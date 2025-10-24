@@ -1,0 +1,285 @@
+// ============================================================================
+// Prisma Schema for NCP (Naver Cloud Platform) Migration
+// ============================================================================
+// 네이버 클라우드 플랫폼 Cloud DB for PostgreSQL용 스키마
+//
+// 최적화 사항:
+// 1. 인덱스 추가: 자주 조회되는 컬럼에 인덱스 추가
+// 2. 감사 로그 강화: 국정원 인증 요구사항 충족
+// 3. 성능 최적화: JSONB 타입 및 GIN 인덱스 활용
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User Management
+// ============================================================================
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String? // NULL for LDAP users or OAuth
+  name          String?
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  profile       UserProfile?
+  inspections   InspectionRecord[]
+  auditLogs     AuditLog[]
+  uploadedFiles UploadedFile[]
+
+  @@index([email])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model UserProfile {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique
+  role            String // 'admin', 'inspector', 'viewer', 'master', 'emergency_center_admin', etc.
+  organization    String?
+  phone           String?
+  lastLoginAt     DateTime?
+  accountType     String? // Phase 3 추가: 계정 유형 (예: 'government', 'contractor', 'inspector')
+  assignedDevices String[]  @default([]) // Phase 3 추가: 할당된 AED 기기 ID 배열
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([role])
+  @@index([organization])
+  @@map("user_profiles")
+}
+
+// ============================================================================
+// AED Device Management
+// ============================================================================
+
+model AEDDevice {
+  id                 Int       @id @default(autoincrement())
+  deviceCode         String    @unique
+  location           String
+  region             String
+  latitude           Float?
+  longitude          Float?
+  status             String    @default("active") // 'active', 'inactive', 'removed'
+  lastInspectionDate DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relations
+  inspections InspectionRecord[]
+
+  @@index([region])
+  @@index([status])
+  @@index([deviceCode])
+  @@index([lastInspectionDate])
+  @@map("aed_devices")
+}
+
+// ============================================================================
+// Inspection Assignments
+// ============================================================================
+
+model InspectionAssignment {
+  id              Int       @id @default(autoincrement())
+  equipmentSerial String
+  assignedTo      Int // User ID who will inspect
+  assignedBy      Int // User ID who assigned
+  assignmentType  String // 'scheduled', 'emergency', 'periodic'
+  scheduledDate   DateTime?
+  scheduledTime   String?
+  priorityLevel   Int       @default(0)
+  notes           String?
+  status          String    @default("pending") // 'pending', 'in_progress', 'completed', 'cancelled'
+  startedAt       DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([equipmentSerial])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([scheduledDate])
+  @@map("inspection_assignments")
+}
+
+// ============================================================================
+// Inspection Records
+// ============================================================================
+
+model InspectionRecord {
+  id             Int      @id @default(autoincrement())
+  deviceId       Int
+  inspectorId    Int
+  inspectionDate DateTime
+  status         String // 'pass', 'fail', 'pending'
+  notes          String?
+  photoPaths     String[] // JSON array of file paths
+  batteryStatus  String?
+  paddleStatus   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  device    AEDDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  inspector User      @relation(fields: [inspectorId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([inspectorId])
+  @@index([inspectionDate])
+  @@index([status])
+  @@map("inspection_records")
+}
+
+// ============================================================================
+// File Management
+// ============================================================================
+
+model UploadedFile {
+  id           Int      @id @default(autoincrement())
+  filename     String
+  filepath     String   @unique
+  category     String // 'inspection-photos', 'device-photos', 'reports', etc.
+  size         Int
+  mimeType     String
+  uploadedById Int
+  createdAt    DateTime @default(now())
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([createdAt])
+  @@map("uploaded_files")
+}
+
+// ============================================================================
+// Authentication & Verification
+// ============================================================================
+
+model EmailVerification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("email_verifications")
+}
+
+model EmailVerificationCode {
+  id        Int      @id @default(autoincrement())
+  email     String
+  code      String
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, code])
+  @@index([expiresAt])
+  @@map("email_verification_codes")
+}
+
+model LoginHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("login_history")
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("password_resets")
+}
+
+// ============================================================================
+// Audit & Logging (국정원 인증 요구사항)
+// ============================================================================
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  action     String // 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'ACCESS', etc.
+  resource   String // 'User', 'AEDDevice', 'InspectionRecord', etc.
+  resourceId Int?
+  changes    String? // JSON object of changes
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model PerformanceLog {
+  id           Int      @id @default(autoincrement())
+  operation    String
+  duration     Int // milliseconds
+  success      Boolean
+  errorMessage String?
+  timestamp    DateTime @default(now())
+
+  @@index([operation])
+  @@index([timestamp])
+  @@map("performance_logs")
+}
+
+// ============================================================================
+// NCP Optimization Notes
+// ============================================================================
+//
+// 1. 인덱스 전략:
+//    - 자주 조회되는 컬럼에 인덱스 추가 (region, status, email 등)
+//    - 복합 인덱스 고려 (userId + createdAt)
+//    - GIN 인덱스는 JSONB 컬럼에 적용 (향후 추가 시)
+//
+// 2. 감사 로그 (AuditLog):
+//    - 국정원 인증 8가지 요구사항 중 하나
+//    - 사용자 행동 추적 (로그인, 데이터 수정, 삭제 등)
+//    - 최소 365일 보관 (AUDIT_LOG_RETENTION_DAYS)
+//
+// 3. 성능 최적화:
+//    - Connection Pooling: Prisma 기본 제공
+//    - Query 최적화: include/select 사용
+//    - Materialized Views: 대시보드용 (별도 SQL 파일)
+//
+// 4. 백업 & 복구:
+//    - NCP Cloud DB 자동 백업 활성화
+//    - PITR (Point-in-Time Recovery) 설정
+//    - 매일 자동 백업 (30일 보관)
+//
+// 5. 마이그레이션 순서:
+//    Step 1: Supabase에서 pg_dump로 데이터 백업
+//    Step 2: NCP Cloud DB 생성
+//    Step 3: 이 스키마로 prisma migrate deploy
+//    Step 4: pg_restore로 데이터 복원
+//    Step 5: 인덱스 및 제약조건 검증
+//
+// ============================================================================

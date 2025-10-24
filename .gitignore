@@ -40,3 +40,26 @@ Thumbs.db
 
 # IDE
 .eslintcache
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# PM2
+.pm2
+logs/
+*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Prisma
+prisma/migrations/**/*.sql
+!prisma/migrations/**/migration.sql
+
+# Uploads (개발 환경)
+/public/uploads
+
+# Reference code (마이그레이션 완료 후 삭제 가능)
+_reference-code
