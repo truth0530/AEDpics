@@ -1,0 +1,3 @@
+[submodule "aed-check-system"]
+	path = aed-check-system
+	url = https://github.com/truth0530/AEDpics-aed-check-system.git
