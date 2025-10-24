@@ -3,6 +3,7 @@
  *
  * POST /api/auth/login
  * - 사용자 인증
+ * - 2FA 검증 (활성화된 경우)
  * - JWT 토큰 반환
  * - 로그인 히스토리 기록
  */
@@ -11,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser } from '@/lib/auth/jwt';
 import { createAuditLog } from '@/lib/db/prisma';
 import { checkRateLimit, createRateLimitResponse, getIdentifier, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rate-limiter';
+import { isTOTPEnabled, verifyTOTPToken, verifyBackupCode } from '@/lib/auth/totp';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // 요청 본문 파싱
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, totpToken } = body;
 
     // 필수 필드 검증
     if (!email || !password) {
@@ -53,10 +55,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if 2FA is enabled
+    const totpEnabled = await isTOTPEnabled(result.user.id);
+
+    if (totpEnabled) {
+      // 2FA is enabled, require TOTP token
+      if (!totpToken) {
+        return NextResponse.json({
+          requiresTOTP: true,
+          message: 'Please provide your 2FA code',
+        }, { status: 200 });
+      }
+
+      // Verify TOTP token or backup code
+      let verified = false;
+
+      // Try TOTP token first
+      verified = await verifyTOTPToken(result.user.id, totpToken);
+
+      // If TOTP fails, try backup code
+      if (!verified) {
+        verified = await verifyBackupCode(result.user.id, totpToken);
+      }
+
+      if (!verified) {
+        // 감사 로그 기록 (2FA 실패)
+        await createAuditLog({
+          userId: result.user.id,
+          action: '2FA_LOGIN_FAILED',
+          resource: 'User',
+          resourceId: result.user.id,
+          ipAddress: request.headers.get('x-forwarded-for') || undefined,
+          userAgent: request.headers.get('user-agent') || undefined,
+        });
+
+        return NextResponse.json(
+          { error: 'Invalid 2FA code' },
+          { status: 401 }
+        );
+      }
+    }
+
     // 감사 로그 기록 (성공한 로그인)
     await createAuditLog({
       userId: result.user.id,
-      action: 'LOGIN',
+      action: totpEnabled ? '2FA_LOGIN_SUCCESS' : 'LOGIN',
       resource: 'User',
       resourceId: result.user.id,
       ipAddress: request.headers.get('x-forwarded-for') || undefined,

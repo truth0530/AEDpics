@@ -23,19 +23,24 @@ datasource db {
 // ============================================================================
 
 model User {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  password      String? // NULL for LDAP users or OAuth
-  name          String?
-  emailVerified Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  password           String? // NULL for LDAP users or OAuth
+  name               String?
+  emailVerified      Boolean   @default(false)
+
+  // Phase 6: Password Policy
+  passwordHistory    String[]  @default([]) // Last 5 password hashes
+  passwordChangedAt  DateTime? // Last password change timestamp
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // Relations
-  profile       UserProfile?
-  inspections   InspectionRecord[]
-  auditLogs     AuditLog[]
-  uploadedFiles UploadedFile[]
+  profile            UserProfile?
+  inspections        InspectionRecord[]
+  auditLogs          AuditLog[]
+  uploadedFiles      UploadedFile[]
 
   @@index([email])
   @@index([createdAt])
@@ -51,6 +56,12 @@ model UserProfile {
   lastLoginAt     DateTime?
   accountType     String? // Phase 3 추가: 계정 유형 (예: 'government', 'contractor', 'inspector')
   assignedDevices String[]  @default([]) // Phase 3 추가: 할당된 AED 기기 ID 배열
+
+  // Phase 6: 2FA (TOTP)
+  totpSecret      String? // TOTP secret (base32 encoded)
+  totpEnabled     Boolean   @default(false)
+  backupCodes     String[]  @default([]) // Hashed backup codes
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
