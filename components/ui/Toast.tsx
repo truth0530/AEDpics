@@ -17,6 +17,7 @@ export interface Toast {
 }
 
 interface ToastOptions {
+  message?: string;
   duration?: number;
 }
 
@@ -70,19 +71,19 @@ export function ToastProvider({ children }: ToastProviderProps) {
   };
 
   const showSuccess = (title: string, options?: ToastOptions) => {
-    addToast({ type: 'success', title, duration: options?.duration });
+    addToast({ type: 'success', title, message: options?.message, duration: options?.duration });
   };
 
   const showError = (title: string, options?: ToastOptions) => {
-    addToast({ type: 'error', title, duration: options?.duration || 7000 });
+    addToast({ type: 'error', title, message: options?.message, duration: options?.duration || 7000 });
   };
 
   const showInfo = (title: string, options?: ToastOptions) => {
-    addToast({ type: 'info', title, duration: options?.duration });
+    addToast({ type: 'info', title, message: options?.message, duration: options?.duration });
   };
 
   const showWarning = (title: string, options?: ToastOptions) => {
-    addToast({ type: 'warning', title, duration: options?.duration });
+    addToast({ type: 'warning', title, message: options?.message, duration: options?.duration });
   };
 
   return (

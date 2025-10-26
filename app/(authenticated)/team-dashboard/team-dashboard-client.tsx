@@ -105,7 +105,7 @@ function TeamDashboardContent({
       setTasks(newTasks);
 
       if (isRealtimeEnabled) {
-        showInfo('작업이 실시간으로 동기화되었습니다', '다른 팀원의 변경사항이 반영되었습니다');
+        showInfo('작업이 실시간으로 동기화되었습니다', { message: '다른 팀원의 변경사항이 반영되었습니다' });
       }
 
       setStats(prev => ({
@@ -153,7 +153,7 @@ function TeamDashboardContent({
       if (isRealtimeEnabled) {
         // Use realtime sync if enabled
         realtimeSync.updateItem(taskId, updatedTask);
-        showSuccess('작업 상태가 변경되었습니다.', '실시간으로 동기화됩니다.');
+        showSuccess('작업 상태가 변경되었습니다.', { message: '실시간으로 동기화됩니다.' });
       } else {
         // Local update only
         setTasks((prev) =>
@@ -167,7 +167,7 @@ function TeamDashboardContent({
               : task
           )
         );
-        showSuccess('작업 상태가 변경되었습니다.', '실제 저장은 Sprint 2에서 연결됩니다.');
+        showSuccess('작업 상태가 변경되었습니다.', { message: '실제 저장은 Sprint 2에서 연결됩니다.' });
       }
     },
     [showSuccess, realtimeSync, isRealtimeEnabled]
@@ -182,7 +182,7 @@ function TeamDashboardContent({
 
       if (isRealtimeEnabled) {
         realtimeSync.updateItem(taskId, updatedTask);
-        showSuccess('작업 담당자가 변경되었습니다.', '실시간으로 동기화됩니다.');
+        showSuccess('작업 담당자가 변경되었습니다.', { message: '실시간으로 동기화됩니다.' });
       } else {
         setTasks((prev) =>
           prev.map((task) =>
@@ -191,7 +191,7 @@ function TeamDashboardContent({
               : task
           )
         );
-        showSuccess('작업 담당자가 변경되었습니다.', '실제 반영은 Sprint 2에서 구현됩니다.');
+        showSuccess('작업 담당자가 변경되었습니다.', { message: '실제 반영은 Sprint 2에서 구현됩니다.' });
       }
     },
     [showSuccess, realtimeSync, isRealtimeEnabled]
@@ -206,7 +206,7 @@ function TeamDashboardContent({
 
       if (isRealtimeEnabled) {
         realtimeSync.updateItem(taskId, updatedTask);
-        showSuccess('작업 일정이 변경되었습니다.', '실시간으로 동기화됩니다.');
+        showSuccess('작업 일정이 변경되었습니다.', { message: '실시간으로 동기화됩니다.' });
       } else {
         setTasks((prev) =>
           prev.map((task) =>
@@ -215,7 +215,7 @@ function TeamDashboardContent({
               : task
           )
         );
-        showSuccess('작업 일정이 변경되었습니다.', '실제 저장은 Sprint 2에서 연결됩니다.');
+        showSuccess('작업 일정이 변경되었습니다.', { message: '실제 저장은 Sprint 2에서 연결됩니다.' });
       }
       setSelectedDate(date);
     },

@@ -391,14 +391,12 @@ export async function POST(request: NextRequest) {
         'health_center_admin': '보건소 관리자'
       };
 
-      await prisma.notification.create({
+      await prisma.notifications.create({
         data: {
-          recipientId: userId,
-          type: 'approval_result',
+          recipient_id: userId,
+          type: 'approval_completed',
           title: '가입 승인 완료',
-          message: `${roleLabels[finalRole] || finalRole} 역할로 승인되었습니다. 이제 AED 점검 시스템을 사용할 수 있습니다.`,
-          isRead: false,
-          createdAt: new Date()
+          message: `${roleLabels[finalRole] || finalRole} 역할로 승인되었습니다. 이제 AED 점검 시스템을 사용할 수 있습니다.`
         }
       });
     } catch (notificationError) {
@@ -602,14 +600,12 @@ export async function DELETE(request: NextRequest) {
 
     // 실시간 알림 생성 (사용자에게 거부 결과 알림)
     try {
-      await prisma.notification.create({
+      await prisma.notifications.create({
         data: {
-          recipientId: userId,
-          type: 'approval_result',
+          recipient_id: userId,
+          type: 'approval_rejected',
           title: '가입 거부됨',
-          message: `가입이 거부되었습니다. 사유: ${rejectReason || '관리자 검토 결과'}. 재신청 가능합니다.`,
-          isRead: false,
-          createdAt: new Date()
+          message: `가입이 거부되었습니다. 사유: ${rejectReason || '관리자 검토 결과'}. 재신청 가능합니다.`
         }
       });
     } catch (notificationError) {

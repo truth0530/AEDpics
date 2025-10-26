@@ -60,8 +60,8 @@ export async function GET(request: NextRequest) {
 
     // 4. 조직 통계
     const [totalOrganizations, organizationsByType] = await Promise.all([
-      prisma.organization.count(),
-      prisma.organization.groupBy({
+      prisma.organizations.count(),
+      prisma.organizations.groupBy({
         by: ['type'],
         _count: true
       })
@@ -69,9 +69,9 @@ export async function GET(request: NextRequest) {
 
     // 5. AED 통계
     const [totalAedDevices, aedByStatus] = await Promise.all([
-      prisma.aedDevice.count(),
-      prisma.aedDevice.groupBy({
-        by: ['status'],
+      prisma.aed_data.count(),
+      prisma.aed_data.groupBy({
+        by: ['operation_status'],
         _count: true
       })
     ]);

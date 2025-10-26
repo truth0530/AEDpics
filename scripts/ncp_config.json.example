@@ -1,0 +1,20 @@
+{
+  "_comment": "NCP PostgreSQL 연결 설정 및 포털 로그인 정보",
+  "_usage": "이 파일을 ncp_config.json으로 복사하고 실제 값으로 수정하세요",
+
+  "host": "pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com",
+  "port": 5432,
+  "database": "aedpics_production",
+  "schema": "aedpics",
+  "user": "aedpics_admin",
+  "password": "YOUR_DATABASE_PASSWORD_HERE",
+
+  "table_name": "aed_data",
+  "batch_size": 500,
+  "stream_batch_size": 100,
+
+  "portal_username": "YOUR_PORTAL_USERNAME",
+  "portal_password": "YOUR_PORTAL_PASSWORD",
+
+  "_security_warning": "이 파일에는 민감한 정보가 포함됩니다. Git에 커밋하지 마세요!"
+}

@@ -47,6 +47,14 @@ yarn-error.log*
 .env.backup
 config/database.json
 
+# NCP configuration (contains DB credentials and portal login)
+scripts/ncp_config.json
+scripts/supabase_config.json
+
+# Scripts with hardcoded credentials (move to external PC before committing)
+scripts/portal_to_ncp.py
+scripts/upload_to_ncp.py
+
 # vercel
 .vercel
 

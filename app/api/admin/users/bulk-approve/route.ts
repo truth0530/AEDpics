@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         email: true,
-        fullName: true,
-        organizationName: true,
+        full_name: true,
+        organization_name: true,
         role: true
       }
     });
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         // 스마트 추천 생성
         const suggestion = generateApprovalSuggestion(
           targetUser.email,
-          targetUser.organizationName || ''
+          targetUser.organization_name || ''
         );
 
         // 사용자 프로필 업데이트
@@ -98,9 +98,9 @@ export async function POST(request: NextRequest) {
             where: { id: targetUser.id },
             data: {
               role: suggestion.role,
-              regionCode: suggestion.regionCode || null,
-              isActive: true,
-              updatedAt: new Date()
+              region_code: suggestion.regionCode || null,
+              is_active: true,
+              updated_at: new Date()
             }
           });
         } catch (updateError: any) {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         results.push({
           userId: targetUser.id,
           email: targetUser.email,
-          fullName: targetUser.fullName,
+          fullName: targetUser.full_name,
           assignedRole: suggestion.role,
           regionCode: suggestion.regionCode
         });

@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // 5. 조직 목록 조회
     const [organizations, total] = await Promise.all([
-      prisma.organization.findMany({
+      prisma.organizations.findMany({
         where,
         select: {
           id: true,
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit
       }),
-      prisma.organization.count({ where })
+      prisma.organizations.count({ where })
     ]);
 
     return NextResponse.json({
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. 동일한 이름의 조직이 이미 존재하는지 확인
-    const existingOrg = await prisma.organization.findFirst({
+    const existingOrg = await prisma.organizations.findFirst({
       where: {
         name,
         region_code
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. 조직 생성
-    const organization = await prisma.organization.create({
+    const organization = await prisma.organizations.create({
       data: {
         name,
         type,
