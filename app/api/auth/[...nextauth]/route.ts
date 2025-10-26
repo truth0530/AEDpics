@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user_profiles.findUnique({
           where: { email: credentials.email },
-          include: { organization: true }
+          include: { organizations: true }
         })
 
         if (!user || !user.passwordHash) {
@@ -47,12 +47,12 @@ export const authOptions: NextAuthOptions = {
         }
 
         // 로그인 성공 - 이력 기록
-        await prisma.loginHistory.create({
+        await prisma.login_history.create({
           data: {
-            userId: user.id,
+            user_id: user.id,
             success: true,
-            ipAddress: 'server',
-            userAgent: 'NextAuth'
+            ip_address: 'server',
+            user_agent: 'NextAuth'
           }
         })
 

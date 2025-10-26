@@ -133,9 +133,11 @@ export async function GET(request: NextRequest) {
     });
 
     // 8. 조직 변경 요청 대기 건수
-    const pendingOrgChangeRequests = await prisma.organizationChangeRequest.count({
-      where: { status: 'pending' }
-    });
+    // DEPRECATED: organization_change_requests table not implemented yet
+    // const pendingOrgChangeRequests = await prisma.organizationChangeRequest.count({
+    //   where: { status: 'pending' }
+    // });
+    const pendingOrgChangeRequests = 0; // Feature not yet available
 
     // 9. 응답 데이터 구성
     return NextResponse.json({
