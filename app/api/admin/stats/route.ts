@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         }
       },
       include: {
-        user: {
+        user_profiles: {
           select: {
             email: true,
             full_name: true
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
       aedDevices: {
         total: totalAedDevices,
         byStatus: aedByStatus.reduce((acc, item) => {
-          acc[item.status] = item._count;
+          acc[item.operation_status] = item._count;
           return acc;
         }, {} as Record<string, number>)
       },
@@ -177,9 +177,9 @@ export async function GET(request: NextRequest) {
       recentActivity: recentLogs.map(log => ({
         id: log.id,
         action: log.action,
-        user: log.user?.email || 'Unknown',
-        userFullName: log.user?.full_name,
-        details: log.details,
+        user: log.user_profiles?.email || 'Unknown',
+        userFullName: log.user_profiles?.full_name,
+        details: log.metadata,
         timestamp: log.created_at
       }))
     });

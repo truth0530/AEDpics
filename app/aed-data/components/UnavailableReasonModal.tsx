@@ -47,12 +47,12 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
 
   const handleSubmit = async () => {
     if (!selectedReason) {
-      showError('사유를 선택해주세요.', '점검불가 사유는 필수입니다.');
+      showError('사유를 선택해주세요.', { message: '점검불가 사유는 필수입니다.' });
       return;
     }
 
     if (selectedReason === 'other' && !customNote.trim()) {
-      showError('기타 사유를 입력해주세요.', '상세 사유는 필수입니다.');
+      showError('기타 사유를 입력해주세요.', { message: '상세 사유는 필수입니다.' });
       return;
     }
 
@@ -83,12 +83,12 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
         throw new Error(data.error || '점검불가 상태 변경에 실패했습니다.');
       }
 
-      showSuccess('점검불가 처리 완료', data.message || '해당 장비는 점검불가 상태로 변경되었습니다.');
+      showSuccess('점검불가 처리 완료', { message: data.message || '해당 장비는 점검불가 상태로 변경되었습니다.' });
       onSuccess();
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('점검불가 처리 실패', message);
+      showError('점검불가 처리 실패', { message });
       setIsSubmitting(false);
     }
   };

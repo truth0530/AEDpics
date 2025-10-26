@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, user_role } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -101,11 +102,12 @@ export async function POST(
     // 8. Audit Log 기록
     await prisma.audit_logs.create({
       data: {
+        id: randomUUID(),
         user_id: adminProfile.id,
         action: 'user_approved',
-        resource_type: 'user_profile',
-        resource_id: id,
-        details: {
+        entity_type: 'user_profile',
+        entity_id: id,
+        metadata: {
           target_user_id: id,
           target_user_email: targetUser.email,
           approved_role: role,

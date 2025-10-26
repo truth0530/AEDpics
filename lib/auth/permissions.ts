@@ -66,6 +66,9 @@ export const PERMISSIONS = {
   // 사용자 목록 조회
   LIST_USERS: (role: UserRole) => hasAdminAccess(role),
 
+  // 대시보드 조회
+  VIEW_DASHBOARD: (role: UserRole) => hasAdminAccess(role),
+
   // 보건소 데이터 동기화
   SYNC_HEALTH_CENTERS: (role: UserRole) => hasSystemAdminAccess(role),
 
@@ -94,6 +97,7 @@ export function getPermissionError(permission: keyof typeof PERMISSIONS): string
     CREATE_NOTIFICATION: '알림 생성 권한이 없습니다.',
     APPROVE_USERS: '사용자 승인 권한이 없습니다.',
     LIST_USERS: '사용자 목록 조회 권한이 없습니다.',
+    VIEW_DASHBOARD: '대시보드 조회 권한이 없습니다.',
     SYNC_HEALTH_CENTERS: '보건소 데이터 동기화 권한이 없습니다.',
     MANAGE_ORGANIZATIONS: '조직 관리 권한이 없습니다.',
     MANAGE_AED_DEVICES: 'AED 장치 관리 권한이 없습니다.',

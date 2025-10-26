@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'crypto';
 const prisma = new PrismaClient();
 import { canApproveUsers, getMasterAdminEmails } from '@/lib/auth/config';
 import { UserRole } from '@/packages/types';
@@ -255,13 +256,13 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         data: {
           role: updateData.role,
-          organizationId: updateData.organization_id,
-          regionCode: updateData.region_code,
-          isActive: updateData.is_active,
-          organizationName: updateData.organization_name,
-          fullName: updateData.full_name,
+          organization_id: updateData.organization_id,
+          region_code: updateData.region_code,
+          is_active: updateData.is_active,
+          organization_name: updateData.organization_name,
+          full_name: updateData.full_name,
           phone: updateData.phone,
-          updatedAt: new Date(updateData.updated_at)
+          updated_at: new Date(updateData.updated_at)
         }
       });
 
@@ -362,18 +363,19 @@ export async function POST(request: NextRequest) {
     try {
       await prisma.audit_logs.create({
         data: {
+          id: randomUUID(),
+          user_id: session.user.id,
           action: 'user_approved',
-          actorId: session.user.id,
-          actorEmail: currentUserProfile.email,
-          targetId: userId,
-          targetEmail: targetUser.email,
+          entity_type: 'user_profile',
+          entity_id: userId,
           metadata: {
+            actor_email: currentUserProfile.email,
+            target_email: targetUser.email,
             assigned_role: finalRole,
             organization_id: organizationId,
             organization_name: organizationName,
             region_code: finalRegionCode
-          },
-          createdAt: new Date()
+          }
         }
       });
     } catch (auditLogError) {
@@ -393,6 +395,7 @@ export async function POST(request: NextRequest) {
 
       await prisma.notifications.create({
         data: {
+          id: randomUUID(),
           recipient_id: userId,
           type: 'approval_completed',
           title: '가입 승인 완료',
@@ -514,8 +517,8 @@ export async function DELETE(request: NextRequest) {
         where: { id: userId },
         data: {
           role: 'rejected' as any, // TypeScript에서 'rejected'가 정의되지 않을 수 있으므로 any로 캐스팅
-          isActive: false,
-          updatedAt: new Date()
+          is_active: false,
+          updated_at: new Date()
         }
       });
     } catch (updateError: any) {
@@ -582,15 +585,16 @@ export async function DELETE(request: NextRequest) {
     try {
       await prisma.audit_logs.create({
         data: {
+          id: randomUUID(),
+          user_id: session.user.id,
           action: 'user_rejected',
-          actorId: session.user.id,
-          actorEmail: currentUserProfile.email,
-          targetId: userId,
-          targetEmail: targetUser.email,
+          entity_type: 'user_profile',
+          entity_id: userId,
           metadata: {
+            actor_email: currentUserProfile.email,
+            target_email: targetUser.email,
             rejection_reason: rejectReason
-          },
-          createdAt: new Date()
+          }
         }
       });
     } catch (auditLogError) {
@@ -602,6 +606,7 @@ export async function DELETE(request: NextRequest) {
     try {
       await prisma.notifications.create({
         data: {
+          id: randomUUID(),
           recipient_id: userId,
           type: 'approval_rejected',
           title: '가입 거부됨',

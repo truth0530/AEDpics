@@ -70,17 +70,16 @@ export async function GET(request: NextRequest) {
         prisma.user_profiles.findMany({
           where,
           include: {
-            organization: {
+            organizations: {
               select: {
                 id: true,
                 name: true,
                 type: true,
-                regionCode: true,
-                cityCode: true
+                region_code: true
               }
             }
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { created_at: 'desc' },
           skip: offset,
           take: limit
         }),
@@ -91,11 +90,11 @@ export async function GET(request: NextRequest) {
 
       // 프로필 데이터 정리
       const processedProfiles = profiles?.map(profile => {
-        const organizationData = profile.organization;
-        const organizationName = organizationData?.name || profile.organizationName || null;
+        const organizationData = profile.organizations;
+        const organizationName = organizationData?.name || profile.organization_name || null;
         const healthCenterName = organizationData?.type === 'health_center'
           ? organizationData?.name
-          : (profile.organizationName || null);
+          : (profile.organization_name || null);
 
         // 전화번호 복호화 (하위 호환성 보장)
         const decryptedPhone = profile.phone ? decryptPhone(profile.phone) : null;
@@ -103,19 +102,19 @@ export async function GET(request: NextRequest) {
         return {
           id: profile.id,
           email: profile.email,
-          fullName: profile.fullName || profile.email?.split('@')[0] || '이름 없음',
+          fullName: profile.full_name || profile.email?.split('@')[0] || '이름 없음',
           role: profile.role,
           phone: decryptedPhone,
-          organizationId: profile.organizationId,
+          organizationId: profile.organization_id,
           organization_name: organizationName,
           health_center: healthCenterName,
           department: profile.department,
-          regionCode: profile.regionCode,
-          createdAt: profile.createdAt,
-          updatedAt: profile.updatedAt,
-          lastLoginAt: profile.lastLoginAt,
-          loginCount: profile.loginCount || 0,
-          isActive: profile.isActive,
+          regionCode: profile.region_code,
+          createdAt: profile.created_at,
+          updatedAt: profile.updated_at,
+          lastLoginAt: profile.last_login_at,
+          loginCount: profile.login_count || 0,
+          isActive: profile.is_active,
           organization: organizationData
         };
       }) || [];

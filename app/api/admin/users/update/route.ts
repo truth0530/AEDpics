@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { UserRole } from '@/packages/types';
 import { isValidRegionForRole } from '@/lib/constants/regions';
+import { randomUUID } from 'crypto';
 
 /**
  * PATCH /api/admin/users/update
@@ -65,7 +66,7 @@ export async function PATCH(request: NextRequest) {
     // 수정 대상 사용자 정보 조회
     const targetUser = await prisma.user_profiles.findUnique({
       where: { id: userId },
-      select: { email: true, role: true, fullName: true }
+      select: { email: true, role: true, full_name: true }
     });
 
     if (!targetUser) {
@@ -150,18 +151,19 @@ export async function PATCH(request: NextRequest) {
     try {
       await prisma.audit_logs.create({
         data: {
+          id: randomUUID(),
+          user_id: session.user.id,
           action: 'user_updated',
-          actorId: session.user.id,
-          actorEmail: currentUserProfile.email,
-          targetId: userId,
-          targetEmail: targetUser.email,
+          entity_type: 'user_profile',
+          entity_id: userId,
           metadata: {
+            actor_email: currentUserProfile.email,
+            target_email: targetUser.email,
             updated_role: role,
             updated_organization_id: organizationId,
             updated_region_code: regionCode,
             previous_role: targetUser.role
-          },
-          createdAt: new Date()
+          }
         }
       });
     } catch (auditLogError) {
@@ -179,14 +181,13 @@ export async function PATCH(request: NextRequest) {
         'health_center_admin': '보건소 관리자'
       };
 
-      await prisma.notification.create({
+      await prisma.notifications.create({
         data: {
-          recipientId: userId,
-          type: 'profile_updated',
+          id: randomUUID(),
+          recipient_id: userId,
+          type: 'role_updated',
           title: '계정 정보 변경',
-          message: `관리자에 의해 계정 정보가 수정되었습니다. ${role ? `역할: ${roleLabels[role] || role}` : ''}`,
-          isRead: false,
-          createdAt: new Date()
+          message: `관리자에 의해 계정 정보가 수정되었습니다. ${role ? `역할: ${roleLabels[role] || role}` : ''}`
         }
       });
     } catch (notificationError) {

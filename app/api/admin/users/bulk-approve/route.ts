@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'crypto';
 const prisma = new PrismaClient();
 import { canApproveUsers } from '@/lib/auth/config';
 import { generateApprovalSuggestion } from '@/lib/utils/approval-helpers';
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     // 현재 사용자의 프로필 조회
     const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true, email: true, fullName: true }
+      select: { role: true, email: true, full_name: true }
     });
 
     if (!currentUserProfile) {
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               userId: targetUser.id,
               approved: true,
-              approverName: currentUserProfile.fullName || currentUserProfile.email,
+              approverName: currentUserProfile.full_name || currentUserProfile.email,
               bulk: true
             })
           });
@@ -214,18 +215,19 @@ export async function POST(request: NextRequest) {
       try {
         await prisma.audit_logs.create({
           data: {
+            id: randomUUID(),
+            user_id: session.user.id,
             action: 'user_bulk_approved',
-            actorId: session.user.id,
-            actorEmail: currentUserProfile.email,
-            targetId: result.userId,
-            targetEmail: result.email,
+            entity_type: 'user_profile',
+            entity_id: result.userId,
             metadata: {
+              actor_email: currentUserProfile.email,
+              target_email: result.email,
               assigned_role: result.assignedRole,
               region_code: result.regionCode,
               bulk_operation: true,
               total_processed: results.length
-            },
-            createdAt: new Date()
+            }
           }
         });
       } catch (auditError) {
@@ -270,7 +272,7 @@ export async function DELETE(request: NextRequest) {
     // 현재 사용자의 프로필 조회
     const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true, email: true, fullName: true }
+      select: { role: true, email: true, full_name: true }
     });
 
     if (!currentUserProfile) {
@@ -306,7 +308,7 @@ export async function DELETE(request: NextRequest) {
       select: {
         id: true,
         email: true,
-        fullName: true,
+        full_name: true,
         role: true
       }
     });
@@ -351,7 +353,7 @@ export async function DELETE(request: NextRequest) {
         results.push({
           userId: targetUser.id,
           email: targetUser.email,
-          fullName: targetUser.fullName
+          fullName: targetUser.full_name
         });
 
         // 거부 이메일 발송 (비동기)
@@ -415,7 +417,7 @@ export async function DELETE(request: NextRequest) {
               userId: targetUser.id,
               approved: false,
               reason: rejectReason || '관리자가 일괄 거부했습니다.',
-              approverName: currentUserProfile.fullName || currentUserProfile.email,
+              approverName: currentUserProfile.full_name || currentUserProfile.email,
               bulk: true
             })
           });
@@ -438,17 +440,18 @@ export async function DELETE(request: NextRequest) {
       try {
         await prisma.audit_logs.create({
           data: {
+            id: randomUUID(),
+            user_id: session.user.id,
             action: 'user_bulk_rejected',
-            actorId: session.user.id,
-            actorEmail: currentUserProfile.email,
-            targetId: result.userId,
-            targetEmail: result.email,
+            entity_type: 'user_profile',
+            entity_id: result.userId,
             metadata: {
+              actor_email: currentUserProfile.email,
+              target_email: result.email,
               rejection_reason: rejectReason,
               bulk_operation: true,
               total_processed: results.length
-            },
-            createdAt: new Date()
+            }
           }
         });
       } catch (auditError) {

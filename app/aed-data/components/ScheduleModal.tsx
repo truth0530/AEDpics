@@ -110,7 +110,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
         // 다중 장비일 경우 바로 완료
         showSuccess(
           result.message || '일정이 추가되었습니다.',
-          '현장점검 메뉴에서 확인할 수 있습니다.'
+          { message: '현장점검 메뉴에서 확인할 수 있습니다.' }
         );
         onClose();
         onScheduled?.();
@@ -118,7 +118,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('일정 추가에 실패했습니다.', message);
+      showError('일정 추가에 실패했습니다.', { message });
     } finally {
       setIsSubmitting(false);
     }
@@ -149,7 +149,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
       onScheduled?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('점검 시작에 실패했습니다.', message);
+      showError('점검 시작에 실패했습니다.', { message });
     } finally {
       setIsSubmitting(false);
     }
@@ -158,7 +158,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
   const handleContinueAdding = () => {
     showSuccess(
       '일정이 추가되었습니다.',
-      '현장점검 메뉴에서 확인할 수 있습니다.'
+      { message: '현장점검 메뉴에서 확인할 수 있습니다.' }
     );
     onClose();
     onScheduled?.();

@@ -3,6 +3,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -169,6 +170,7 @@ export async function POST(request: NextRequest) {
     // 6. 조직 생성
     const organization = await prisma.organizations.create({
       data: {
+        id: randomUUID(),
         name,
         type,
         region_code
@@ -178,11 +180,12 @@ export async function POST(request: NextRequest) {
     // 7. Audit Log 기록
     await prisma.audit_logs.create({
       data: {
+        id: randomUUID(),
         user_id: session.user.id,
         action: 'organization_created',
-        resource_type: 'organization',
-        resource_id: organization.id,
-        details: {
+        entity_type: 'organization',
+        entity_id: organization.id,
+        metadata: {
           name,
           type,
           region_code

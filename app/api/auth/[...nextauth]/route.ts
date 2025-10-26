@@ -25,25 +25,25 @@ export const authOptions: NextAuthOptions = {
           include: { organizations: true }
         })
 
-        if (!user || !user.passwordHash) {
+        if (!user || !user.password_hash) {
           throw new Error("이메일 또는 비밀번호가 일치하지 않습니다")
         }
 
         const isValid = await bcrypt.compare(
           credentials.password,
-          user.passwordHash
+          user.password_hash
         )
 
         if (!isValid) {
           throw new Error("이메일 또는 비밀번호가 일치하지 않습니다")
         }
 
-        if (!user.isActive) {
+        if (!user.is_active) {
           throw new Error("계정이 비활성화되었습니다")
         }
 
-        if (user.accountLocked) {
-          throw new Error(`계정이 잠겼습니다: ${user.lockReason || '관리자에게 문의하세요'}`)
+        if (user.account_locked) {
+          throw new Error(`계정이 잠겼습니다: ${user.lock_reason || '관리자에게 문의하세요'}`)
         }
 
         // 로그인 성공 - 이력 기록

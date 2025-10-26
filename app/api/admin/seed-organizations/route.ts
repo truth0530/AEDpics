@@ -10,6 +10,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { hasSystemAdminAccess } from '@/lib/auth/permissions';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -114,10 +115,10 @@ export async function POST(request: NextRequest) {
 
     // 데이터 삽입 (createMany 사용)
     const organizationsToInsert = ALL_HEALTH_CENTERS.map(center => ({
+      id: randomUUID(),
       name: center.name,
       type: 'health_center',
       region_code: center.region_code,
-      city_code: center.city_code,
       contact: center.contact_phone,
       address: center.address,
     }));

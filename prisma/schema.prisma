@@ -99,6 +99,8 @@ model audit_logs {
   action        String
   entity_type   String?
   entity_id     String?        @db.Uuid
+  resource_type String?
+  actor_id      String?        @db.Uuid
   metadata      Json           @default("{}")
   ip_address    String?
   user_agent    String?

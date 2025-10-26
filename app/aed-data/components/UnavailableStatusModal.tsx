@@ -49,12 +49,12 @@ export function UnavailableStatusModal({ device, onClose, onSuccess }: Unavailab
         throw new Error(data.error || '점검불가 상태 취소에 실패했습니다.');
       }
 
-      showSuccess('점검불가 취소 완료', data.message || '장비가 정상 상태로 복원되었습니다.');
+      showSuccess('점검불가 취소 완료', { message: data.message || '장비가 정상 상태로 복원되었습니다.' });
       onSuccess();
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('점검불가 취소 실패', message);
+      showError('점검불가 취소 실패', { message });
       setIsSubmitting(false);
     }
   };

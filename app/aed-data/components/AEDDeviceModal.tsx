@@ -129,7 +129,7 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('일정 취소 실패', message);
+      showError('일정 취소 실패', { message });
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +157,7 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
       await response.json().catch(() => null);
       const serial = device.equipment_serial || device.management_number || device.id;
 
-      showSuccess('즉시 점검이 생성되었습니다.', '점검 화면으로 이동합니다.');
+      showSuccess('즉시 점검이 생성되었습니다.', { message: '점검 화면으로 이동합니다.' });
 
       setTimeout(() => {
         onClose();
@@ -169,7 +169,7 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
       }, 500);
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('점검 시작에 실패했습니다.', message);
+      showError('점검 시작에 실패했습니다.', { message });
     } finally {
       setIsSubmitting(false);
     }

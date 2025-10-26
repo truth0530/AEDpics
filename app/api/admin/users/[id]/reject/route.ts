@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { PrismaClient } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -85,11 +86,12 @@ export async function POST(
     // 7. Audit Log 기록 (삭제 전에)
     await prisma.audit_logs.create({
       data: {
+        id: randomUUID(),
         user_id: adminProfile.id,
         action: 'user_rejected',
-        resource_type: 'user_profile',
-        resource_id: id,
-        details: {
+        entity_type: 'user_profile',
+        entity_id: id,
+        metadata: {
           target_user_id: id,
           target_user_email: targetUser.email,
           target_user_role: targetUser.role,

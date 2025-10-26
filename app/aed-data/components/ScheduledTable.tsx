@@ -97,7 +97,7 @@ export function ScheduledTable({ userId }: ScheduledTableProps) {
       fetchAssignments(); // 목록 새로고침
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('일정 취소 실패', message);
+      showError('일정 취소 실패', { message });
     }
   };
 
@@ -122,7 +122,7 @@ export function ScheduledTable({ userId }: ScheduledTableProps) {
       router.push(`/inspection/${equipmentSerial}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('점검 시작 실패', message);
+      showError('점검 시작 실패', { message });
     }
   };
 

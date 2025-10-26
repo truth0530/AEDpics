@@ -55,7 +55,7 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
         if (response.status === 409 && payload.sessionId) {
           showSuccess(
             '진행 중인 점검이 있습니다.',
-            '기존 점검을 이어서 진행합니다.'
+            { message: '기존 점검을 이어서 진행합니다.' }
           );
           setTimeout(() => {
             onClose();
@@ -69,7 +69,7 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
 
       await response.json().catch(() => null);
 
-      showSuccess('점검 세션이 생성되었습니다.', '점검 화면으로 이동합니다.');
+      showSuccess('점검 세션이 생성되었습니다.', { message: '점검 화면으로 이동합니다.' });
 
       setTimeout(() => {
         onClose();
@@ -77,7 +77,7 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
       }, 300);
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-      showError('점검 시작에 실패했습니다.', message);
+      showError('점검 시작에 실패했습니다.', { message });
       setIsSubmitting(false);
     }
   };
