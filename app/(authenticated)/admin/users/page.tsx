@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserRole } from '@prisma/client';
+import { user_role as UserRole } from '@prisma/client';
 import { Search, User, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 interface UserProfile {

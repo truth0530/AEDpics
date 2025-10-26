@@ -21,7 +21,8 @@ export default async function PerformancePage() {
   }
 
   // 관리자만 접근 가능
-  if (userProfile.role !== 'central_admin' && userProfile.role !== 'regional_admin') {
+  const allowedRoles = ['master', 'emergency_center_admin', 'ministry_admin', 'regional_admin'];
+  if (!allowedRoles.includes(userProfile.role)) {
     redirect("/dashboard")
   }
 

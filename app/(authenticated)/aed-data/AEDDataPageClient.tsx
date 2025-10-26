@@ -293,7 +293,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
                 if (cancelled || !window.kakao) return;
 
                 // Geocoder로 주소 변환
-                const geocoder = new window.kakao.maps.services.Geocoder();
+                const geocoder = new (window.kakao.maps.services as any).Geocoder();
                 geocoder.coord2RegionCode(lng, lat, function(result: any, status: any) {
                   if (cancelled) return;
 
@@ -672,8 +672,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
               onSelectAll={handleSelectAll}
               scheduleFilter={
                 viewMode === 'toAdd' ? 'unscheduled' : // 추가할목록: 미추가 장비만
-                viewMode === 'scheduled' ? 'scheduled' : // 추가된목록: 추가된 장비만
-                'all' // 전체목록: 모두 표시
+                'scheduled' // 추가된목록 및 전체목록: 추가된 장비 표시
               }
               totalDataCount={data?.length || 0}
               currentViewMode={viewMode === 'toAdd' ? 'list' : viewMode === 'scheduled' ? 'completed' : 'map'}
