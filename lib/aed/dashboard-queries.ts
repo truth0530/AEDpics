@@ -4,6 +4,11 @@ import { cache } from 'react';
 import type { UserProfile } from '@/packages/types';
 import { normalizeRegionName } from '@/lib/constants/regions';
 
+// 임시: Supabase createClient 대체 (마이그레이션 필요)
+const createClient = async (): Promise<any> => {
+  throw new Error('Supabase client not available. Please use Prisma instead.');
+};
+
 interface DashboardStats {
   total: number;
   mandatory: number;
@@ -197,7 +202,7 @@ export const getCachedDashboardData = async (userProfile: UserProfile): Promise<
       };
     } else if (userProfile.role === 'regional_admin') {
       // 시군구별 현황 - SQL에서 지역 필터링 및 집계
-      const userRegion = userProfile.organization?.region_code;
+      const userRegion = userProfile.organization?.regionCode;
 
       if (!userRegion) {
         return {

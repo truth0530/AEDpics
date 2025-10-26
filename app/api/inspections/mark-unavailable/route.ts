@@ -23,15 +23,15 @@ export async function POST(request: NextRequest) {
     // 요청 본문 파싱
     const body = await request.json();
     const {
-      equipmentSerial,
+      equipment_serial,
       reason,
       note
     } = body;
 
     // 필수 파라미터 확인
-    if (!equipmentSerial) {
+    if (!equipment_serial) {
       return NextResponse.json(
-        { error: 'equipmentSerial은 필수입니다.' },
+        { error: 'equipment_serial은 필수입니다.' },
         { status: 400 }
       );
     }
@@ -53,10 +53,10 @@ export async function POST(request: NextRequest) {
 
     // 해당 장비에 대한 할당 레코드 조회 (본인이 할당한 것만)
     try {
-      const existingAssignment = await prisma.inspectionsAssignment.findFirst({
+      const existingAssignment = await prisma.inspection_assignments.findFirst({
         where: {
-          equipmentSerial: equipmentSerial,
-          assignedBy: session.user.id,
+          equipment_serial: equipment_serial,
+          assigned_by: session.user.id,
           OR: [
             { status: 'pending' },
             { status: 'in_progress' }
@@ -67,16 +67,14 @@ export async function POST(request: NextRequest) {
       if (!existingAssignment) {
         // 새 할당 레코드 생성
         try {
-          const newAssignment = await prisma.inspectionsAssignment.create({
+          const newAssignment = await prisma.inspection_assignments.create({
             data: {
-              equipmentSerial: equipmentSerial,
-              assignedTo: session.user.id,
-              assignedBy: session.user.id,
-              assignmentType: 'scheduled',
+              equipment_serial: equipment_serial,
+              assigned_to: session.user.id,
+              assigned_by: session.user.id,
+              assignment_type: 'scheduled',
               status: 'unavailable',
-              unavailableReason: reason as any,
-              unavailableNote: note,
-              unavailableAt: new Date()
+              notes: `${reason}: ${note || ''}`
             }
           });
 
@@ -96,14 +94,12 @@ export async function POST(request: NextRequest) {
 
       // 기존 할당이 있으면 업데이트
       try {
-        const updatedAssignment = await prisma.inspectionsAssignment.update({
+        const updatedAssignment = await prisma.inspection_assignments.update({
           where: { id: existingAssignment.id },
           data: {
             status: 'unavailable',
-            unavailableReason: reason as any,
-            unavailableNote: note,
-            unavailableAt: new Date(),
-            updatedAt: new Date()
+            notes: `${reason}: ${note || ''}`,
+            updated_at: new Date()
           }
         });
 
@@ -136,7 +132,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE /api/inspections/mark-unavailable?equipmentSerial=xxx
+ * DELETE /api/inspections/mark-unavailable?equipment_serial=xxx
  * 점검불가 상태 취소 (status를 다시 'pending'으로 변경)
  */
 export async function DELETE(request: NextRequest) {
@@ -151,23 +147,23 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // URL 파라미터에서 equipmentSerial 가져오기
+    // URL 파라미터에서 equipment_serial 가져오기
     const { searchParams } = new URL(request.url);
-    const equipmentSerial = searchParams.get('equipmentSerial');
+    const equipment_serial = searchParams.get('equipment_serial');
 
-    if (!equipmentSerial) {
+    if (!equipment_serial) {
       return NextResponse.json(
-        { error: 'equipmentSerial 파라미터가 필요합니다.' },
+        { error: 'equipment_serial 파라미터가 필요합니다.' },
         { status: 400 }
       );
     }
 
     // 점검불가 상태인 할당 레코드 조회
     try {
-      const assignment = await prisma.inspectionsAssignment.findFirst({
+      const assignment = await prisma.inspection_assignments.findFirst({
         where: {
-          equipmentSerial: equipmentSerial,
-          assignedBy: session.user.id,
+          equipment_serial: equipment_serial,
+          assigned_by: session.user.id,
           status: 'unavailable'
         }
       });
@@ -181,14 +177,12 @@ export async function DELETE(request: NextRequest) {
 
       // 상태를 pending으로 변경하고 unavailable 필드 초기화
       try {
-        const updatedAssignment = await prisma.inspectionsAssignment.update({
+        const updatedAssignment = await prisma.inspection_assignments.update({
           where: { id: assignment.id },
           data: {
             status: 'pending',
-            unavailableReason: null,
-            unavailableNote: null,
-            unavailableAt: null,
-            updatedAt: new Date()
+            notes: null,
+            updated_at: new Date()
           }
         });
 

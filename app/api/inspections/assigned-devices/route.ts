@@ -13,7 +13,7 @@ export async function GET() {
 
   const profile = await prisma.user_profiles.findUnique({
     where: { id: session.user.id },
-    select: { role: true, assignedDevices: true }
+    select: { role: true, assigned_devices: true }
   });
 
   if (!profile) {
@@ -29,7 +29,7 @@ export async function GET() {
   }
 
   // 할당된 장비가 없는 경우
-  if (!profile.assignedDevices || !Array.isArray(profile.assignedDevices) || profile.assignedDevices.length === 0) {
+  if (!profile.assigned_devices || !Array.isArray(profile.assigned_devices) || profile.assigned_devices.length === 0) {
     return NextResponse.json({
       devices: [],
       count: 0,
@@ -39,23 +39,23 @@ export async function GET() {
 
   // 할당된 장비 정보 조회
   try {
-    const devices = await prisma.aedData.findMany({
+    const devices = await prisma.aed_data.findMany({
       where: {
-        equipmentSerial: {
-          in: profile.assignedDevices
+        equipment_serial: {
+          in: profile.assigned_devices
         }
       },
       select: {
         id: true,
-        managementNumber: true,
-        equipmentSerial: true,
-        installationInstitution: true,
-        installationAddress: true,
-        batteryExpiryDate: true,
-        patchExpiryDate: true,
-        lastInspectionDate: true,
+        management_number: true,
+        equipment_serial: true,
+        installation_institution: true,
+        installation_address: true,
+        battery_expiry_date: true,
+        patch_expiry_date: true,
+        last_inspection_date: true,
         manufacturer: true,
-        modelName: true,
+        model_name: true,
         sido: true,
         gugun: true
       }

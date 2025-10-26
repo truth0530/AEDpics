@@ -5,7 +5,25 @@
 
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
-import { FilterOptions, AEDDevice, InspectionData, ScheduleEntry } from '@/types/aed';
+import { AEDDevice } from '@/types/aed';
+
+// 임시: 타입 정의
+interface FilterOptions {
+  [key: string]: any;
+}
+
+interface InspectionData {
+  [key: string]: any;
+}
+
+interface ScheduleEntry {
+  [key: string]: any;
+}
+
+// 임시: createClient 대체
+const createClient = (): any => {
+  return null;
+};
 
 export interface PaginationOptions {
   page?: number;
@@ -237,7 +255,7 @@ class AEDDataService {
       .rpc('get_aed_status_counts', { org_id: organizationId });
 
     if (statusError) {
-      console.error('Error fetching status counts:', error);
+      console.error('Error fetching status counts:', statusError);
     }
 
     // Get recent inspections count

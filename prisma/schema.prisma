@@ -79,7 +79,7 @@ model aed_data {
   search_vector                 Unsupported("tsvector")?
   gps_issues                    gps_issues[]
   inspection_schedules          inspection_schedules[]
-  inspections                   inspections[]
+  inspections                   inspections[]             @relation("InspectionToAedData")
 
   @@index([latitude, longitude], map: "idx_aed_data_coordinates")
   @@index([data_status], map: "idx_aed_data_data_status")
@@ -275,8 +275,8 @@ model inspections {
   created_at           DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at           DateTime?      @default(now()) @db.Timestamptz(6)
   completed_at         DateTime?      @db.Timestamptz(6)
-  aed_data             aed_data?      @relation(fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  user_profiles        user_profiles? @relation(fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aed_data             aed_data?      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
+  user_profiles        user_profiles? @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
 
   @@index([equipment_serial], map: "idx_inspections_equipment_serial")
   @@index([inspector_id], map: "idx_inspections_inspector_id")
@@ -368,6 +368,7 @@ model organizations {
   type                organization_type
   parent_id           String?              @db.Uuid
   region_code         String?
+  city_code           String?
   address             String?
   contact             String?
   latitude            Decimal?             @db.Decimal(10, 8)
@@ -397,6 +398,20 @@ model otp_rate_limits {
 
   @@index([email], map: "idx_otp_rate_limits_email")
   @@index([window_expires_at], map: "idx_otp_rate_limits_window_expires")
+}
+
+model email_verification_codes {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String
+  code       String
+  expires_at DateTime @db.Timestamptz(6)
+  used       Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([email], map: "idx_email_verification_codes_email")
+  @@index([code], map: "idx_email_verification_codes_code")
+  @@index([expires_at], map: "idx_email_verification_codes_expires")
 }
 
 model schedule_instances {
@@ -619,7 +634,7 @@ model user_profiles {
   inspection_schedule_entries                                                                      inspection_schedule_entries[]
   inspection_schedules                                                                             inspection_schedules[]
   inspection_sessions                                                                              inspection_sessions[]
-  inspections                                                                                      inspections[]
+  inspections                                                                                      inspections[]                         @relation("InspectionToInspector")
   login_history                                                                                    login_history[]
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2024Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2024Touser_profiles")
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2025Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2025Touser_profiles")
@@ -873,6 +888,7 @@ enum user_role {
   local_admin
   pending_approval
   email_verified
+  rejected
   regional_emergency_center_admin
   temporary_inspector
 }

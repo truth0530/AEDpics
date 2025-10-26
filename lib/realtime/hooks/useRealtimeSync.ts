@@ -24,7 +24,7 @@ export function useRealtimeSync<T extends { id: string }>(
   const { table, initialData = [], onDataChange, enabled = true } = options
   const [data, setData] = useState<T[]>(initialData)
 
-  const handleDataChange = useCallback((event: RealtimeEvent) => {
+  const handleDataChange = useCallback((event: RealtimeEvent<T>) => {
     if (event.table !== table) return
 
     setData(prevData => {

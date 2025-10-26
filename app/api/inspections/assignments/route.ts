@@ -26,7 +26,7 @@ async function handleBulkAssignment(
     // 사용자 프로필 조회
     const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true, organizationId: true }
+      select: { role: true, organization_id: true }
     });
 
     if (!userProfile) {
@@ -46,7 +46,7 @@ async function handleBulkAssignment(
     if (finalAssignedTo !== session.user.id) {
       const assigneeProfile = await prisma.user_profiles.findUnique({
         where: { id: finalAssignedTo },
-        select: { organizationId: true, regionCode: true }
+        select: { organization_id: true, region_code: true }
       });
 
       if (!assigneeProfile) {
@@ -59,7 +59,7 @@ async function handleBulkAssignment(
 
       if (requesterRole === 'local_admin') {
         // local_admin can only assign within their organization
-        if (assigneeProfile.organizationId !== userProfile.organizationId) {
+        if (assigneeProfile.organization_id !== userProfile.organization_id) {
           return NextResponse.json({
             error: '보건소 관리자는 같은 조직 내에서만 할당할 수 있습니다.'
           }, { status: 403 });
@@ -76,16 +76,16 @@ async function handleBulkAssignment(
     }
 
     // Prisma를 사용한 대량 삽입 (RPC 대체)
-    const existingAssignments = await prisma.inspectionsAssignment.findMany({
+    const existingAssignments = await prisma.inspection_assignments.findMany({
       where: {
-        equipmentSerial: { in: equipmentSerials },
-        assignedTo: finalAssignedTo,
+        equipment_serial: { in: equipmentSerials },
+        assigned_to: finalAssignedTo,
         status: { in: ['pending', 'in_progress'] }
       },
-      select: { equipmentSerial: true }
+      select: { equipment_serial: true }
     });
 
-    const existingSerials = new Set(existingAssignments.map(a => a.equipmentSerial));
+    const existingSerials = new Set(existingAssignments.map(a => a.equipment_serial));
     const newSerials = equipmentSerials.filter(s => !existingSerials.has(s));
 
     if (newSerials.length === 0) {
@@ -103,15 +103,15 @@ async function handleBulkAssignment(
 
     // 대량 생성
     try {
-      const result = await prisma.inspectionsAssignment.createMany({
+      const result = await prisma.inspection_assignments.createMany({
         data: newSerials.map(serial => ({
-          equipmentSerial: serial,
-          assignedTo: finalAssignedTo,
-          assignedBy: session.user.id,
-          assignmentType: params.assignmentType as any,
-          scheduledDate: params.scheduledDate ? new Date(params.scheduledDate) : null,
-          scheduledTime: params.scheduledTime ? new Date(`1970-01-01T${params.scheduledTime}`) : null,
-          priorityLevel: params.priorityLevel,
+          equipment_serial: serial,
+          assigned_to: finalAssignedTo,
+          assigned_by: session.user.id,
+          assignment_type: params.assignmentType as any,
+          scheduled_date: params.scheduledDate ? new Date(params.scheduledDate) : null,
+          scheduled_time: params.scheduledTime ? new Date(`1970-01-01T${params.scheduledTime}`) : null,
+          priority_level: params.priorityLevel,
           notes: params.notes || null,
           status: 'pending'
         })),
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     // 사용자 프로필 조회
     const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true, organizationId: true }
+      select: { role: true, organization_id: true }
     });
 
     if (!userProfile) {
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     if (finalAssignedTo !== session.user.id) {
       const assigneeProfile = await prisma.user_profiles.findUnique({
         where: { id: finalAssignedTo },
-        select: { organizationId: true, regionCode: true }
+        select: { organization_id: true, region_code: true }
       });
 
       if (!assigneeProfile) {
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
 
       if (requesterRole === 'local_admin') {
         // local_admin can only assign within their organization
-        if (assigneeProfile.organizationId !== userProfile.organizationId) {
+        if (assigneeProfile.organization_id !== userProfile.organization_id) {
           return NextResponse.json({
             error: '보건소 관리자는 같은 조직 내에서만 할당할 수 있습니다.'
           }, { status: 403 });
@@ -241,25 +241,25 @@ export async function POST(request: NextRequest) {
     // 병렬 쿼리로 성능 개선 (순차 → 병렬)
     const [existing, aedDevice] = await Promise.all([
       // 1. 중복 방지: 동일 장비 + 동일 점검원 + active 상태 확인
-      prisma.inspectionsAssignment.findFirst({
+      prisma.inspection_assignments.findFirst({
         where: {
-          equipmentSerial: equipmentSerial,
-          assignedTo: finalAssignedTo,
+          equipment_serial: equipmentSerial,
+          assigned_to: finalAssignedTo,
           status: { in: ['pending', 'in_progress'] }
         },
         select: {
           id: true,
           status: true,
-          scheduledDate: true
+          scheduled_date: true
         }
       }),
 
       // 2. AED 장비 존재 확인
-      prisma.aedData.findUnique({
-        where: { equipmentSerial: equipmentSerial },
+      prisma.aed_data.findUnique({
+        where: { equipment_serial: equipmentSerial },
         select: {
-          equipmentSerial: true,
-          installationInstitution: true
+          equipment_serial: true,
+          installation_institution: true
         }
       })
     ]);
@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
           existingAssignment: {
             id: existing.id,
             status: existing.status,
-            scheduledDate: existing.scheduledDate
+            scheduled_date: existing.scheduled_date
           }
         },
         { status: 409 }
@@ -288,24 +288,24 @@ export async function POST(request: NextRequest) {
 
     // 일정추가 생성
     try {
-      const assignment = await prisma.inspectionsAssignment.create({
+      const assignment = await prisma.inspection_assignments.create({
         data: {
-          equipmentSerial: equipmentSerial,
-          assignedTo: finalAssignedTo,
-          assignedBy: session.user.id,
-          assignmentType: assignmentType as any,
-          scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-          scheduledTime: scheduledTime ? new Date(`1970-01-01T${scheduledTime}`) : null,
-          priorityLevel: priorityLevel,
+          equipment_serial: equipmentSerial,
+          assigned_to: finalAssignedTo,
+          assigned_by: session.user.id,
+          assignment_type: assignmentType as any,
+          scheduled_date: scheduledDate ? new Date(scheduledDate) : null,
+          scheduled_time: scheduledTime ? new Date(`1970-01-01T${scheduledTime}`) : null,
+          priority_level: priorityLevel,
           notes: notes,
           status: 'pending'
         },
         include: {
-          assignedToUser: {
-            select: { id: true, fullName: true, role: true }
+          user_profiles_inspection_assignments_assigned_toTouser_profiles: {
+            select: { id: true, full_name: true, role: true }
           },
-          assignedByUser: {
-            select: { id: true, fullName: true, role: true }
+          user_profiles_inspection_assignments_assigned_byTouser_profiles: {
+            select: { id: true, full_name: true, role: true }
           }
         }
       });
@@ -321,16 +321,16 @@ export async function POST(request: NextRequest) {
       // Check for unique constraint violation (Prisma error code P2002)
       if (insertError.code === 'P2002') {
         // Fetch existing assignment info to return in response
-        const existingAssignment = await prisma.inspectionsAssignment.findFirst({
+        const existingAssignment = await prisma.inspection_assignments.findFirst({
           where: {
-            equipmentSerial: equipmentSerial,
-            assignedTo: finalAssignedTo,
+            equipment_serial: equipmentSerial,
+            assigned_to: finalAssignedTo,
             status: { in: ['pending', 'in_progress'] }
           },
           select: {
             id: true,
             status: true,
-            scheduledDate: true
+            scheduled_date: true
           }
         });
 
@@ -378,11 +378,11 @@ export async function GET(request: NextRequest) {
     const where: any = {};
 
     if (assignedTo) {
-      where.assignedTo = assignedTo;
+      where.assigned_to = assignedTo;
     }
 
     if (assignedBy) {
-      where.assignedBy = assignedBy;
+      where.assigned_by = assignedBy;
     }
 
     if (status) {
@@ -390,22 +390,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (equipmentSerial) {
-      where.equipmentSerial = equipmentSerial;
+      where.equipment_serial = equipmentSerial;
     }
 
-    const data = await prisma.inspectionsAssignment.findMany({
+    const data = await prisma.inspection_assignments.findMany({
       where,
       include: {
-        assignedToUser: {
-          select: { id: true, fullName: true, role: true, email: true }
+        user_profiles_inspection_assignments_assigned_toTouser_profiles: {
+          select: { id: true, full_name: true, role: true, email: true }
         },
-        assignedByUser: {
-          select: { id: true, fullName: true, role: true, email: true }
+        user_profiles_inspection_assignments_assigned_byTouser_profiles: {
+          select: { id: true, full_name: true, role: true, email: true }
         }
       },
       orderBy: [
-        { scheduledDate: 'asc' },
-        { createdAt: 'desc' }
+        { scheduled_date: 'asc' },
+        { created_at: 'desc' }
       ]
     });
 
@@ -417,13 +417,13 @@ export async function GET(request: NextRequest) {
       completed: data.filter(a => a.status === 'completed').length,
       cancelled: data.filter(a => a.status === 'cancelled').length,
       overdue: data.filter(a => {
-        if (!a.scheduledDate) return false;
-        return a.status === 'pending' && new Date(a.scheduledDate) < new Date();
+        if (!a.scheduled_date) return false;
+        return a.status === 'pending' && new Date(a.scheduled_date) < new Date();
       }).length,
       today: data.filter(a => {
-        if (!a.scheduledDate) return false;
+        if (!a.scheduled_date) return false;
         const today = new Date().toISOString().split('T')[0];
-        const schedDate = a.scheduledDate.toISOString().split('T')[0];
+        const schedDate = a.scheduled_date.toISOString().split('T')[0];
         return schedDate === today && a.status === 'pending';
       }).length
     };
@@ -475,14 +475,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 할당 조회
-    const assignment = await prisma.inspectionsAssignment.findUnique({
+    const assignment = await prisma.inspection_assignments.findUnique({
       where: { id: assignmentId },
       select: {
         id: true,
         status: true,
-        assignedTo: true,
-        assignedBy: true,
-        equipmentSerial: true
+        assigned_to: true,
+        assigned_by: true,
+        equipment_serial: true
       }
     });
 
@@ -507,7 +507,7 @@ export async function PATCH(request: NextRequest) {
     // 취소는 pending 또는 in_progress 상태에서 가능 (completed는 이미 위에서 걸러짐)
 
     // 취소는 할당한 사람만 가능
-    if (newStatus === 'cancelled' && assignment.assignedBy !== session.user.id) {
+    if (newStatus === 'cancelled' && assignment.assigned_by !== session.user.id) {
       return NextResponse.json(
         { error: '일정을 취소할 권한이 없습니다.' },
         { status: 403 }
@@ -515,7 +515,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 시작은 할당받은 사람만 가능 (pending -> in_progress)
-    if (newStatus === 'in_progress' && assignment.assignedTo !== session.user.id) {
+    if (newStatus === 'in_progress' && assignment.assigned_to !== session.user.id) {
       return NextResponse.json(
         { error: '점검을 시작할 권한이 없습니다.' },
         { status: 403 }
@@ -523,7 +523,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 완료는 할당받은 사람만 가능 (in_progress -> completed)
-    if (newStatus === 'completed' && assignment.assignedTo !== session.user.id) {
+    if (newStatus === 'completed' && assignment.assigned_to !== session.user.id) {
       return NextResponse.json(
         { error: '점검을 완료할 권한이 없습니다.' },
         { status: 403 }
@@ -533,9 +533,9 @@ export async function PATCH(request: NextRequest) {
     // in_progress 상태에서 취소하는 경우: 활성 세션 삭제
     if (newStatus === 'cancelled' && currentStatus === 'in_progress') {
       // 활성 점검 세션 삭제
-      await prisma.inspectionsSession.deleteMany({
+      await prisma.inspection_sessions.deleteMany({
         where: {
-          equipmentSerial: assignment.equipmentSerial,
+          equipment_serial: assignment.equipment_serial,
           status: 'active'
         }
       });
@@ -559,15 +559,15 @@ export async function PATCH(request: NextRequest) {
       updateData.cancelledAt = new Date();
     }
 
-    const updatedAssignment = await prisma.inspectionsAssignment.update({
+    const updatedAssignment = await prisma.inspection_assignments.update({
       where: { id: assignmentId },
       data: updateData,
       include: {
-        assignedToUser: {
-          select: { id: true, fullName: true, role: true }
+        user_profiles_inspection_assignments_assigned_toTouser_profiles: {
+          select: { id: true, full_name: true, role: true }
         },
-        assignedByUser: {
-          select: { id: true, fullName: true, role: true }
+        user_profiles_inspection_assignments_assigned_byTouser_profiles: {
+          select: { id: true, full_name: true, role: true }
         }
       }
     });
@@ -615,9 +615,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 할당 조회 (권한 확인용)
-    const assignment = await prisma.inspectionsAssignment.findUnique({
+    const assignment = await prisma.inspection_assignments.findUnique({
       where: { id: assignmentId },
-      select: { assignedBy: true, status: true }
+      select: { assigned_by: true, status: true }
     });
 
     if (!assignment) {
@@ -628,7 +628,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 본인이 생성한 할당만 삭제 가능
-    if (assignment.assignedBy !== session.user.id) {
+    if (assignment.assigned_by !== session.user.id) {
       return NextResponse.json(
         { error: '삭제 권한이 없습니다.' },
         { status: 403 }
@@ -653,11 +653,11 @@ export async function DELETE(request: NextRequest) {
 
     // 삭제 (취소 상태로 변경)
     try {
-      await prisma.inspectionsAssignment.update({
+      await prisma.inspection_assignments.update({
         where: { id: assignmentId },
         data: {
           status: 'cancelled',
-          cancelledAt: new Date()
+          cancelled_at: new Date()
         }
       });
 

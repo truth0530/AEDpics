@@ -27,15 +27,15 @@ async function main() {
   console.log('🔍 Testing Prisma Client connection to NCP PostgreSQL...\n')
 
   // Test 1: Count organizations
-  const orgCount = await prisma.organization.count()
+  const orgCount = await prisma.organizations.count()
   console.log(`✅ Organizations table: ${orgCount} records`)
 
   // Test 2: Count user_profiles
-  const userCount = await prisma.userProfile.count()
+  const userCount = await prisma.user_profiles.count()
   console.log(`✅ User Profiles table: ${userCount} records`)
 
   // Test 3: Count aed_data
-  const aedCount = await prisma.aedData.count()
+  const aedCount = await prisma.aed_data.count()
   console.log(`✅ AED Data table: ${aedCount} records`)
 
   // Test 4: List all tables (via raw query)

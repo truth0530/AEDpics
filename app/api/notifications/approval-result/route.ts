@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
           timestamp: new Date().toISOString()
         } as any,
         is_read: false
-      },
+      } as any,
       select: { id: true }
     });
 

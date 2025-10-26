@@ -44,6 +44,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'reports.generate',
     'settings.modify'
   ],
+  regional_emergency_center_admin: [
+    'users.manage',
+    'users.approve',
+    'data.full_access',
+    'reports.generate',
+    'settings.modify'
+  ],
   ministry_admin: [
     'data.read',
     'data.modify',
@@ -72,6 +79,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ],
   email_verified: [
     'profile.create'
+  ],
+  rejected: [
+    'profile.view'
   ]
 };
 

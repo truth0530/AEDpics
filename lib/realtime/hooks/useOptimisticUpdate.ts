@@ -85,7 +85,7 @@ export function useOptimisticUpdate<T extends { id: string; updated_at?: Date | 
               if (showToasts) {
                 showWarning(
                   '충돌 감지',
-                  `${conflicts.length}개의 충돌이 자동 해결되었습니다`
+                  { message: `${conflicts.length}개의 충돌이 자동 해결되었습니다` }
                 )
               }
             }
@@ -94,14 +94,14 @@ export function useOptimisticUpdate<T extends { id: string; updated_at?: Date | 
           // Auto-merge or local-wins
           updater.current.confirmUpdate(updateId)
           if (showToasts) {
-            showSuccess('업데이트 성공', '변경사항이 저장되었습니다')
+            showSuccess('업데이트 성공', { message: '변경사항이 저장되었습니다' })
           }
         }
       } else {
         // No conflicts
-        updater.current.confirmUpdate(updateId, serverValue)
+        updater.current.confirmUpdate(updateId)
         if (showToasts) {
-          showSuccess('업데이트 성공', '변경사항이 저장되었습니다')
+          showSuccess('업데이트 성공', { message: '변경사항이 저장되었습니다' })
         }
       }
     } catch (error) {
@@ -120,7 +120,7 @@ export function useOptimisticUpdate<T extends { id: string; updated_at?: Date | 
         if (showToasts) {
           showError(
             '업데이트 실패',
-            '변경사항을 저장할 수 없습니다. 이전 상태로 복원되었습니다.'
+            { message: '변경사항을 저장할 수 없습니다. 이전 상태로 복원되었습니다.' }
           )
         }
       }
@@ -135,7 +135,7 @@ export function useOptimisticUpdate<T extends { id: string; updated_at?: Date | 
     setPendingCount(0)
     setConflictCount(0)
     if (showToasts) {
-      showWarning('모든 변경 취소', '대기 중인 모든 변경사항이 취소되었습니다')
+      showWarning('모든 변경 취소', { message: '대기 중인 모든 변경사항이 취소되었습니다' })
     }
   }, [showToasts, showWarning])
 

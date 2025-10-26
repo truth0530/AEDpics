@@ -1,10 +1,18 @@
 // AED 점검 시스템 타입 정의
-import { user_role } from '@prisma/client';
 
 export type OrganizationType = 'ministry' | 'emergency_center' | 'province' | 'city' | 'health_center';
 
-// Prisma의 user_role enum을 re-export
-export type UserRole = user_role;
+export type UserRole =
+  | 'master'
+  | 'emergency_center_admin'
+  | 'regional_emergency_center_admin' // 17개 지역응급의료지원센터
+  | 'ministry_admin'
+  | 'regional_admin'
+  | 'local_admin'
+  | 'temporary_inspector'
+  | 'pending_approval'
+  | 'email_verified'
+  | 'rejected';
 
 export type InspectionType = 'monthly' | 'special' | 'emergency';
 
@@ -25,15 +33,13 @@ export interface Organization {
   name: string;
   type: OrganizationType;
   parentId?: string;
-  regionCode?: string;
+  region_code?: string;
   city_code?: string;
   address?: string;
   contact?: string;
   contactNumber?: string;
   managerName?: string;
   managerEmail?: string;
-  latitude?: number;
-  longitude?: number;
   createdAt: Date;
   updatedAt: Date;
 }

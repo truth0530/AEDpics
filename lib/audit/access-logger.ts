@@ -1,6 +1,11 @@
 // TODO: Supabase 서버 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/server';
 
+// 임시: Supabase createClient stub
+const createClient = async (): Promise<any> => {
+  throw new Error('Supabase client not available. Please use Prisma instead.');
+};
+
 export interface AccessLogFilterSummary {
   battery_expiry_date?: string;
   patch_expiry_date?: string;

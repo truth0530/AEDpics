@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const accessContext: AccessContext = {
       userId: profile.id,
       role: profile.role,
-      accountType: profile.account_type || 'public',
+      accountType: (profile.account_type as 'public' | 'temporary') || 'public',
       assignedDevices: profile.assigned_devices || [],
       organizationId: profile.organization_id || undefined,
     };

@@ -120,7 +120,7 @@ export async function getUserAccessContext(userId: string): Promise<AccessContex
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
 
-    const profile = await prisma.userProfile.findUnique({
+    const profile = await prisma.user_profiles.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -364,6 +364,14 @@ const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     requiresCityFilter: true
   },
   email_verified: {
+    canViewAllRegions: false,
+    maxResultLimit: 0,
+    canExportData: false,
+    canViewSensitiveData: false,
+    requiresRegionFilter: true,
+    requiresCityFilter: true
+  },
+  rejected: {
     canViewAllRegions: false,
     maxResultLimit: 0,
     canExportData: false,

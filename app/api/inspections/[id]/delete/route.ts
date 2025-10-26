@@ -34,9 +34,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     where: { id: inspectionId },
     select: {
       id: true,
-      inspectorId: true,
-      equipmentSerial: true,
-      inspectionDate: true
+      inspector_id: true,
+      equipment_serial: true,
+      inspection_date: true
     }
   });
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
 
   const isAdmin = profile?.role && ['master', 'emergency_center_admin', 'ministry_admin'].includes(profile.role);
-  const isOwner = inspection.inspectorId === session.user.id;
+  const isOwner = inspection.inspector_id === session.user.id;
 
   if (!isOwner && !isAdmin) {
     return NextResponse.json({ error: 'You do not have permission to delete this inspection' }, { status: 403 });
@@ -71,16 +71,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     await prisma.audit_logs.create({
       data: {
-        userId: session.user.id,
+        id: require('crypto').randomUUID(),
+        user_id: session.user.id,
         action: 'delete_inspection',
-        entityType: 'inspections',
-        entityId: inspectionId,
+        entity_type: 'inspections',
+        entity_id: inspectionId,
         metadata: {
-          equipment_serial: inspection.equipmentSerial,
-          inspection_date: inspection.inspectionDate.toISOString(),
+          equipment_serial: inspection.equipment_serial,
+          inspection_date: inspection.inspection_date?.toISOString(),
           reason: reason || 'No reason provided',
         },
-        createdAt: new Date()
+        created_at: new Date()
       }
     });
   } catch (err) {

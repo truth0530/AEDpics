@@ -2,6 +2,19 @@
 
 import { useInspectionSessionStore } from '@/lib/state/inspection-session-store';
 
+interface StorageData {
+  storage_type?: string;
+  checklist_items?: Record<string, boolean | string>;
+  signage_checklist?: Record<string, boolean>;
+  signage_selected?: string[];
+  [key: string]: any;
+}
+
+interface StepData {
+  storage?: StorageData;
+  [key: string]: any;
+}
+
 const STORAGE_TYPES = [
   { id: 'none', label: '보관함 없음' },
   { id: 'wall_mounted', label: '벽걸이' },
@@ -62,10 +75,10 @@ const SIGNAGE_ITEMS = [
 ];
 
 export function StorageChecklistStep() {
-  const stepData = useInspectionSessionStore((state) => state.stepData);
+  const stepData = useInspectionSessionStore((state) => state.stepData) as StepData;
   const updateStepData = useInspectionSessionStore((state) => state.updateStepData);
 
-  const storage = stepData.storage || {};
+  const storage: StorageData = stepData.storage || {};
   const checklist = storage.checklist_items || {};
   const signageChecklist = storage.signage_checklist || {};
 
@@ -80,7 +93,7 @@ export function StorageChecklistStep() {
     });
   };
 
-  const handleChecklistChange = (itemId: string, status: boolean) => {
+  const handleChecklistChange = (itemId: string, status: boolean | string) => {
     updateStepData('storage', {
       ...storage,
       checklist_items: {

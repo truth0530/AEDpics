@@ -21,9 +21,63 @@ interface PhotoDocumentation {
   reference_docs?: string;
 }
 
+interface BasicInfoData {
+  all_matched?: boolean | 'edited';
+  manager?: string;
+  contact_info?: string;
+  category_1?: string;
+  category_2?: string;
+  category_3?: string;
+  edit_reason?: string;
+  location_matched?: boolean;
+  address?: string;
+  gps_verified?: boolean;
+  gps_latitude?: number;
+  gps_longitude?: number;
+}
+
+interface LocationInfoData {
+  location_matched?: boolean;
+  address?: string;
+  gps_verified?: boolean;
+  gps_latitude?: number;
+  gps_longitude?: number;
+}
+
+interface DeviceInfoData {
+  all_matched?: boolean | 'edited';
+  manufacturer?: string;
+  model_name?: string;
+  serial_number?: string;
+  production_date?: string;
+  edit_reason?: string;
+  supplies_matched?: boolean | 'edited';
+  battery_expiry_date?: string;
+  pad_expiry_date?: string;
+  manufacturing_date?: string;
+  serial_number_photo?: string;
+  battery_mfg_date_photo?: string;
+  device_mfg_date_photo?: string;
+}
+
+interface StorageInfoData {
+  all_matched?: boolean | 'edited';
+  battery_expiry?: string;
+  pad_expiry?: string;
+  edit_reason?: string;
+}
+
+interface StepData {
+  basicInfo?: BasicInfoData;
+  locationInfo?: LocationInfoData;
+  deviceInfo?: DeviceInfoData;
+  storageInfo?: StorageInfoData;
+  [key: string]: any;
+}
+
 export function InspectionSummaryStep() {
   const session = useInspectionSessionStore((state) => state.session);
-  const stepData = useInspectionSessionStore((state) => state.stepData);
+  const stepData = useInspectionSessionStore((state) => state.stepData) as StepData;
   const updateStepData = useInspectionSessionStore((state) => state.updateStepData);
   const { user } = useUser();
 

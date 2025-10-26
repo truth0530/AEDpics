@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
  */
 export const getCachedUserProfile = cache(async (userId: string): Promise<UserProfile | null> => {
   try {
-    const profile = await prisma.userProfile.findUnique({
+    const profile = await prisma.user_profiles.findUnique({
       where: { id: userId },
       include: {
         organizations: true
@@ -58,7 +58,7 @@ export const getCachedUserProfile = cache(async (userId: string): Promise<UserPr
  */
 export const getCachedPendingApprovalCount = cache(async (): Promise<number> => {
   try {
-    const count = await prisma.userProfile.count({
+    const count = await prisma.user_profiles.count({
       where: {
         role: 'pending_approval'
       }

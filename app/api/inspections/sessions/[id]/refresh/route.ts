@@ -19,14 +19,14 @@ export async function POST(
   }
 
   // 세션 조회
-  const inspectionSession = await prisma.inspectionsSession.findUnique({
+  const inspectionSession = await prisma.inspection_sessions.findUnique({
     where: { id: sessionId },
     select: {
-      equipmentSerial: true,
+      equipment_serial: true,
       status: true,
-      currentStep: true,
-      inspectorId: true,
-      deviceInfo: true
+      current_step: true,
+      inspector_id: true,
+      device_info: true
     }
   });
 
@@ -38,12 +38,12 @@ export async function POST(
   }
 
   // 권한 확인
-  if (inspectionSession.inspectorId !== session.user.id) {
+  if (inspectionSession.inspector_id !== session.user.id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   // 점검 진행 중이면 갱신 불가
-  if (inspectionSession.status === 'active' && inspectionSession.currentStep > 0) {
+  if (inspectionSession.status === 'active' && inspectionSession.current_step > 0) {
     return NextResponse.json(
       {
         error: 'Cannot refresh during active inspection',
@@ -55,8 +55,8 @@ export async function POST(
 
   try {
     // 최신 데이터 조회
-    const latestData = await prisma.aedData.findUnique({
-      where: { equipmentSerial: inspectionSession.equipmentSerial }
+    const latestData = await prisma.aed_data.findUnique({
+      where: { equipment_serial: inspectionSession.equipment_serial }
     });
 
     if (!latestData) {
@@ -64,11 +64,11 @@ export async function POST(
     }
 
     // 세션에 최신 데이터 업데이트
-    await prisma.inspectionsSession.update({
+    await prisma.inspection_sessions.update({
       where: { id: sessionId },
       data: {
-        deviceInfo: latestData as any,
-        updatedAt: new Date()
+        device_info: latestData as any,
+        updated_at: new Date()
       }
     });
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -35,35 +35,36 @@ export async function POST(request: NextRequest) {
     // 사용자 프로필 생성
     const user = await prisma.user_profiles.create({
       data: {
-        id: uuidv4(),
+        id: randomUUID(),
         email: profileData.email,
-        passwordHash: passwordHash,
-        fullName: profileData.fullName,
+        password_hash: passwordHash,
+        full_name: profileData.fullName || profileData.full_name,
         phone: profileData.phone || null,
-        region: profileData.region,
-        regionCode: profileData.regionCode,
-        organizationName: profileData.organizationName,
-        organizationId: profileData.organizationId || null,
+        region: profileData.region || null,
+        region_code: profileData.regionCode || profileData.region_code || null,
+        organization_name: profileData.organizationName || profileData.organization_name || null,
+        organization_id: profileData.organizationId || profileData.organization_id || null,
         remarks: profileData.remarks || null,
         role: profileData.role || 'pending_approval',
-        isActive: profileData.isActive || false,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        is_active: profileData.isActive !== undefined ? profileData.isActive : false,
+        created_at: new Date(),
+        updated_at: new Date()
       }
     })
 
     // 로그인 히스토리 기록
-    await prisma.loginHistory.create({
+    await prisma.login_history.create({
       data: {
-        userId: user.id,
+        id: randomUUID(),
+        user_id: user.id,
         success: true,
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        userAgent: request.headers.get('user-agent') || 'unknown'
+        ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: request.headers.get('user-agent') || 'unknown'
       }
     })
 
     // 비밀번호 해시 제거 후 반환
-    const { passwordHash: _, ...safeUser } = user
+    const { password_hash: _, ...safeUser } = user
 
     return NextResponse.json({ success: true, user: safeUser })
   } catch (error) {

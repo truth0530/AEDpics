@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // 사용자 프로필 조회
     const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true, organizationId: true }
+      select: { role: true, organization_id: true }
     });
 
     if (!userProfile) {
@@ -97,19 +97,19 @@ export async function POST(request: NextRequest) {
         switch (operation.type) {
           case 'create':
             // 일정 생성
-            if (!operation.data || !operation.data.equipmentSerial) {
+            if (!operation.data || !operation.data.equipment_serial) {
               throw new Error('equipmentSerial이 필요합니다.');
             }
 
-            result = await prisma.inspectionsAssignment.create({
+            result = await prisma.inspection_assignments.create({
               data: {
-                equipmentSerial: operation.data.equipmentSerial,
-                assignedTo: operation.data.assignedTo || session.user.id,
-                assignedBy: session.user.id,
-                assignmentType: operation.data.assignmentType || 'scheduled',
-                scheduledDate: operation.data.scheduledDate,
-                scheduledTime: operation.data.scheduledTime,
-                priorityLevel: operation.data.priorityLevel || 0,
+                equipment_serial: operation.data.equipment_serial,
+                assigned_to: operation.data.assignedTo || session.user.id,
+                assigned_by: session.user.id,
+                assignment_type: operation.data.assignment_type || 'scheduled',
+                scheduled_date: operation.data.scheduled_date,
+                scheduled_time: operation.data.scheduled_time,
+                priority_level: operation.data.priority_level || 0,
                 notes: operation.data.notes,
                 status: 'pending'
               }
@@ -125,11 +125,11 @@ export async function POST(request: NextRequest) {
             const updateData: any = {};
             if (operation.data?.status) updateData.status = operation.data.status;
             if (operation.data?.notes !== undefined) updateData.notes = operation.data.notes;
-            if (operation.data?.priorityLevel !== undefined) updateData.priorityLevel = operation.data.priorityLevel;
-            if (operation.data?.scheduledDate) updateData.scheduledDate = operation.data.scheduledDate;
-            if (operation.data?.scheduledTime !== undefined) updateData.scheduledTime = operation.data.scheduledTime;
+            if (operation.data?.priority_level !== undefined) updateData.priority_level = operation.data.priority_level;
+            if (operation.data?.scheduled_date) updateData.scheduled_date = operation.data.scheduled_date;
+            if (operation.data?.scheduled_time !== undefined) updateData.scheduled_time = operation.data.scheduled_time;
 
-            result = await prisma.inspectionsAssignment.update({
+            result = await prisma.inspection_assignments.update({
               where: { id: operation.id },
               data: updateData
             });
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
               throw new Error('id가 필요합니다.');
             }
 
-            await prisma.inspectionsAssignment.delete({
+            await prisma.inspection_assignments.delete({
               where: { id: operation.id }
             });
 

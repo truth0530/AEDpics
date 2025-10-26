@@ -28,7 +28,7 @@ export async function GET(
     const profile = await prisma.user_profiles.findUnique({
       where: { id },
       include: {
-        organization: true,
+        organizations: true,
       }
     })
 
@@ -36,10 +36,8 @@ export async function GET(
       return NextResponse.json({ error: '프로필을 찾을 수 없습니다' }, { status: 404 })
     }
 
-    // 비밀번호 해시 제거 (보안)
-    const { passwordHash, ...safeProfile } = profile
-
-    return NextResponse.json(safeProfile)
+    // 비밀번호 해시 제거 (보안) - passwordHash 필드 없음
+    return NextResponse.json(profile)
   } catch (error) {
     console.error('프로필 조회 오류:', error)
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 })

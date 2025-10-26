@@ -38,10 +38,12 @@ export function MobileUserCard({
       emergency_center_admin: 'bg-red-500',
       ministry_admin: 'bg-blue-500',
       regional_admin: 'bg-green-500',
+      regional_emergency_center_admin: 'bg-green-400',
       local_admin: 'bg-yellow-500',
       temporary_inspector: 'bg-orange-500',
       pending_approval: 'bg-gray-500',
-      email_verified: 'bg-gray-400'
+      email_verified: 'bg-gray-400',
+      rejected: 'bg-red-600'
     };
     return colors[role] || 'bg-gray-500';
   };
@@ -52,10 +54,12 @@ export function MobileUserCard({
       emergency_center_admin: '중앙응급의료센터',
       ministry_admin: '보건복지부',
       regional_admin: '시도 관리자',
+      regional_emergency_center_admin: '시도 응급센터',
       local_admin: '보건소 담당자',
       temporary_inspector: '임시 점검원',
       pending_approval: '승인 대기',
-      email_verified: '이메일 인증됨'
+      email_verified: '이메일 인증됨',
+      rejected: '거부됨'
     };
     return names[role] || role;
   };

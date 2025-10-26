@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
+// 임시: Supabase 비활성화
+const supabase: any = null;
+
 export default function InspectionLayout({
   children,
 }: {

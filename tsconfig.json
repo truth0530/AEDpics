@@ -62,6 +62,9 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
-    "**/*.spec.tsx"
+    "**/*.spec.tsx",
+    "app/_archive_tutorial2/**/*",
+    "app/_archive_tutorial3/**/*",
+    ".archive/**/*"
   ]
 }

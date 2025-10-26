@@ -1,30 +1,16 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { isAllowedEmailDomain } from '@/lib/auth/config';
 import { rateLimits } from '@/lib/rate-limit';
 import { checkOtpRateLimit } from '@/lib/auth/otp-rate-limiter';
 import { sendResendEmail } from '@/lib/email/retry-helper';
 
-// 환경변수 검증
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.RESEND_API_KEY) {
-  throw new Error('Missing required environment variables for OTP service');
-}
+const prisma = new PrismaClient();
 
-// Service Role 클라이언트 생성 (auth.users 확인용)
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+// 환경변수 검증
+if (!process.env.RESEND_API_KEY) {
+  throw new Error('Missing required environment variable: RESEND_API_KEY');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,14 +68,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-
     // 1. user_profiles 테이블 확인 - 활성 사용자만 체크 (거부된 사용자는 재가입 허용)
-    const { data: existingProfile } = await supabase
-      .from('user_profiles')
-      .select('email, role, is_active')
-      .eq('email', email)
-      .single();
+    const existingProfile = await prisma.user_profiles.findUnique({
+      where: { email },
+      select: {
+        email: true,
+        role: true,
+        is_active: true,
+        id: true
+      }
+    });
 
     if (existingProfile) {
       // 거부된 사용자(rejected)이거나 비활성 사용자는 재가입 허용
@@ -106,63 +94,34 @@ export async function POST(request: NextRequest) {
       }
 
       // 거부된 사용자는 기존 프로필 삭제 후 재가입 진행
-      await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('email', email);
-    }
-
-    // 2. auth.users 테이블 확인 (Service Role 사용)
-    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (authError) {
-      console.error('Auth users check error:', authError);
-      // Auth 확인 실패 시에도 계속 진행 (fallback)
-    } else {
-      const existingAuthUser = authUsers.users.find(user => user.email === email);
-
-      if (existingAuthUser) {
-        return NextResponse.json(
-          {
-            error: '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
-            code: 'EMAIL_ALREADY_EXISTS'
-          },
-          { status: 409 } // Conflict
-        );
-      }
+      await prisma.user_profiles.delete({
+        where: { id: existingProfile.id }
+      });
     }
 
     // 기존 OTP 정리 (동일 이메일의 모든 OTP 삭제 - 재발송 시 혼란 방지)
-    await supabaseAdmin
-      .from('email_verification_codes')
-      .delete()
-      .eq('email', email);
+    await prisma.email_verification_codes.deleteMany({
+      where: { email }
+    });
 
     // 6자리 랜덤 코드 생성
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15분 후 만료 (보안 강화)
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15분 후 만료
 
-    // OTP를 데이터베이스에 저장 - Admin 클라이언트 사용 (세션 없는 사용자도 저장 가능)
-    const { data: insertData, error: insertError } = await supabaseAdmin
-      .from('email_verification_codes')
-      .insert({
+    // OTP를 데이터베이스에 저장
+    const insertedOtp = await prisma.email_verification_codes.create({
+      data: {
         email,
         code: otp,
-        expires_at: expiresAt.toISOString()
-      })
-      .select('id')
-      .single();
+        expires_at: expiresAt
+      },
+      select: {
+        id: true
+      }
+    });
 
-    if (insertError || !insertData) {
-      console.error('OTP 저장 실패:', insertError);
-      return NextResponse.json(
-        { error: 'OTP 생성 실패' },
-        { status: 500 }
-      );
-    }
-
-    const otpRecordId = insertData.id;
+    const otpRecordId = insertedOtp.id;
 
     // Resend API를 재시도 로직과 함께 호출
     try {
@@ -254,10 +213,9 @@ export async function POST(request: NextRequest) {
       console.error('Email send failed after retries:', emailError);
 
       // 이메일 발송 실패 시 저장된 OTP 삭제 (사용자 혼란 방지)
-      await supabaseAdmin
-        .from('email_verification_codes')
-        .delete()
-        .eq('id', otpRecordId);
+      await prisma.email_verification_codes.delete({
+        where: { id: otpRecordId }
+      });
 
       return NextResponse.json(
         { error: '이메일 발송 실패. 잠시 후 다시 시도해주세요.' },

@@ -366,7 +366,8 @@ export function getRoleDisplayName(role: UserRole): string {
     local_admin: '보건소 담당자',
     temporary_inspector: '임시 점검원',
     pending_approval: '승인 대기',
-    email_verified: '이메일 인증됨'
+    email_verified: '이메일 인증됨',
+    rejected: '승인 거부됨'
   };
   return names[role] || role;
 }
@@ -382,7 +383,8 @@ export function getRoleBadgeColor(role: UserRole): string {
     local_admin: 'bg-yellow-500',
     temporary_inspector: 'bg-orange-500',
     pending_approval: 'bg-gray-500',
-    email_verified: 'bg-gray-400'
+    email_verified: 'bg-gray-400',
+    rejected: 'bg-red-700'
   };
   return colors[role] || 'bg-gray-500';
 }

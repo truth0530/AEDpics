@@ -4,6 +4,11 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import { NextRequest, NextResponse } from 'next/server';
 
+// 임시: Supabase createClient 대체
+const createClient = async (): Promise<any> => {
+  throw new Error('Supabase client not available. Please use Prisma instead.');
+};
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();

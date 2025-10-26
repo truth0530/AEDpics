@@ -5,7 +5,7 @@
  * npx ts-node scripts/validate-region-codes.ts
  */
 
-import { REGIONS, REGION_LABEL_TO_CODE, REGION_ALIASES, normalizeRegionName } from '../lib/constants/regions';
+import { REGIONS, REGION_LABEL_TO_CODE, normalizeRegionName } from '../lib/constants/regions';
 
 console.log('🔍 지역 코드 일관성 검증 시작...\n');
 

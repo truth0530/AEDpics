@@ -1,23 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { rateLimits } from '@/lib/rate-limit';
 
-// 환경변수 검증
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Missing required environment variables for OTP verification');
-}
-
-// Admin 클라이언트 생성 (RLS 우회, 익명 사용자도 접근 가능)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   // Rate Limiting 체크
@@ -43,12 +28,11 @@ export async function POST(request: NextRequest) {
   try {
     const { email, code } = await request.json();
 
-    // user_profiles 테이블 확인 (Admin 클라이언트 사용)
-    const { data: existingUser } = await supabaseAdmin
-      .from('user_profiles')
-      .select('email')
-      .eq('email', email)
-      .single();
+    // user_profiles 테이블 확인
+    const existingUser = await prisma.user_profiles.findUnique({
+      where: { email },
+      select: { email: true }
+    });
 
     if (existingUser) {
       return NextResponse.json(
@@ -60,32 +44,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // OTP 확인 (Admin 클라이언트 사용)
-    const { data: otpData, error: otpError } = await supabaseAdmin
-      .from('email_verification_codes')
-      .select('*')
-      .eq('email', email)
-      .eq('code', code)
-      .eq('used', false)
-      .gte('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    // OTP 확인 (Prisma)
+    const otpData = await prisma.email_verification_codes.findFirst({
+      where: {
+        email,
+        code,
+        used: false,
+        expires_at: {
+          gte: new Date()
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
 
-    if (otpError || !otpData) {
+    if (!otpData) {
       return NextResponse.json(
         { error: '잘못된 인증번호이거나 만료되었습니다.' },
         { status: 400 }
       );
     }
 
-    // OTP를 사용됨으로 표시 (Admin 클라이언트 사용)
-    await supabaseAdmin
-      .from('email_verification_codes')
-      .update({ used: true })
-      .eq('id', otpData.id);
+    // OTP를 사용됨으로 표시
+    await prisma.email_verification_codes.update({
+      where: { id: otpData.id },
+      data: { used: true }
+    });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       email: email
     });

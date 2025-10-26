@@ -18,13 +18,13 @@ export async function GET(request: NextRequest) {
     const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       include: {
-        organization: {
+        organizations: {
           select: {
             id: true,
             name: true,
             type: true,
-            regionCode: true,
-            cityCode: true,
+            region_code: true,
+            city_code: true,
             latitude: true,
             longitude: true
           }
@@ -37,55 +37,55 @@ export async function GET(request: NextRequest) {
     }
 
     // 1단계: 활성 세션이 있는 장비 목록 조회 (점검대상목록에서 제외하기 위함)
-    const activeSessions = await prisma.inspectionsSession.findMany({
+    const activeSessions = await prisma.inspection_sessions.findMany({
       where: {
-        inspectorId: session.user.id,
-        completedAt: null
+        inspector_id: session.user.id,
+        completed_at: null
       },
       select: {
-        equipmentSerial: true
+        equipment_serial: true
       }
     });
 
     const activeSessionSerials = new Set(
-      activeSessions.map(s => s.equipmentSerial)
+      activeSessions.map(s => s.equipment_serial)
     );
 
     // 2단계: 할당된 장비 목록 조회
     try {
-      const assignments = await prisma.inspectionsAssignment.findMany({
+      const assignments = await prisma.inspection_assignments.findMany({
         where: {
-          assignedTo: session.user.id,
+          assigned_to: session.user.id,
           status: {
             in: ['pending', 'in_progress']
           }
         },
         select: {
           id: true,
-          equipmentSerial: true,
+          equipment_serial: true,
           status: true,
-          scheduledDate: true,
-          createdAt: true,
-          startedAt: true
+          scheduled_date: true,
+          created_at: true,
+          started_at: true
         },
         orderBy: {
-          scheduledDate: 'asc'
+          scheduled_date: 'asc'
         }
       });
 
       // 3단계: 활성 세션이 없는 장비만 필터링
       const assignmentsWithoutSession = assignments.filter(
-        a => !activeSessionSerials.has(a.equipmentSerial)
+        a => !activeSessionSerials.has(a.equipment_serial)
       );
 
       // 4단계: 장비 상세 정보 조회
-      const equipmentSerials = assignmentsWithoutSession.map(a => a.equipmentSerial);
+      const equipmentSerials = assignmentsWithoutSession.map(a => a.equipment_serial);
       let data: any[] = [];
 
       if (equipmentSerials.length > 0) {
-        const aedData = await prisma.aedData.findMany({
+        const aedData = await prisma.aed_data.findMany({
           where: {
-            equipmentSerial: {
+            equipment_serial: {
               in: equipmentSerials
             }
           }
@@ -94,12 +94,12 @@ export async function GET(request: NextRequest) {
         // 5단계: 데이터 결합 및 urgency 계산
         const now = new Date();
         data = assignmentsWithoutSession.map(assignment => {
-          const aed = aedData.find(a => a.equipmentSerial === assignment.equipmentSerial);
+          const aed = aedData.find(a => a.equipment_serial === assignment.equipment_serial);
 
           // inspection_urgency 계산
           let inspection_urgency = 'upcoming';
-          if (assignment.scheduledDate) {
-            const scheduledDate = new Date(assignment.scheduledDate);
+          if (assignment.scheduled_date) {
+            const scheduledDate = new Date(assignment.scheduled_date);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             scheduledDate.setHours(0, 0, 0, 0);
@@ -115,9 +115,9 @@ export async function GET(request: NextRequest) {
             ...aed,
             assignment_id: assignment.id,
             assignment_status: assignment.status,
-            scheduled_date: assignment.scheduledDate,
-            assigned_at: assignment.createdAt,
-            started_at: assignment.startedAt,
+            scheduled_date: assignment.scheduled_date,
+            assigned_at: assignment.created_at,
+            started_at: assignment.started_at,
             inspection_urgency
           };
         });

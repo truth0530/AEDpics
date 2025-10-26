@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const result = await prisma.organizations.createMany({
-      data: organizationsToInsert,
+      data: organizationsToInsert as any,
       skipDuplicates: true, // 중복은 무시
     });
 

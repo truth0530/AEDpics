@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
+import { randomUUID } from "crypto"
 
 const prisma = new PrismaClient()
 
@@ -49,6 +50,7 @@ export const authOptions: NextAuthOptions = {
         // 로그인 성공 - 이력 기록
         await prisma.login_history.create({
           data: {
+            id: randomUUID(),
             user_id: user.id,
             success: true,
             ip_address: 'server',
@@ -56,19 +58,19 @@ export const authOptions: NextAuthOptions = {
           }
         })
 
-        // lastLoginAt 업데이트
+        // last_login_at 업데이트
         await prisma.user_profiles.update({
           where: { id: user.id },
-          data: { lastLoginAt: new Date() }
+          data: { last_login_at: new Date() }
         })
 
         return {
           id: user.id,
           email: user.email,
-          name: user.fullName,
+          name: user.full_name,
           role: user.role,
-          organizationId: user.organizationId,
-          organizationName: user.organizationName
+          organizationId: user.organization_id,
+          organizationName: user.organization_name
         }
       }
     })

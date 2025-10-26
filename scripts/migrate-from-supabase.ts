@@ -114,7 +114,7 @@ async function migrateOrganizations() {
   for (const org of data) {
     try {
       // Check if organization already exists
-      const existing = await prisma.organization.findUnique({
+      const existing = await prisma.organizations.findUnique({
         where: { id: org.id }
       });
 
@@ -123,19 +123,19 @@ async function migrateOrganizations() {
         continue;
       }
 
-      await prisma.organization.create({
+      await prisma.organizations.create({
         data: {
           id: org.id,
           name: org.name,
           type: org.type,
-          parentId: org.parent_id,
-          regionCode: org.region_code,
+          parent_id: org.parent_id,
+          region_code: org.region_code,
           address: org.address,
           contact: org.contact,
           latitude: org.latitude,
           longitude: org.longitude,
-          createdAt: org.created_at,
-          updatedAt: org.updated_at,
+          created_at: org.created_at,
+          updated_at: org.updated_at,
         }
       });
       success++;
@@ -152,7 +152,7 @@ async function migrateOrganizations() {
 /**
  * Map old Supabase role to new NCP role
  */
-function mapRole(oldRole: string): string {
+function mapRole(oldRole: string): any {
   const roleMap: Record<string, string> = {
     'regional_emergency_center_admin': 'regional_admin',
     'emergency_center_admin': 'emergency_center_admin',
@@ -197,7 +197,7 @@ async function migrateUserProfiles() {
   for (const profile of data) {
     try {
       // Check if user profile already exists
-      const existing = await prisma.userProfile.findUnique({
+      const existing = await prisma.user_profiles.findUnique({
         where: { id: profile.id }
       });
 
@@ -206,25 +206,25 @@ async function migrateUserProfiles() {
         continue;
       }
 
-      await prisma.userProfile.create({
+      await prisma.user_profiles.create({
         data: {
           id: profile.id,
           email: profile.email,
-          fullName: profile.full_name,
+          full_name: profile.full_name,
           phone: profile.phone,
-          organizationId: profile.organization_id,
+          organization_id: profile.organization_id,
           role: mapRole(profile.role),
-          isActive: profile.is_active,
-          approvedBy: profile.approved_by,
-          approvedAt: profile.approved_at,
+          is_active: profile.is_active,
+          approved_by: profile.approved_by,
+          approved_at: profile.approved_at,
           region: profile.region,
-          organizationName: profile.organization_name,
+          organization_name: profile.organization_name,
           remarks: profile.remarks,
-          regionCode: profile.region_code,
+          region_code: profile.region_code,
           district: profile.district,
           department: profile.department,
-          createdAt: profile.created_at,
-          updatedAt: profile.updated_at,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at,
         }
       });
       success++;
@@ -298,7 +298,7 @@ async function migrateAuditLogs() {
 
   for (const log of data) {
     try {
-      const existing = await prisma.auditLog.findUnique({
+      const existing = await prisma.audit_logs.findUnique({
         where: { id: log.id }
       });
 
@@ -307,20 +307,20 @@ async function migrateAuditLogs() {
         continue;
       }
 
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           id: log.id,
-          userId: log.user_id,
+          user_id: log.user_id,
           action: log.action,
-          entityType: log.table_name,
-          entityId: log.record_id,
+          entity_type: log.table_name,
+          entity_id: log.record_id,
           metadata: {
             old_values: log.old_values,
             new_values: log.new_values,
           },
-          ipAddress: log.ip_address,
-          userAgent: log.user_agent,
-          createdAt: log.created_at,
+          ip_address: log.ip_address,
+          user_agent: log.user_agent,
+          created_at: log.created_at,
         }
       });
       success++;
@@ -363,7 +363,7 @@ async function migrateLoginHistory() {
 
   for (const login of data) {
     try {
-      const existing = await prisma.loginHistory.findUnique({
+      const existing = await prisma.login_history.findUnique({
         where: { id: login.id }
       });
 
@@ -372,15 +372,15 @@ async function migrateLoginHistory() {
         continue;
       }
 
-      await prisma.loginHistory.create({
+      await prisma.login_history.create({
         data: {
           id: login.id,
-          userId: login.user_id,
-          loginTime: login.login_at,
-          ipAddress: login.ip_address,
-          userAgent: login.user_agent,
+          user_id: login.user_id,
+          login_time: login.login_at,
+          ip_address: login.ip_address,
+          user_agent: login.user_agent,
           success: login.success ?? true,
-          createdAt: login.created_at || login.login_at,
+          created_at: login.created_at || login.login_at,
         }
       });
       success++;
@@ -423,7 +423,7 @@ async function migrateNotifications() {
 
   for (const notification of data) {
     try {
-      const existing = await prisma.notification.findUnique({
+      const existing = await prisma.notifications.findUnique({
         where: { id: notification.id }
       });
 
@@ -432,22 +432,22 @@ async function migrateNotifications() {
         continue;
       }
 
-      await prisma.notification.create({
+      await prisma.notifications.create({
         data: {
           id: notification.id,
-          recipientId: notification.user_id,
-          senderId: notification.sender_id || null,
+          recipient_id: notification.user_id,
+          sender_id: notification.sender_id || null,
           title: notification.title,
           message: notification.message,
           type: notification.type,
-          isRead: notification.read ?? false,
+          is_read: notification.read ?? false,
           data: {
             related_table: notification.related_table,
             related_id: notification.related_id,
             read_at: notification.read_at,
           },
-          createdAt: notification.created_at,
-          expiresAt: notification.expires_at || null,
+          created_at: notification.created_at,
+          expires_at: notification.expires_at || null,
         }
       });
       success++;
@@ -490,7 +490,7 @@ async function migrateInspectionScheduleEntries() {
 
   for (const entry of data) {
     try {
-      const existing = await prisma.inspectionScheduleEntry.findUnique({
+      const existing = await prisma.inspection_schedule_entries.findUnique({
         where: { id: entry.id }
       });
 
@@ -506,18 +506,18 @@ async function migrateInspectionScheduleEntries() {
         continue;
       }
 
-      await prisma.inspectionScheduleEntry.create({
+      await prisma.inspection_schedule_entries.create({
         data: {
           id: entry.id,
-          deviceEquipmentSerial: entry.device_equipment_serial || entry.aed_id,
-          scheduledFor: entry.scheduled_date || entry.scheduled_for,
-          assigneeIdentifier: entry.assigned_inspector_id || entry.assignee_identifier || 'unknown',
+          device_equipment_serial: entry.device_equipment_serial || entry.aed_id,
+          scheduled_for: entry.scheduled_date || entry.scheduled_for,
+          assignee_identifier: entry.assigned_inspector_id || entry.assignee_identifier || 'unknown',
           priority: entry.priority || 'normal',
           status: entry.status || 'scheduled',
           notes: entry.notes,
-          createdBy: entry.created_by,
-          createdAt: entry.created_at,
-          updatedAt: entry.updated_at,
+          created_by: entry.created_by,
+          created_at: entry.created_at,
+          updated_at: entry.updated_at,
         }
       });
       success++;

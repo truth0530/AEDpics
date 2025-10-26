@@ -17,23 +17,23 @@ export interface SystemStats {
 export async function getSystemStats(): Promise<SystemStats> {
   try {
     // AED 장비 총 대수
-    const totalDevices = await prisma.aedDevice.count();
+    const totalDevices = await prisma.aed_data.count();
 
-    // 보건소 수 (distinct health_center_name)
-    const healthCenters = await prisma.aedDevice.findMany({
+    // 보건소 수 (distinct jurisdiction_health_center)
+    const healthCenters = await prisma.aed_data.findMany({
       where: {
-        health_center_name: {
+        jurisdiction_health_center: {
           not: null
         }
       },
       select: {
-        health_center_name: true
+        jurisdiction_health_center: true
       },
-      distinct: ['health_center_name']
+      distinct: ['jurisdiction_health_center']
     });
 
     // 시도 수 (distinct sido)
-    const provinces = await prisma.aedDevice.findMany({
+    const provinces = await prisma.aed_data.findMany({
       where: {
         sido: {
           not: null
@@ -53,8 +53,8 @@ export async function getSystemStats(): Promise<SystemStats> {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const [totalInspections, recentInspections] = await Promise.all([
-        prisma.inspection.count(),
-        prisma.inspection.count({
+        prisma.inspections.count(),
+        prisma.inspections.count({
           where: {
             inspection_date: {
               gte: thirtyDaysAgo

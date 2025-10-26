@@ -25,12 +25,12 @@ export const POST = apiHandler(async (request: NextRequest, { params }: { params
   const { reason } = body;
 
   // 세션 조회 (본인 세션인지 확인)
-  const inspectionSession = await prisma.inspectionsSession.findUnique({
+  const inspectionSession = await prisma.inspection_sessions.findUnique({
     where: { id: sessionId },
     select: {
       id: true,
-      inspectorId: true,
-      equipmentSerial: true,
+      inspector_id: true,
+      equipment_serial: true,
       status: true,
       notes: true
     }
@@ -41,7 +41,7 @@ export const POST = apiHandler(async (request: NextRequest, { params }: { params
   }
 
   // 권한 확인: 본인만 취소 가능
-  if (inspectionSession.inspectorId !== session.user.id) {
+  if (inspectionSession.inspector_id !== session.user.id) {
     return NextResponse.json({ error: 'Only the session owner can cancel it' }, { status: 403 });
   }
 
@@ -55,13 +55,13 @@ export const POST = apiHandler(async (request: NextRequest, { params }: { params
 
   // Soft Delete: status를 'cancelled'로 변경
   try {
-    await prisma.inspectionsSession.update({
+    await prisma.inspection_sessions.update({
       where: { id: sessionId },
       data: {
         status: 'cancelled',
-        cancelledAt: new Date(),
+        cancelled_at: new Date(),
         notes: reason ? `취소 사유: ${reason}` : inspectionSession.notes,
-        updatedAt: new Date()
+        updated_at: new Date()
       }
     });
   } catch (updateError) {

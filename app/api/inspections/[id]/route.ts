@@ -20,22 +20,22 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 점검 이력 조회 (inspector와 aedData 포함)
+  // 점검 이력 조회 (inspector와 aed_data 포함)
   const inspection = await prisma.inspections.findUnique({
     where: { id: inspectionId },
     include: {
-      inspector: {
+      user_profiles: {
         select: {
-          fullName: true,
+          full_name: true,
           email: true
         }
       },
-      aedData: {
+      aed_data: {
         select: {
-          equipmentSerial: true,
-          installationInstitution: true,
-          installationAddress: true,
-          modelName: true,
+          equipment_serial: true,
+          installation_institution: true,
+          installation_address: true,
+          model_name: true,
           manufacturer: true
         }
       }
@@ -50,9 +50,9 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
     success: true,
     inspection: {
       ...inspection,
-      inspector_name: inspection.inspector?.fullName || '알 수 없음',
-      inspector_email: inspection.inspector?.email,
-      device_info: inspection.aedData,
+      inspector_name: inspection.user_profiles?.full_name || '알 수 없음',
+      inspector_email: inspection.user_profiles?.email,
+      device_info: inspection.aed_data,
     },
   });
 });
@@ -80,7 +80,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
     where: { id: inspectionId },
     select: {
       id: true,
-      inspectorId: true
+      inspector_id: true
     }
   });
 
@@ -95,7 +95,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
   });
 
   const isAdmin = profile?.role && ['master', 'emergency_center_admin', 'ministry_admin'].includes(profile.role);
-  const isOwner = inspection.inspectorId === session.user.id;
+  const isOwner = inspection.inspector_id === session.user.id;
 
   if (!isOwner && !isAdmin) {
     return NextResponse.json({ error: 'You do not have permission to update this inspection' }, { status: 403 });

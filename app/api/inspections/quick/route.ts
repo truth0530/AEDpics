@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         role: true,
-        assignedDevices: true,
-        organizationId: true
+        assigned_devices: true,
+        organization_id: true
       }
     });
 
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
       userId: profile.id,
       role: profile.role,
       accountType: 'public',
-      assignedDevices: profile.assignedDevices || [],
-      organizationId: profile.organizationId || undefined,
+      assignedDevices: profile.assigned_devices || [],
+      organizationId: profile.organization_id || undefined,
     };
 
     console.log('[Quick Inspection] User context:', {
@@ -62,16 +62,16 @@ export async function POST(request: NextRequest) {
     // aed_data 테이블에서 device 확인
     // deviceId는 equipment_serial 또는 id를 사용할 수 있음
     const deviceIdAsNumber = parseInt(deviceId, 10);
-    const device = await prisma.aedData.findFirst({
+    const device = await prisma.aed_data.findFirst({
       where: {
         OR: [
           ...(isNaN(deviceIdAsNumber) ? [] : [{ id: deviceIdAsNumber }]),
-          { equipmentSerial: deviceId }
+          { equipment_serial: deviceId }
         ]
       },
       select: {
         id: true,
-        equipmentSerial: true
+        equipment_serial: true
       }
     });
 
@@ -87,23 +87,23 @@ export async function POST(request: NextRequest) {
     try {
       const inspection = await prisma.inspections.create({
         data: {
-          aedDataId: device.id,
-          equipmentSerial: device.equipmentSerial,
-          inspectorId: session.user.id,
-          inspectionType: 'special',
-          overallStatus: 'pending',
+          aed_data_id: device.id,
+          equipment_serial: device.equipment_serial,
+          inspector_id: session.user.id,
+          inspection_type: 'special',
+          overall_status: 'pending',
         },
         select: {
           id: true,
-          inspectionDate: true,
-          overallStatus: true
+          inspection_date: true,
+          overall_status: true
         }
       });
 
       return NextResponse.json({
         inspectionId: inspection.id,
-        inspectionDate: inspection.inspectionDate,
-        status: inspection.overallStatus,
+        inspection_date: inspection.inspection_date,
+        status: inspection.overall_status,
       });
 
     } catch (insertError) {

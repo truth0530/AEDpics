@@ -25,6 +25,7 @@ export function RealtimeApprovalNotifier({ userRole, userRegionCode, canApproveU
   const { showInfo } = useToast();
   // TODO: Realtime 기능 임시 비활성화
   // const supabase = createClient();
+  const supabase: any = null; // 임시: Supabase 비활성화
   const shownNotifications = useRef<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioInitialized = useRef<boolean>(false);

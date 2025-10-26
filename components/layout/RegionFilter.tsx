@@ -43,7 +43,7 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     user.role === 'master';
 
   // 사용자의 소속 조직 지역 (organization.region_code 또는 user.region_code)
-  const userRegionCode = user.organization?.region_code || user.region_code;
+  const userRegionCode = (user.organization as any)?.region_code || user.region_code;
   const userRegionLabel = userRegionCode ? REGIONS.find(r => r.code === userRegionCode)?.label || '서울' : '서울';
 
   // regional_emergency_center_admin는 자신의 관할 지역을 기본값으로 설정
@@ -105,9 +105,9 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
 
   // regional_admin(시도청)인 경우 본인 시도로 초기화
   useEffect(() => {
-    if (user.role === 'regional_admin' && user.organization?.region_code) {
+    if (user.role === 'regional_admin' && (user.organization as any)?.region_code) {
       // region_code를 한글 시도명으로 변환
-      const regionLabel = REGIONS.find(r => r.code === user.organization.region_code)?.label;
+      const regionLabel = REGIONS.find(r => r.code === (user.organization as any).region_code)?.label;
       if (regionLabel) {
         setSelectedSido(regionLabel);
       }

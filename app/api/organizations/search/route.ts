@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 조직 검색 (정확히 일치하거나 유사한 이름)
-    const organization = await prisma.organization.findFirst({
+    const organization = await prisma.organizations.findFirst({
       where: {
         OR: [
           { name: name },
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        regionCode: true
+        region_code: true
       }
     })
 

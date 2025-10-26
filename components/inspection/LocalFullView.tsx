@@ -127,7 +127,7 @@ function LocalViewContent() {
 
       {/* Filter Bar - 목록/점검완료 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
       {/* ✅ 현장점검에서는 접기/펼치기 버튼 제거 - 항상 필터 표시 */}
-      {(viewMode === 'list' || viewMode === 'completed') && <AEDFilterBar viewMode="inspection" />}
+      {(viewMode === 'list' || viewMode === 'completed') && <AEDFilterBar />}
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden relative">
@@ -136,7 +136,7 @@ function LocalViewContent() {
         {viewMode === 'map' && (
           <div className="absolute top-0 left-0 right-0 z-10">
             <div className="bg-gray-900/70 backdrop-blur-md shadow-lg border-b border-gray-700/30">
-              <AEDFilterBar viewMode="inspection" />
+              <AEDFilterBar />
             </div>
           </div>
         )}
@@ -167,7 +167,7 @@ function LocalViewContent() {
                 onQuickInspect={(device) => {
                   const serial = device.equipment_serial;
                   handleInspectionStart(serial);
-                  showSuccess('점검 페이지로 이동합니다', `장비: ${device.installation_institution}`);
+                  showSuccess('점검 페이지로 이동합니다', { message: `장비: ${device.installation_institution}` });
                   router.push(`/inspection/${serial}`);
                 }}
               />
@@ -188,7 +188,7 @@ function LocalViewContent() {
                   // 점검 시작 처리
                   const serial = location.equipment_serial;
                   handleInspectionStart(serial);
-                  showSuccess('점검 페이지로 이동합니다', `장비: ${location.installation_institution}`);
+                  showSuccess('점검 페이지로 이동합니다', { message: `장비: ${location.installation_institution}` });
                   router.push(`/inspection/${serial}`);
                 }}
               />

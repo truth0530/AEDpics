@@ -88,7 +88,7 @@ export async function POST(
     const updatedUser = await prisma.user_profiles.update({
       where: { id },
       data: {
-        role: role as UserRole,
+        role: role as user_role,
         approved_by: adminProfile.id,
         approved_at: new Date(),
         is_active: true,

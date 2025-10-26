@@ -66,8 +66,9 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         data: {
           role: 'rejected',
-          isActive: false,
-          updatedAt: new Date()
+          is_active: false,
+          rejected_reason: reason,
+          updated_at: new Date()
         }
       });
     } catch (updateError: any) {
@@ -78,21 +79,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 거부 이력 기록
-    try {
-      await prisma.approvalHistory.create({
-        data: {
-          userId: userId,
-          action: 'rejected',
-          reason,
-          approvedBy: session.user.id,
-          createdAt: new Date()
-        }
-      });
-    } catch (historyError) {
-      console.error('Failed to log rejection history:', historyError);
-      // 이력 기록 실패는 치명적이지 않으므로 계속 진행
-    }
+    // 거부 이력 기록 - approvalHistory 테이블은 아직 구현되지 않음
+    // TODO: 향후 audit_logs 테이블 사용으로 대체 예정
+    // try {
+    //   await prisma.approval_history.create({
+    //     data: {
+    //       user_id: userId,
+    //       action: 'rejected',
+    //       reason,
+    //       approved_by: session.user.id,
+    //       created_at: new Date()
+    //     }
+    //   });
+    // } catch (historyError) {
+    //   console.error('Failed to log rejection history:', historyError);
+    // }
 
     // 거부 알림 전송
     try {

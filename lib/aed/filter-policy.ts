@@ -45,6 +45,9 @@ const ROLE_FILTER_POLICY: Record<UserRole, FilterPolicy> = {
   email_verified: {
     required: ['sido', 'gugun'],
   },
+  rejected: {
+    required: ['sido', 'gugun'],
+  },
 };
 
 function hasFilter(

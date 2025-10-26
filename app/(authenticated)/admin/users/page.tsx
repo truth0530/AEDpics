@@ -162,10 +162,10 @@ export default function AdminUsersPage() {
       ministry_admin: '보건복지부',
       regional_admin: '지역 관리자',
       local_admin: '로컬 관리자',
-      inspector: '점검원',
       temporary_inspector: '임시 점검원',
       pending_approval: '승인 대기',
-      email_verified: '이메일 인증 완료'
+      email_verified: '이메일 인증 완료',
+      rejected: '거부됨'
     };
     return labels[role] || role;
   };

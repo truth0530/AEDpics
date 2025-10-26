@@ -22,9 +22,9 @@ export async function GET() {
 
     // 기본 데이터 존재 여부 확인
     const [organizationCount, userCount, aedCount] = await Promise.all([
-      prisma.organization.count(),
+      prisma.organizations.count(),
       prisma.user_profiles.count(),
-      prisma.aedData.count()
+      prisma.aed_data.count()
     ]);
 
     const responseTime = Date.now() - startTime;
