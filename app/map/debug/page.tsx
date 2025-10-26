@@ -80,7 +80,7 @@ export default function DebugMapPage() {
         <h2 className="text-lg font-semibold mb-2">환경 정보:</h2>
         <div className="bg-gray-100 p-4 rounded font-mono text-sm">
           <div>Node Env: {process.env.NODE_ENV}</div>
-          <div>API Key from env: {process.env.NEXT_PUBLIC_KAKAO_MAP_KEY || 'Not found'}</div>
+          <div>API Key from env: {process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || 'Not found'}</div>
           <div>Fallback Key: 6e3339a5cbd61f1f3b08e3a06071795b</div>
         </div>
       </div>

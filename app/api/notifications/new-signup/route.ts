@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 알림 생성 API 호출
-    const notificationResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/create`, {
+    const notificationResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

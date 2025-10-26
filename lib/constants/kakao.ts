@@ -3,7 +3,7 @@ const FALLBACK_KEY = '6e3339a5cbd61f1f3b08e3a06071795b';
 
 export const KAKAO_MAP_CONFIG = {
   // JavaScript 키 (브라우저용)
-  JS_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_KEY || FALLBACK_KEY,
+  JS_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || FALLBACK_KEY,
 
   // 스크립트 URL 생성
   getScriptUrl: ({
@@ -13,7 +13,7 @@ export const KAKAO_MAP_CONFIG = {
     libraries?: string[];
     autoload?: boolean;
   } = {}) => {
-    const key = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY || FALLBACK_KEY;
+    const key = process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || FALLBACK_KEY;
     const libs = libraries.length > 0 ? `&libraries=${libraries.join(',')}` : '';
     const autoloadParam = autoload ? '' : '&autoload=false';
     return `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}${libs}${autoloadParam}`;

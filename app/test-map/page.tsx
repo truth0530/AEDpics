@@ -79,7 +79,7 @@ export default function TestMapPage() {
         <h3 className="text-lg font-semibold mb-2">카카오맵 API 설정 안내</h3>
         <ol className="list-decimal list-inside space-y-2 text-sm">
           <li>카카오 개발자 콘솔에서 JavaScript 키 확인</li>
-          <li>.env.local 파일에 NEXT_PUBLIC_KAKAO_MAP_KEY 설정</li>
+          <li>.env.local 파일에 NEXT_PUBLIC_KAKAO_MAP_APP_KEY 설정</li>
           <li>도메인 등록:
             <ul className="list-disc list-inside ml-4 mt-1">
               <li>http://localhost:3000</li>
