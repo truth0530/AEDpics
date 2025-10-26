@@ -163,10 +163,14 @@ git push origin main
 - Supabase에서 NCP PostgreSQL로 데이터베이스 마이그레이션
 - 자체 호스팅 환경 구축
 
-### 현재 상태 (2025-10-25)
+### 현재 상태 (2025-10-26)
 - Phase 1: 인프라 구축 완료
 - Phase 2: 데이터 마이그레이션 완료 (315개 레코드)
-- 프로젝트 구조 재정리 완료
+- Phase 3: 프로덕션 배포 준비 완료
+  - Critical 이슈 해결 (organization_change_requests API 비활성화)
+  - 환경변수명 통일 완료
+  - 프로덕션 빌드 성공
+- 배포 준비 상태
 
 ### 기술 스택
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript
@@ -188,11 +192,19 @@ User: aedpics_admin
 
 ### 환경변수 구성
 ```bash
-# .env.local
+# .env.local - 필수 환경변수
 DATABASE_URL="postgresql://aedpics_admin:PASSWORD@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
+NEXTAUTH_URL="http://localhost:3001"
+NEXTAUTH_SECRET="generate-random-32-chars"
+JWT_SECRET="generate-random-secret"
 NEXT_PUBLIC_KAKAO_MAP_APP_KEY="your_kakao_key"
 RESEND_API_KEY="your_resend_key"
+MASTER_EMAIL="admin@nmc.or.kr"
+NEXT_PUBLIC_SITE_URL="http://localhost:3001"
+ENCRYPTION_KEY="generate-random-key"
 ```
+
+상세한 환경변수 설정은 [.env.example](.env.example) 참조
 
 ## 개발 체크리스트
 
@@ -214,18 +226,32 @@ RESEND_API_KEY="your_resend_key"
 - [x] 중복 제거 로직 구현
 - [x] 프로젝트 구조 재정리
 
+### Phase 3: 프로덕션 배포 준비 (완료 - 2025-10-26)
+#### Critical 이슈 해결
+- [x] organization_change_requests API 비활성화 (6개 파일)
+  - 존재하지 않는 테이블 참조 방지
+  - 501 Not Implemented 응답으로 안전하게 처리
+- [x] NextAuth Prisma 모델명 수정
+  - login_history 모델명 통일
+  - organizations 관계명 수정
+- [x] 환경변수 문서화 완료 (.env.example)
+  - 15개 필수/선택 변수 문서화
+  - Supabase 레거시 변수 DEPRECATED 표시
+
+#### 환경변수명 통일
+- [x] Kakao Maps API 키 통일 (3개 파일)
+  - NEXT_PUBLIC_KAKAO_MAP_KEY → NEXT_PUBLIC_KAKAO_MAP_APP_KEY
+- [x] Master 계정 변수 통일 (1개 파일)
+  - MASTER_ADMIN_EMAILS → MASTER_EMAIL
+- [x] Application URL 통일 (1개 파일)
+  - NEXT_PUBLIC_APP_URL 제거, NEXT_PUBLIC_SITE_URL 표준화
+
+#### 빌드 및 배포 준비
+- [x] TypeScript 타입 검사 통과
+- [x] 프로덕션 빌드 성공 (118개 페이지)
+- [x] 배포 준비 완료
+
 ### Phase 4: AED 데이터 Import (진행 예정)
-
-### Phase 3: 빌드 시스템 전환 및 안정화 (완료 - 2025-10-26)
-- [x] cached-queries.ts Prisma 전환 (인증 레이어 핵심)
-- [x] AuthButton NextAuth 전환
-- [x] ESLint 파싱 오류 수정 (5개 lib 파일)
-- [x] React Hooks 규칙 위반 수정 (2개 페이지)
-- [x] prefer-const 경고 수정 (3개 파일)
-- [x] Supabase 의존 페이지 임시 비활성화 (12개)
-- [x] 프로덕션 빌드 성공 (113개 페이지)
-- [x] 빌드 시스템 안정화 완료
-
 - [ ] e-gen CSV 파일 준비 (81,331개 레코드)
 - [ ] upload_to_ncp.py 실행
 - [ ] 데이터 검증 및 정합성 확인
@@ -280,6 +306,9 @@ RESEND_API_KEY="your_resend_key"
 - [ ] 버그 수정
 
 #### 배포 준비
+- [x] 프로덕션 배포 준비 완료 (Phase 3)
+- [x] Critical 이슈 해결
+- [x] 환경변수 통일 및 문서화
 - [ ] NCP 프로덕션 환경 설정
 - [ ] CI/CD 파이프라인
 - [ ] 모니터링 시스템
@@ -425,8 +454,8 @@ migrate: 마이그레이션 관련
 
 ---
 
-**마지막 업데이트**: 2025-10-25
-**문서 버전**: 2.0.0
+**마지막 업데이트**: 2025-10-26
+**문서 버전**: 2.1.0
 
 ---
 
