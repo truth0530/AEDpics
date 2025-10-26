@@ -1,36 +1,30 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
-// Force dynamic rendering to avoid prerender errors
 export const dynamic = 'force-dynamic';
 
-/**
- * 프로필 메뉴 페이지
- *
- * TODO: Supabase에서 Prisma + API 엔드포인트로 전환 필요
- * - GET /api/profile - 사용자 프로필 조회
- * - GET /api/admin/pending-approvals/count - 승인 대기 수 조회
- */
 export default function ProfileMenuPage() {
   const router = useRouter();
 
-  useEffect(() => {
-    // 임시로 profile 페이지로 리다이렉트
-    console.warn('[ProfileMenuPage] This page is temporarily disabled - needs Prisma migration');
-    router.push('/profile');
-  }, [router]);
-
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-center text-white">
-        <h1 className="text-2xl font-bold mb-4">페이지 이동 중...</h1>
-        <p className="text-gray-400">
-          이 페이지는 현재 업데이트 중입니다.
-          <br />
-          프로필 페이지로 이동합니다.
-        </p>
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-8">프로필 메뉴</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="cursor-pointer hover:shadow-lg" onClick={() => router.push('/profile')}>
+          <CardHeader>
+            <CardTitle>프로필 보기</CardTitle>
+          </CardHeader>
+          <CardContent>내 프로필 정보를 확인합니다</CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-lg" onClick={() => router.push('/profile/history')}>
+          <CardHeader>
+            <CardTitle>변경 이력</CardTitle>
+          </CardHeader>
+          <CardContent>프로필 변경 이력을 확인합니다</CardContent>
+        </Card>
       </div>
     </div>
   );
