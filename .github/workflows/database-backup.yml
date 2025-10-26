@@ -1,0 +1,71 @@
+name: Database Backup
+
+on:
+  schedule:
+    # 매일 새벽 2시 (KST 11시)
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install PostgreSQL client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+
+    - name: Create backup
+      run: |
+        DATE=$(date +%Y%m%d_%H%M%S)
+        PGPASSWORD=${{ secrets.DB_PASSWORD }} pg_dump \
+          -h ${{ secrets.DB_HOST }} \
+          -p ${{ secrets.DB_PORT }} \
+          -U ${{ secrets.DB_USER }} \
+          -d ${{ secrets.DB_NAME }} \
+          -n aedpics \
+          --no-owner \
+          --no-acl \
+          -f backup_${DATE}.sql
+        gzip backup_${DATE}.sql
+        echo "BACKUP_FILE=backup_${DATE}.sql.gz" >> $GITHUB_ENV
+
+    - name: Upload backup to artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: database-backup
+        path: backup_*.sql.gz
+        retention-days: 30
+
+    - name: Notify backup success
+      if: success()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            text: "Database backup completed",
+            attachments: [{
+              color: 'good',
+              text: `Backup file: ${{ env.BACKUP_FILE }}`
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Notify backup failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            text: "Database backup failed",
+            attachments: [{
+              color: 'danger',
+              text: "Failed to create database backup"
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

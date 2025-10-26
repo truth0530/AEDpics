@@ -1,37 +1,51 @@
-name: Build Check
+name: Build and Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
-        
+        cache: 'npm'
+
     - name: Install dependencies
-      run: |
-        cd aed-check-system
-        npm ci
-        
-    - name: Run lint
-      run: |
-        cd aed-check-system
-        npm run lint
-        
-    - name: Run build
-      run: |
-        cd aed-check-system
-        npm run build
+      run: npm ci
+
+    - name: Generate Prisma Client
+      run: npx prisma generate
       env:
-        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Run TypeScript check
+      run: npm run tsc
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Build Next.js
+      run: npm run build
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        NEXT_PUBLIC_KAKAO_MAP_APP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APP_KEY }}
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-output
+        path: .next
+        retention-days: 7

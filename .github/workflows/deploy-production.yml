@@ -1,0 +1,97 @@
+name: Deploy to NCP Production
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Generate Prisma Client
+      run: npx prisma generate
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Run tests and build
+      run: |
+        npm run tsc
+        npm run lint
+        npm run build
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        NEXT_PUBLIC_KAKAO_MAP_APP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APP_KEY }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        MASTER_ACCOUNT_EMAIL: ${{ secrets.MASTER_ACCOUNT_EMAIL }}
+
+    - name: Deploy to NCP Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          cd /var/www/aedpics
+          git pull origin main
+          npm ci
+          npx prisma generate
+          npm run build
+          pm2 reload aedpics
+
+    - name: Health Check
+      run: |
+        sleep 10
+        curl -f https://aedpics.nmc.or.kr/api/health || exit 1
+
+    - name: Notify deployment success
+      if: success()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            text: "Production deployment successful",
+            attachments: [{
+              color: 'good',
+              text: `Deployed to NCP Production\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}`
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Notify deployment failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            text: "Production deployment failed",
+            attachments: [{
+              color: 'danger',
+              text: `Failed to deploy to NCP Production\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}`
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
