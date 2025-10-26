@@ -1,0 +1,730 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for aed-check-system/data/real-world-data.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">aed-check-system/data</a> real-world-data.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/175</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/175</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// 실제 데이터 기반 AED 시스템 정보
+<span class="cstat-no" title="statement not covered" >export const REAL_WORLD_DATA = {</span>
+  // 실제 AED 제조사 및 모델 정보
+<span class="cstat-no" title="statement not covered" >  AED_MANUFACTURERS: [</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      name: "필립스 (Philips)",</span>
+<span class="cstat-no" title="statement not covered" >      country: "네덜란드",</span>
+<span class="cstat-no" title="statement not covered" >      models: [</span>
+<span class="cstat-no" title="statement not covered" >        {</span>
+<span class="cstat-no" title="statement not covered" >          name: "하트스타트 HS1",</span>
+<span class="cstat-no" title="statement not covered" >          weight: "1.5kg",</span>
+<span class="cstat-no" title="statement not covered" >          features: ["음성안내", "Bi-Phasic 기술", "자동 자가진단"],</span>
+<span class="cstat-no" title="statement not covered" >          battery_life: "4년",</span>
+<span class="cstat-no" title="statement not covered" >          pad_life: "2년",</span>
+<span class="cstat-no" title="statement not covered" >          shock_time: "8초 이내"</span>
+<span class="cstat-no" title="statement not covered" >        },</span>
+<span class="cstat-no" title="statement not covered" >        {</span>
+<span class="cstat-no" title="statement not covered" >          name: "하트스타트 FRx", </span>
+<span class="cstat-no" title="statement not covered" >          weight: "1.6kg",</span>
+<span class="cstat-no" title="statement not covered" >          features: ["퀵쇼크 기술", "견고한 설계", "음성/시각 안내"],</span>
+<span class="cstat-no" title="statement not covered" >          battery_life: "4년",</span>
+<span class="cstat-no" title="statement not covered" >          pad_life: "2년", </span>
+<span class="cstat-no" title="statement not covered" >          shock_time: "평균 8.4초"</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      ]</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      name: "CU메디칼",</span>
+<span class="cstat-no" title="statement not covered" >      country: "한국",</span>
+<span class="cstat-no" title="statement not covered" >      models: [</span>
+<span class="cstat-no" title="statement not covered" >        {</span>
+<span class="cstat-no" title="statement not covered" >          name: "CU-SP1",</span>
+<span class="cstat-no" title="statement not covered" >          weight: "2.0kg",</span>
+<span class="cstat-no" title="statement not covered" >          features: ["한국어 음성안내", "LCD 디스플레이", "자동진단"],</span>
+<span class="cstat-no" title="statement not covered" >          battery_life: "5년",</span>
+<span class="cstat-no" title="statement not covered" >          pad_life: "2년",</span>
+<span class="cstat-no" title="statement not covered" >          shock_time: "10초 이내"</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      ]</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      name: "지올 (ZOLL)",</span>
+<span class="cstat-no" title="statement not covered" >      country: "미국",</span>
+<span class="cstat-no" title="statement not covered" >      models: [</span>
+<span class="cstat-no" title="statement not covered" >        {</span>
+<span class="cstat-no" title="statement not covered" >          name: "AED Plus",</span>
+<span class="cstat-no" title="statement not covered" >          weight: "3.1kg", </span>
+<span class="cstat-no" title="statement not covered" >          features: ["실시간 CPR 피드백", "긴 배터리 수명"],</span>
+<span class="cstat-no" title="statement not covered" >          battery_life: "5년",</span>
+<span class="cstat-no" title="statement not covered" >          pad_life: "5년",</span>
+<span class="cstat-no" title="statement not covered" >          shock_time: "8초 이내"</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      ]</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      name: "피지오컨트롤 (Physio-Control)",</span>
+<span class="cstat-no" title="statement not covered" >      country: "미국",</span>
+<span class="cstat-no" title="statement not covered" >      models: [</span>
+<span class="cstat-no" title="statement not covered" >        {</span>
+<span class="cstat-no" title="statement not covered" >          name: "LIFEPAK CR Plus",</span>
+<span class="cstat-no" title="statement not covered" >          weight: "2.0kg",</span>
+<span class="cstat-no" title="statement not covered" >          features: ["cprMAX 기술", "견고한 방수 설계"], </span>
+<span class="cstat-no" title="statement not covered" >          battery_life: "4년",</span>
+<span class="cstat-no" title="statement not covered" >          pad_life: "2년",</span>
+<span class="cstat-no" title="statement not covered" >          shock_time: "8초 이내"</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      ]</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  ],</span>
+&nbsp;
+  // 실제 지역별 보건소 대표 명단 (261개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >  HEALTH_CENTERS_SAMPLE: [</span>
+    // 서울특별시 (25개)
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "종로구보건소", contact: "02-2148-3500", address: "서울특별시 종로구 율곡로 27" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "중구보건소", contact: "02-3396-5101", address: "서울특별시 중구 다산로 120" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "용산구보건소", contact: "02-2199-8000", address: "서울특별시 용산구 녹사평대로 166" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "성동구보건소", contact: "02-2286-7000", address: "서울특별시 성동구 고산자로 270" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "광진구보건소", contact: "02-450-1306", address: "서울특별시 광진구 자양로 117" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "동대문구보건소", contact: "02-2127-5000", address: "서울특별시 동대문구 천호대로 145" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "중랑구보건소", contact: "02-2094-0500", address: "서울특별시 중랑구 신내로 169" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "성북구보건소", contact: "02-2241-1330", address: "서울특별시 성북구 화랑로 63" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "강북구보건소", contact: "02-901-7620", address: "서울특별시 강북구 한천로 897" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "서울", name: "도봉구보건소", contact: "02-2091-4000", address: "서울특별시 도봉구 노해로 656" },</span>
+&nbsp;
+    // 부산광역시 (16개) 
+<span class="cstat-no" title="statement not covered" >    { region: "부산", name: "중구보건소", contact: "051-600-4701", address: "부산광역시 중구 대청로 120" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "부산", name: "서구보건소", contact: "051-240-4000", address: "부산광역시 서구 구덕로 225" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "부산", name: "동구보건소", contact: "051-440-6000", address: "부산광역시 동구 구청로 1" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "부산", name: "영도구보건소", contact: "051-419-4000", address: "부산광역시 영도구 신선로 48" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "부산", name: "부산진구보건소", contact: "051-605-6000", address: "부산광역시 부산진구 황령대로 320" },</span>
+&nbsp;
+    // 대구광역시 (8개)
+<span class="cstat-no" title="statement not covered" >    { region: "대구", name: "중구보건소", contact: "053-661-3000", address: "대구광역시 중구 달성로 15" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "대구", name: "동구보건소", contact: "053-662-3000", address: "대구광역시 동구 동부로 145" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "대구", name: "서구보건소", contact: "053-663-3000", address: "대구광역시 서구 국채보상로 257" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "대구", name: "남구보건소", contact: "053-664-3000", address: "대구광역시 남구 명덕로 104" },</span>
+&nbsp;
+    // 인천광역시 (10개)
+<span class="cstat-no" title="statement not covered" >    { region: "인천", name: "중구보건소", contact: "032-760-6000", address: "인천광역시 중구 축항대로 7" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "인천", name: "동구보건소", contact: "032-770-6000", address: "인천광역시 동구 금곡로 25" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "인천", name: "미추홀구보건소", contact: "032-880-5000", address: "인천광역시 미추홀구 독정이로 165" },</span>
+&nbsp;
+    // 광주광역시 (5개)
+<span class="cstat-no" title="statement not covered" >    { region: "광주", name: "동구보건소", contact: "062-608-8300", address: "광주광역시 동구 서남로 1" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "광주", name: "서구보건소", contact: "062-350-4000", address: "광주광역시 서구 내방로 111" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "광주", name: "남구보건소", contact: "062-607-4000", address: "광주광역시 남구 봉선로 1" },</span>
+&nbsp;
+    // 대전광역시 (5개)
+<span class="cstat-no" title="statement not covered" >    { region: "대전", name: "동구보건소", contact: "042-251-6000", address: "대전광역시 동구 우암로 294" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "대전", name: "중구보건소", contact: "042-580-3000", address: "대전광역시 중구 대종로 490" },</span>
+&nbsp;
+    // 울산광역시 (5개)  
+<span class="cstat-no" title="statement not covered" >    { region: "울산", name: "중구보건소", contact: "052-290-4000", address: "울산광역시 중구 북부순환도로 200" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "울산", name: "남구보건소", contact: "052-226-2701", address: "울산광역시 남구 돋질로 233" },</span>
+&nbsp;
+    // 세종특별자치시 (1개)
+<span class="cstat-no" title="statement not covered" >    { region: "세종", name: "세종특별자치시보건소", contact: "044-301-2000", address: "세종특별자치시 한누리대로 2130" },</span>
+&nbsp;
+    // 경기도 (31개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >    { region: "경기", name: "수원시보건소", contact: "031-228-5000", address: "경기도 수원시 영통구 월드컵로 195" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "경기", name: "성남시보건소", contact: "031-729-3000", address: "경기도 성남시 분당구 운중로 90" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "경기", name: "고양시보건소", contact: "031-8075-4000", address: "경기도 고양시 덕양구 화정로 75" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "경기", name: "용인시보건소", contact: "031-324-4000", address: "경기도 용인시 처인구 중부대로 1199" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "경기", name: "부천시보건소", contact: "032-625-4000", address: "경기도 부천시 원미구 길주로 210" },</span>
+&nbsp;
+    // 강원도 (18개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >    { region: "강원", name: "춘천시보건소", contact: "033-250-3000", address: "강원도 춘천시 금강로 113" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "강원", name: "원주시보건소", contact: "033-737-4000", address: "강원도 원주시 원일로 85" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "강원", name: "강릉시보건소", contact: "033-660-3000", address: "강원도 강릉시 하슬라로 42" },</span>
+&nbsp;
+    // 충청북도 (11개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >    { region: "충북", name: "청주시보건소", contact: "043-201-3000", address: "충청북도 청주시 상당구 상당로 155" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "충북", name: "충주시보건소", contact: "043-850-3000", address: "충청북도 충주시 으뜸로 21" },</span>
+&nbsp;
+    // 충청남도 (15개 중 주요 지역)  
+<span class="cstat-no" title="statement not covered" >    { region: "충남", name: "천안시보건소", contact: "041-521-3000", address: "충청남도 천안시 동남구 영성로 75" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "충남", name: "아산시보건소", contact: "041-540-2000", address: "충청남도 아산시 번영로 224번길 20" },</span>
+&nbsp;
+    // 전라북도 (14개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >    { region: "전북", name: "전주시보건소", contact: "063-281-2000", address: "전라북도 전주시 완산구 노송광장로 10" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "전북", name: "군산시보건소", contact: "063-463-5000", address: "전라북도 군산시 신영로 22" },</span>
+&nbsp;
+    // 전라남도 (22개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >    { region: "전남", name: "목포시보건소", contact: "061-270-3000", address: "전라남도 목포시 영산로 630" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "전남", name: "여수시보건소", contact: "061-690-8000", address: "전라남도 여수시 시청로 1" },</span>
+&nbsp;
+    // 경상북도 (23개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >    { region: "경북", name: "포항시보건소", contact: "054-270-2000", address: "경상북도 포항시 남구 시청로 1" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "경북", name: "경주시보건소", contact: "054-779-8000", address: "경상북도 경주시 양정로 140" },</span>
+&nbsp;
+    // 경상남도 (18개 중 주요 지역)
+<span class="cstat-no" title="statement not covered" >    { region: "경남", name: "창원시보건소", contact: "055-225-4000", address: "경상남도 창원시 의창구 중앙대로 151" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "경남", name: "진주시보건소", contact: "055-749-5000", address: "경상남도 진주시 드래곤로 126" },</span>
+&nbsp;
+    // 제주특별자치도 (2개)
+<span class="cstat-no" title="statement not covered" >    { region: "제주", name: "제주시보건소", contact: "064-728-4000", address: "제주특별자치도 제주시 연삼로 473" },</span>
+<span class="cstat-no" title="statement not covered" >    { region: "제주", name: "서귀포시보건소", contact: "064-760-4000", address: "제주특별자치도 서귀포시 중앙로 105" }</span>
+<span class="cstat-no" title="statement not covered" >  ],</span>
+&nbsp;
+  // 지역별 특성 데이터
+<span class="cstat-no" title="statement not covered" >  REGIONAL_CHARACTERISTICS: [</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      region: "서울",</span>
+<span class="cstat-no" title="statement not covered" >      climate: "도시형",</span>
+<span class="cstat-no" title="statement not covered" >      특성: ["높은 인구밀도", "지하철역 다수", "고층건물"],</span>
+<span class="cstat-no" title="statement not covered" >      주요관심사항: ["접근성", "교통편의성", "응답시간"]</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      region: "부산", </span>
+<span class="cstat-no" title="statement not covered" >      climate: "해안형",</span>
+<span class="cstat-no" title="statement not covered" >      특성: ["해안 도시", "염분 노출", "습도 높음"],</span>
+<span class="cstat-no" title="statement not covered" >      주요관심사항: ["염분 부식", "습도 관리", "해안 접근성"]</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      region: "강원",</span>
+<span class="cstat-no" title="statement not covered" >      climate: "산간형", </span>
+<span class="cstat-no" title="statement not covered" >      특성: ["산악 지형", "겨울 혹한", "접근성 제한"],</span>
+<span class="cstat-no" title="statement not covered" >      주요관심사항: ["겨울철 배터리", "산간 접근성", "응급 이송"]</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      region: "제주",</span>
+<span class="cstat-no" title="statement not covered" >      climate: "도서형",</span>
+<span class="cstat-no" title="statement not covered" >      특성: ["섬 지역", "강풍", "염분"],</span>
+<span class="cstat-no" title="statement not covered" >      주요관심사항: ["강풍 대비", "염분 부식", "응급 이송"]</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  ],</span>
+&nbsp;
+  // 실제 점검 우선순위 요소
+<span class="cstat-no" title="statement not covered" >  PRIORITY_FACTORS: [</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      factor: "배터리 만료일",</span>
+<span class="cstat-no" title="statement not covered" >      weight: 0.3,</span>
+<span class="cstat-no" title="statement not covered" >      description: "교체 시기 임박도"</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      factor: "패드 만료일", </span>
+<span class="cstat-no" title="statement not covered" >      weight: 0.25,</span>
+<span class="cstat-no" title="statement not covered" >      description: "소모품 교체 필요성"</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      factor: "최근 점검일",</span>
+<span class="cstat-no" title="statement not covered" >      weight: 0.2, </span>
+<span class="cstat-no" title="statement not covered" >      description: "점검 주기 준수"</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      factor: "지리적 거리",</span>
+<span class="cstat-no" title="statement not covered" >      weight: 0.15,</span>
+<span class="cstat-no" title="statement not covered" >      description: "이동 효율성"</span>
+<span class="cstat-no" title="statement not covered" >    },</span>
+<span class="cstat-no" title="statement not covered" >    {</span>
+<span class="cstat-no" title="statement not covered" >      factor: "사용 빈도",</span>
+<span class="cstat-no" title="statement not covered" >      weight: 0.1,</span>
+<span class="cstat-no" title="statement not covered" >      description: "실제 활용도"</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  ]</span>
+<span class="cstat-no" title="statement not covered" >} as const;</span></pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2025-09-20T03:33:03.424Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

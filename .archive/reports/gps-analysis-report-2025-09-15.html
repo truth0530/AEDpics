@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS 데이터 분석 리포트 - 2025. 9. 16.</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; border-bottom: 3px solid #007bff; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .summary { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .critical { color: #dc3545; font-weight: bold; }
+        .warning { color: #ffc107; font-weight: bold; }
+        .info { color: #17a2b8; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 10px; text-align: left; border: 1px solid #ddd; }
+        th { background: #007bff; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .issue-card { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 10px 0; }
+        .critical-card { background: #f8d7da; border-left: 4px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ GPS 데이터 정교한 분석 리포트</h1>
+        <p>분석 일시: 2025-09-15T23:17:06.083Z</p>
+
+        <div class="summary">
+            <h2>📊 요약</h2>
+            <p>총 레코드: <strong>80766</strong>개</p>
+            <p class="critical">심각한 문제: 67건</p>
+            <p>문제 있는 데이터 비율: <strong>0.41%</strong></p>
+        </div>
+
+        <h2>🎯 디폴트 좌표 사용 (0건)</h2>
+        <p class="info">디폴트 좌표 사용 없음</p>
+
+        <h2>📍 주소-좌표 불일치 (86건)</h2>
+        
+        <table>
+            <tr>
+                <th>기관명</th>
+                <th>주소</th>
+                <th>좌표</th>
+                <th>문제</th>
+            </tr>
+            
+            <tr>
+                <td>유코카캐리어스(주)</td>
+                <td>제주 제주시</td>
+                <td>36.9671, 125.6897</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>고려해운(주)</td>
+                <td>제주 제주시</td>
+                <td>37.5631, 126.9814</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>고려해운(주)</td>
+                <td>제주 제주시</td>
+                <td>37.5631, 126.9814</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>207해진호</td>
+                <td>제주 제주시</td>
+                <td>33.9626, 126.2982</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>333동운</td>
+                <td>제주 제주시</td>
+                <td>33.9626, 126.2982</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>702만봉호</td>
+                <td>제주 제주시</td>
+                <td>33.9626, 126.2982</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>2007경창호</td>
+                <td>제주 제주시</td>
+                <td>33.9626, 126.2982</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>2013현진호</td>
+                <td>제주 제주시</td>
+                <td>33.9626, 126.2982</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>108대주호</td>
+                <td>제주 제주시</td>
+                <td>33.9626, 126.2982</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+            <tr>
+                <td>2019부영호</td>
+                <td>제주 제주시</td>
+                <td>36.6828, 126.1418</td>
+                <td class="warning">시도 범위 벗어남</td>
+            </tr>
+            
+        </table>
+        
+
+        <h2>🔴 이상치 탐지 (247건)</h2>
+        
+        <div class="issue-card">
+            <p>구군 중심점에서 비정상적으로 멀리 떨어진 장비:</p>
+            <ul>
+                
+                    <li>군자1리경로당 (강원 춘천시) - 중심점에서 13.09km 떨어짐</li>
+                
+                    <li>광판보건진료소 (강원 춘천시) - 중심점에서 15.08km 떨어짐</li>
+                
+                    <li>주식회사더존비즈온 (강원 춘천시) - 중심점에서 14.93km 떨어짐</li>
+                
+                    <li>남산면보건지소 (강원 춘천시) - 중심점에서 11.47km 떨어짐</li>
+                
+                    <li>동산면보건지소 (강원 춘천시) - 중심점에서 13.72km 떨어짐</li>
+                
+            </ul>
+        </div>
+        
+
+        <h2>📌 좌표 클러스터 (3건)</h2>
+        
+        <div class="warning">
+            <p>10개 이상의 AED가 10m 반경 내에 집중된 위치:</p>
+            <ul>
+                
+                    <li>좌표 (35.8411, 128.6812)에 13개 집중</li>
+                
+                    <li>좌표 (35.8472, 128.5798)에 10개 집중</li>
+                
+                    <li>좌표 (35.8697, 128.6035)에 43개 집중</li>
+                
+            </ul>
+        </div>
+        
+
+        <h2>📈 통계</h2>
+        <table>
+            <tr>
+                <th>항목</th>
+                <th>값</th>
+            </tr>
+            <tr>
+                <td>좌표가 있는 데이터</td>
+                <td>954개</td>
+            </tr>
+            <tr>
+                <td>좌표가 없는 데이터</td>
+                <td>46개</td>
+            </tr>
+            <tr>
+                <td>위도 범위</td>
+                <td>33.2074 ~ 38.3773</td>
+            </tr>
+            <tr>
+                <td>경도 범위</td>
+                <td>126.0223 ~ 129.1823</td>
+            </tr>
+        </table>
+
+        <h2>💡 권장사항</h2>
+        <ol>
+            <li><strong>디폴트 좌표 즉시 수정:</strong> 0건의 디폴트 좌표를 실제 위치로 업데이트</li>
+            <li><strong>주소 재확인:</strong> 시도 범위를 벗어난 86건의 주소 검증</li>
+            <li><strong>이상치 검토:</strong> 구군 중심에서 10km 이상 떨어진 247건 확인</li>
+            <li><strong>클러스터 분석:</strong> 과도하게 집중된 좌표 3곳 검토</li>
+        </ol>
+    </div>
+</body>
+</html>
+    

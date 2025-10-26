@@ -1,0 +1,283 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, ArrowUpDown, Download } from 'lucide-react';
+
+interface RegionStats {
+  region: string;
+  total: number;
+  mandatory: number;
+  nonMandatory: number;
+  completed: number;
+  completedMandatory: number;
+  completedNonMandatory: number;
+  assigned: number;
+  assignedMandatory: number;
+  assignedNonMandatory: number;
+  fieldInspected: number;
+  fieldInspectedMandatory: number;
+  fieldInspectedNonMandatory: number;
+  rate: number;
+}
+
+interface RegionStatsTableProps {
+  data: RegionStats[];
+  onRegionClick: (region: RegionStats) => void;
+}
+
+type SortField = 'region' | 'total' | 'rate' | 'assigned' | 'fieldInspected';
+type SortDirection = 'asc' | 'desc';
+
+export default function RegionStatsTable({ data, onRegionClick }: RegionStatsTableProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<SortField>('total');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // 검색 및 정렬
+  const filteredAndSortedData = useMemo(() => {
+    let filtered = data.filter((region) =>
+      region.region.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'region':
+          comparison = a.region.localeCompare(b.region, 'ko-KR');
+          break;
+        case 'total':
+          comparison = a.total - b.total;
+          break;
+        case 'rate':
+          comparison = a.rate - b.rate;
+          break;
+        case 'assigned':
+          comparison = a.assigned - b.assigned;
+          break;
+        case 'fieldInspected':
+          comparison = a.fieldInspected - b.fieldInspected;
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [data, searchTerm, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const getStatusColor = (rate: number) => {
+    if (rate >= 80) return 'text-green-400';
+    if (rate >= 60) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  const getStatusIndicator = (rate: number) => {
+    if (rate >= 80) return '🟢';
+    if (rate >= 60) return '🟡';
+    return '🔴';
+  };
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`;
+    }
+    return num.toString();
+  };
+
+  const handleDownloadCSV = () => {
+    const headers = ['지역', '전체', '관리자점검율', '일정추가', '현장점검'];
+    const rows = filteredAndSortedData.map((region) => [
+      region.region,
+      region.total,
+      `${region.rate}%`,
+      region.assigned,
+      region.fieldInspected,
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.join(',')),
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `시도별_통계_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 검색 및 필터 바 */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="지역 검색..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-gray-900 border-gray-800 text-white"
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownloadCSV}
+          className="bg-gray-900 border-gray-800 text-gray-300 hover:bg-gray-800"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          CSV 다운로드
+        </Button>
+      </div>
+
+      {/* 통계 요약 */}
+      <div className="text-sm text-gray-400">
+        총 {filteredAndSortedData.length}개 지역 표시
+      </div>
+
+      {/* 테이블 */}
+      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-800/50">
+              <tr>
+                <th className="px-4 py-3 text-left">
+                  <button
+                    onClick={() => handleSort('region')}
+                    className="flex items-center gap-1 text-xs font-medium text-gray-300 hover:text-white"
+                  >
+                    지역
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => handleSort('total')}
+                    className="flex items-center gap-1 ml-auto text-xs font-medium text-gray-300 hover:text-white"
+                  >
+                    전체
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => handleSort('rate')}
+                    className="flex items-center gap-1 ml-auto text-xs font-medium text-gray-300 hover:text-white"
+                  >
+                    관점률
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => handleSort('assigned')}
+                    className="flex items-center gap-1 ml-auto text-xs font-medium text-gray-300 hover:text-white"
+                  >
+                    일정추가
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => handleSort('fieldInspected')}
+                    className="flex items-center gap-1 ml-auto text-xs font-medium text-gray-300 hover:text-white"
+                  >
+                    현장점검
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-center">
+                  <span className="text-xs font-medium text-gray-300">진척률</span>
+                </th>
+                <th className="px-4 py-3 text-center">
+                  <span className="text-xs font-medium text-gray-300">상세</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              {filteredAndSortedData.map((region) => (
+                <tr
+                  key={region.region}
+                  className="hover:bg-gray-800/50 transition-colors"
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{getStatusIndicator(region.rate)}</span>
+                      <span className="text-sm font-medium text-white">
+                        {region.region}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-sm text-gray-300">
+                      {formatNumber(region.total)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className={`text-sm font-semibold ${getStatusColor(region.rate)}`}>
+                      {region.rate.toFixed(1)}%
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-sm text-orange-400">
+                      {region.assigned}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-sm text-green-400">
+                      {region.fieldInspected}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-16 bg-gray-800 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full ${
+                            region.rate >= 80
+                              ? 'bg-green-500'
+                              : region.rate >= 60
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                          }`}
+                          style={{ width: `${Math.min(region.rate, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRegionClick(region)}
+                      className="text-blue-400 hover:text-blue-300 hover:bg-gray-800"
+                    >
+                      보기
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 빈 결과 메시지 */}
+      {filteredAndSortedData.length === 0 && (
+        <div className="text-center py-8 text-gray-400">
+          검색 결과가 없습니다.
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,276 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { isAllowedEmailDomain } from '@/lib/auth/config';
+import { rateLimits } from '@/lib/rate-limit';
+import { checkOtpRateLimit } from '@/lib/auth/otp-rate-limiter';
+import { sendResendEmail } from '@/lib/email/retry-helper';
+
+// 환경변수 검증
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.RESEND_API_KEY) {
+  throw new Error('Missing required environment variables for OTP service');
+}
+
+// Service Role 클라이언트 생성 (auth.users 확인용)
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
+export async function POST(request: NextRequest) {
+  try {
+    const { email } = await request.json();
+
+    // 이메일 도메인 검증 먼저 (불필요한 rate limit 체크 방지)
+    if (!isAllowedEmailDomain(email)) {
+      return NextResponse.json(
+        { error: '허용되지 않은 이메일 도메인입니다.' },
+        { status: 400 }
+      );
+    }
+
+    // DB 기반 Rate Limiting 체크 (서버 사이드, 이메일 기반)
+    const dbRateLimit = await checkOtpRateLimit(email);
+    if (!dbRateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `OTP 요청 횟수 초과. ${Math.ceil(dbRateLimit.retryAfterSeconds! / 60)}분 후 다시 시도해주세요.`,
+          retryAfter: dbRateLimit.resetAt.toISOString(),
+          retryAfterSeconds: dbRateLimit.retryAfterSeconds
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '3',
+            'X-RateLimit-Remaining': dbRateLimit.remaining.toString(),
+            'X-RateLimit-Reset': dbRateLimit.resetAt.toISOString(),
+            'Retry-After': dbRateLimit.retryAfterSeconds!.toString()
+          }
+        }
+      );
+    }
+
+    // 클라이언트 사이드 Rate Limiting 체크 (IP 기반, 추가 보안 레이어)
+    const clientRateLimit = await rateLimits.sendOtp(request);
+    if (!clientRateLimit.success) {
+      const retryAfterSeconds = Math.ceil((clientRateLimit.reset.getTime() - Date.now()) / 1000);
+
+      return NextResponse.json(
+        {
+          error: '너무 많은 요청입니다. 잠시 후 다시 시도해주세요.',
+          retryAfter: clientRateLimit.reset.toISOString(),
+          retryAfterSeconds
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': clientRateLimit.limit.toString(),
+            'X-RateLimit-Remaining': clientRateLimit.remaining.toString(),
+            'X-RateLimit-Reset': clientRateLimit.reset.toISOString(),
+            'Retry-After': retryAfterSeconds.toString()
+          }
+        }
+      );
+    }
+
+    const supabase = await createClient();
+
+    // 1. user_profiles 테이블 확인 - 활성 사용자만 체크 (거부된 사용자는 재가입 허용)
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('email, role, is_active')
+      .eq('email', email)
+      .single();
+
+    if (existingProfile) {
+      // 거부된 사용자(rejected)이거나 비활성 사용자는 재가입 허용
+      const isRejected = existingProfile.role === 'rejected' || existingProfile.is_active === false;
+
+      if (!isRejected) {
+        return NextResponse.json(
+          {
+            error: '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+            code: 'EMAIL_ALREADY_EXISTS'
+          },
+          { status: 409 } // Conflict
+        );
+      }
+
+      // 거부된 사용자는 기존 프로필 삭제 후 재가입 진행
+      await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('email', email);
+    }
+
+    // 2. auth.users 테이블 확인 (Service Role 사용)
+    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (authError) {
+      console.error('Auth users check error:', authError);
+      // Auth 확인 실패 시에도 계속 진행 (fallback)
+    } else {
+      const existingAuthUser = authUsers.users.find(user => user.email === email);
+
+      if (existingAuthUser) {
+        return NextResponse.json(
+          {
+            error: '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+            code: 'EMAIL_ALREADY_EXISTS'
+          },
+          { status: 409 } // Conflict
+        );
+      }
+    }
+
+    // 기존 OTP 정리 (동일 이메일의 모든 OTP 삭제 - 재발송 시 혼란 방지)
+    await supabaseAdmin
+      .from('email_verification_codes')
+      .delete()
+      .eq('email', email);
+
+    // 6자리 랜덤 코드 생성
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15분 후 만료 (보안 강화)
+
+    // OTP를 데이터베이스에 저장 - Admin 클라이언트 사용 (세션 없는 사용자도 저장 가능)
+    const { data: insertData, error: insertError } = await supabaseAdmin
+      .from('email_verification_codes')
+      .insert({
+        email,
+        code: otp,
+        expires_at: expiresAt.toISOString()
+      })
+      .select('id')
+      .single();
+
+    if (insertError || !insertData) {
+      console.error('OTP 저장 실패:', insertError);
+      return NextResponse.json(
+        { error: 'OTP 생성 실패' },
+        { status: 500 }
+      );
+    }
+
+    const otpRecordId = insertData.id;
+
+    // Resend API를 재시도 로직과 함께 호출
+    try {
+      await sendResendEmail(
+        process.env.RESEND_API_KEY,
+        {
+          from: 'noreply@aed.pics',
+          to: email,
+          subject: `AED 점검 시스템 - 인증번호: ${otp}`,
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>AED 픽스 - 이메일 인증</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #030712 0%, #111827 50%, #030712 100%);">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #030712 0%, #111827 50%, #030712 100%); padding: 40px 20px;">
+                <tr>
+                  <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(16px); border-radius: 16px; border: 1px solid rgba(34, 197, 94, 0.2); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 197, 94, 0.1); overflow: hidden;">
+
+                      <!-- Logo Header -->
+                      <tr>
+                        <td style="padding: 40px 30px 30px; text-align: center;">
+                          <div style="display: inline-block; position: relative; width: 80px; height: 80px; margin-bottom: 20px;">
+                            <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); border-radius: 50%; opacity: 0.3; animation: pulse 2s infinite;"></div>
+                            <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); border-radius: 50%;">
+                              <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M50 85C50 85 20 60 20 40C20 30 25 25 32 25C38 25 44 28 50 35C56 28 62 25 68 25C75 25 80 30 80 40C80 60 50 85 50 85Z" fill="white"/>
+                                <path d="M55 35L45 50H55L40 65L60 45H50L55 35Z" fill="#10b981" stroke="#10b981" stroke-width="2"/>
+                              </svg>
+                            </div>
+                          </div>
+                          <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">AED 픽스</h1>
+                          <p style="margin: 8px 0 0 0; font-size: 14px;">
+                            <span style="color: #fcd34d; font-weight: 700;">AED</span>
+                            <span style="color: #9ca3af;"> </span>
+                            <span style="color: #fcd34d; font-weight: 700;">pic</span>
+                            <span style="color: #9ca3af;">k up </span>
+                            <span style="color: #fcd34d; font-weight: 700;">s</span>
+                            <span style="color: #9ca3af;">ystem</span>
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Content -->
+                      <tr>
+                        <td style="padding: 0 30px 40px;">
+                          <!-- OTP Box with Glow Effect -->
+                          <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%); border: 2px solid rgba(34, 197, 94, 0.5); border-radius: 12px; padding: 30px 20px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 40px rgba(34, 197, 94, 0.15);">
+                            <p style="margin: 0 0 20px 0; color: #fbbf24; font-size: 14px; font-weight: 600; text-align: center;">
+                              인증번호를 15분내에 입력해주세요
+                            </p>
+                            <div style="font-size: 52px; font-weight: 800; color: #22c55e; letter-spacing: 8px; user-select: all; font-family: 'Courier New', monospace; text-shadow: 0 0 20px rgba(34, 197, 94, 0.3);">
+                              ${otp}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td style="background: rgba(17, 24, 39, 0.8); padding: 24px 30px; text-align: center; border-top: 1px solid rgba(75, 85, 99, 0.3);">
+                          <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 12px;">
+                            본 메일은 발신 전용입니다. 문의사항은 관할 응급의료지원센터로 연락해주세요.
+                          </p>
+                          <p style="margin: 0; color: #4b5563; font-size: 11px;">
+                            © 2025 AED 픽스 aed.pics · 국립중앙의료원 중앙응급의료센터
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `
+        },
+        {
+          maxRetries: 3,
+          initialDelay: 1000, // 1초
+          exponentialBase: 2
+        }
+      );
+    } catch (emailError) {
+      console.error('Email send failed after retries:', emailError);
+
+      // 이메일 발송 실패 시 저장된 OTP 삭제 (사용자 혼란 방지)
+      await supabaseAdmin
+        .from('email_verification_codes')
+        .delete()
+        .eq('id', otpRecordId);
+
+      return NextResponse.json(
+        { error: '이메일 발송 실패. 잠시 후 다시 시도해주세요.' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('OTP 발송 오류:', error);
+    return NextResponse.json(
+      { error: '서버 오류' },
+      { status: 500 }
+    );
+  }
+}

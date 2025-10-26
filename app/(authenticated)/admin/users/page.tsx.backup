@@ -1,0 +1,653 @@
+'use client';
+
+import { useState, useEffect, useReducer, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { UserProfile, UserRole } from '@/packages/types';
+import { canApproveUsers } from '@/lib/auth/config';
+import { getAllowedRegions, isValidRegionForRole } from '@/lib/constants/regions';
+import { ToastProvider, useToast } from '@/components/ui/Toast';
+import { Search, User, Calendar, Building, MapPin, Phone, Mail, ChevronRight, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+
+interface UserWithProfile {
+  id: string;
+  email: string;
+  fullName?: string;
+  phone?: string;
+  organizationId?: string;
+  organization?: { id: string; name: string; region_code: string } | null;
+  organization_id?: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  created_at: string;
+  updated_at: string;
+  department?: string;
+  region_code?: string;
+  organization_name?: string;
+  health_center?: string;
+  last_login_at?: string;
+  login_count?: number;
+}
+
+interface ApprovalFormData {
+  role: UserRole;
+  organizationId?: string;
+  regionCode?: string;
+  department?: string;
+  memo?: string;
+}
+
+// 이메일 도메인 기반 자동 추천
+function getRecommendation(user: UserWithProfile): ApprovalFormData {
+  const domain = user.email.split('@')[1];
+
+  // NMC 도메인
+  if (domain === 'nmc.or.kr') {
+    return {
+      role: 'emergency_center_admin',
+      regionCode: 'KR',
+      department: user.department
+    };
+  }
+
+  // korea.kr 도메인은 다양한 공공기관에서 사용하므로
+  // 구체적인 역할은 수동으로 지정하도록 함
+
+  // 기본값
+  return {
+    role: 'local_admin',
+    department: user.department
+  };
+}
+
+// 상태 관리 리듀서
+type State = {
+  loading: boolean;
+  users: UserWithProfile[];
+  organizations: Array<{ id: string; name: string; region_code: string; type: string }>;
+  currentUser: UserProfile | null;
+  selectedUser: UserWithProfile | null;
+  filter: 'all' | 'pending' | 'approved' | 'rejected';
+  searchQuery: string;
+  error: string | null;
+};
+
+type Action =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_USERS'; payload: UserWithProfile[] }
+  | { type: 'SET_ORGANIZATIONS'; payload: State['organizations'] }
+  | { type: 'SET_CURRENT_USER'; payload: UserProfile | null }
+  | { type: 'SET_SELECTED_USER'; payload: UserWithProfile | null }
+  | { type: 'SET_FILTER'; payload: State['filter'] }
+  | { type: 'SET_SEARCH'; payload: string }
+  | { type: 'SET_ERROR'; payload: string | null };
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_USERS':
+      return { ...state, users: action.payload };
+    case 'SET_ORGANIZATIONS':
+      return { ...state, organizations: action.payload };
+    case 'SET_CURRENT_USER':
+      return { ...state, currentUser: action.payload };
+    case 'SET_SELECTED_USER':
+      return { ...state, selectedUser: action.payload };
+    case 'SET_FILTER':
+      return { ...state, filter: action.payload };
+    case 'SET_SEARCH':
+      return { ...state, searchQuery: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    default:
+      return state;
+  }
+}
+
+function AdminUsersContent() {
+  const router = useRouter();
+  const supabase = createClient();
+  const { showSuccess, showError } = useToast();
+
+  const [state, dispatch] = useReducer(reducer, {
+    loading: true,
+    users: [],
+    organizations: [],
+    currentUser: null,
+    selectedUser: null,
+    filter: 'pending',
+    searchQuery: '',
+    error: null
+  });
+
+  const [formData, setFormData] = useState<ApprovalFormData>({
+    role: 'local_admin'
+  });
+  const [processing, setProcessing] = useState(false);
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    checkAuthAndLoadData();
+  }, []);
+
+  // 실시간 구독
+  useEffect(() => {
+    if (!state.currentUser) return;
+
+    const channel = supabase
+      .channel('user_profiles_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_profiles'
+        },
+        (payload) => {
+          console.log('실시간 업데이트:', payload);
+          // 변경사항 발생 시 목록 새로고침
+          checkAuthAndLoadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [state.currentUser]);  
+
+  const checkAuthAndLoadData = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+
+    try {
+      // 현재 사용자 확인
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user?.email) {
+        router.push('/auth/login');
+        return;
+      }
+
+      // 사용자 프로필 로드
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // 권한 확인
+      if (!profile || !canApproveUsers(profile.role)) {
+        router.push('/dashboard');
+        return;
+      }
+
+      dispatch({ type: 'SET_CURRENT_USER', payload: profile });
+
+      // 사용자 목록 로드
+      const { data: users, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('*, organization:organization_id (id, name, region_code)')
+        .order('created_at', { ascending: false });
+
+      if (usersError) throw usersError;
+      dispatch({ type: 'SET_USERS', payload: users || [] });
+
+      // 조직 목록 로드
+      const { data: orgs, error: orgsError } = await supabase
+        .from('organizations')
+        .select('id, name, region_code, type')
+        .order('name');
+
+      if (orgsError) throw orgsError;
+      dispatch({ type: 'SET_ORGANIZATIONS', payload: orgs || [] });
+
+    } catch (error) {
+      console.error('Data loading error:', error);
+      dispatch({ type: 'SET_ERROR', payload: '데이터를 불러오는데 실패했습니다.' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // 필터링된 사용자 목록
+  const filteredUsers = state.users.filter(user => {
+    // 상태 필터
+    if (state.filter === 'pending' && user.role !== 'pending_approval') return false;
+    if (state.filter === 'approved' && user.role === 'pending_approval') return false;
+    if (state.filter === 'rejected' && !user.isActive) return false;
+
+    // 검색 필터
+    if (state.searchQuery) {
+      const query = state.searchQuery.toLowerCase();
+      return (
+        user.email.toLowerCase().includes(query) ||
+        user.fullName?.toLowerCase().includes(query) ||
+        user.organization_name?.toLowerCase().includes(query) ||
+        user.health_center?.toLowerCase().includes(query)
+      );
+    }
+
+    return true;
+  });
+
+  // 사용자 선택 시
+  const handleSelectUser = (user: UserWithProfile) => {
+    dispatch({ type: 'SET_SELECTED_USER', payload: user });
+
+    // 추천값 설정
+    const recommendation = getRecommendation(user);
+    setFormData(recommendation);
+  };
+
+  // 승인 처리
+  const handleApprove = async () => {
+    if (!state.selectedUser || !formData.organizationId) {
+      showError('필수 정보를 모두 입력해주세요.');
+      return;
+    }
+
+    // 유효성 검증
+    if (!isValidRegionForRole(formData.regionCode || '', formData.role)) {
+      showError('선택한 역할과 지역이 일치하지 않습니다.');
+      return;
+    }
+
+    setProcessing(true);
+
+    try {
+      const response = await fetch('/api/admin/users/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: state.selectedUser.id,
+          ...formData
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || '승인 실패');
+      }
+
+      showSuccess(`${state.selectedUser.fullName || state.selectedUser.email} 승인 완료`);
+
+      // 목록 새로고침
+      await checkAuthAndLoadData();
+      dispatch({ type: 'SET_SELECTED_USER', payload: null });
+
+    } catch (error) {
+      showError((error as Error).message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 거부 처리
+  const handleReject = async (reason: string) => {
+    if (!state.selectedUser) return;
+
+    setProcessing(true);
+
+    try {
+      // 거부 처리 API 호출
+      const response = await fetch('/api/admin/users/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: state.selectedUser.id,
+          reason
+        })
+      });
+
+      if (!response.ok) throw new Error('거부 처리 실패');
+
+      showSuccess('거부 처리 완료');
+      await checkAuthAndLoadData();
+      dispatch({ type: 'SET_SELECTED_USER', payload: null });
+
+    } catch (error) {
+      showError((error as Error).message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 통계 카드 데이터 - useMemo로 안정화
+  const stats = useMemo(() => ({
+    pending: state.users.filter(u => u.role === 'pending_approval').length,
+    approved: state.users.filter(u => u.role !== 'pending_approval' && u.isActive).length,
+    total: state.users.length
+  }), [state.users]);
+
+  if (state.loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950">
+        {/* 헤더 */}
+        <div className="bg-gray-900 border-b border-gray-800 p-6">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-2xl font-bold text-white mb-4">사용자 승인 관리</h1>
+
+            {/* 통계 카드 */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm">승인 대기</p>
+                    <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
+                  </div>
+                  <Clock className="w-8 h-8 text-yellow-400 opacity-50" />
+                </div>
+              </div>
+              <div className="bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm">승인됨</p>
+                    <p className="text-2xl font-bold text-green-400">{stats.approved}</p>
+                  </div>
+                  <CheckCircle className="w-8 h-8 text-green-400 opacity-50" />
+                </div>
+              </div>
+              <div className="bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm">전체 사용자</p>
+                    <p className="text-2xl font-bold text-blue-400">{stats.total}</p>
+                  </div>
+                  <User className="w-8 h-8 text-blue-400 opacity-50" />
+                </div>
+              </div>
+            </div>
+
+            {/* 필터 & 검색 */}
+            <div className="flex gap-4">
+              <div className="flex gap-2">
+                {(['pending', 'approved', 'all'] as const).map(filter => (
+                  <button
+                    key={filter}
+                    onClick={() => dispatch({ type: 'SET_FILTER', payload: filter })}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      state.filter === filter
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    {filter === 'pending' ? '승인 대기' : filter === 'approved' ? '승인됨' : '전체'}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={state.searchQuery}
+                  onChange={(e) => dispatch({ type: 'SET_SEARCH', payload: e.target.value })}
+                  placeholder="이름, 이메일, 소속으로 검색..."
+                  className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 메인 컨텐츠 - 2 패널 레이아웃 */}
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* 좌측 패널 - 사용자 목록 */}
+            <div className="lg:col-span-1 bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+              <div className="p-4 border-b border-gray-800">
+                <h2 className="font-semibold text-white">
+                  신청자 목록 ({filteredUsers.length})
+                </h2>
+              </div>
+              <div className="max-h-[calc(100vh-24rem)] overflow-y-auto">
+                {filteredUsers.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    {state.searchQuery ? '검색 결과가 없습니다.' : '대기 중인 신청이 없습니다.'}
+                  </div>
+                ) : (
+                  filteredUsers.map(user => (
+                    <button
+                      key={user.id}
+                      onClick={() => handleSelectUser(user)}
+                      className={`w-full p-4 text-left border-b border-gray-800 hover:bg-gray-800 transition-colors ${
+                        state.selectedUser?.id === user.id ? 'bg-gray-800' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-white">
+                              {user.fullName || '이름 미입력'}
+                            </span>
+                            {user.role === 'pending_approval' && (
+                              <span className="px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-400 rounded">
+                                대기중
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-400 mt-1">{user.email}</p>
+                          {user.organization_name && (
+                            <p className="text-xs text-gray-500 mt-1">{user.organization_name}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-2">
+                            신청일: {new Date(user.created_at).toLocaleDateString('ko-KR')}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* 우측 패널 - 상세 정보 & 승인 폼 */}
+            <div className="lg:col-span-2">
+              {state.selectedUser ? (
+                <div className="bg-gray-900 rounded-lg border border-gray-800">
+                  {/* 사용자 정보 */}
+                  <div className="p-6 border-b border-gray-800">
+                    <h2 className="text-xl font-bold text-white mb-4">신청자 상세 정보</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-400 text-sm">이름:</span>
+                          <span className="text-white font-medium">
+                            {state.selectedUser.fullName || '미입력'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-400 text-sm">이메일:</span>
+                          <span className="text-white font-medium">{state.selectedUser.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-400 text-sm">전화번호:</span>
+                          <span className="text-white font-medium">
+                            {state.selectedUser.phone || '미입력'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Building className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-400 text-sm">신청 소속:</span>
+                          <span className="text-white font-medium">
+                            {state.selectedUser.organization_name || state.selectedUser.health_center || '미입력'}
+                          </span>
+                        </div>
+                        {state.selectedUser.department && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-400 text-sm">부서:</span>
+                            <span className="text-white font-medium">{state.selectedUser.department}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-400 text-sm">신청일:</span>
+                          <span className="text-white font-medium">
+                            {new Date(state.selectedUser.created_at).toLocaleString('ko-KR')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 추천 설정 알림 */}
+                  {getRecommendation(state.selectedUser).role && (
+                    <div className="mx-6 mt-6 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-semibold text-blue-400">추천 설정</h4>
+                          <p className="text-xs text-gray-400 mt-1">
+                            이메일 도메인과 신청 정보를 기반으로 추천된 설정입니다.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 승인 폼 */}
+                  <div className="p-6 space-y-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">승인 설정</h3>
+
+                    {/* 역할 선택 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        역할 <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={formData.role}
+                        onChange={(e) => {
+                          const role = e.target.value as UserRole;
+                          const allowedRegions = getAllowedRegions(role);
+                          setFormData({
+                            ...formData,
+                            role,
+                            regionCode: allowedRegions.length === 1 ? allowedRegions[0].code : formData.regionCode
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:outline-none"
+                      >
+                        <option value="local_admin">보건소 담당자</option>
+                        <option value="regional_admin">시도 관리자</option>
+                        <option value="ministry_admin">보건복지부</option>
+                        <option value="emergency_center_admin">중앙응급의료센터</option>
+                      </select>
+                    </div>
+
+                    {/* 지역 선택 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        지역 <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={formData.regionCode || ''}
+                        onChange={(e) => setFormData({ ...formData, regionCode: e.target.value, organizationId: undefined })}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:outline-none"
+                        disabled={getAllowedRegions(formData.role).length === 1}
+                      >
+                        <option value="">선택하세요</option>
+                        {getAllowedRegions(formData.role).map(region => (
+                          <option key={region.code} value={region.code}>
+                            {region.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 소속기관 선택 */}
+                    {formData.regionCode && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          소속기관 <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                          value={formData.organizationId || ''}
+                          onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:outline-none"
+                        >
+                          <option value="">선택하세요</option>
+                          {state.organizations
+                            .filter(org => org.region_code === formData.regionCode)
+                            .map(org => (
+                              <option key={org.id} value={org.id}>
+                                {org.name}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* 메모 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        내부 메모 (선택)
+                      </label>
+                      <textarea
+                        value={formData.memo || ''}
+                        onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+                        rows={3}
+                        placeholder="승인 관련 메모..."
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* 액션 버튼 */}
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={handleApprove}
+                        disabled={processing || !formData.organizationId}
+                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                      >
+                        {processing ? '처리 중...' : '승인'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const reason = prompt('거부 사유를 입력하세요:');
+                          if (reason) handleReject(reason);
+                        }}
+                        disabled={processing}
+                        className="flex-1 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                      >
+                        거부
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-12">
+                  <div className="text-center">
+                    <User className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400">좌측 목록에서 사용자를 선택하세요</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+    </div>
+  );
+}
+
+export default function ImprovedAdminUsersPage() {
+  return (
+    <ToastProvider>
+      <AdminUsersContent />
+    </ToastProvider>
+  );
+}

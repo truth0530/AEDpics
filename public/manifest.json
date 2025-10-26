@@ -1,0 +1,28 @@
+{
+  "name": "AED 스마트 점검 시스템",
+  "short_name": "AED Check",
+  "description": "자동심장충격기 현지점검 관리 시스템",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#10b981",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "utilities"],
+  "shortcuts": [
+    {
+      "name": "점검 시작",
+      "short_name": "점검",
+      "description": "AED 점검 시작",
+      "url": "/tutorial",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

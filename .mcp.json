@@ -1,0 +1,17 @@
+{
+  "servers": {
+    "filesystem": {
+      "description": "Filesystem access for the project",
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "."],
+      "type": "stdio"
+    },
+    "shadcn": {
+      "description": "Shadcn UI component manager",
+      "command": "node",
+      "args": ["mcp-server/index.js"],
+      "type": "stdio",
+      "cwd": "."
+    }
+  }
+}

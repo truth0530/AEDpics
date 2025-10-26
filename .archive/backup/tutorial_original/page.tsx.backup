@@ -1,0 +1,188 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function TutorialPage() {
+  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // 모바일/PC 구분
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  useEffect(() => {
+    // PC 버전 tutorial-pc.html 로드
+    if (!isMobile) {
+      window.location.href = '/tutorial-pc.html';
+    }
+    // 모바일 버전은 아래 컴포넌트로 처리
+  }, [isMobile]);
+
+  if (!isMobile) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p>PC 버전 튜토리얼로 이동 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 모바일 버전 튜토리얼
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      {/* 헤더 */}
+      <div className="bg-gray-900/80 backdrop-blur-xl border-b border-gray-700/50 p-4 sticky top-0 z-50">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => router.push('/')}
+            className="text-gray-400 hover:text-white"
+          >
+            ← 홈으로
+          </button>
+          <h1 className="text-lg font-bold text-green-400">AED Smart Check</h1>
+          <div className="w-16"></div>
+        </div>
+      </div>
+
+      {/* 메인 콘텐츠 */}
+      <div className="p-4">
+        {/* 상태 카드 */}
+        <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 mb-6 border border-gray-700/50">
+          <div className="text-center mb-6">
+            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-12 h-12 text-green-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 85C50 85 20 60 20 40C20 30 25 25 32 25C38 25 44 28 50 35C56 28 62 25 68 25C75 25 80 30 80 40C80 60 50 85 50 85Z" fill="currentColor"/>
+                <path d="M55 35L45 50H55L40 65L60 45H50L55 35Z" fill="#ffffff" strokeWidth="2" stroke="#ffffff"/>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">자동심장충격기</h2>
+            <p className="text-gray-400">현지점검 튜토리얼</p>
+          </div>
+
+          {/* 기본 정보 */}
+          <div className="space-y-4">
+            <div className="bg-gray-700/50 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">장비 위치</span>
+                <span className="text-white font-semibold">1층 로비</span>
+              </div>
+            </div>
+            
+            <div className="bg-gray-700/50 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">관리기관</span>
+                <span className="text-white font-semibold">서울시 중구 보건소</span>
+              </div>
+            </div>
+
+            <div className="bg-gray-700/50 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">마지막 점검</span>
+                <span className="text-green-400 font-semibold">2024.12.01</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 점검 항목들 */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-white mb-4">점검 항목</h3>
+          
+          {/* 패드 유효기간 */}
+          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-4 border border-gray-700/50">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-300">패드 유효기간</span>
+              <span className="text-green-400 text-sm">정상</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">2025.08.15까지 (8개월 남음)</p>
+          </div>
+
+          {/* 배터리 상태 */}
+          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-4 border border-gray-700/50">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-300">배터리 상태</span>
+              <span className="text-green-400 text-sm">정상</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="bg-green-500 h-2 rounded-full" style={{width: '92%'}}></div>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">충전량 92%</p>
+          </div>
+
+          {/* 외관 상태 */}
+          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-4 border border-gray-700/50">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-300">외관 상태</span>
+              <span className="text-green-400 text-sm">양호</span>
+            </div>
+            <p className="text-xs text-gray-400">손상 없음, 청결 상태 양호</p>
+          </div>
+
+          {/* 접근성 */}
+          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-4 border border-gray-700/50">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-300">접근성</span>
+              <span className="text-green-400 text-sm">우수</span>
+            </div>
+            <p className="text-xs text-gray-400">24시간 접근 가능, 안내표지 명확</p>
+          </div>
+        </div>
+
+        {/* 액션 버튼들 */}
+        <div className="mt-8 space-y-4">
+          <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-4 rounded-2xl hover:from-green-600 hover:to-green-700 transition-all">
+            점검 완료 처리
+          </button>
+          
+          <button className="w-full bg-gray-700/50 text-white font-semibold py-4 rounded-2xl hover:bg-gray-600/50 transition-all">
+            사진 첨부
+          </button>
+          
+          <button className="w-full bg-gray-700/50 text-white font-semibold py-4 rounded-2xl hover:bg-gray-600/50 transition-all">
+            문제 신고
+          </button>
+        </div>
+
+        {/* 하단 안내 */}
+        <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+            </svg>
+            <div>
+              <p className="text-blue-400 text-sm font-semibold mb-1">튜토리얼 모드</p>
+              <p className="text-gray-300 text-xs leading-relaxed">
+                실제 데이터에는 영향을 주지 않습니다. 
+                정식 사용을 원하시면 로그인 후 이용해주세요.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 하단 네비게이션 */}
+        <div className="mt-8 mb-4 text-center">
+          <button
+            onClick={() => router.push('/auth/signin')}
+            className="text-green-400 hover:text-green-300 text-sm font-semibold"
+          >
+            로그인하여 정식 버전 사용하기 →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

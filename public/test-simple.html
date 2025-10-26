@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Simple Kakao Map Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #map { width: 100%; height: 400px; border: 2px solid #333; }
+        .log { padding: 10px; margin: 10px 0; background: #f0f0f0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Simple Kakao Map Test</h1>
+    <div id="log" class="log">Loading...</div>
+    <div id="map"></div>
+
+    <script>
+        const log = (msg) => {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toISOString().substr(11, 8);
+            logDiv.innerHTML += `<div>[${time}] ${msg}</div>`;
+            console.log(msg);
+        };
+
+        log('Page loaded');
+
+        // Create script element
+        const script = document.createElement('script');
+        script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=6e3339a5cbd61f1f3b08e3a06071795b';
+
+        script.onload = () => {
+            log('Script loaded');
+
+            // Check if kakao object exists
+            if (typeof kakao !== 'undefined') {
+                log('✅ kakao object found');
+
+                // Try to create map immediately
+                const container = document.getElementById('map');
+                const options = {
+                    center: new kakao.maps.LatLng(37.5665, 126.9780),
+                    level: 3
+                };
+
+                try {
+                    const map = new kakao.maps.Map(container, options);
+                    log('✅ Map created successfully!');
+                } catch (e) {
+                    log('❌ Error creating map: ' + e.message);
+                }
+            } else {
+                log('❌ kakao object not found');
+            }
+        };
+
+        script.onerror = (e) => {
+            log('❌ Script failed to load');
+            console.error(e);
+        };
+
+        document.head.appendChild(script);
+        log('Script tag appended');
+    </script>
+</body>
+</html>

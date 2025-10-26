@@ -1,0 +1,149 @@
+# Migration 파일 감사 보고서
+
+## 검토 일자: 2025-10-04 (최종 업데이트)
+
+## 📊 전체 현황
+- 총 파일 수: 41개
+- 검토 대상: 41개
+- 보관 권장: 15개
+- 유지 필요: 31개 (신규 7개 추가)
+
+---
+
+## ✅ 유지해야 할 Migration (31개)
+
+### 핵심 스키마 (필수)
+1. ✅ `01_initial_schema.sql` - 기본 테이블 (organizations, user_profiles)
+2. ✅ `02_initial_data.sql` - 초기 데이터
+3. ✅ `03_rls_policies.sql` - RLS 정책
+4. ✅ `04_aed_tables.sql` - AED 데이터 테이블
+
+### 기능 관련 (필수)
+5. ✅ `05_team_management.sql` - 팀 관리
+6. ✅ `06_fix_inspection_schema.sql` - 점검 스키마 수정
+7. ✅ `10_aed_data_rls_policy.sql` - AED 데이터 RLS
+8. ✅ `11_create_notifications.sql` - 알림 테이블
+9. ✅ `12_fix_notification_policies.sql` - 알림 정책 수정
+10. ✅ `13_add_last_login.sql` - 마지막 로그인
+11. ✅ `14_login_tracking.sql` - 로그인 추적
+12. ✅ `15_organization_changes.sql` - 조직 변경
+13. ✅ `16_inspection_schedule_entries.sql` - 점검 스케줄
+14. ✅ `17_duplicate_equipment_handling.sql` - 중복 장비 처리
+15. ✅ `18_notification_system.sql` - 알림 시스템
+16. ✅ `19_gps_issues_table.sql` - GPS 이슈 테이블
+17. ✅ `20_create_inspection_sessions.sql` - 점검 세션
+18. ✅ `25_otp_rate_limiting.sql` - OTP 제한
+19. ✅ `28_add_field_changes_to_sessions.sql` - 필드 변경 추적
+20. ✅ `31_add_coordinates_to_organizations.sql` - 조직 좌표 추가
+21. ✅ `20250927_create_missing_tables.sql` - 누락 테이블 생성 (2025년 9월)
+22. ✅ `20250927_create_audit_logs.sql` - 감사 로그 (2025년 9월)
+23. ✅ `20250927_safe_audit_logs_setup.sql` - 안전한 감사 로그 설정 (2025년 9월)
+
+### **최종 성공한 RPC 함수 (중요!)**
+24. ⭐ **`40_fix_varchar_text_mismatch.sql`** - get_aed_data_filtered 최종 버전
+
+### **2025-10-04 신규 추가: 구비의무기관 매칭 시스템 (7개)**
+25. 🆕 **`41_target_list_2024_upload.sql`** - 구비의무기관 리스트 테이블 생성
+26. 🆕 **`42_target_key_generation.sql`** - target_key 자동 생성 로직
+27. 🆕 **`43_aed_target_mapping.sql`** - AED ↔ 구비의무기관 영속성 매핑 테이블
+28. 🆕 **`44_auto_matching_function.sql`** - 자동 매칭 알고리즘 (equipment_serial 기반)
+29. 🆕 **`45_fix_one_to_many_mapping.sql`** - 1:N 매핑 지원 (1 기관 → N 관리번호)
+30. 🆕 **`46_auto_match_management_number.sql`** - 관리번호 기반 그룹 매칭
+31. 🆕 **`47_target_matching_ui_functions.sql`** - 매칭 관리 UI 지원 함수
+    - get_target_matching_list_2024() - UI용 매칭 목록 조회
+    - 신뢰도/지역/검색/확정 여부 필터링
+    - ⚠️ 모든 VARCHAR 컬럼에 ::VARCHAR 캐스팅 적용
+
+---
+
+## 🗑️ 삭제/보관 권장 Migration (15개)
+
+### 잘못된 스키마를 가진 RPC 함수들 (삭제 권장)
+1. ❌ `07_health_center_mapping.sql` - 잘못된 health_center_id 사용
+2. ❌ `08_health_center_initial_data.sql` - 잘못된 스키마 데이터
+3. ❌ `09_aed_query_functions.sql` - 오래된 RPC 함수 (40번으로 대체됨)
+4. ❌ `23_aed_query_functions_complete.sql` - 오래된 RPC 함수 (40번으로 대체됨)
+
+### 롤백/중복 파일 (삭제 권장)
+5. ❌ `26_region_code_migration.sql` - 잘못된 region_code 추가 시도
+6. ❌ `26_region_code_migration_rollback.sql` - 위의 롤백
+7. ❌ `27_persistent_mapping_table.sql` - region_code 매핑 테이블 (불필요)
+
+### 임시/테스트 파일 (삭제 권장)
+8. ❌ `APPLY_PENDING_MIGRATIONS.sql` - 임시 실행 파일
+9. ❌ `ESSENTIAL_MIGRATIONS_2025_10_04_v3.sql` - **잘못된 스키마 포함!**
+10. ❌ `RUN_THIS_FOR_AED_MAP.sql` - 임시 실행 파일
+
+---
+
+## 🔥 즉시 삭제해야 할 파일 (위험!)
+
+### **`ESSENTIAL_MIGRATIONS_2025_10_04_v3.sql`** ⚠️
+- **이유**: 존재하지 않는 컬럼 참조 (health_center_id, region_code 등)
+- **영향**: 혼란의 근원, 잘못된 참조 문서
+- **조치**: 즉시 삭제 또는 _archive로 이동
+
+---
+
+## 📝 권장 조치사항
+
+### 1단계: 즉시 보관
+```bash
+cd /Users/kwangsunglee/Projects/AED_check2025/aed-check-system/supabase/migrations
+
+# 잘못된 스키마 파일들 보관
+mv 07_health_center_mapping.sql _archive_failed_attempts/
+mv 08_health_center_initial_data.sql _archive_failed_attempts/
+mv 09_aed_query_functions.sql _archive_failed_attempts/
+mv 23_aed_query_functions_complete.sql _archive_failed_attempts/
+mv 26_region_code_migration.sql _archive_failed_attempts/
+mv 26_region_code_migration_rollback.sql _archive_failed_attempts/
+mv 27_persistent_mapping_table.sql _archive_failed_attempts/
+
+# 임시 파일들 보관
+mv APPLY_PENDING_MIGRATIONS.sql _archive_failed_attempts/
+mv ESSENTIAL_MIGRATIONS_2025_10_04_v3.sql _archive_failed_attempts/
+mv RUN_THIS_FOR_AED_MAP.sql _archive_failed_attempts/
+```
+
+### 2단계: 최종 정리 확인
+보관 후 남는 파일:
+- 01-06: 기본 스키마
+- 10-20: 기능 추가
+- 25, 28, 31: 기능 개선
+- 20250127, 20250927: 누락 테이블/감사 로그
+- **40: 최종 RPC 함수** ⭐
+- **41-46: 구비의무기관 매칭 시스템** 🆕
+
+---
+
+## ⚠️ 주의사항
+
+### 이미 실행된 Migration은?
+- Supabase는 실행된 migration을 `supabase_migrations` 테이블에 기록
+- 파일을 삭제해도 이미 실행된 것은 영향 없음
+- 단, 향후 참조/혼란 방지를 위해 정리 필요
+
+### 40번 이후 새 RPC 함수가 필요하면?
+- **절대 09번, 23번 참조하지 말 것**
+- **40번을 기준으로 수정**
+- **실제 스키마 재확인** (`information_schema.columns`)
+
+### 41-47번 구비의무기관 매칭 시스템 사용 시
+- **반드시 실제 스키마 확인**: `installation_institution` (NOT `institution_name`)
+- **category 주의**: `category_1, category_2, category_3` (NOT `category`)
+- **VARCHAR 캐스팅 필수**: 모든 VARCHAR 컬럼에 `::VARCHAR` 명시
+- **실행 순서**: 41 → 42 → 43 → 44 → 45 → 46 → 47
+
+---
+
+## 🎯 최종 권장사항
+
+1. ✅ **즉시**: ESSENTIAL_MIGRATIONS_2025_10_04_v3.sql 삭제
+2. ✅ **단기**: 잘못된 스키마 파일 9개 보관
+3. ✅ **장기**: Migration 40번을 정상 작동 기준으로 유지
+4. 🆕 **신규**: 41-47번 구비의무기관 매칭 시스템 순차 실행
+5. ⚠️ **주의**: 47번은 VARCHAR 캐스팅 규칙 완벽 준수
+
+## 검토자: Claude
+## 최종 업데이트: 2025-10-04 (구비의무기관 매칭 시스템 추가)

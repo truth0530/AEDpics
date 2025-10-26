@@ -1,0 +1,428 @@
+# CLAUDE.md - AI 개발 가이드라인
+
+## 프로젝트 문서 목차
+
+### 핵심 문서
+- [README.md](README.md) - 프로젝트 개요 및 시작 가이드
+- [CLAUDE.md](CLAUDE.md) - AI 개발 가이드라인 (현재 문서)
+- [docs/시작하기.md](docs/시작하기.md) - 상세 시작 가이드
+
+### 마이그레이션 문서
+- [docs/migration/NCP_마이그레이션_완전가이드.md](docs/migration/NCP_마이그레이션_완전가이드.md) - NCP 마이그레이션 전체 과정
+- [docs/migration/MIGRATION_STATUS.md](docs/migration/MIGRATION_STATUS.md) - 현재 마이그레이션 상태
+- [docs/migration/NCP_MIGRATION_PHASE1_COMPLETE.md](docs/migration/NCP_MIGRATION_PHASE1_COMPLETE.md) - Phase 1 완료 보고서
+
+### 데이터 Import
+- [docs/AED_DATA_IMPORT_GUIDE.md](docs/AED_DATA_IMPORT_GUIDE.md) - AED 데이터 import 가이드
+- [docs/CSV_STRUCTURE_ANALYSIS.md](docs/CSV_STRUCTURE_ANALYSIS.md) - e-gen CSV 파일 구조 분석
+
+### 레퍼런스
+- [docs/reference/ARCHITECTURE_OVERVIEW.md](docs/reference/ARCHITECTURE_OVERVIEW.md) - 시스템 아키텍처
+- [docs/reference/SUPABASE_SCHEMA_COMPLETE.md](docs/reference/SUPABASE_SCHEMA_COMPLETE.md) - 레거시 Supabase 스키마 분석 (참조용)
+- [docs/reference/REGION_CODE_GUIDELINES.md](docs/reference/REGION_CODE_GUIDELINES.md) - 지역 코드 가이드라인
+- [docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md](docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md) - 프로젝트 구조 재정리 보고서
+
+## 절대 준수 사항
+
+### 1. 이모지 사용 절대 금지
+- 모든 문서, 코드, 커밋 메시지에서 이모지 사용 금지
+- 프로페셔널한 텍스트 기반 커뮤니케이션만 사용
+
+### 1-1. 핵심 권한 체계 (절대 불변)
+**AED 데이터 조회 권한 규칙 - 이 프로젝트의 핵심**
+
+#### 전국 권한 (17개 시도 + 전체 선택 가능)
+- **@nmc.or.kr** (중앙응급의료센터 및 17개 시도 응급의료지원센터):
+  - 17개 시도 자유 선택, "전체" 선택 가능, 시군구 자유 선택
+  - 중앙응급의료센터: 기본 선택값 없음
+  - 시도 응급의료지원센터: 해당 시도가 기본 선택됨 (변경 가능)
+- **@korea.kr 중 보건복지부**: 17개 시도 자유 선택, "전체" 선택 가능, 시군구 자유 선택
+
+#### 시도 권한 (소속 시도 고정, 시군구 선택 가능)
+- **@korea.kr 중 시청/도청**: 소속 시도 고정 표시, 해당 시도 내 시군구 자유 선택 또는 "전체"
+
+#### 시군구 권한 (소속 시도 및 시군구 고정)
+- **@korea.kr 중 보건소**: 소속 시도 고정 표시, 소속 시군구 고정 표시, 변경 불가
+- **두 가지 조회 기준 선택 가능**:
+  - 주소 기준: 해당 시군구에 물리적으로 설치된 AED
+  - 관할보건소 기준: 해당 보건소가 관리하는 AED (타 지역 포함 가능)
+
+**중요**: KR(중앙)은 조직 구분용 코드로 실제 AED 데이터가 없음. 데이터 조회 선택지에서 제외
+
+### 1-2. AED 데이터 지역 구분 체계
+**이원화된 지역 관리 시스템**
+
+#### 물리적 주소 기준
+- **시도/시군구 칼럼**: AED가 실제 설치된 위치
+- 예: 서울특별시 강서구에 설치된 AED
+
+#### 관할보건소 기준 (jurisdiction_health_center)
+- **관할보건소 칼럼**: AED를 관리하는 보건소
+- 물리적 위치와 다를 수 있음
+- 예: 서울 강서구에 있지만 대구 중구 보건소가 관리
+
+**조회 기준 선택**: 사용자는 라디오 버튼으로 두 기준 중 선택
+- 주소 기준: 선택한 지역에 설치된 모든 AED
+- 관할보건소 기준: 소속 보건소가 관리하는 모든 AED (타 지역 포함)
+
+### 2. 임의 추정 및 단정 금지
+- 확인되지 않은 수치를 추정하여 사실처럼 사용 금지
+- 예시: "한국의 AED가 30,000대"라고 임의로 추정하여 문서 작성 금지
+- 불확실한 정보는 반드시 사용자에게 확인 요청
+- 추정이 필요한 경우 "약", "추정" 등을 명시하고 근거 제시
+- 현재 확정된 수치:
+  - AED 총 대수: 81,331대 (2025년 9월 인트라넷 집계)
+  - 보건소 수: 261개 (2024년 12월 보건복지부 공식 통계)
+  - 시도: 17개 (대한민국 행정구역)
+
+### 3. 임의 작업 금지
+- 사용자가 명시적으로 요청하지 않은 기능 추가 금지
+- 창의적 해석이나 확장 금지
+- 요청사항만 정확히 구현
+
+### 4. 단계적 진행 원칙
+- 한 번에 하나의 작업만 수행
+- 이전 단계 완료 확인 후 다음 단계 진행
+- 건너뛰기나 병렬 작업 금지 (명시적 요청 제외)
+
+## 필수: GitHub 푸시 전 검사 절차
+
+### 반드시 실행해야 할 명령어 (순서대로)
+
+#### 1. TypeScript 타입 검사
+```bash
+npm run tsc
+# 또는
+npx tsc --noEmit
+```
+- **목적**: TypeScript 컴파일 오류 사전 방지
+- **실패 시**: 모든 타입 오류를 수정할 때까지 푸시 금지
+
+#### 2. ESLint 검사
+```bash
+npm run lint
+# 또는
+npx next lint
+```
+- **목적**: 코드 스타일 및 품질 검사
+- **실패 시**: 모든 lint 오류를 수정할 때까지 푸시 금지
+
+#### 3. 로컬 빌드 테스트
+```bash
+npm run build
+```
+- **목적**: Next.js 프로덕션 빌드 가능 여부 확인
+- **실패 시**: 빌드 오류를 모두 해결할 때까지 푸시 금지
+
+#### 4. 자동 수정 가능한 오류 처리
+```bash
+# ESLint 자동 수정
+npm run lint -- --fix
+
+# Prettier 포매팅 (설치된 경우)
+npx prettier --write .
+```
+
+### 푸시 전 체크리스트
+- [ ] `npm run tsc` 통과
+- [ ] `npm run lint` 통과
+- [ ] `npm run build` 통과
+- [ ] 불필요한 console.log 제거
+- [ ] 주석 처리된 코드 정리
+- [ ] import 정리 (사용하지 않는 import 제거)
+
+### 일반적인 오류 해결 방법
+
+#### TypeScript 오류
+- `any` 타입 사용 금지 → 적절한 타입 정의
+- `@ts-ignore` 사용 금지 → 타입 문제 근본 해결
+- undefined/null 체크 → optional chaining (?.) 사용
+
+#### ESLint 오류
+- `no-explicit-any`: interface나 type 정의
+- `no-unused-vars`: 사용하지 않는 변수 제거
+- `react-hooks/exhaustive-deps`: 의존성 배열 수정
+
+### 커밋 및 푸시 순서
+```bash
+# 1. 모든 검사 통과 확인
+npm run tsc && npm run lint && npm run build
+
+# 2. 성공 시에만 커밋
+git add .
+git commit -m "커밋 메시지"
+
+# 3. 푸시
+git push origin main
+```
+
+## NCP 마이그레이션 프로젝트 개요
+
+### 프로젝트 목적
+- 국정원 인증 획득을 위한 네이버 클라우드 플랫폼(NCP) 전환
+- Supabase에서 NCP PostgreSQL로 데이터베이스 마이그레이션
+- 자체 호스팅 환경 구축
+
+### 현재 상태 (2025-10-25)
+- Phase 1: 인프라 구축 완료
+- Phase 2: 데이터 마이그레이션 완료 (315개 레코드)
+- 프로젝트 구조 재정리 완료
+
+### 기술 스택
+- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Database**: NCP PostgreSQL (pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com)
+- **ORM**: Prisma (23개 모델, 25개 enum)
+- **Map**: Kakao Maps API
+- **Email**: Resend API
+
+### 데이터베이스 연결 정보
+```bash
+# NCP PostgreSQL
+Host: pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com
+Port: 5432
+Database: aedpics_production
+Schema: aedpics
+User: aedpics_admin
+```
+
+### 환경변수 구성
+```bash
+# .env.local
+DATABASE_URL="postgresql://aedpics_admin:PASSWORD@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
+NEXT_PUBLIC_KAKAO_MAP_APP_KEY="your_kakao_key"
+RESEND_API_KEY="your_resend_key"
+```
+
+## 개발 체크리스트
+
+### Phase 1: 인프라 구축 (완료)
+- [x] Next.js 프로젝트 초기화
+- [x] TypeScript 설정
+- [x] Tailwind CSS 설정
+- [x] NCP PostgreSQL 연결
+- [x] Prisma 스키마 구축 (979줄)
+- [x] 환경변수 구성
+- [x] Git 저장소 설정
+
+### Phase 2: 데이터 마이그레이션 (완료)
+- [x] Prisma 스키마 정의 (23개 모델)
+- [x] 마이그레이션 스크립트 작성
+- [x] Organizations 마이그레이션 (291개)
+- [x] UserProfiles 마이그레이션 (24개)
+- [x] 필드 매핑 및 Enum 변환
+- [x] 중복 제거 로직 구현
+- [x] 프로젝트 구조 재정리
+
+### Phase 3: AED 데이터 Import (진행 예정)
+- [ ] e-gen CSV 파일 준비 (81,331개 레코드)
+- [ ] upload_to_ncp.py 실행
+- [ ] 데이터 검증 및 정합성 확인
+- [ ] GPS 좌표 검증
+
+### Phase 4: 기능 구현
+#### 인증 체계
+- [x] 3단계 가입 프로세스 UI
+- [x] 이메일 도메인 검증 (클라이언트)
+- [x] Master 계정 환경변수 설정
+- [x] 프로필 설정 페이지 구현
+- [x] 승인 대기 페이지 구현
+- [x] 약관 동의 UX 개선
+- [x] Resend API 이메일 연동
+- [ ] 서버사이드 도메인 검증
+- [ ] 이메일 인증 플로우 테스트
+- [ ] 관리자 승인 기능 완성
+
+#### 데이터 관리
+- [ ] 조직 관리 CRUD
+- [ ] 사용자 관리 인터페이스
+- [ ] AED 장치 등록 기능
+- [ ] e-gen 데이터 동기화
+- [ ] 데이터 정규화 로직
+- [ ] 중복 제거 알고리즘
+
+#### 점검 기능 (Stage 1 완료)
+- [x] 즉시 점검 기능 (QuickInspectPanel 구현)
+- [x] 점검 스케줄링 (ScheduleModal 구현)
+- [x] 역할 기반 액션 버튼 (ActionButtons.tsx)
+- [x] 점검 API 엔드포인트 (/api/inspections/quick)
+- [x] 스케줄 API 엔드포인트 (/api/schedules)
+- [x] inspection_schedule_entries 테이블 구축
+- [ ] 점검 이력 조회 화면
+- [ ] 사진 업로드 기능
+- [ ] 점검 결과 저장
+
+#### PWA 모바일 앱
+- [ ] PWA 설정 (next-pwa)
+- [ ] Service Worker 구현
+- [ ] 오프라인 모드 지원
+- [ ] IndexedDB 동기화
+- [ ] 모바일 최적화 UI
+- [ ] 카메라 API 연동
+
+#### 시스템 테스트
+- [ ] 단위 테스트 작성
+- [ ] 통합 테스트 구현
+- [ ] 부하 테스트 (250개 보건소)
+- [ ] 보안 취약점 점검
+- [ ] 성능 최적화
+- [ ] 버그 수정
+
+#### 배포 준비
+- [ ] NCP 프로덕션 환경 설정
+- [ ] CI/CD 파이프라인
+- [ ] 모니터링 시스템
+- [ ] 백업 체계 구축
+- [ ] 사용자 매뉴얼 작성
+- [ ] 교육 자료 제작
+
+### Phase 5: 확장 기능 (MVP 이후)
+- [ ] e-gen API 직접 연동
+- [ ] 실시간 동기화
+- [ ] AI 패턴 분석
+- [ ] 고급 리포트
+- [ ] 자동 알림
+- [ ] 빅데이터 플랫폼
+
+## 프로젝트 구조
+
+```
+AEDpics/
+├── README.md                   # 프로젝트 README
+├── CLAUDE.md                   # AI 개발 가이드라인 (현재 문서)
+├── package.json
+├── tsconfig.json
+├── next.config.ts
+├── tailwind.config.ts
+├── eslint.config.mjs
+├── postcss.config.mjs
+├── middleware.ts
+├── prisma/
+│   └── schema.prisma           # 979줄, 23개 모델, 25개 enum
+├── app/                        # Next.js 앱 디렉토리
+├── components/                 # React 컴포넌트
+├── lib/                        # 통합 라이브러리
+│   ├── types/                  # TypeScript 타입 정의
+│   ├── utils/                  # 유틸리티 함수
+│   ├── hooks/                  # React 커스텀 훅
+│   └── supabase/               # 레거시 Supabase 클라이언트 (참조용)
+├── scripts/                    # 스크립트
+│   ├── upload_to_ncp.py        # AED 데이터 Import
+│   ├── migration/              # 마이그레이션 스크립트
+│   ├── test/                   # 테스트 스크립트
+│   └── utils/                  # 유틸리티 스크립트
+├── docs/                       # 문서
+│   ├── migration/              # 마이그레이션 문서
+│   ├── reference/              # 레퍼런스 문서
+│   ├── planning/               # 개선 계획 문서
+│   └── archive/                # 구버전 문서
+├── config/                     # 설정 파일 참조 사본
+└── .archive/                   # 구버전 파일 보관
+```
+
+## 코드 작성 규칙
+
+### 명명 규칙
+- 컴포넌트: PascalCase
+- 함수/변수: camelCase
+- 상수: UPPER_SNAKE_CASE
+- 파일명: kebab-case
+
+### 타입 정의
+- 모든 타입은 `lib/types/`에 정의
+- interface 우선 사용
+- any 타입 사용 금지
+
+### 주석 규칙
+- 한글 주석 사용 가능
+- 복잡한 로직에만 주석 추가
+- TODO 주석은 이슈로 전환
+
+## 보안 체크리스트
+
+- [ ] 환경변수 노출 방지
+- [ ] SQL Injection 방지 (Prisma 사용)
+- [ ] XSS 방지
+- [ ] CSRF 토큰 구현
+- [ ] Rate Limiting
+- [ ] 로깅 시스템
+- [ ] 민감정보 암호화
+
+## 성능 최적화 주의사항
+
+### 서버 컴포넌트 사용 시 주의
+- 서버 컴포넌트에서 무거운 연산 피하기
+- 데이터베이스 쿼리 최적화 필수
+- 불필요한 서버 요청 최소화
+- 캐싱 전략 적극 활용
+
+### 미들웨어 최적화
+- 미들웨어는 Edge Runtime에서 실행됨을 인지
+- 무거운 라이브러리 import 금지
+- 조건부 실행으로 불필요한 처리 방지
+- matcher 패턴으로 특정 경로만 처리
+
+### API 라우트 최적화
+- Response 스트리밍 활용
+- 대용량 데이터는 페이지네이션 필수
+- 동시 요청 수 제한 (Rate Limiting)
+- 에러 핸들링으로 빠른 실패 처리
+
+## 성능 목표
+
+- 페이지 로드: < 3초
+- API 응답: < 500ms
+- 동시 접속: 250개 보건소
+- 가용성: 99.9%
+
+## 커밋 메시지 규칙
+
+```
+feat: 새로운 기능 추가
+fix: 버그 수정
+docs: 문서 수정
+style: 코드 포맷팅
+refactor: 코드 리팩토링
+test: 테스트 추가
+chore: 빌드 작업 수정
+migrate: 마이그레이션 관련
+```
+
+## 작업 전 체크리스트
+
+작업 시작 전 반드시 확인:
+1. [ ] 마이그레이션 상태 확인 (docs/migration/MIGRATION_STATUS.md)
+2. [ ] 사용자 요청사항 명확히 파악
+3. [ ] 관련 문서 모두 참조
+4. [ ] 이전 작업 완료 상태 확인
+5. [ ] 테스트 계획 수립
+
+## 작업 후 체크리스트
+
+작업 완료 후 반드시 확인:
+1. [ ] 요청사항 모두 구현됨
+2. [ ] 테스트 통과
+3. [ ] 문서 업데이트
+4. [ ] 코드 리뷰 체크
+5. [ ] 다음 단계 준비
+
+## 연락처 정보
+
+- 시스템 관리자: truth0530@nmc.or.kr
+- 기술 지원: inhak@nmc.or.kr
+- 프로젝트 매니저: woo@nmc.or.kr
+
+---
+
+**마지막 업데이트**: 2025-10-25
+**문서 버전**: 2.0.0
+
+---
+
+**관련 문서**:
+- 프로젝트 개요: [README.md](README.md)
+- 마이그레이션 가이드: [docs/migration/NCP_마이그레이션_완전가이드.md](docs/migration/NCP_마이그레이션_완전가이드.md)
+- 마이그레이션 상태: [docs/migration/MIGRATION_STATUS.md](docs/migration/MIGRATION_STATUS.md)
+- AED 데이터 Import: [docs/AED_DATA_IMPORT_GUIDE.md](docs/AED_DATA_IMPORT_GUIDE.md)
+- 시스템 아키텍처: [docs/reference/ARCHITECTURE_OVERVIEW.md](docs/reference/ARCHITECTURE_OVERVIEW.md)
+- 프로젝트 구조 재정리: [docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md](docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md)

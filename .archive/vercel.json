@@ -1,0 +1,52 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "regions": ["icn1"],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "app/api/admin/run-migration/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/auth/send-otp/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/auth/verify-otp/route.ts": {
+      "maxDuration": 10
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/gps-analysis",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

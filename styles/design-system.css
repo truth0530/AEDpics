@@ -1,0 +1,255 @@
+/* AED Smart Inspector 3.0 Design System */
+
+/* Color Palette */
+:root {
+  /* Primary Colors */
+  --primary-blue: #3B82F6;
+  --primary-blue-dark: #2563EB;
+  --primary-blue-light: #60A5FA;
+
+  --primary-green: #10B981;
+  --primary-green-dark: #059669;
+  --primary-green-light: #34D399;
+
+  --primary-red: #EF4444;
+  --primary-red-dark: #DC2626;
+  --primary-red-light: #F87171;
+
+  --primary-yellow: #F59E0B;
+  --primary-yellow-dark: #D97706;
+  --primary-yellow-light: #FBD636;
+
+  /* Background Colors */
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-tertiary: #334155;
+  --bg-hover: #475569;
+  --bg-disabled: #64748B;
+
+  /* Surface Colors */
+  --surface-card: rgba(30, 41, 59, 0.9);
+  --surface-overlay: rgba(15, 23, 42, 0.95);
+  --surface-modal: rgba(15, 23, 42, 0.98);
+
+  /* Text Colors */
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #64748B;
+  --text-disabled: #475569;
+  --text-inverse: #0F172A;
+
+  /* Border Colors */
+  --border-default: rgba(51, 65, 85, 0.5);
+  --border-light: rgba(51, 65, 85, 0.3);
+  --border-focus: #3B82F6;
+  --border-error: #EF4444;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  --font-mono: 'SF Mono', 'Consolas', monospace;
+
+  /* Font Sizes */
+  --text-h1: 2rem;
+  --text-h2: 1.5rem;
+  --text-h3: 1.25rem;
+  --text-lg: 1.125rem;
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.75rem;
+
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.5);
+  --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.5);
+  --shadow-glow-red: 0 0 20px rgba(239, 68, 68, 0.5);
+
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --transition-slow: 300ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-index */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-popover: 50;
+  --z-tooltip: 60;
+  --z-toast: 70;
+
+  /* Touch Targets */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 56px;
+
+  /* Breakpoints */
+  --mobile: 320px;
+  --mobile-lg: 480px;
+  --tablet: 768px;
+  --desktop: 1024px;
+  --desktop-lg: 1280px;
+  --desktop-xl: 1536px;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #0F172A;
+    --text-primary: #F8FAFC;
+  }
+}
+
+/* Utility Classes */
+.glass-morphism {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+.glass-morphism-light {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(51, 65, 85, 0.2);
+}
+
+/* Priority Color Classes */
+.priority-urgent {
+  --priority-color: var(--primary-red);
+  --priority-bg: rgba(239, 68, 68, 0.1);
+  --priority-border: var(--primary-red);
+}
+
+.priority-warning {
+  --priority-color: var(--primary-yellow);
+  --priority-bg: rgba(245, 158, 11, 0.1);
+  --priority-border: var(--primary-yellow);
+}
+
+.priority-normal {
+  --priority-color: var(--primary-green);
+  --priority-bg: rgba(16, 185, 129, 0.1);
+  --priority-border: var(--primary-green);
+}
+
+.priority-completed {
+  --priority-color: var(--primary-blue);
+  --priority-bg: rgba(59, 130, 246, 0.1);
+  --priority-border: var(--primary-blue);
+}
+
+/* Animation Classes */
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up var(--transition-base) var(--easing-default);
+}
+
+.animate-scale-in {
+  animation: scale-in var(--transition-base) var(--easing-default);
+}
+
+/* Focus Styles */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--border-focus);
+}
+
+/* Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: var(--radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Mobile-first Responsive Utilities */
+@media (min-width: 768px) {
+  .md\:text-h1 { font-size: var(--text-h1); }
+  .md\:text-h2 { font-size: var(--text-h2); }
+  .md\:text-h3 { font-size: var(--text-h3); }
+}
+
+@media (min-width: 1024px) {
+  .lg\:text-h1 { font-size: calc(var(--text-h1) * 1.1); }
+  .lg\:text-h2 { font-size: calc(var(--text-h2) * 1.1); }
+  .lg\:text-h3 { font-size: calc(var(--text-h3) * 1.1); }
+}

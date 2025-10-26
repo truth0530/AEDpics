@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AED 스마트 점검 시스템 구축 계획</title>
+    <!-- 중요: 이 문서에서는 이모지 사용을 절대 금지합니다. 전문적인 프레젠테이션으로서 텍스트와 아이콘만 사용하십시오. -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #000000;
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .slide {
+            width: 90%;
+            max-width: 1200px;
+            height: 85vh;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+            padding: 60px;
+            display: none;
+            animation: slideIn 0.5s ease-out;
+            overflow-y: auto;
+            color: #ffffff;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-header {
+            border-bottom: 3px solid #10b981;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #ffffff;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 36px;
+            color: #ffffff;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            font-size: 24px;
+            color: #e0e0e0;
+            font-weight: 500;
+            margin: 20px 0;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #b0b0b0;
+            font-weight: 400;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 4px solid #10b981;
+            transition: transform 0.3s ease;
+            border: 1px solid #333;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.1);
+        }
+
+        .card p {
+            color: #e0e0e0;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #10b981 0%, #0e8a66 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .process-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .process-step {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            min-width: 150px;
+        }
+
+        .process-icon {
+            width: 80px;
+            height: 80px;
+            background: #1a1a1a;
+            border: 2px solid #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 20px;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .arrow {
+            font-size: 24px;
+            color: #666;
+            margin: 0 10px;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 30px;
+        }
+
+        .timeline-date {
+            width: 120px;
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-left: 30px;
+            border-left: 2px solid #333;
+            position: relative;
+            color: #e0e0e0;
+        }
+
+        .timeline-content:before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+
+        .comparison-table th {
+            background: #1a1a1a;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #ffffff;
+            border: 1px solid #333;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border: 1px solid #333;
+            color: #e0e0e0;
+        }
+
+        .highlight {
+            background: #10b981;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .improvement {
+            color: #4ade80;
+            font-weight: 700;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: #1a1a1a;
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #0e8a66;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background: #333;
+            cursor: not-allowed;
+        }
+
+        .slide-number {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            color: #e0e0e0;
+        }
+
+        .feature-list li:before {
+            content: '✓';
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, #10b981 0%, #0e8a66 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .cta-box h3 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .cta-box p {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .slide {
+                padding: 30px;
+            }
+            
+            h1 {
+                font-size: 32px;
+            }
+            
+            h2 {
+                font-size: 28px;
+            }
+            
+            .process-flow {
+                flex-direction: column;
+            }
+            
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- 슬라이드 1: 표지 -->
+        <div class="slide active">
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+                <h1 style="font-size: 56px; margin-bottom: 30px;">자동심장충격기(AED)<br>스마트 점검 시스템 구축 계획</h1>
+                <p class="subtitle">데이터 기반 현장 점검 효율화 방안</p>
+                <div style="margin-top: 60px;">
+                    <div class="content-grid" style="max-width: 600px;">
+                        <div class="stat-box">
+                            <div class="stat-number">81,331</div>
+                            <div class="stat-label">전국 AED</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number">통합</div>
+                            <div class="stat-label">데이터 연계</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number">실시간</div>
+                            <div class="stat-label">현황 파악</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 슬라이드 2: 현장 방문 시나리오 요약 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>현장 방문 시나리오 요약</h2>
+            </div>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>1. 전국 현황</h3>
+                    <ul style="margin-top: 15px; list-style: none; padding-left: 0; line-height: 1.8; color: #e0e0e0;">
+                        <li>• 전국 보건소별 구비의무기관 장비 대수 평균: 약 160대</li>
+                        <li>• 1위 제주 제주시: 1,361대</li>
+                        <li>• 2위 경기 화성시: 850대</li>
+                        <li>• 20위 울산 남구: 357대</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>2. 1일 점검 가능 대수 (1인, 4시간 기준)</h3>
+                    <ul style="margin-top: 15px; list-style: none; padding-left: 0; line-height: 1.8; color: #e0e0e0;">
+                        <li>• 평균 약 9~10대 점검 가능</li>
+                        <li>• 최적 동선(도심 밀집): 최대 12대</li>
+                        <li>• 분산 동선(농촌·광역 이동): 최소 5대</li>
+                        <li>→ 동선 및 밀집도에 따라 편차 발생</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>3. 점검 소요기간 시나리오</h3>
+                    <ul style="margin-top: 15px; list-style: none; padding-left: 0; line-height: 1.8; color: #e0e0e0;">
+                        <li>• 1인 단독 진행: 최소 수개월(수백 일) 소요</li>
+                        <li>• 10인 팀 단위 진행: 최소 수십 일, 최대 수개월 소요</li>
+                        <li>→ 지역별 밀집도, 이동 거리, 장비 총량에 따라 변동</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cta-box" style="margin-top: 40px;">
+                <p style="font-size: 20px;">현재 인력과 시스템으로는 전수 점검이 현실적으로 불가능한 상황입니다.</p>
+            </div>
+        </div>
+
+        <!-- 슬라이드 3: 현재의 문제점 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>왜 새로운 시스템이 필요한가?</h2>
+            </div>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>데이터 신뢰성 부족</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">월 1회 자체 점검 데이터의 <span class="highlight">정확성을 검증할 방법 없음</span></p>
+                </div>
+                <div class="card">
+                    <h3>현장 점검 비효율</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">담당자 1명이 수백 개 장비를 비체계적으로 점검하여 <span class="highlight">실제 현장방문 후 점검이 어려움</span></p>
+                </div>
+                <div class="card">
+                    <h3>점검 품질 관리 부재</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">관리책임자 점검 결과 검토 체계 없어 <span class="highlight">점검률 저조 및 유효기간 만료 방치</span></p>
+                </div>
+                <div class="card">
+                    <h3>정보 단절</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">e-gen 점검결과와 보건소 현장 점검 결과를 <span class="highlight">연계하기 어려운 문제 수년간 방치</span></p>
+                </div>
+            </div>
+            <div class="cta-box" style="margin-top: 40px;">
+                <p style="font-size: 20px;">현재 시스템으로는 관리책임자 따로 보건소 따로 점검만 할 뿐 그 결과를 제대로 활용할 수 없습니다.</p>
+            </div>
+        </div>
+
+        <!-- 슬라이드 4: 시스템 개요 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>2단계 검증 시스템으로 해결합니다</h2>
+            </div>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="process-icon">1차</div>
+                    <h3>1차 점검</h3>
+                    <p style="color: #e0e0e0;">관리책임자<br>월 1회 점검</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="process-step">
+                    <div class="process-icon">DB</div>
+                    <h3>데이터 수집</h3>
+                    <p style="color: #e0e0e0;">자동 반입<br>정규화</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="process-step">
+                    <div class="process-icon">2차</div>
+                    <h3>2차 검증</h3>
+                    <p style="color: #e0e0e0;">보건소 담당자<br>현장 확인</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="process-step">
+                    <div class="process-icon">QA</div>
+                    <h3>품질 개선</h3>
+                    <p style="color: #e0e0e0;">실시간<br>현행화</p>
+                </div>
+            </div>
+            <div class="content-grid" style="margin-top: 50px;">
+                <div class="card">
+                    <h3>기존 데이터 활용</h3>
+                    <p>매월 수집되는 점검 데이터를 자동으로 분석하여 문제점 사전 파악</p>
+                </div>
+                <div class="card">
+                    <h3>스마트 검증</h3>
+                    <p>유효기간 임박, 점검 미흡, 점검률 저조 기관 등 우선순위 제시</p>
+                </div>
+                <div class="card">
+                    <h3>실시간 개선</h3>
+                    <p>현장에서 바로 수정하고 관리책임자에게 즉시 전달</p>
+                </div>
+            </div>
+            <div style="position: absolute; bottom: 20px; left: 60px; right: 60px; text-align: center;">
+                <p style="font-size: 12px; color: #666; line-height: 1.4;">
+                    * 현재는 e-gen 데이터를 수동으로 연계하여 기본적인 우선순위 관리 / 향후 e-gen 직접 연계 시 고급 분석 가능
+                </p>
+            </div>
+        </div>
+
+        <!-- 슬라이드 5: 스마트 현장 지원 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>점검 효율을 3배 높이는 현장 지원 시스템</h2>
+            </div>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>우선순위 자동 분석</h3>
+                    <ul style="margin-top: 15px; padding-left: 20px; line-height: 1.8; color: #e0e0e0;">
+                        <li>패드 유효기간 30일 이내</li>
+                        <li>60일 이상 미점검 장비</li>
+                        <li>점검률 50% 미만 기관</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>최적 동선 제공</h3>
+                    <ul style="margin-top: 15px; padding-left: 20px; line-height: 1.8; color: #e0e0e0;">
+                        <li>AI 기반 최단 경로 계산</li>
+                        <li>실시간 교통 상황 반영</li>
+                        <li>팀별 구역 자동 배분</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>즉시 검색</h3>
+                    <ul style="margin-top: 15px; padding-left: 20px; line-height: 1.8; color: #e0e0e0;">
+                        <li>기관명으로 바로 검색</li>
+                        <li>GPS 기반 주변 장비 표시</li>
+                        <li>완료된 점검 자동 제외</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>보건소 명칭 자동 매칭</h3>
+                    <ul style="margin-top: 15px; padding-left: 20px; line-height: 1.8; color: #e0e0e0;">
+                        <li>247개 인트라넷 보건소 정규화</li>
+                        <li>띄어쓰기, 시도명 차이 자동 처리</li>
+                        <li>분소/지소 18개 특수 케이스 대응</li>
+                    </ul>
+                </div>
+            </div>
+            <table class="comparison-table">
+                <tr>
+                    <th>항목</th>
+                    <th>현재</th>
+                    <th>개선 후</th>
+                    <th>효과</th>
+                </tr>
+                <tr>
+                    <td>일일 점검 가능 대수</td>
+                    <td>10대</td>
+                    <td>30대</td>
+                    <td class="improvement">↑ 200%</td>
+                </tr>
+                <tr>
+                    <td>이동 거리</td>
+                    <td>50km</td>
+                    <td>35km</td>
+                    <td class="improvement">↓ 30%</td>
+                </tr>
+                <tr>
+                    <td>점검 소요 시간</td>
+                    <td>30분/대</td>
+                    <td>10분/대</td>
+                    <td class="improvement">↓ 67%</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 슬라이드 6: 모바일 점검 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>스마트폰 하나로 완성하는 정확한 점검</h2>
+            </div>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="process-icon">터치</div>
+                    <h3>터치로 간단히</h3>
+                    <p style="color: #e0e0e0;">복잡한 입력 없이<br>터치만으로 점검</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="process-step">
+                    <div class="process-icon">카메라</div>
+                    <h3>카메라로 정확히</h3>
+                    <p style="color: #e0e0e0;">제조번호, 유효기간<br>자동 인식</p>
+                </div>
+                <span class="arrow">→</span>
+                <div class="process-step">
+                    <div class="process-icon">지도</div>
+                    <h3>지도로 편리하게</h3>
+                    <p style="color: #e0e0e0;">손가락으로<br>위치 수정</p>
+                </div>
+            </div>
+            <div class="content-grid" style="margin-top: 40px;">
+                <div class="stat-box">
+                    <div class="stat-number">90%</div>
+                    <div class="stat-label">입력 오류 감소</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">70%</div>
+                    <div class="stat-label">점검 시간 단축</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">누구나 사용 가능</div>
+                </div>
+            </div>
+            <ul class="feature-list" style="margin-top: 30px;">
+                <li>큰 버튼과 명확한 UI로 현장에서도 실수 없이 사용</li>
+                <li>OCR 기술로 텍스트 자동 인식, 수정은 간편하게</li>
+                <li>실시간 데이터 검증으로 잘못된 입력 즉시 알림</li>
+            </ul>
+        </div>
+
+        <!-- 슬라이드 7: 팀 협업 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>여러 팀이 효율적으로 협업하는 시스템</h2>
+            </div>
+            <div style="background: #1a1a1a; padding: 30px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #333;">
+                <h3 style="text-align: center; margin-bottom: 20px;">100개 장비를 5개 팀이 효율적으로 분담</h3>
+                <div class="process-flow">
+                    <div class="process-step">
+                        <div class="process-icon">계획</div>
+                        <p style="color: #e0e0e0;"><strong>전체 계획</strong><br>월간 목표 설정</p>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="process-step">
+                        <div class="process-icon">팀</div>
+                        <p style="color: #e0e0e0;"><strong>팀별 배분</strong><br>20개씩 자동 할당</p>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="process-step">
+                        <div class="process-icon">모니터</div>
+                        <p style="color: #e0e0e0;"><strong>실시간 확인</strong><br>진행 상황 모니터링</p>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="process-step">
+                        <div class="process-icon">조정</div>
+                        <p style="color: #e0e0e0;"><strong>유연한 재조정</strong><br>필요시 재분배</p>
+                    </div>
+                </div>
+            </div>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>스마트 할당</h3>
+                    <p>팀 역량과 지역을 고려한 자동 배분으로 균형잡힌 업무 분담</p>
+                </div>
+                <div class="card">
+                    <h3>실시간 협업</h3>
+                    <p>팀별 진행 상황을 실시간으로 공유하여 효율적 협력</p>
+                </div>
+                <div class="card">
+                    <h3>동적 재조정</h3>
+                    <p>진행 상황에 따라 자동으로 업무 재분배 제안</p>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <span class="highlight" style="font-size: 20px; padding: 10px 20px;">목표 달성률 70% → 95%</span>
+            </div>
+        </div>
+
+        <!-- 슬라이드 8: 데이터 품질 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>데이터 품질 강화로 국민 안전 보장</h2>
+            </div>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>자동 검증</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">논리적 오류 즉시 감지<br>
+                    예: 패드 없는데 유효기간 입력</p>
+                </div>
+                <div class="card">
+                    <h3>우선순위 관리</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">유효기간 임박 장비<br>
+                    → 점검 미흡 기관 자동 식별</p>
+                </div>
+                <div class="card">
+                    <h3>실시간 보정</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">현장에서 바로 수정<br>
+                    지적사항 즉시 리포트</p>
+                </div>
+            </div>
+            <table class="comparison-table">
+                <tr>
+                    <th>품질 지표</th>
+                    <th>기존(예시)</th>
+                    <th>목표</th>
+                    <th>개선</th>
+                </tr>
+                <tr>
+                    <td>데이터 정확도</td>
+                    <td>60%</td>
+                    <td>95%</td>
+                    <td class="improvement">↑ 58%</td>
+                </tr>
+                <tr>
+                    <td>점검률 저조 기관 관리</td>
+                    <td>수동</td>
+                    <td>자동</td>
+                    <td class="improvement">신규</td>
+                </tr>
+                <tr>
+                    <td>현행화 주기</td>
+                    <td>30일</td>
+                    <td>실시간</td>
+                    <td class="improvement">즉시</td>
+                </tr>
+            </table>
+            <div class="cta-box" style="margin-top: 30px;">
+                <p>점검 결과 제출 현황을 실시간 분석 모니터링이 가능해집니다.</p>
+            </div>
+        </div>
+
+        <!-- 슬라이드 9: 도전 과제 및 해결 방안 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>현실적 도전 과제와 해결 방안</h2>
+            </div>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>e-gen 데이터 연계 제약</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">
+                        <span style="color: #ff6b6b;">도전:</span> DB 직접 접근 불가<br>
+                        <span style="color: #4ade80;">해결:</span> 수동 업로드로 시작, 단계적 API 협의
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>보건소 인력 부족</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">
+                        <span style="color: #ff6b6b;">도전:</span> 담당자 1명이 수백개 관리<br>
+                        <span style="color: #4ade80;">해결:</span> 자동화 최대화, 직관적 UI
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>사용자 저항</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">
+                        <span style="color: #ff6b6b;">도전:</span> 새 시스템 적응 부담<br>
+                        <span style="color: #4ade80;">해결:</span> 충분한 교육, 단계적 전환
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>보건소 명칭 불일치</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">
+                        <span style="color: #ff6b6b;">도전:</span> 인트라넷/공공데이터 명칭 상이<br>
+                        <span style="color: #4ade80;">해결:</span> 정규화 함수로 자동 매칭 구현
+                    </p>
+                </div>
+            </div>
+            <div style="background: #1a1a1a; padding: 20px; border-radius: 12px; margin-top: 30px; border: 1px solid #333;">
+                <h3 style="text-align: center; margin-bottom: 15px; color: #10b981;">구축 전략</h3>
+                <div style="display: flex; justify-content: space-around; align-items: center;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 14px; color: #888;">MVP (3개월)</div>
+                        <div style="font-size: 16px; color: #fff; margin-top: 5px;">전국 261개<br>보건소 기본 기능</div>
+                    </div>
+                    <span style="color: #666; font-size: 24px;">→</span>
+                    <div style="text-align: center;">
+                        <div style="font-size: 14px; color: #888;">고도화 (6개월)</div>
+                        <div style="font-size: 16px; color: #fff; margin-top: 5px;">e-gen 연계<br>고급 분석</div>
+                    </div>
+                    <span style="color: #666; font-size: 24px;">→</span>
+                    <div style="text-align: center;">
+                        <div style="font-size: 14px; color: #888;">완성 (12개월)</div>
+                        <div style="font-size: 16px; color: #fff; margin-top: 5px;">AI 분석<br>완전 자동화</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 슬라이드 10: 점검 방식 결정 사항 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>핵심 결정 사항: 점검 방식의 선택</h2>
+            </div>
+            <div style="background: #1a1a1a; padding: 30px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #333;">
+                <h3 style="text-align: center; margin-bottom: 30px; color: #ff6b6b;">현실적 고민: 이상과 현실 사이</h3>
+                <p style="text-align: center; font-size: 18px; line-height: 1.8; color: #e0e0e0;">
+                    실제 현장 방문 점검을 전제로 시스템을 개발할 것인가?<br>
+                    아니면 현실적으로 서류상 점검 관행을 인정하고 대안을 제공할 것인가?
+                </p>
+            </div>
+            
+            <div class="content-grid">
+                <div class="card" style="border-left-color: #4ade80;">
+                    <h3>방안 A: 현장 방문 중심 시스템</h3>
+                    <p style="margin-top: 15px; line-height: 1.8;">
+                        <strong style="color: #4ade80;">원칙:</strong> 실제 현장 방문을 전제로 한 시스템<br><br>
+                        <strong>장점:</strong><br>
+                        • 데이터 정확성 보장<br>
+                        • 실제 AED 상태 파악 가능<br>
+                        • 국민 안전 직접 기여<br><br>
+                        <strong style="color: #ff6b6b;">단점:</strong><br>
+                        • 현실적으로 전수 점검 불가능<br>
+                        • 인력 부족으로 실행 어려움<br>
+                        • 저항과 회피 가능성
+                    </p>
+                </div>
+                
+                <div class="card" style="border-left-color: #fbbf24;">
+                    <h3>방안 B: 하이브리드 접근</h3>
+                    <p style="margin-top: 15px; line-height: 1.8;">
+                        <strong style="color: #fbbf24;">타협:</strong> 현실을 인정하되 개선 유도<br><br>
+                        <strong>접근법:</strong><br>
+                        • 우선순위 기반 선별 점검<br>
+                        • 엑셀 일괄 제출 옵션 제공<br>
+                        • 단계적 현장 점검 확대<br><br>
+                        <strong style="color: #10b981;">특징:</strong><br>
+                        • 고위험 장비는 반드시 현장 점검<br>
+                        • 일반 장비는 서류 점검 허용<br>
+                        • 점진적 품질 개선
+                    </p>
+                </div>
+                
+                <div class="card" style="border-left-color: #ff6b6b;">
+                    <h3>방안 C: 서류 중심 + 샘플링</h3>
+                    <p style="margin-top: 15px; line-height: 1.8;">
+                        <strong style="color: #ff6b6b;">현실:</strong> 서류 점검 관행 수용<br><br>
+                        <strong>방법:</strong><br>
+                        • 엑셀 일괄 업로드 중심<br>
+                        • 무작위 샘플링 검증<br>
+                        • 이상 징후 감지시만 현장 점검<br><br>
+                        <strong>고려사항:</strong><br>
+                        • 빠른 전수 점검 가능<br>
+                        • 실제 상태 파악 한계<br>
+                        • 형식적 점검 우려
+                    </p>
+                </div>
+            </div>
+            
+            <div class="cta-box" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); margin-top: 30px;">
+                <h3 style="font-size: 24px; margin-bottom: 20px;">권장 방향: 단계적 접근</h3>
+                <p style="font-size: 18px; line-height: 1.8;">
+                    <strong>1단계:</strong> 엑셀 일괄 제출 허용으로 전수 데이터 확보<br>
+                    <strong>2단계:</strong> 우선순위 기반 선별적 현장 점검 실시<br>
+                    <strong>3단계:</strong> 점진적으로 현장 점검 비율 확대
+                </p>
+                <p style="margin-top: 20px; font-size: 16px;">
+                    "완벽한 소수보다 불완전한 전체가 더 나을 수 있다"
+                </p>
+            </div>
+        </div>
+
+        <!-- 슬라이드 11: 구축 일정 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>체계적인 단계별 구축 계획</h2>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">1-2주차</div>
+                    <div class="timeline-content">
+                        <h3>기반 시스템 및 인증 체계 (90% 완료)</h3>
+                        <p>Supabase 설정, 3단계 가입 프로세스, RLS 정책, Master 계정 설정</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">3-4주차</div>
+                    <div class="timeline-content">
+                        <h3>데이터 연계 및 팀 관리</h3>
+                        <p>e-gen 데이터 수동 업로드, 팀원 관리 시스템, 업무 할당 및 스케줄 관리</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">5-6주차</div>
+                    <div class="timeline-content">
+                        <h3>현장 점검 앱 개발</h3>
+                        <p>모바일 PWA 앱, OCR 자동 인식, 지도 기반 위치 수정</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">7-9주차</div>
+                    <div class="timeline-content">
+                        <h3>시범 운영 및 안정화</h3>
+                        <p>파일럿 테스트, 사용자 피드백 반영, 시스템 최적화</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">10-12주차</div>
+                    <div class="timeline-content">
+                        <h3>전국 확대 적용</h3>
+                        <p>전국 보건소 확대, 교육 실시, 운영 안정화</p>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 40px;">
+                <div class="stat-box" style="display: inline-block; padding: 20px 40px;">
+                    <p style="font-size: 20px;">3개월 내 완성 - 신속한 구축으로 즉시 효과 실현</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 슬라이드 12: 팀 관리 시스템 (NEW) -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>통합 팀 관리 및 업무 할당 시스템</h2>
+            </div>
+            <div class="content-grid">
+                <div class="card" style="border-left-color: #10b981;">
+                    <h3>팀원 통합 관리</h3>
+                    <p style="margin-top: 15px; line-height: 1.8;">
+                        <strong style="color: #10b981;">정규직원:</strong> korea.kr 계정 보유자<br>
+                        <strong style="color: #10b981;">임시점검원:</strong> 계정 없이도 등록 가능<br>
+                        <strong style="color: #10b981;">자원봉사자:</strong> 기간제 관리<br><br>
+                        • 조직별 독립된 팀 구성<br>
+                        • 세분화된 권한 설정<br>
+                        • 활동 이력 추적
+                    </p>
+                </div>
+                
+                <div class="card" style="border-left-color: #3b82f6;">
+                    <h3>스마트 업무 할당</h3>
+                    <p style="margin-top: 15px; line-height: 1.8;">
+                        <strong style="color: #3b82f6;">업무 유형:</strong><br>
+                        • 정기 점검<br>
+                        • 긴급 점검<br>
+                        • 유지보수<br>
+                        • 교육 훈련<br><br>
+                        <strong>우선순위 관리:</strong> 긴급/높음/보통/낮음<br>
+                        <strong>상태 추적:</strong> 실시간 진행상황
+                    </p>
+                </div>
+                
+                <div class="card" style="border-left-color: #f59e0b;">
+                    <h3>자동 일정 관리</h3>
+                    <p style="margin-top: 15px; line-height: 1.8;">
+                        <strong style="color: #f59e0b;">반복 일정:</strong><br>
+                        • 일간/주간/월간/분기/연간<br>
+                        • 자동 일정 생성<br>
+                        • 알림 설정<br><br>
+                        <strong>캘린더 뷰:</strong> 직관적 일정 확인<br>
+                        <strong>충돌 방지:</strong> 중복 할당 차단
+                    </p>
+                </div>
+            </div>
+            
+            <div class="cta-box" style="background: linear-gradient(135deg, #065f46 0%, #064e3b 100%); margin-top: 30px;">
+                <h3 style="font-size: 20px; margin-bottom: 15px;">핵심 혜택</h3>
+                <p style="font-size: 16px; line-height: 1.8;">
+                    ✓ korea.kr 계정 없는 임시 점검원도 팀에 포함<br>
+                    ✓ 보건소별 독립적인 팀 운영<br>
+                    ✓ 업무 부담 균등 분배<br>
+                    ✓ 점검 누락 방지
+                </p>
+            </div>
+        </div>
+
+        <!-- 슬라이드 13: 보안 및 인증 체계 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>철저한 보안 및 인증 체계</h2>
+            </div>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>3단계 가입 승인</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">
+                        <span class="highlight">1단계</span> 이메일 인증<br>
+                        <span class="highlight">2단계</span> 프로필 설정<br>
+                        <span class="highlight">3단계</span> 관리자 승인
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>도메인 기반 접근 제한</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">
+                        @korea.kr 정부기관 도메인<br>
+                        @nmc.or.kr 중앙응급의료센터<br>
+                        외부 도메인 <span class="highlight">완전 차단</span>
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>계층별 권한 관리</h3>
+                    <p style="margin-top: 15px; line-height: 1.6;">
+                        Master 시스템 관리자<br>
+                        중앙/시도/보건소별 차등 권한<br>
+                        Row-Level Security 적용
+                    </p>
+                </div>
+            </div>
+            <div style="background: #1a1a1a; padding: 30px; border-radius: 12px; margin-top: 30px; border: 1px solid #333;">
+                <h3 style="text-align: center; margin-bottom: 20px;">보안 강화 조치</h3>
+                <div class="content-grid">
+                    <div class="stat-box">
+                        <div class="stat-number">30분</div>
+                        <div class="stat-label">비활동시 자동 로그아웃</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">영구</div>
+                        <div class="stat-label">모든 점검 이력 보존</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">실시간</div>
+                        <div class="stat-label">비정상 접근 탐지</div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <p style="color: #10b981; font-size: 18px; font-weight: 600;">
+                    개인정보보호법 및 정보보안 규정 완벽 준수
+                </p>
+            </div>
+        </div>
+
+        <!-- 슬라이드 13: 기대 효과 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>측정 가능한 성과 창출</h2>
+            </div>
+            <h3 style="margin-bottom: 20px;">정량적 효과</h3>
+            <table class="comparison-table">
+                <tr>
+                    <th>항목</th>
+                    <th>현재</th>
+                    <th>목표</th>
+                    <th>개선율</th>
+                </tr>
+                <tr>
+                    <td>점검 효율 (일일)</td>
+                    <td>10대</td>
+                    <td>30대</td>
+                    <td class="improvement">200% ↑</td>
+                </tr>
+                <tr>
+                    <td>데이터 정확도</td>
+                    <td>60%</td>
+                    <td>95%</td>
+                    <td class="improvement">58% ↑</td>
+                </tr>
+                <tr>
+                    <td>업무 시간</td>
+                    <td>8시간</td>
+                    <td>3시간</td>
+                    <td class="improvement">63% ↓</td>
+                </tr>
+                <tr>
+                    <td>점검 비용</td>
+                    <td>100</td>
+                    <td>40</td>
+                    <td class="improvement">60% ↓</td>
+                </tr>
+            </table>
+            
+            <h3 style="margin: 30px 0 20px;">정성적 효과</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <h3>국민 생명 보호</h3>
+                    <p>정확한 AED 관리로 응급상황 대응력 강화</p>
+                </div>
+                <div class="card">
+                    <h3>업무 만족도</h3>
+                    <p>효율적인 시스템으로 담당자 스트레스 감소</p>
+                </div>
+                <div class="card">
+                    <h3>투명한 관리</h3>
+                    <p>모든 점검 이력 추적 가능한 투명한 체계</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 슬라이드 14: 결론 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>국민 안전을 위한 필수 투자</h2>
+            </div>
+            <div class="content-grid" style="margin-bottom: 40px;">
+                <div class="card">
+                    <h3>검증된 기술</h3>
+                    <p>안정적인 클라우드 기반으로 즉시 구축 가능</p>
+                </div>
+                <div class="card">
+                    <h3>즉각적 효과</h3>
+                    <p>구축 즉시 3배 효율 향상 실현</p>
+                </div>
+                <div class="card">
+                    <h3>확장 가능성</h3>
+                    <p>타 응급장비 관리로 확대 적용 가능</p>
+                </div>
+            </div>
+            
+            <div class="cta-box" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);">
+                <h3 style="font-size: 32px; margin-bottom: 30px;">전국 81,331대 AED의 완벽한 관리</h3>
+                <p style="font-size: 22px; line-height: 1.8;">
+                    단 한 명의 생명이라도 더 구할 수 있다면,<br>
+                    이 시스템은 충분한 가치가 있습니다.
+                </p>
+                <div style="margin-top: 40px;">
+                    <div style="display: inline-block; background: #0a0a0a; color: #ffffff; padding: 15px 30px; border-radius: 8px; font-weight: 600; font-size: 20px; border: 2px solid #dc2626;">
+                        함께 만들어가는 안전한 대한민국
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <p style="color: #b0b0b0; font-size: 18px;">
+                    보건복지부 × 전국 보건소 × 응급의료지원센터
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 네비게이션 -->
+    <div class="navigation">
+        <button class="nav-btn" onclick="changeSlide(-1)" id="prevBtn">이전</button>
+        <span class="slide-number">
+            <span id="currentSlide">1</span> / 14
+        </span>
+        <button class="nav-btn" onclick="changeSlide(1)" id="nextBtn">다음</button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 14;
+
+        function showSlide(n) {
+            const slides = document.getElementsByClassName('slide');
+            
+            // 범위 체크
+            if (n > totalSlides) {
+                currentSlide = totalSlides;
+            } else if (n < 1) {
+                currentSlide = 1;
+            } else {
+                currentSlide = n;
+            }
+            
+            // 모든 슬라이드 숨기기
+            for (let i = 0; i < slides.length; i++) {
+                slides[i].classList.remove('active');
+            }
+            
+            // 현재 슬라이드만 표시 (인덱스 체크)
+            if (slides[currentSlide - 1]) {
+                slides[currentSlide - 1].classList.add('active');
+            }
+            
+            // 슬라이드 번호 업데이트
+            const currentSlideElement = document.getElementById('currentSlide');
+            if (currentSlideElement) {
+                currentSlideElement.textContent = currentSlide;
+            }
+            
+            // 버튼 상태 업데이트
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            if (prevBtn) prevBtn.disabled = currentSlide === 1;
+            if (nextBtn) nextBtn.disabled = currentSlide === totalSlides;
+        }
+
+        function changeSlide(n) {
+            showSlide(currentSlide + n);
+        }
+
+        // 키보드 네비게이션
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft') changeSlide(-1);
+            if (event.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // 초기 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            showSlide(1);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "AED Smart Check System",
+  "short_name": "AED Check",
+  "description": "전국 80,000대 AED 통합 관리 및 점검 시스템",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111827",
+  "theme_color": "#22c55e",
+  "scope": "/",
+  "lang": "ko-KR",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32 48x48 64x64 128x128 192x192 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "productivity", "utilities"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

@@ -1,0 +1,97 @@
+{
+  "unique_centers": [
+    {
+      "jurisdiction_health_center": "강릉시보건소",
+      "sido": "강원",
+      "gugun": "강릉시"
+    },
+    {
+      "jurisdiction_health_center": "강원특별자치도고성군보건소",
+      "sido": "강원",
+      "gugun": "고성군"
+    },
+    {
+      "jurisdiction_health_center": "속초시보건소",
+      "sido": "강원",
+      "gugun": "고성군"
+    },
+    {
+      "jurisdiction_health_center": "동해시보건소",
+      "sido": "강원",
+      "gugun": "동해시"
+    },
+    {
+      "jurisdiction_health_center": "삼척시보건소",
+      "sido": "강원",
+      "gugun": "삼척시"
+    },
+    {
+      "jurisdiction_health_center": "속초시보건소",
+      "sido": "강원",
+      "gugun": "속초시"
+    }
+  ],
+  "province_counts": {
+    "강원": 5
+  },
+  "top_20_centers": [
+    {
+      "rank": 1,
+      "health_center_name": "강릉시보건소",
+      "sido": "강원",
+      "gugun": "강릉시",
+      "device_count": 343
+    },
+    {
+      "rank": 2,
+      "health_center_name": "동해시보건소",
+      "sido": "강원",
+      "gugun": "동해시",
+      "device_count": 201
+    },
+    {
+      "rank": 3,
+      "health_center_name": "삼척시보건소",
+      "sido": "강원",
+      "gugun": "삼척시",
+      "device_count": 198
+    },
+    {
+      "rank": 4,
+      "health_center_name": "속초시보건소",
+      "sido": "강원",
+      "gugun": "고성군",
+      "device_count": 166
+    },
+    {
+      "rank": 5,
+      "health_center_name": "강원특별자치도고성군보건소",
+      "sido": "강원",
+      "gugun": "고성군",
+      "device_count": 92
+    }
+  ],
+  "name_patterns": {
+    "시도포함": 1,
+    "구군만포함": 4,
+    "보건소로끝남": 1,
+    "띄어쓰기있음": 0,
+    "기타": 0
+  },
+  "pattern_examples": {
+    "시도포함": [
+      "강원특별자치도고성군보건소 (강원 고성군)"
+    ],
+    "구군만포함": [
+      "강릉시보건소 (강원 강릉시)",
+      "동해시보건소 (강원 동해시)",
+      "삼척시보건소 (강원 삼척시)",
+      "속초시보건소 (강원 속초시)"
+    ],
+    "보건소로끝남": [
+      "속초시보건소 (강원 고성군)"
+    ],
+    "띄어쓰기있음": [],
+    "기타": []
+  }
+}

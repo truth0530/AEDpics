@@ -1,0 +1,1902 @@
+{
+  "unique_centers": [
+    {
+      "jurisdiction_health_center": "김포시보건소",
+      "sido": "경기",
+      "gugun": "김포시"
+    },
+    {
+      "jurisdiction_health_center": "화성시서부보건소",
+      "sido": "경기",
+      "gugun": "화성시"
+    },
+    {
+      "jurisdiction_health_center": "성남시분당구보건소",
+      "sido": "경기",
+      "gugun": "성남시 분당구"
+    },
+    {
+      "jurisdiction_health_center": "상록수보건소",
+      "sido": "경기",
+      "gugun": "안산시 상록구"
+    },
+    {
+      "jurisdiction_health_center": "평택시평택보건소",
+      "sido": "경기",
+      "gugun": "평택시"
+    },
+    {
+      "jurisdiction_health_center": "포천시보건소",
+      "sido": "경기",
+      "gugun": "포천시"
+    },
+    {
+      "jurisdiction_health_center": "남양주풍양보건소",
+      "sido": "경기",
+      "gugun": "남양주시"
+    },
+    {
+      "jurisdiction_health_center": "이천시보건소",
+      "sido": "경기",
+      "gugun": "이천시"
+    },
+    {
+      "jurisdiction_health_center": "남양주보건소",
+      "sido": "경기",
+      "gugun": "남양주시"
+    },
+    {
+      "jurisdiction_health_center": "포항시남구보건소",
+      "sido": "경북",
+      "gugun": "포항시 남구"
+    },
+    {
+      "jurisdiction_health_center": "화성시동부보건소",
+      "sido": "경기",
+      "gugun": "화성시"
+    },
+    {
+      "jurisdiction_health_center": "구리시보건소",
+      "sido": "경기",
+      "gugun": "구리시"
+    },
+    {
+      "jurisdiction_health_center": "시흥시보건소",
+      "sido": "경기",
+      "gugun": "시흥시"
+    },
+    {
+      "jurisdiction_health_center": "수원시권선구보건소",
+      "sido": "경기",
+      "gugun": "수원시 권선구"
+    },
+    {
+      "jurisdiction_health_center": "고양시일산동구보건소",
+      "sido": "경기",
+      "gugun": "고양시 일산동구"
+    },
+    {
+      "jurisdiction_health_center": "부천시보건소",
+      "sido": "경기",
+      "gugun": "부천시"
+    },
+    {
+      "jurisdiction_health_center": "파주보건소",
+      "sido": "경기",
+      "gugun": "파주시"
+    },
+    {
+      "jurisdiction_health_center": "일산서구보건소",
+      "sido": "경기",
+      "gugun": "고양시 일산서구"
+    },
+    {
+      "jurisdiction_health_center": "성남시중원구보건소",
+      "sido": "경기",
+      "gugun": "성남시 중원구"
+    },
+    {
+      "jurisdiction_health_center": "수지구보건소",
+      "sido": "경기",
+      "gugun": "용인시 수지구"
+    },
+    {
+      "jurisdiction_health_center": "양평군보건소",
+      "sido": "경기",
+      "gugun": "양평군"
+    },
+    {
+      "jurisdiction_health_center": "안산시단원보건소",
+      "sido": "경기",
+      "gugun": "안산시 단원구"
+    },
+    {
+      "jurisdiction_health_center": "오산시보건소",
+      "sido": "경기",
+      "gugun": "오산시"
+    },
+    {
+      "jurisdiction_health_center": "동두천시보건소",
+      "sido": "경기",
+      "gugun": "동두천시"
+    },
+    {
+      "jurisdiction_health_center": "과천시보건소",
+      "sido": "경기",
+      "gugun": "과천시"
+    },
+    {
+      "jurisdiction_health_center": "안양시 만안구보건소",
+      "sido": "경기",
+      "gugun": "안양시 만안구"
+    },
+    {
+      "jurisdiction_health_center": "처인구보건소",
+      "sido": "경기",
+      "gugun": "용인시 처인구"
+    },
+    {
+      "jurisdiction_health_center": "안양시 동안구보건소",
+      "sido": "경기",
+      "gugun": "안양시 동안구"
+    },
+    {
+      "jurisdiction_health_center": "군포시보건소",
+      "sido": "경기",
+      "gugun": "군포시"
+    },
+    {
+      "jurisdiction_health_center": "광명시보건소",
+      "sido": "경기",
+      "gugun": "광명시"
+    },
+    {
+      "jurisdiction_health_center": "광주시보건소",
+      "sido": "경기",
+      "gugun": "광주시"
+    },
+    {
+      "jurisdiction_health_center": "수정구보건소",
+      "sido": "경기",
+      "gugun": "성남시 수정구"
+    },
+    {
+      "jurisdiction_health_center": "하남시보건소",
+      "sido": "경기",
+      "gugun": "하남시"
+    },
+    {
+      "jurisdiction_health_center": "울진군보건소",
+      "sido": "경북",
+      "gugun": "울진군"
+    },
+    {
+      "jurisdiction_health_center": "운정보건소",
+      "sido": "경기",
+      "gugun": "파주시"
+    },
+    {
+      "jurisdiction_health_center": "화성시동탄보건소",
+      "sido": "경기",
+      "gugun": "화성시"
+    },
+    {
+      "jurisdiction_health_center": "김천시보건소",
+      "sido": "경북",
+      "gugun": "김천시"
+    },
+    {
+      "jurisdiction_health_center": "칠곡군보건소",
+      "sido": "경북",
+      "gugun": "칠곡군"
+    },
+    {
+      "jurisdiction_health_center": "경주시보건소",
+      "sido": "경북",
+      "gugun": "경주시"
+    },
+    {
+      "jurisdiction_health_center": "고양시덕양구보건소",
+      "sido": "경기",
+      "gugun": "고양시 덕양구"
+    },
+    {
+      "jurisdiction_health_center": "양주시보건소",
+      "sido": "경기",
+      "gugun": "양주시"
+    },
+    {
+      "jurisdiction_health_center": "기흥구보건소",
+      "sido": "경기",
+      "gugun": "용인시 기흥구"
+    },
+    {
+      "jurisdiction_health_center": "영통구보건소",
+      "sido": "경기",
+      "gugun": "수원시 영통구"
+    },
+    {
+      "jurisdiction_health_center": "의정부시보건소",
+      "sido": "경기",
+      "gugun": "의정부시"
+    },
+    {
+      "jurisdiction_health_center": "청도군보건소",
+      "sido": "경북",
+      "gugun": "청도군"
+    },
+    {
+      "jurisdiction_health_center": "의성군보건소",
+      "sido": "경북",
+      "gugun": "의성군"
+    },
+    {
+      "jurisdiction_health_center": "영천시보건소",
+      "sido": "경북",
+      "gugun": "영천시"
+    },
+    {
+      "jurisdiction_health_center": "수원시팔달구보건소",
+      "sido": "경기",
+      "gugun": "수원시 팔달구"
+    },
+    {
+      "jurisdiction_health_center": "구미시보건소",
+      "sido": "경북",
+      "gugun": "구미시"
+    },
+    {
+      "jurisdiction_health_center": "평택시 송탄보건소",
+      "sido": "경기",
+      "gugun": "평택시"
+    },
+    {
+      "jurisdiction_health_center": "의왕시보건소",
+      "sido": "경기",
+      "gugun": "의왕시"
+    },
+    {
+      "jurisdiction_health_center": "여주시보건소",
+      "sido": "경기",
+      "gugun": "여주시"
+    },
+    {
+      "jurisdiction_health_center": "안성시보건소",
+      "sido": "경기",
+      "gugun": "안성시"
+    },
+    {
+      "jurisdiction_health_center": "청송군보건의료원",
+      "sido": "경북",
+      "gugun": "청송군"
+    },
+    {
+      "jurisdiction_health_center": "구미시선산보건소",
+      "sido": "경북",
+      "gugun": "구미시"
+    },
+    {
+      "jurisdiction_health_center": "영주시보건소",
+      "sido": "경북",
+      "gugun": "영주시"
+    },
+    {
+      "jurisdiction_health_center": "여수시보건소",
+      "sido": "전남",
+      "gugun": "여수시"
+    },
+    {
+      "jurisdiction_health_center": "진도군보건소",
+      "sido": "전남",
+      "gugun": "진도군"
+    },
+    {
+      "jurisdiction_health_center": "가평군보건소",
+      "sido": "경기",
+      "gugun": "가평군"
+    },
+    {
+      "jurisdiction_health_center": "장안구보건소",
+      "sido": "경기",
+      "gugun": "수원시 장안구"
+    },
+    {
+      "jurisdiction_health_center": "목포시보건소",
+      "sido": "전남",
+      "gugun": "목포시"
+    },
+    {
+      "jurisdiction_health_center": "고흥군보건소",
+      "sido": "전남",
+      "gugun": "고흥군"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시강서구보건소",
+      "sido": "부산",
+      "gugun": "강서구"
+    },
+    {
+      "jurisdiction_health_center": "상주시보건소",
+      "sido": "경북",
+      "gugun": "상주시"
+    },
+    {
+      "jurisdiction_health_center": "포항시북구보건소",
+      "sido": "경북",
+      "gugun": "포항시 북구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시사상구보건소",
+      "sido": "부산",
+      "gugun": "사상구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시금정구보건소",
+      "sido": "부산",
+      "gugun": "금정구"
+    },
+    {
+      "jurisdiction_health_center": "사하구보건소",
+      "sido": "부산",
+      "gugun": "사하구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시수영구보건소",
+      "sido": "부산",
+      "gugun": "수영구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시남구보건소",
+      "sido": "부산",
+      "gugun": "남구"
+    },
+    {
+      "jurisdiction_health_center": "태안군보건의료원",
+      "sido": "충남",
+      "gugun": "태안군"
+    },
+    {
+      "jurisdiction_health_center": "안동시보건소",
+      "sido": "경북",
+      "gugun": "안동시"
+    },
+    {
+      "jurisdiction_health_center": "영양군보건소",
+      "sido": "경북",
+      "gugun": "영양군"
+    },
+    {
+      "jurisdiction_health_center": "부산진구보건소",
+      "sido": "부산",
+      "gugun": "부산진구"
+    },
+    {
+      "jurisdiction_health_center": "부산 연제구보건소",
+      "sido": "부산",
+      "gugun": "연제구"
+    },
+    {
+      "jurisdiction_health_center": "경산시보건소",
+      "sido": "경북",
+      "gugun": "경산시"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시기장군보건소",
+      "sido": "부산",
+      "gugun": "기장군"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시북구보건소",
+      "sido": "부산",
+      "gugun": "북구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시서구보건소",
+      "sido": "부산",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시동구보건소",
+      "sido": "부산",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시영도구보건소",
+      "sido": "부산",
+      "gugun": "영도구"
+    },
+    {
+      "jurisdiction_health_center": "장성군보건소",
+      "sido": "전남",
+      "gugun": "장성군"
+    },
+    {
+      "jurisdiction_health_center": "예천군보건소",
+      "sido": "경북",
+      "gugun": "예천군"
+    },
+    {
+      "jurisdiction_health_center": "성주군보건소",
+      "sido": "경북",
+      "gugun": "성주군"
+    },
+    {
+      "jurisdiction_health_center": "봉화군보건소",
+      "sido": "경북",
+      "gugun": "봉화군"
+    },
+    {
+      "jurisdiction_health_center": "충주시보건소",
+      "sido": "충북",
+      "gugun": "충주시"
+    },
+    {
+      "jurisdiction_health_center": "문경시보건소",
+      "sido": "경북",
+      "gugun": "문경시"
+    },
+    {
+      "jurisdiction_health_center": "영덕군보건소",
+      "sido": "경북",
+      "gugun": "영덕군"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시중구보건소",
+      "sido": "부산",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "서천군보건소",
+      "sido": "충남",
+      "gugun": "서천군"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시해운대구보건소",
+      "sido": "부산",
+      "gugun": "해운대구"
+    },
+    {
+      "jurisdiction_health_center": "통영시보건소",
+      "sido": "부산",
+      "gugun": "강서구"
+    },
+    {
+      "jurisdiction_health_center": "제천시보건소",
+      "sido": "충북",
+      "gugun": "제천시"
+    },
+    {
+      "jurisdiction_health_center": "고령군보건소",
+      "sido": "경북",
+      "gugun": "고령군"
+    },
+    {
+      "jurisdiction_health_center": "논산시보건소",
+      "sido": "충남",
+      "gugun": "논산시"
+    },
+    {
+      "jurisdiction_health_center": "당진시보건소",
+      "sido": "충남",
+      "gugun": "당진시"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시중구보건소",
+      "sido": "부산",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "아산시보건소",
+      "sido": "충남",
+      "gugun": "아산시"
+    },
+    {
+      "jurisdiction_health_center": "예산군보건소",
+      "sido": "충남",
+      "gugun": "예산군"
+    },
+    {
+      "jurisdiction_health_center": "서울특별시중구보건소",
+      "sido": "서울",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시동래구보건소",
+      "sido": "부산",
+      "gugun": "동래구"
+    },
+    {
+      "jurisdiction_health_center": "부천시보건소",
+      "sido": "경기도",
+      "gugun": "부천시"
+    },
+    {
+      "jurisdiction_health_center": "울릉군보건의료원",
+      "sido": "경북",
+      "gugun": "울릉군"
+    },
+    {
+      "jurisdiction_health_center": "보은군보건소",
+      "sido": "충북",
+      "gugun": "보은군"
+    },
+    {
+      "jurisdiction_health_center": "흥덕보건소",
+      "sido": "충북",
+      "gugun": "청주시 상당구"
+    },
+    {
+      "jurisdiction_health_center": "연천군보건의료원",
+      "sido": "경기",
+      "gugun": "연천군"
+    },
+    {
+      "jurisdiction_health_center": "창원시창원보건소",
+      "sido": "경남",
+      "gugun": "창원시 성산구"
+    },
+    {
+      "jurisdiction_health_center": "창원시창원보건소",
+      "sido": "경남",
+      "gugun": "창원시 의창구"
+    },
+    {
+      "jurisdiction_health_center": "창원시마산보건소",
+      "sido": "경남",
+      "gugun": "창원시 마산합포구"
+    },
+    {
+      "jurisdiction_health_center": "의령군보건소",
+      "sido": "경남",
+      "gugun": "의령군"
+    },
+    {
+      "jurisdiction_health_center": "창원시마산보건소",
+      "sido": "경남",
+      "gugun": "창원시 마산회원구"
+    },
+    {
+      "jurisdiction_health_center": "창원시진해보건소",
+      "sido": "경남",
+      "gugun": "창원시 진해구"
+    },
+    {
+      "jurisdiction_health_center": "김해시서부보건소",
+      "sido": "경남",
+      "gugun": "김해시"
+    },
+    {
+      "jurisdiction_health_center": "서원보건소",
+      "sido": "충북",
+      "gugun": "청주시 서원구"
+    },
+    {
+      "jurisdiction_health_center": "김해시보건소",
+      "sido": "경남",
+      "gugun": "김해시"
+    },
+    {
+      "jurisdiction_health_center": "웅상보건소",
+      "sido": "경남",
+      "gugun": "양산시"
+    },
+    {
+      "jurisdiction_health_center": "거제시보건소",
+      "sido": "경남",
+      "gugun": "거제시"
+    },
+    {
+      "jurisdiction_health_center": "고성군보건소",
+      "sido": "경남",
+      "gugun": "고성군"
+    },
+    {
+      "jurisdiction_health_center": "합천군보건소",
+      "sido": "경남",
+      "gugun": "합천군"
+    },
+    {
+      "jurisdiction_health_center": "영동군보건소",
+      "sido": "충북",
+      "gugun": "영동군"
+    },
+    {
+      "jurisdiction_health_center": "통영시보건소",
+      "sido": "경남",
+      "gugun": "통영시"
+    },
+    {
+      "jurisdiction_health_center": "청주시상당보건소",
+      "sido": "충북",
+      "gugun": "청주시 상당구"
+    },
+    {
+      "jurisdiction_health_center": "밀양시보건소",
+      "sido": "경남",
+      "gugun": "밀양시"
+    },
+    {
+      "jurisdiction_health_center": "남해군보건소",
+      "sido": "경남",
+      "gugun": "남해군"
+    },
+    {
+      "jurisdiction_health_center": "천안시동남구보건소",
+      "sido": "충남",
+      "gugun": "천안시 동남구"
+    },
+    {
+      "jurisdiction_health_center": "부여군보건소",
+      "sido": "충남",
+      "gugun": "부여군"
+    },
+    {
+      "jurisdiction_health_center": "홍성군보건소",
+      "sido": "충남",
+      "gugun": "홍성군"
+    },
+    {
+      "jurisdiction_health_center": "보령시보건소",
+      "sido": "충남",
+      "gugun": "보령시"
+    },
+    {
+      "jurisdiction_health_center": "산청군보건의료원",
+      "sido": "경남",
+      "gugun": "산청군"
+    },
+    {
+      "jurisdiction_health_center": "사천시보건소",
+      "sido": "경남",
+      "gugun": "사천시"
+    },
+    {
+      "jurisdiction_health_center": "옥천군보건소",
+      "sido": "충북",
+      "gugun": "옥천군"
+    },
+    {
+      "jurisdiction_health_center": "청원보건소",
+      "sido": "충북",
+      "gugun": "청주시 청원구"
+    },
+    {
+      "jurisdiction_health_center": "증평군보건소",
+      "sido": "충북",
+      "gugun": "증평군"
+    },
+    {
+      "jurisdiction_health_center": "창녕군보건소",
+      "sido": "경남",
+      "gugun": "창녕군"
+    },
+    {
+      "jurisdiction_health_center": "함안군보건소",
+      "sido": "경남",
+      "gugun": "함안군"
+    },
+    {
+      "jurisdiction_health_center": "음성군보건소",
+      "sido": "충북",
+      "gugun": "음성군"
+    },
+    {
+      "jurisdiction_health_center": "거창군보건소",
+      "sido": "경남",
+      "gugun": "거창군"
+    },
+    {
+      "jurisdiction_health_center": "양산시보건소",
+      "sido": "경남",
+      "gugun": "양산시"
+    },
+    {
+      "jurisdiction_health_center": "흥덕보건소",
+      "sido": "충북",
+      "gugun": "청주시 흥덕구"
+    },
+    {
+      "jurisdiction_health_center": "함양군보건소",
+      "sido": "경남",
+      "gugun": "함양군"
+    },
+    {
+      "jurisdiction_health_center": "강릉시보건소",
+      "sido": "강원",
+      "gugun": "강릉시"
+    },
+    {
+      "jurisdiction_health_center": "춘천시보건소",
+      "sido": "강원",
+      "gugun": "춘천시"
+    },
+    {
+      "jurisdiction_health_center": "금산군보건소",
+      "sido": "충남",
+      "gugun": "금산군"
+    },
+    {
+      "jurisdiction_health_center": "괴산군보건소",
+      "sido": "충북",
+      "gugun": "괴산군"
+    },
+    {
+      "jurisdiction_health_center": "인제군보건소",
+      "sido": "강원",
+      "gugun": "인제군"
+    },
+    {
+      "jurisdiction_health_center": "단양군보건의료원",
+      "sido": "충북",
+      "gugun": "단양군"
+    },
+    {
+      "jurisdiction_health_center": "진천군보건소",
+      "sido": "충북",
+      "gugun": "진천군"
+    },
+    {
+      "jurisdiction_health_center": "하동군보건소",
+      "sido": "경남",
+      "gugun": "하동군"
+    },
+    {
+      "jurisdiction_health_center": "거제시보건소",
+      "sido": "경남",
+      "gugun": "통영시"
+    },
+    {
+      "jurisdiction_health_center": "무주군보건의료원",
+      "sido": "전북",
+      "gugun": "무주군"
+    },
+    {
+      "jurisdiction_health_center": "군산시보건소",
+      "sido": "전북",
+      "gugun": "군산시"
+    },
+    {
+      "jurisdiction_health_center": "진주시보건소",
+      "sido": "경남",
+      "gugun": "진주시"
+    },
+    {
+      "jurisdiction_health_center": "정읍시보건소",
+      "sido": "전북",
+      "gugun": "정읍시"
+    },
+    {
+      "jurisdiction_health_center": "통영시보건소",
+      "sido": "경남",
+      "gugun": "고성군"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시중구보건소",
+      "sido": "부산",
+      "gugun": "사하구"
+    },
+    {
+      "jurisdiction_health_center": "계룡시보건소",
+      "sido": "충남",
+      "gugun": "계룡시"
+    },
+    {
+      "jurisdiction_health_center": "남원시보건소",
+      "sido": "전북",
+      "gugun": "남원시"
+    },
+    {
+      "jurisdiction_health_center": "동해시보건소",
+      "sido": "강원",
+      "gugun": "동해시"
+    },
+    {
+      "jurisdiction_health_center": "제주시제주보건소",
+      "sido": "제주",
+      "gugun": "제주시"
+    },
+    {
+      "jurisdiction_health_center": "서귀포시서귀포보건소",
+      "sido": "제주",
+      "gugun": "서귀포시"
+    },
+    {
+      "jurisdiction_health_center": "신안군보건소",
+      "sido": "전남",
+      "gugun": "신안군"
+    },
+    {
+      "jurisdiction_health_center": "대전광역시동구보건소",
+      "sido": "대전",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "중구보건소",
+      "sido": "대전",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "강진군보건소",
+      "sido": "전남",
+      "gugun": "강진군"
+    },
+    {
+      "jurisdiction_health_center": "광진구보건소",
+      "sido": "서울",
+      "gugun": "광진구"
+    },
+    {
+      "jurisdiction_health_center": "대전광역시서구보건소",
+      "sido": "대전",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시달서구보건소",
+      "sido": "대구",
+      "gugun": "달서구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시수성구보건소",
+      "sido": "대구",
+      "gugun": "수성구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시군위군보건소",
+      "sido": "대구",
+      "gugun": "군위군"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시북구보건소",
+      "sido": "대구",
+      "gugun": "북구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시남구보건소",
+      "sido": "대구",
+      "gugun": "남구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시동구보건소",
+      "sido": "대구",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "달성군보건소",
+      "sido": "대구",
+      "gugun": "달성군"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시중구보건소",
+      "sido": "대구",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "전주시보건소",
+      "sido": "전북",
+      "gugun": "전주시 완산구"
+    },
+    {
+      "jurisdiction_health_center": "고창군보건소",
+      "sido": "전북",
+      "gugun": "고창군"
+    },
+    {
+      "jurisdiction_health_center": "덕진보건소",
+      "sido": "전북",
+      "gugun": "전주시 덕진구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시서구보건소",
+      "sido": "대구",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "익산시보건소",
+      "sido": "전북",
+      "gugun": "익산시"
+    },
+    {
+      "jurisdiction_health_center": "부안군보건소",
+      "sido": "전북",
+      "gugun": "부안군"
+    },
+    {
+      "jurisdiction_health_center": "곡성군보건의료원",
+      "sido": "전남",
+      "gugun": "곡성군"
+    },
+    {
+      "jurisdiction_health_center": "순창군보건의료원",
+      "sido": "전북",
+      "gugun": "순창군"
+    },
+    {
+      "jurisdiction_health_center": "임실군보건의료원",
+      "sido": "전북",
+      "gugun": "임실군"
+    },
+    {
+      "jurisdiction_health_center": "김제시보건소",
+      "sido": "전북",
+      "gugun": "김제시"
+    },
+    {
+      "jurisdiction_health_center": "완주군보건소",
+      "sido": "전북",
+      "gugun": "완주군"
+    },
+    {
+      "jurisdiction_health_center": "장수군보건의료원",
+      "sido": "전북",
+      "gugun": "장수군"
+    },
+    {
+      "jurisdiction_health_center": "원주시보건소",
+      "sido": "강원",
+      "gugun": "원주시"
+    },
+    {
+      "jurisdiction_health_center": "진안군보건소",
+      "sido": "전북",
+      "gugun": "진안군"
+    },
+    {
+      "jurisdiction_health_center": "양양군보건소",
+      "sido": "강원",
+      "gugun": "양양군"
+    },
+    {
+      "jurisdiction_health_center": "화천군보건의료원",
+      "sido": "강원",
+      "gugun": "화천군"
+    },
+    {
+      "jurisdiction_health_center": "보성군보건소",
+      "sido": "전남",
+      "gugun": "보성군"
+    },
+    {
+      "jurisdiction_health_center": "광주광역시북구보건소",
+      "sido": "광주",
+      "gugun": "북구"
+    },
+    {
+      "jurisdiction_health_center": "광주광역시남구보건소",
+      "sido": "광주",
+      "gugun": "남구"
+    },
+    {
+      "jurisdiction_health_center": "광주광역시동구보건소",
+      "sido": "광주",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "평창군보건의료원",
+      "sido": "강원",
+      "gugun": "평창군"
+    },
+    {
+      "jurisdiction_health_center": "광산구보건소",
+      "sido": "광주",
+      "gugun": "광산구"
+    },
+    {
+      "jurisdiction_health_center": "안양시 동안구보건소",
+      "sido": "경기",
+      "gugun": "안양시 만안구"
+    },
+    {
+      "jurisdiction_health_center": "양구군보건소",
+      "sido": "강원",
+      "gugun": "양구군"
+    },
+    {
+      "jurisdiction_health_center": "부천시보건소",
+      "sido": "경기",
+      "gugun": "양평군"
+    },
+    {
+      "jurisdiction_health_center": "포항시북구보건소",
+      "sido": "경남",
+      "gugun": "사천시"
+    },
+    {
+      "jurisdiction_health_center": "정선군보건소",
+      "sido": "강원",
+      "gugun": "정선군"
+    },
+    {
+      "jurisdiction_health_center": "홍천군보건소",
+      "sido": "강원",
+      "gugun": "홍천군"
+    },
+    {
+      "jurisdiction_health_center": "강원특별자치도고성군보건소",
+      "sido": "강원",
+      "gugun": "고성군"
+    },
+    {
+      "jurisdiction_health_center": "동부보건소",
+      "sido": "경기",
+      "gugun": "남양주시"
+    },
+    {
+      "jurisdiction_health_center": "고양시일산동구보건소",
+      "sido": "경기",
+      "gugun": "고양시 일산서구"
+    },
+    {
+      "jurisdiction_health_center": "안양시 동안구보건소",
+      "sido": "경기",
+      "gugun": "의왕시"
+    },
+    {
+      "jurisdiction_health_center": "관악구보건소",
+      "sido": "서울",
+      "gugun": "관악구"
+    },
+    {
+      "jurisdiction_health_center": "마포구보건소",
+      "sido": "서울",
+      "gugun": "마포구"
+    },
+    {
+      "jurisdiction_health_center": "서울특별시중랑구보건소",
+      "sido": "서울",
+      "gugun": "중랑구"
+    },
+    {
+      "jurisdiction_health_center": "서울특별시송파구보건소",
+      "sido": "서울",
+      "gugun": "송파구"
+    },
+    {
+      "jurisdiction_health_center": "동대문구보건소",
+      "sido": "서울",
+      "gugun": "동대문구"
+    },
+    {
+      "jurisdiction_health_center": "양천구보건소",
+      "sido": "서울",
+      "gugun": "양천구"
+    },
+    {
+      "jurisdiction_health_center": "성북구보건소",
+      "sido": "서울",
+      "gugun": "성북구"
+    },
+    {
+      "jurisdiction_health_center": "영등포구보건소",
+      "sido": "서울",
+      "gugun": "영등포구"
+    },
+    {
+      "jurisdiction_health_center": "도봉구보건소",
+      "sido": "서울",
+      "gugun": "도봉구"
+    },
+    {
+      "jurisdiction_health_center": "종로구보건소",
+      "sido": "서울",
+      "gugun": "종로구"
+    },
+    {
+      "jurisdiction_health_center": "서대문구보건소",
+      "sido": "서울",
+      "gugun": "서대문구"
+    },
+    {
+      "jurisdiction_health_center": "강동구보건소",
+      "sido": "서울",
+      "gugun": "강동구"
+    },
+    {
+      "jurisdiction_health_center": "은평구보건소",
+      "sido": "서울",
+      "gugun": "은평구"
+    },
+    {
+      "jurisdiction_health_center": "노원구보건소",
+      "sido": "서울",
+      "gugun": "노원구"
+    },
+    {
+      "jurisdiction_health_center": "서울특별시동작구보건소",
+      "sido": "서울",
+      "gugun": "동작구"
+    },
+    {
+      "jurisdiction_health_center": "강북구보건소",
+      "sido": "서울",
+      "gugun": "강북구"
+    },
+    {
+      "jurisdiction_health_center": "구로구보건소",
+      "sido": "서울",
+      "gugun": "구로구"
+    },
+    {
+      "jurisdiction_health_center": "강남구보건소",
+      "sido": "서울",
+      "gugun": "강남구"
+    },
+    {
+      "jurisdiction_health_center": "서초구보건소",
+      "sido": "서울",
+      "gugun": "서초구"
+    },
+    {
+      "jurisdiction_health_center": "성동구보건소",
+      "sido": "서울",
+      "gugun": "성동구"
+    },
+    {
+      "jurisdiction_health_center": "금천구보건소",
+      "sido": "서울",
+      "gugun": "금천구"
+    },
+    {
+      "jurisdiction_health_center": "용산구보건소",
+      "sido": "서울",
+      "gugun": "용산구"
+    },
+    {
+      "jurisdiction_health_center": "서울특별시강서구보건소",
+      "sido": "서울",
+      "gugun": "강서구"
+    },
+    {
+      "jurisdiction_health_center": "공주시보건소",
+      "sido": "충남",
+      "gugun": "공주시"
+    },
+    {
+      "jurisdiction_health_center": "천안시서북구보건소",
+      "sido": "충남",
+      "gugun": "천안시 서북구"
+    },
+    {
+      "jurisdiction_health_center": "청양군보건의료원",
+      "sido": "충남",
+      "gugun": "청양군"
+    },
+    {
+      "jurisdiction_health_center": "서산시보건소",
+      "sido": "충남",
+      "gugun": "서산시"
+    },
+    {
+      "jurisdiction_health_center": "평택시평택보건소",
+      "sido": "충남",
+      "gugun": "당진시"
+    },
+    {
+      "jurisdiction_health_center": "광양시보건소",
+      "sido": "충남",
+      "gugun": "천안시 서북구"
+    },
+    {
+      "jurisdiction_health_center": "서산시보건소",
+      "sido": "충남",
+      "gugun": "당진시"
+    },
+    {
+      "jurisdiction_health_center": "영월군보건소",
+      "sido": "강원",
+      "gugun": "영월군"
+    },
+    {
+      "jurisdiction_health_center": "태백시보건소",
+      "sido": "강원",
+      "gugun": "태백시"
+    },
+    {
+      "jurisdiction_health_center": "삼척시보건소",
+      "sido": "강원",
+      "gugun": "삼척시"
+    },
+    {
+      "jurisdiction_health_center": "속초시보건소",
+      "sido": "강원",
+      "gugun": "속초시"
+    },
+    {
+      "jurisdiction_health_center": "횡성군보건소",
+      "sido": "강원",
+      "gugun": "횡성군"
+    },
+    {
+      "jurisdiction_health_center": "철원군보건소",
+      "sido": "강원",
+      "gugun": "철원군"
+    },
+    {
+      "jurisdiction_health_center": "울산광역시남구보건소",
+      "sido": "울산",
+      "gugun": "남구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시중구보건소",
+      "sido": "서울",
+      "gugun": "영등포구"
+    },
+    {
+      "jurisdiction_health_center": "나주시보건소",
+      "sido": "전남",
+      "gugun": "나주시"
+    },
+    {
+      "jurisdiction_health_center": "세종특별자치시보건소",
+      "sido": "세종",
+      "gugun": "세종시"
+    },
+    {
+      "jurisdiction_health_center": "화순군보건소",
+      "sido": "전남",
+      "gugun": "화순군"
+    },
+    {
+      "jurisdiction_health_center": "영덕군보건소",
+      "sido": "경북",
+      "gugun": "울진군"
+    },
+    {
+      "jurisdiction_health_center": "광주광역시서구보건소",
+      "sido": "광주",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "속초시보건소",
+      "sido": "경북",
+      "gugun": "포항시 북구"
+    },
+    {
+      "jurisdiction_health_center": "구미시선산보건소",
+      "sido": "경기",
+      "gugun": "파주시"
+    },
+    {
+      "jurisdiction_health_center": "봉화군보건소",
+      "sido": "광주",
+      "gugun": "북구"
+    },
+    {
+      "jurisdiction_health_center": "울주군보건소",
+      "sido": "울산",
+      "gugun": "울주군"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시서구보건소",
+      "sido": "인천",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시중구보건소",
+      "sido": "인천",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "울산광역시중구보건소",
+      "sido": "울산",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "평택시평택보건소",
+      "sido": "울산",
+      "gugun": "남구"
+    },
+    {
+      "jurisdiction_health_center": "울산동구보건소",
+      "sido": "울산",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시남동구보건소",
+      "sido": "인천",
+      "gugun": "남동구"
+    },
+    {
+      "jurisdiction_health_center": "울산광역시북구보건소",
+      "sido": "울산",
+      "gugun": "북구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시계양구보건소",
+      "sido": "인천",
+      "gugun": "계양구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시연수구보건소",
+      "sido": "인천",
+      "gugun": "연수구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시동구보건소",
+      "sido": "인천",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "옹진군보건소",
+      "sido": "인천",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "미추홀구보건소",
+      "sido": "인천",
+      "gugun": "미추홀구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시부평구보건소",
+      "sido": "인천",
+      "gugun": "부평구"
+    },
+    {
+      "jurisdiction_health_center": "옹진군보건소",
+      "sido": "인천",
+      "gugun": "옹진군"
+    },
+    {
+      "jurisdiction_health_center": "강화군보건소",
+      "sido": "인천",
+      "gugun": "강화군"
+    },
+    {
+      "jurisdiction_health_center": "울산광역시남구보건소",
+      "sido": "울산",
+      "gugun": "울주군"
+    },
+    {
+      "jurisdiction_health_center": "포항시남구보건소",
+      "sido": "경북",
+      "gugun": "포항시 북구"
+    },
+    {
+      "jurisdiction_health_center": "사천시보건소",
+      "sido": "경남",
+      "gugun": "진주시"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시중구보건소",
+      "sido": "서울",
+      "gugun": "강서구"
+    },
+    {
+      "jurisdiction_health_center": "유성구보건소",
+      "sido": "대전",
+      "gugun": "유성구"
+    },
+    {
+      "jurisdiction_health_center": "대전광역시대덕구보건소",
+      "sido": "대전",
+      "gugun": "대덕구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시동구보건소",
+      "sido": "부산",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "해남군보건소",
+      "sido": "전남",
+      "gugun": "해남군"
+    },
+    {
+      "jurisdiction_health_center": "광양시보건소",
+      "sido": "전남",
+      "gugun": "광양시"
+    },
+    {
+      "jurisdiction_health_center": "완도군보건의료원",
+      "sido": "전남",
+      "gugun": "완도군"
+    },
+    {
+      "jurisdiction_health_center": "함평군보건소",
+      "sido": "전남",
+      "gugun": "함평군"
+    },
+    {
+      "jurisdiction_health_center": "무안군보건소",
+      "sido": "전남",
+      "gugun": "무안군"
+    },
+    {
+      "jurisdiction_health_center": "순천시보건소",
+      "sido": "전남",
+      "gugun": "순천시"
+    },
+    {
+      "jurisdiction_health_center": "상록수보건소",
+      "sido": "경기",
+      "gugun": "수원시 영통구"
+    },
+    {
+      "jurisdiction_health_center": "상록수보건소",
+      "sido": "경기",
+      "gugun": "안산시 단원구"
+    },
+    {
+      "jurisdiction_health_center": "군산시보건소",
+      "sido": "충남",
+      "gugun": "서천군"
+    },
+    {
+      "jurisdiction_health_center": "홍성군보건소",
+      "sido": "충남",
+      "gugun": "예산군"
+    },
+    {
+      "jurisdiction_health_center": "영광군보건소",
+      "sido": "전남",
+      "gugun": "영광군"
+    },
+    {
+      "jurisdiction_health_center": "통영시보건소",
+      "sido": "경남",
+      "gugun": "창원시 의창구"
+    },
+    {
+      "jurisdiction_health_center": "안산시단원보건소",
+      "sido": "경기",
+      "gugun": "안산시 상록구"
+    },
+    {
+      "jurisdiction_health_center": "거제시보건소",
+      "sido": "경남",
+      "gugun": "고성군"
+    },
+    {
+      "jurisdiction_health_center": "속초시보건소",
+      "sido": "경남",
+      "gugun": "사천시"
+    },
+    {
+      "jurisdiction_health_center": "사천시보건소",
+      "sido": "경남",
+      "gugun": "남해군"
+    },
+    {
+      "jurisdiction_health_center": "구례군보건의료원",
+      "sido": "전남",
+      "gugun": "구례군"
+    },
+    {
+      "jurisdiction_health_center": "영암군보건소",
+      "sido": "전남",
+      "gugun": "영암군"
+    },
+    {
+      "jurisdiction_health_center": "장흥군보건소",
+      "sido": "전남",
+      "gugun": "장흥군"
+    },
+    {
+      "jurisdiction_health_center": "담양군보건소",
+      "sido": "전남",
+      "gugun": "담양군"
+    },
+    {
+      "jurisdiction_health_center": "삼성 보건지소",
+      "sido": "대전",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "중구보건소",
+      "sido": "대전",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "순천시보건소",
+      "sido": "전남",
+      "gugun": "구례군"
+    },
+    {
+      "jurisdiction_health_center": "여수시보건소",
+      "sido": "전남",
+      "gugun": "순천시"
+    },
+    {
+      "jurisdiction_health_center": "안산시단원보건소",
+      "sido": "인천",
+      "gugun": "옹진군"
+    },
+    {
+      "jurisdiction_health_center": "포항시북구보건소",
+      "sido": "대구",
+      "gugun": "달성군"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시중구보건소",
+      "sido": "대구",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "인천광역시중구보건소",
+      "sido": "부산",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시서구보건소",
+      "sido": "부산",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시수영구보건소",
+      "sido": "부산",
+      "gugun": "해운대구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시동구보건소",
+      "sido": "부산",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시동구보건소",
+      "sido": "부산",
+      "gugun": "영도구"
+    },
+    {
+      "jurisdiction_health_center": "여수시보건소",
+      "sido": "전남",
+      "gugun": "완도군"
+    },
+    {
+      "jurisdiction_health_center": "고흥군보건소",
+      "sido": "전남",
+      "gugun": "여수시"
+    },
+    {
+      "jurisdiction_health_center": "남양주보건소",
+      "sido": "대전",
+      "gugun": "서구"
+    },
+    {
+      "jurisdiction_health_center": "중구보건소",
+      "sido": "대전",
+      "gugun": "유성구"
+    },
+    {
+      "jurisdiction_health_center": "창원시마산보건소",
+      "sido": "전남",
+      "gugun": "광양시"
+    },
+    {
+      "jurisdiction_health_center": "목포시보건소",
+      "sido": "전남",
+      "gugun": "무안군"
+    },
+    {
+      "jurisdiction_health_center": "제주시제주보건소",
+      "sido": "전남",
+      "gugun": "여수시"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시기장군보건소",
+      "sido": "전남",
+      "gugun": "여수시"
+    },
+    {
+      "jurisdiction_health_center": "울산광역시남구보건소",
+      "sido": "전남",
+      "gugun": "광양시"
+    },
+    {
+      "jurisdiction_health_center": "여수시보건소",
+      "sido": "전남",
+      "gugun": "광양시"
+    },
+    {
+      "jurisdiction_health_center": "포항시북구보건소",
+      "sido": "경북",
+      "gugun": "울진군"
+    },
+    {
+      "jurisdiction_health_center": "포항시남구보건소",
+      "sido": "경북",
+      "gugun": "경주시"
+    },
+    {
+      "jurisdiction_health_center": "정읍시보건소",
+      "sido": "전북",
+      "gugun": "김제시"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시군위군보건소",
+      "sido": "대구",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시수성구보건소",
+      "sido": "대구",
+      "gugun": "달성군"
+    },
+    {
+      "jurisdiction_health_center": "해운대구보건소재반지소",
+      "sido": "부산",
+      "gugun": "해운대구"
+    },
+    {
+      "jurisdiction_health_center": "군산시보건소",
+      "sido": "경남",
+      "gugun": "창원시 마산합포구"
+    },
+    {
+      "jurisdiction_health_center": "고양시덕양구보건소",
+      "sido": "서울",
+      "gugun": "성북구"
+    },
+    {
+      "jurisdiction_health_center": "포항시북구보건소",
+      "sido": "경북",
+      "gugun": "포항시 남구"
+    },
+    {
+      "jurisdiction_health_center": "여수시보건소",
+      "sido": "부산",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "울릉군보건의료원",
+      "sido": "경북",
+      "gugun": "포항시 북구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시중구보건소",
+      "sido": "인천",
+      "gugun": "중구"
+    },
+    {
+      "jurisdiction_health_center": "서산시보건소",
+      "sido": "충남",
+      "gugun": "태안군"
+    },
+    {
+      "jurisdiction_health_center": "보령시보건소",
+      "sido": "충남",
+      "gugun": "서천군"
+    },
+    {
+      "jurisdiction_health_center": "전주시보건소",
+      "sido": "전북",
+      "gugun": "전주시 덕진구"
+    },
+    {
+      "jurisdiction_health_center": "제주시제주보건소",
+      "sido": "부산",
+      "gugun": "해운대구"
+    },
+    {
+      "jurisdiction_health_center": "영덕군보건소",
+      "sido": "경북",
+      "gugun": "포항시 북구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시중구보건소",
+      "sido": "부산",
+      "gugun": "동구"
+    },
+    {
+      "jurisdiction_health_center": "부산광역시서구보건소",
+      "sido": "부산",
+      "gugun": "영도구"
+    },
+    {
+      "jurisdiction_health_center": "대구광역시중구보건소",
+      "sido": "부산",
+      "gugun": "강서구"
+    }
+  ],
+  "total_unique_centers": 337,
+  "province_counts": {
+    "경기": 49,
+    "서울": 28,
+    "전남": 26,
+    "경남": 25,
+    "경북": 25,
+    "부산": 22,
+    "충남": 19,
+    "강원": 18,
+    "전북": 15,
+    "충북": 14,
+    "인천": 12,
+    "대구": 10,
+    "대전": 7,
+    "울산": 6,
+    "광주": 6,
+    "제주": 2,
+    "세종": 1,
+    "경기도": 1
+  },
+  "top_20_centers": [
+    {
+      "rank": 1,
+      "health_center_name": "제주시제주보건소",
+      "sido": "제주",
+      "gugun": "제주시",
+      "device_count": 6240
+    },
+    {
+      "rank": 2,
+      "health_center_name": "서귀포시서귀포보건소",
+      "sido": "제주",
+      "gugun": "서귀포시",
+      "device_count": 2306
+    },
+    {
+      "rank": 3,
+      "health_center_name": "인천광역시중구보건소",
+      "sido": "서울",
+      "gugun": "영등포구",
+      "device_count": 1003
+    },
+    {
+      "rank": 4,
+      "health_center_name": "천안시서북구보건소",
+      "sido": "충남",
+      "gugun": "천안시 서북구",
+      "device_count": 960
+    },
+    {
+      "rank": 5,
+      "health_center_name": "보령시보건소",
+      "sido": "충남",
+      "gugun": "보령시",
+      "device_count": 870
+    },
+    {
+      "rank": 6,
+      "health_center_name": "대구광역시달서구보건소",
+      "sido": "대구",
+      "gugun": "달서구",
+      "device_count": 865
+    },
+    {
+      "rank": 7,
+      "health_center_name": "대구광역시북구보건소",
+      "sido": "대구",
+      "gugun": "북구",
+      "device_count": 852
+    },
+    {
+      "rank": 8,
+      "health_center_name": "아산시보건소",
+      "sido": "충남",
+      "gugun": "아산시",
+      "device_count": 845
+    },
+    {
+      "rank": 9,
+      "health_center_name": "부산광역시동구보건소",
+      "sido": "부산",
+      "gugun": "동구",
+      "device_count": 831
+    },
+    {
+      "rank": 10,
+      "health_center_name": "서산시보건소",
+      "sido": "충남",
+      "gugun": "서산시",
+      "device_count": 782
+    },
+    {
+      "rank": 11,
+      "health_center_name": "여수시보건소",
+      "sido": "전남",
+      "gugun": "여수시",
+      "device_count": 761
+    },
+    {
+      "rank": 12,
+      "health_center_name": "광산구보건소",
+      "sido": "광주",
+      "gugun": "광산구",
+      "device_count": 761
+    },
+    {
+      "rank": 13,
+      "health_center_name": "부천시보건소",
+      "sido": "경기",
+      "gugun": "부천시",
+      "device_count": 717
+    },
+    {
+      "rank": 14,
+      "health_center_name": "당진시보건소",
+      "sido": "충남",
+      "gugun": "당진시",
+      "device_count": 671
+    },
+    {
+      "rank": 15,
+      "health_center_name": "달성군보건소",
+      "sido": "대구",
+      "gugun": "달성군",
+      "device_count": 668
+    },
+    {
+      "rank": 16,
+      "health_center_name": "거제시보건소",
+      "sido": "경남",
+      "gugun": "거제시",
+      "device_count": 665
+    },
+    {
+      "rank": 17,
+      "health_center_name": "대구광역시수성구보건소",
+      "sido": "대구",
+      "gugun": "수성구",
+      "device_count": 662
+    },
+    {
+      "rank": 18,
+      "health_center_name": "통영시보건소",
+      "sido": "부산",
+      "gugun": "강서구",
+      "device_count": 650
+    },
+    {
+      "rank": 19,
+      "health_center_name": "성남시분당구보건소",
+      "sido": "경기",
+      "gugun": "성남시 분당구",
+      "device_count": 635
+    },
+    {
+      "rank": 20,
+      "health_center_name": "화성시동탄보건소",
+      "sido": "경기",
+      "gugun": "화성시",
+      "device_count": 618
+    }
+  ],
+  "name_patterns": {
+    "시도포함": 68,
+    "구군만포함": 176,
+    "보건소로끝남": 91,
+    "띄어쓰기있음": 1,
+    "기타": 1
+  },
+  "pattern_examples": {
+    "시도포함": [
+      "청도군보건소 (경북 청도군)",
+      "진도군보건소 (전남 진도군)",
+      "부산광역시강서구보건소 (부산 강서구)",
+      "부산광역시사상구보건소 (부산 사상구)",
+      "부산광역시금정구보건소 (부산 금정구)"
+    ],
+    "구군만포함": [
+      "김포시보건소 (경기 김포시)",
+      "화성시서부보건소 (경기 화성시)",
+      "평택시평택보건소 (경기 평택시)",
+      "포천시보건소 (경기 포천시)",
+      "이천시보건소 (경기 이천시)"
+    ],
+    "보건소로끝남": [
+      "성남시분당구보건소 (경기 성남시 분당구)",
+      "상록수보건소 (경기 안산시 상록구)",
+      "남양주풍양보건소 (경기 남양주시)",
+      "남양주보건소 (경기 남양주시)",
+      "포항시남구보건소 (경북 포항시 남구)"
+    ],
+    "띄어쓰기있음": [
+      "삼성 보건지소 (대전 동구)"
+    ],
+    "기타": [
+      "울릉군보건의료원 (경북 포항시 북구)"
+    ]
+  },
+  "total_devices": 80761,
+  "average_per_center": 239.64688427299703,
+  "sido_device_distribution": {
+    "경기": 15563,
+    "서울": 8960,
+    "제주": 8544,
+    "충남": 8040,
+    "경남": 6854,
+    "대구": 4599,
+    "경북": 4515,
+    "부산": 4406,
+    "인천": 3997,
+    "전남": 3505
+  }
+}

@@ -1,0 +1,7144 @@
+{
+  "timestamp": "2025-09-15T22:32:00.657Z",
+  "totalRecords": 80766,
+  "issues": {
+    "duplicateSerialNumbers": [
+      {
+        "serialNumber": "D15122100001",
+        "count": 2,
+        "devices": [
+          {
+            "managementNumber": "20210726-20",
+            "institution": "통영해양경찰서P-27정"
+          },
+          {
+            "managementNumber": "20210727-15",
+            "institution": "통영해양경찰서P-58정"
+          }
+        ]
+      },
+      {
+        "serialNumber": "-",
+        "count": 2,
+        "devices": [
+          {
+            "managementNumber": "20121010-05",
+            "institution": "신부문화회관"
+          },
+          {
+            "managementNumber": "20091227-19",
+            "institution": "직산양당보건진료소"
+          }
+        ]
+      },
+      {
+        "serialNumber": "14-1593",
+        "count": 2,
+        "devices": [
+          {
+            "managementNumber": "20221130-23",
+            "institution": "하나병원"
+          },
+          {
+            "managementNumber": "20240223-00",
+            "institution": "의료법인수석의료재단북면이화요양병원"
+          }
+        ]
+      },
+      {
+        "serialNumber": "10054-0000-2201680",
+        "count": 2,
+        "devices": [
+          {
+            "managementNumber": "20220728-14",
+            "institution": "구암1동행정복지센터"
+          },
+          {
+            "managementNumber": "20220728-13",
+            "institution": "여성회관마산관"
+          }
+        ]
+      },
+      {
+        "serialNumber": "제허14-1593호",
+        "count": 2,
+        "devices": [
+          {
+            "managementNumber": "20230530-05",
+            "institution": "창녕생태곤충원"
+          },
+          {
+            "managementNumber": "20250722-10",
+            "institution": "책둠벙도서관"
+          }
+        ]
+      },
+      {
+        "serialNumber": "D01120060372",
+        "count": 3,
+        "devices": [
+          {
+            "managementNumber": "20230721-00",
+            "institution": "한산대체력단련장"
+          },
+          {
+            "managementNumber": "20230721-00",
+            "institution": "한산대체력단련장"
+          },
+          {
+            "managementNumber": "20230721-00",
+            "institution": "한산대체력단련장"
+          }
+        ]
+      },
+      {
+        "serialNumber": "B23A-07952",
+        "count": 2,
+        "devices": [
+          {
+            "managementNumber": "20140127-12",
+            "institution": "보은한화공장(1사업장)"
+          },
+          {
+            "managementNumber": "20140127-12",
+            "institution": "보은한화공장(1사업장)"
+          }
+        ]
+      },
+      {
+        "serialNumber": "10015-0000-2100062",
+        "count": 2,
+        "devices": [
+          {
+            "managementNumber": "20250808-10",
+            "institution": "하트세이버"
+          },
+          {
+            "managementNumber": "20250808-10",
+            "institution": "하트세이버"
+          }
+        ]
+      }
+    ],
+    "dateLogicErrors": [
+      {
+        "managementNumber": "20130719-6",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2022-10-08",
+            "installation_date": "2022-07-12"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20121226-22",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2017-01-30",
+            "installation_date": "2012-11-29"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130220-24",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2019-01-01",
+            "installation_date": "2018-06-05"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130220-24",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2019-01-01",
+            "installation_date": "2018-06-05"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130109-9",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2022-10-31",
+            "installation_date": "2019-11-13"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240730-04",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2024-05-31",
+            "installation_date": "2023-06-13"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20170720-01",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2015-12-31",
+            "installation_date": "2014-03-26"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150501-04",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2022-01-13",
+            "installation_date": "2013-09-23"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20100727-3",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2023-03-14",
+            "installation_date": "2008-10-31"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20170824-06",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2020-06-11",
+            "installation_date": "2017-08-24"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140402-01",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2020-06-18",
+            "installation_date": "2017-08-24"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171026-14",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2017-03-30",
+            "installation_date": "2017-03-27"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171025-21",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2017-10-27",
+            "installation_date": "2016-12-01"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171027-04",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2015-07-29",
+            "installation_date": "2015-04-01"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180302-06",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2018-05-01",
+            "installation_date": "2018-02-28"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171024-20",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2016-10-25",
+            "installation_date": "2016-10-24"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171025-47",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2014-09-20",
+            "installation_date": "2014-09-01"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180214-01",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2018-03-01",
+            "installation_date": "2018-02-14"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180108-25",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2017-12-27",
+            "installation_date": "2017-01-04"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180104-07",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2017-12-01",
+            "installation_date": "2017-08-04"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171218-06",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2017-12-18",
+            "installation_date": "2017-11-10"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180406-14",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2018-06-01",
+            "installation_date": "2018-04-05"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20081217-01",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2017-04-20",
+            "installation_date": "2008-12-17"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160323-04",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2018-02-01",
+            "installation_date": "2016-03-23"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180822-09",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2022-05-01",
+            "installation_date": "2018-05-26"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180602-34",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2018-05-31",
+            "installation_date": "2018-05-27"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180718-15",
+        "errors": [
+          {
+            "type": "제조일 > 설치일",
+            "manufacturing_date": "2018-02-05",
+            "installation_date": "2018-01-03"
+          }
+        ]
+      }
+    ],
+    "gpsErrors": [
+      {
+        "managementNumber": "20180612-50",
+        "institution": "대유상선(주)",
+        "errors": [
+          {
+            "type": "한국 범위 벗어남",
+            "lat": 34.82276257,
+            "lng": 137.24748991
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221207-03",
+        "institution": "107용진호",
+        "errors": [
+          {
+            "type": "GPS 좌표 없음"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150910-20",
+        "institution": "청구전원타운",
+        "errors": [
+          {
+            "type": "GPS 좌표 없음"
+          }
+        ]
+      }
+    ],
+    "missingFields": [
+      {
+        "field": "installation_position",
+        "count": 39
+      },
+      {
+        "field": "model_name",
+        "count": 2
+      },
+      {
+        "field": "manufacturer",
+        "count": 8
+      }
+    ],
+    "statusInconsistencies": [],
+    "expiredItems": {
+      "battery": {
+        "expired": 4922,
+        "expiringSoon": 1006
+      },
+      "pad": {
+        "expired": 6145,
+        "expiringSoon": 1482
+      }
+    },
+    "inspectionIssues": {
+      "noInspection": 5263,
+      "overSixMonths": 6745,
+      "threeToSixMonths": 1606,
+      "note": "주의: 점검 주기 패턴은 알 수 없음. 최근 점검일만 기준으로 분석"
+    },
+    "categoryErrors": [
+      {
+        "managementNumber": "20180531-115",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)청해환경"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180222-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "옥길센트리뷰아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180531-115",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)청해환경"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20181022-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)비케이"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240830-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포스코퓨처엠"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20200901-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "삼성전자구미2사업장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "현대건설(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180703-36",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "당감4동주민센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180227-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "하안13단지고층주공아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180227-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "하안13단지고층주공아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190403-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)해창기업"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240708-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "주실마을관광안내소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240930-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "GS건설포항자이애서턴현장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240708-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "두들마을관광안내소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180227-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "하안13단지고층주공아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190731-48",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "서면2차봄여름가을겨울아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240812-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경상북도관광홍보관"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180423-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "래미안장전아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180730-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대동항업(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240607-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "원익큐엔씨S캠퍼스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241029-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신라응급영천지점"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190712-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제2003금성호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20170830-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "덕유마을 3단지아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20101231-15",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "암기보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230816-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경주뉴센트로에일린의뜰"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240112-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경상북도소방본부"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190803-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "덕천주공2단지아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250102-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "88원양호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190806-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "만덕3단지주공아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250411-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포스코이앤씨"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180531-28",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "해양환경공단부산지사"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241202-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "CJ대한통운경산올영오프라인센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180615-39",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제710해운호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230816-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "지멘스헬시니어스(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240105-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한국예선(유)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230103-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "아진산업"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230103-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "아진산업"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20151209-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "벽산블루밍디자인시티"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240117-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포레나부산덕천2차"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190523-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "내남보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240607-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신경주더퍼스트데시앙"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20161031-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "국립공원관리공단(주왕산국립공원사무소)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160518-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "청구하이츠아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180711-64",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)삼안환경"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240806-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포스코GYS테크"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190516-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경주시민운동장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221215-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "LG디스플레이㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230329-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "내부순환(만덕~센텀) 도시고속화도로(1공구)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230713-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "LG-HYBCM"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240830-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포스코퓨처엠"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250103-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경산아이파크1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20181117-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대연파크푸르지오아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240708-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "선바위관광지관광안내소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20161031-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "국립공원관리공단(주왕산국립공원사무소)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240227-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "레이카운티아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190402-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "봉은해운(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190402-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "봉은해운(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "현대건설(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221211-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국씨엠(주)부산공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240514-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "힐스테이트더샵상생공원현장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241209-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구미푸르지오엘리포레시티1단지"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241202-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "CJ대한통운경산올영오프라인센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190612-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "명지스위트팰리스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221221-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)풍산부산사업장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190612-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "삼한골든뷰센트럴파크"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250402-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "매봉마을1단지아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190612-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "삼한골든뷰센트럴파크"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180716-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)에스앤피해운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180726-38",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)토탈포트서비스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250702-17",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제225유성호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190920-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대연자이아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제1정수호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180718-24",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)대진해운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180601-53",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "해양환경공단포항지사"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241029-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한국교통안전공단"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180718-31",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "김태식"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180711-62",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)진명해운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241220-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포항펜타시티한신더휴4단지"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180530-186",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "고암오네뜨아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250212-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포항펜타시티동화아이위시"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180627-34",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "감만현대1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250103-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경산하양제일풍경채"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221221-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)풍산부산사업장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180614-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "정일산업(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250304-09",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "힐스테이트황성"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180423-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "금정산1차쌍용예가아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241217-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(재)포항산업과학연구원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-24",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "마우나오션리조트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230619-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국제강(주)포항공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180614-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "정일산업(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-24",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "마우나오션리조트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250721-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "2025안성호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250729-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "호미곶여행자센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180614-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "정일산업(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250616-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구미세관"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221223-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "SK실트론"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250901-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제303혜수호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250729-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "해모로리버시티아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250721-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "원호자이더포레관리사무소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20080102-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "119구조구급센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250709-08",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "태성22호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180719-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)명진선박"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250826-09",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제1대승호(어선번호1611001-6477702)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240227-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "레이카운티아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180614-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "정일산업(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180719-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)명진선박"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221223-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "SK실트론"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180719-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "명성티엔비"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221223-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "SK실트론"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221223-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "SK실트론"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250721-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "장명호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250702-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제32금정호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180719-44",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)에이치비씨해운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230320-24",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "기장군도시관리공단-기장군국민체육센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250827-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포항국제전세컨벤션센터건립공사현장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250317-22",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "청해해상급유주식회사"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "현대건설(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20080102-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "119구조구급센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250311-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "양정자이더샵SKVIEW아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230320-24",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "기장군도시관리공단-기장군국민체육센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180704-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "성보해운(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡로지스틱스서비스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "107희성호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "303우진호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180530-157",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동원산업(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구미인동하늘채디어반2차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250711-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제5예건호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20170111-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구미원호푸르지오아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250805-17",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포항시청민원실"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250805-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포항시설관리공단(포항야구장)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180716-52",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "207대양호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡로지스틱스서비스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡로지스틱스서비스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250901-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구미캠핑장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250709-09",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제86한승호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡로지스틱스서비스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250616-21",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "병산서원관리사무소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "현대건설(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "현대건설(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221223-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "SK실트론"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221223-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "SK실트론"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180529-278",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "광영호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240624-25",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "현대건설(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20080102-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "가산119안전센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241107-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신창수산"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250428-19",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "중흥S-클래스에듀포레"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221223-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "SK실트론"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "독도관리사무소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250625-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡풀필먼트서비스유한회사경산2센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20080102-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "가산119안전센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250812-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제2보승호(어선번호1811001-6477708)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190801-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구평3단지부영아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250630-33",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "선성현문화단지관리사무실"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180802-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제7순복호(안강망협회)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250711-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제506진흥호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250804-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡로지스틱스서비스"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250729-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제7창경호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250709-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제2021유성호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180104-09",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "배방중앙하이츠1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20161010-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "흥해삼도뷰엔빌"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250423-46",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "2017영일호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140127-23",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "옥계119안전센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250709-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제205광성호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230404-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한국해양과학기술원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180716-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신난다(이문주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240703-28",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "천안한양수자인에코시티"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240830-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)에이치제이해운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240719-15",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "영천시청"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180621-26",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "티웨이항공"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221211-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국씨엠(주)부산공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240704-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "남구건강생활지원센터"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221213-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한화시스템㈜"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230920-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "힐스테이트가야1,2차신축공사현장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250805-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "포항시설관리공단(종합운동장)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180529-278",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "광영호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250901-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제3대동호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160119-41",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한일2차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160120-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대림하이빌아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160120-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "월영현대건설아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160119-39",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "상곡주공1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180629-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "창신Inc"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160119-39",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "상곡주공1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221229-123",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)성광벤드"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130819-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "산청군보건의료원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130819-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "산청군보건의료원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130819-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "산청군보건의료원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한신휴플러스아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-46",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "평산휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-46",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "평산휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-46",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "평산휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130925-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "천성리버타운아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-33",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "주공7단지휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-33",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "주공7단지휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "종합운동장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "종합운동장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "종합운동장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "양산신도시효성백년가약아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-19",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "양산금산휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-19",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "양산금산휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190219-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "509유일호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-19",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "양산금산휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20191205-21",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "천성2호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180621-55",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)조양"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신창비바패밀리아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241106-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "주식회사포스인터내셔날"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-26",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신도시현대아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-27",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신도시쌍용아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-39",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "소주휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-39",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "소주휴먼시아아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180611-53",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대진유조"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240830-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)에이치제이해운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-49",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "부영벽산아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-15",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "반도유보라아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-29",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동원로얄듀크아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-47",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대승1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-17",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "극동아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180611-51",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "세진유업"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221230-15",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대우건설"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180526-08",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제103바다호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240702-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "부산해상관광개발"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180711-36",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)티제이쉬핑"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171027-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "주공6단지2차"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20200413-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)동서항업"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "창녕군시설관리공단"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20131021-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "죽림주공아파트(관리사무소)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20131021-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "죽림주공아파트(관리사무소)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-68",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "덕산베스트타운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250526-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "강서자이에코델타아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241209-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제13금성호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-68",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "덕산베스트타운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171025-39",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신동아파밀리에"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20171201-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "코아루에듀파크 아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140116-66",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대동다숲아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20131204-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "거제자이아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20131204-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "거제자이아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250509-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "뉴삼우마린(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221219-50",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "쿠팡로지스틱스서비스_부산5캠프"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20181116-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동래삼정그린코아포레스트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221229-123",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)성광벤드"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20181116-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동래삼정그린코아포레스트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180621-55",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)조양"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "회화보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130814-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경남239호(해양수산과)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130814-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "하일보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "하이봉현보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180630-09",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)덕성해양개발"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "하이덕명보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-08",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "삼산삼봉보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-17",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "마암신리보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130814-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "마암보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동해보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-19",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동해매정보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대가송계보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130814-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대가보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130814-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구만보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130813-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "거류보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-117",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "팔판마을3단지부영e그린타운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140122-34",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "팔판마을1단지부영"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-115",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "김해진영코아루"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-102",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "삼성아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-101",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "일동한신아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-116",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "율현마을동원로얄듀크"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-122",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "율곡마을주공2단지"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-122",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "율곡마을주공2단지"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-121",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "석봉마을7단지부영아파트관리사무소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-118",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "석봉마을4단지부영"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-106",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "삼방한일아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-95",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동원아파트(삼방)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-109",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "분성마을1단지현대아이파크"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-112",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "분성마을5단지푸르지오"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-105",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "분성마을2단지부영"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-103",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "분성마을3단지동원로얄듀크"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-103",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "분성마을3단지동원로얄듀크"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-123",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "덕산아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-108",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대동한마음타운(외동)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140121-110",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "구지마을동원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-28",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "밀양구치소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-28",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "밀양구치소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-28",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "밀양구치소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20241107-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신창수산"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-20",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대방대동아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-31",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대방그린빌아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221211-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국씨엠(주)부산공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180716-16",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)와이케이산업"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-17",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대동그린파크아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "피닉스포레아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-23",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신월주공아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20191205-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "광명해운(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "벽산블루밍A아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "두산위브아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대동중앙아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180604-48",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동림탱커(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180716-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "신난다(이문주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221211-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국씨엠(주)부산공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221211-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국씨엠(주)부산공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130821-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경상남도마산의료원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140120-36",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한일타운3차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180725-59",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)노아해운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20220216-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "선영해운(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180711-31",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한빛타운"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180605-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "경양수산(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221229-123",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)성광벤드"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-36",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "장암보건진료소(입구)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-42",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "이룡보건진료소(입구)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-40",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "여항보건진료소(입구)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20230404-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한국해양과학기술원"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-38",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "문암보건진료소(입구)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20210917-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "화명푸르지오헤리센트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20221211-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동국씨엠(주)부산공장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20191205-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "국립해양조사원 남해해양조사사무소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130924-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "함양군청"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20191205-07",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "광명해운(주)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180719-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "명성티엔비"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250710-08",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "부산해상해운(주)[영진호]"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240422-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "대방건설(주)부산에코델타시티 대방디에트르아파트신축공사현장"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20141219-24",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "연지자이1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190806-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "만덕3단지주공아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20220504-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "주식회사연월"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250826-02",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한정기[107동성호]"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190713-24",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동래효성해링턴플레이스 아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190401-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)현원수산"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20250703-12",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "래미안포레스티지"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130819-06",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "병목보건진료소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-29",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "현대산업아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-19",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "반림현대건설아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20191128-01",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "인덕원푸르지오엘센트로아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20140212-27",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한림푸르지오"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160119-33",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "한일타운1차아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-19",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "율현마을e편한세상9단지2차"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-21",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "진영자이아파트"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20190412-11",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "제2영11호"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-03",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "팔판6단지푸르지오"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-04",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "화정마을1단지부영"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-14",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "석봉마을대동아파트(부곡동)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-15",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "월산마을주공11단지"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-15",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "월산마을주공11단지"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20150406-18",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "월산마을1단지부영"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20240129-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동부건설"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180802-13",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "필승호(안강망협회)"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20160209-05",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "지내동원2차"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180525-00",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "보령쉬핑"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20130812-45",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "동부도시보건지소"
+          }
+        ]
+      },
+      {
+        "managementNumber": "20180525-10",
+        "errors": [
+          {
+            "type": "구비의무기관 분류 의심",
+            "institution": "(주)대진어업"
+          }
+        ]
+      }
+    ],
+    "contactFormatErrors": [
+      {
+        "managementNumber": "20160707-08",
+        "contact": "6360303"
+      },
+      {
+        "managementNumber": "20180719-02",
+        "contact": "8668488"
+      },
+      {
+        "managementNumber": "20190522-14",
+        "contact": "3381494"
+      },
+      {
+        "managementNumber": "20200604-79",
+        "contact": "18990071"
+      },
+      {
+        "managementNumber": "20130809-13",
+        "contact": "7942900"
+      },
+      {
+        "managementNumber": "20180302-03",
+        "contact": "5522023"
+      },
+      {
+        "managementNumber": "20180530-59",
+        "contact": "2413300"
+      },
+      {
+        "managementNumber": "20180530-59",
+        "contact": "2413300"
+      },
+      {
+        "managementNumber": "20180530-59",
+        "contact": "2413300"
+      },
+      {
+        "managementNumber": "20151023-15",
+        "contact": "5517633"
+      },
+      {
+        "managementNumber": "20230210-50",
+        "contact": "1544-3778"
+      },
+      {
+        "managementNumber": "20200525-49",
+        "contact": "1544-7582"
+      },
+      {
+        "managementNumber": "20180714-03",
+        "contact": "4656244"
+      },
+      {
+        "managementNumber": "20200121-14",
+        "contact": "012-40-7088"
+      },
+      {
+        "managementNumber": "20200121-14",
+        "contact": "012-40-7088"
+      },
+      {
+        "managementNumber": "20151023-02",
+        "contact": "5400100"
+      },
+      {
+        "managementNumber": "20151023-02",
+        "contact": "5400100"
+      },
+      {
+        "managementNumber": "20151023-13",
+        "contact": "5474062"
+      },
+      {
+        "managementNumber": "20200625-34",
+        "contact": "7401890"
+      },
+      {
+        "managementNumber": "20200604-79",
+        "contact": "18990071"
+      },
+      {
+        "managementNumber": "20150205-06",
+        "contact": "5510841"
+      },
+      {
+        "managementNumber": "20181019-13",
+        "contact": "8702114"
+      },
+      {
+        "managementNumber": "20160520-02",
+        "contact": "6363906"
+      },
+      {
+        "managementNumber": "20160826-07",
+        "contact": "5529107"
+      },
+      {
+        "managementNumber": "20160826-08",
+        "contact": "5486300"
+      },
+      {
+        "managementNumber": "20160513-07",
+        "contact": "6372500"
+      },
+      {
+        "managementNumber": "20160826-13",
+        "contact": "5486350"
+      },
+      {
+        "managementNumber": "20230210-50",
+        "contact": "1544-3778"
+      },
+      {
+        "managementNumber": "20160831-61",
+        "contact": "5306202"
+      },
+      {
+        "managementNumber": "20160516-00",
+        "contact": "6365631"
+      },
+      {
+        "managementNumber": "20160530-01",
+        "contact": "6339606"
+      },
+      {
+        "managementNumber": "20160530-01",
+        "contact": "6339606"
+      },
+      {
+        "managementNumber": "20160831-100",
+        "contact": "0559709708005"
+      },
+      {
+        "managementNumber": "20160826-12",
+        "contact": "5486422"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20160828-01",
+        "contact": "5487346"
+      },
+      {
+        "managementNumber": "20230210-50",
+        "contact": "1544-3778"
+      },
+      {
+        "managementNumber": "20160826-05",
+        "contact": "7120441"
+      },
+      {
+        "managementNumber": "20151023-12",
+        "contact": "5424366"
+      },
+      {
+        "managementNumber": "20151023-06",
+        "contact": "5478297"
+      },
+      {
+        "managementNumber": "20160520-03",
+        "contact": "6341061"
+      },
+      {
+        "managementNumber": "20160520-03",
+        "contact": "6341061"
+      },
+      {
+        "managementNumber": "20160523-06",
+        "contact": "6801120"
+      },
+      {
+        "managementNumber": "20160525-02",
+        "contact": "6818111"
+      },
+      {
+        "managementNumber": "20160530-00",
+        "contact": "6819003"
+      },
+      {
+        "managementNumber": "20151023-14",
+        "contact": "5527630"
+      },
+      {
+        "managementNumber": "20161018-11",
+        "contact": "6412301"
+      },
+      {
+        "managementNumber": "20170307-06",
+        "contact": "7120448"
+      },
+      {
+        "managementNumber": "20170307-06",
+        "contact": "7120448"
+      },
+      {
+        "managementNumber": "20161019-01",
+        "contact": "6453379"
+      },
+      {
+        "managementNumber": "20161019-02",
+        "contact": "6432588"
+      },
+      {
+        "managementNumber": "20170306-26",
+        "contact": "7120474"
+      },
+      {
+        "managementNumber": "20170306-26",
+        "contact": "7120474"
+      },
+      {
+        "managementNumber": "20161019-06",
+        "contact": "6480568"
+      },
+      {
+        "managementNumber": "20170102-31",
+        "contact": "3461150"
+      },
+      {
+        "managementNumber": "20161019-05",
+        "contact": "6452200"
+      }
+    ],
+    "manufacturerModelIssues": [
+      {
+        "managementNumber": "20100705-356",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170307-02",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "i-PAD NFK200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200917-11",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR501-B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-28",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161019-02",
+        "manufacturer": "나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220705-18",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170306-26",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A16-DF",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161019-12",
+        "manufacturer": "나눔테크",
+        "model": "HeartPlus NT-180B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-327",
+        "manufacturer": "(주)씨유메디칼",
+        "model": "i-PAD CU-SPI Plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240227-13",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240227-13",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170303-09",
+        "manufacturer": "필립스",
+        "model": "HEARTSTART FRx",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-14",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200901-26",
+        "manufacturer": "필립스",
+        "model": "Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-16",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-31",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231215-15",
+        "manufacturer": "메디아나",
+        "model": "Heart On A16-DS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201015-13",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200921-24",
+        "manufacturer": "메디아나",
+        "model": "hearton a15-g4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231121-20",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201214-23",
+        "manufacturer": "나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231121-20",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170207-06",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170207-06",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161019-05",
+        "manufacturer": "필립스",
+        "model": "Heart Start HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231121-20",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220917-00",
+        "manufacturer": "(주)씨유메디칼",
+        "model": "CU-SPRC",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201215-00",
+        "manufacturer": "메디아나",
+        "model": "A10-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161019-00",
+        "manufacturer": "메디아나",
+        "model": "저출력심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-336",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200129-02",
+        "manufacturer": "(주)메디아나",
+        "model": "Heartn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161026-09",
+        "manufacturer": "(주)나눔테크",
+        "model": "저출력심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240306-07",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-06",
+        "manufacturer": "씨유메디칼",
+        "model": "SP-1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250616-26",
+        "manufacturer": "나눔테크",
+        "model": "ReHeart(NT-381.0)",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161031-15",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-318.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210215-00",
+        "manufacturer": "(주)필립스코리아",
+        "model": "Heart Start HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210406-19",
+        "manufacturer": "메디아나",
+        "model": "HEARTON A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210324-05",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20160609-00",
+        "manufacturer": "(주)라디안",
+        "model": "HEART GUARDIAN HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170105-16",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-09",
+        "manufacturer": "씨유메디칼",
+        "model": "SP-1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161229-01",
+        "manufacturer": "씨유메디칼",
+        "model": "SP-1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240102-16",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161229-02",
+        "manufacturer": "씨유메디칼",
+        "model": "SP-1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20120917-29",
+        "manufacturer": "라디안",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161006-02",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161229-06",
+        "manufacturer": "씨유메디칼",
+        "model": "SP-1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231221-01",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "저출력심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240228-00",
+        "manufacturer": "라디안",
+        "model": "HR501",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161020-17",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161108-02",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161108-02",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartProNT-280",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161018-12",
+        "manufacturer": "나눔테크",
+        "model": "Heat Pro NT-280",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240228-00",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.c",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240514-00",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart NT381.0",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210414-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOnA15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170105-15",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230320-24",
+        "manufacturer": "라디안",
+        "model": "HR-701 A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240418-02",
+        "manufacturer": "나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170120-09",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "i-PAD NFK200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231030-09",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B/Reheart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20160831-80",
+        "manufacturer": "(주)라디안",
+        "model": "HR501",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240508-00",
+        "manufacturer": "나눔테크",
+        "model": "NT-180",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170120-09",
+        "manufacturer": "라디안",
+        "model": "저출력심장충격기, 라디안",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161223-04",
+        "manufacturer": "씨유메디칼",
+        "model": "SP-1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-12",
+        "manufacturer": "씨유메디칼",
+        "model": "SP-1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20160831-82",
+        "manufacturer": "(주)라디안",
+        "model": "HR501",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170102-39",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180913-02",
+        "manufacturer": "필립스",
+        "model": "HS 1(Heartstart)",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-22",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart/NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-27",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230320-30",
+        "manufacturer": "나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221219-38",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-45",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-46",
+        "manufacturer": "나눔테크",
+        "model": "NT-380.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-59",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20190710-26",
+        "manufacturer": "나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210630-06",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20110124-10",
+        "manufacturer": "나눔테크",
+        "model": "리허트",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240926-05",
+        "manufacturer": "씨유메디칼",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170324-14",
+        "manufacturer": "(주)메디아나",
+        "model": "REF A15M-G4-1K",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170324-14",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170324-14",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170620-03",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper NT-180",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130814-00",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230120-01",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20150205-07",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230210-50",
+        "manufacturer": "씨유메디칼",
+        "model": "cu-sp1plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250311-05",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A10-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170327-02",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210609-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170526-02",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250318-12",
+        "manufacturer": "씨유메디칼",
+        "model": "NFK200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210414-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOnA15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-502",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241216-04",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241025-24",
+        "manufacturer": "메디아나",
+        "model": "Heart On A16-GF",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161014-19",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-503-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "필립스",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "필립스",
+        "model": "Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "필립스",
+        "model": "Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221102-00",
+        "manufacturer": "나눔테크",
+        "model": "Heart Keeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "필립스",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-32",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart(NT-381)",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241127-00",
+        "manufacturer": "㈜라디안큐바이오",
+        "model": "HR501",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140116-20",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170523-05",
+        "manufacturer": "필립스",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170626-04",
+        "manufacturer": "나눔테크",
+        "model": "N_T180",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20150923-08",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20190718-01",
+        "manufacturer": "(주)라디안",
+        "model": "Heate Guardian HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171025-49",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170831-00",
+        "manufacturer": "메디아나",
+        "model": "Heart On A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20131204-03",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-14",
+        "manufacturer": "나눔테크",
+        "model": "Heartkeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-16",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-56",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231215-16",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A16-DS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210609-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171215-07",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140116-35",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130925-00",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130925-00",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-13",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-43",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231114-01",
+        "manufacturer": "필립스",
+        "model": "HEART START",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-43",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-51",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-289",
+        "manufacturer": "필립스",
+        "model": "US/Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-11",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-20",
+        "manufacturer": "나눔테크",
+        "model": "N-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-28",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180820-00",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210809-03",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-23",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20231219-32",
+        "manufacturer": "나눔테크",
+        "model": "ReHeart NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241031-01",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.G/Reheart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140122-141",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241015-00",
+        "manufacturer": "라디안",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210809-05",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-54",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart/NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250203-15",
+        "manufacturer": "메디아나",
+        "model": "A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130814-03",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-15",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-22",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-33",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-36",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-214",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-502",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250822-01",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "I-PAD NFK300",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-20",
+        "manufacturer": "메디아나",
+        "model": "A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20211119-02",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250822-03",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3814.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-20",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20211126-05",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170413-10",
+        "manufacturer": "필립스",
+        "model": "FRXAED",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170904-00",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-33",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250807-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "HEARTKEEPER",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250724-05",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-180B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-37",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250813-02",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT381.AI",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241203-07",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170516-10",
+        "manufacturer": "라디안",
+        "model": "저출력심장충격기, 라디안",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140116-36",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130925-06",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-701 PlusA",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241025-28",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201221-11",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20160204-29",
+        "manufacturer": "주식회사 나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170412-09",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170412-09",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250814-10",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250814-10",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170704-01",
+        "manufacturer": "씨유메디칼",
+        "model": "I-PAD CU SPI",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220314-02",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171122-01",
+        "manufacturer": "라디안",
+        "model": "HR501-B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220314-03",
+        "manufacturer": "메디아나",
+        "model": "hearton A10",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220314-03",
+        "manufacturer": "메디아나",
+        "model": "hearton A10",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130813-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-143",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220404-11",
+        "manufacturer": "라디안",
+        "model": "Heart Guardian",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171201-16",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170405-08",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartON A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250908-01",
+        "manufacturer": "나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230508-33",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "립(LAEP), HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20190329-05",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "T-PAD, NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220322-00",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3814.C",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250813-05",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180207-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A10-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250530-12",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A10-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220428-02",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.0",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20150924-00",
+        "manufacturer": "나눔테크",
+        "model": "nt381.0",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220404-11",
+        "manufacturer": "라디안",
+        "model": "Heart Guardian",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20241128-04",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170308-01",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-48",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250903-10",
+        "manufacturer": "메디아나",
+        "model": "A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220408-07",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-48",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171228-14",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF-1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20110124-14",
+        "manufacturer": "나눔테크",
+        "model": "리허트",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250822-02",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220628-09",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartON A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170802-20",
+        "manufacturer": "나눔테크",
+        "model": "NT-180B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140127-12",
+        "manufacturer": "필립스",
+        "model": "HEARTSTART HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180219-09",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A10",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130812-35",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140116-43",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-12",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180129-00",
+        "manufacturer": "나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-19",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-19",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140127-12",
+        "manufacturer": "필립스",
+        "model": "HEARTSTART HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-41",
+        "manufacturer": "나눔테크",
+        "model": "하트키퍼",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180212-02",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "저출력심장충격기 I-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220607-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170306-36",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NE1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20181107-16",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170413-08",
+        "manufacturer": "필립스",
+        "model": "FRXAED",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170811-27",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170818-31",
+        "manufacturer": "(주)메디아나",
+        "model": "REF A10M-G4-OK",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220610-02",
+        "manufacturer": "필립스",
+        "model": "HEARTSTART HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220610-02",
+        "manufacturer": "필립스",
+        "model": "HEARTSTART HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20141209-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170413-09",
+        "manufacturer": "필립스",
+        "model": "FRXAED",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20131018-03",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-274",
+        "manufacturer": "필립스",
+        "model": "US/Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-17",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-27",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-21",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.0",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170413-01",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20181107-16",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250703-13",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.R",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140127-12",
+        "manufacturer": "필립스",
+        "model": "HEARTSTART HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220607-03",
+        "manufacturer": "필립스",
+        "model": "Heart start HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220607-03",
+        "manufacturer": "필립스",
+        "model": "Heart start HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-57",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart/NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-57",
+        "manufacturer": "(주)나눔테크",
+        "model": "ReHeart/NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170417-00",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-08",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20171211-25",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-283",
+        "manufacturer": "필립스",
+        "model": "US/Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180104-01",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170424-01",
+        "manufacturer": "(주)메디아나",
+        "model": "Heartona15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-30",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-58",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170428-31",
+        "manufacturer": "나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20100705-258",
+        "manufacturer": "필립스",
+        "model": "US/Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-34",
+        "manufacturer": "나눔테크",
+        "model": "NT-280",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170713-41",
+        "manufacturer": "나눔테크",
+        "model": "NT-280",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20160204-26",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.AI",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-12",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220713-20",
+        "manufacturer": "필립스",
+        "model": "Hear tstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-42",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-58",
+        "manufacturer": "나눔테크",
+        "model": "NT-280",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220801-08",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170704-00",
+        "manufacturer": "씨유메디칼",
+        "model": "I-PAD CU SPI",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20030321-01",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221028-11",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220802-08",
+        "manufacturer": "(주)나눔테크",
+        "model": "heart keeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220729-00",
+        "manufacturer": "(주)씨유메디칼",
+        "model": "I-PAD NF 1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220824-08",
+        "manufacturer": "나눔테크",
+        "model": "HEARTKEEPER",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201015-15",
+        "manufacturer": "씨유메디칼",
+        "model": "저출력심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220824-08",
+        "manufacturer": "나눔테크",
+        "model": "HEARTKEEPER",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220411-06",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-502",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221130-17",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221130-17",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170704-02",
+        "manufacturer": "씨유메디칼",
+        "model": "I-PAD CU SPI",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20030321-01",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20150924-00",
+        "manufacturer": "나눔테크",
+        "model": "nt381.0",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20240327-12",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heatleeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221214-36",
+        "manufacturer": "라디안큐바이오",
+        "model": "Heart Guardian HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250723-06",
+        "manufacturer": "나눔테크",
+        "model": "NT-381.0",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250407-40",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250626-15",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20250620-08",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.G",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221216-16",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "I-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220825-02",
+        "manufacturer": "메디아나",
+        "model": "Heart on A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20030321-01",
+        "manufacturer": "(주)메디아나",
+        "model": "Heart on A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20110214-06",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heartkeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230210-50",
+        "manufacturer": "씨유메디칼",
+        "model": "cu-sp1plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221215-10",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221215-05",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170712-61",
+        "manufacturer": "메디아나",
+        "model": "자동심잗충격기(AED)",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170526-00",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartsOn A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180818-03",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180818-10",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180717-10",
+        "manufacturer": "(주)라디안",
+        "model": "저출력 심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180529-66",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180529-66",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180529-66",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180813-31",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180814-13",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "자동심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170725-11",
+        "manufacturer": "라디안",
+        "model": "자동심장충격기-HR51A1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180814-13",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "자동심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180816-51",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180818-06",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180820-00",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180820-01",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180813-30",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180404-01",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "I-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180626-01",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "CU-SPRC",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180528-99",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "CU-SPI PIUS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180827-05",
+        "manufacturer": "메디아나",
+        "model": "Heart on A12-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180603-20",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heart Keeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180605-60",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180814-21",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221227-18",
+        "manufacturer": "(주)메디아나",
+        "model": "A10-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20140202-03",
+        "manufacturer": "필립스",
+        "model": "Heartstart FRx",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180813-67",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180602-41",
+        "manufacturer": "(주)씨유메디칼",
+        "model": "CU-SPI-PlUS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180814-14",
+        "manufacturer": "씨유메디칼",
+        "model": "I-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180529-40",
+        "manufacturer": "필립스",
+        "model": "M3536A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180525-98",
+        "manufacturer": "(주)라디안",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180523-05",
+        "manufacturer": "(주)메디아나",
+        "model": "Heart On A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180523-05",
+        "manufacturer": "(주)메디아나",
+        "model": "Heart On A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180523-05",
+        "manufacturer": "(주)메디아나",
+        "model": "Heart On A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180525-95",
+        "manufacturer": "(주)라디안",
+        "model": "SN:RA1803-139ES",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20110214-08",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heartkeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20181219-05",
+        "manufacturer": "필립스",
+        "model": "Heart Start M5066A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200608-203",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heartkeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200609-59",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartPlus NT-180",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200611-10",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170816-00",
+        "manufacturer": "라디안",
+        "model": "저출력심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200610-23",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heartkeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20181108-22",
+        "manufacturer": "씨유메디칼",
+        "model": "samaritanPAD",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221130-17",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230109-68",
+        "manufacturer": "필립스",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230109-68",
+        "manufacturer": "필립스",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200604-73",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200525-15",
+        "manufacturer": "메디아나",
+        "model": "HeartON A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20190713-12",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230120-69",
+        "manufacturer": "㈜나눔테크",
+        "model": "Heart Saver NT-285",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200604-76",
+        "manufacturer": "나눔테크",
+        "model": "저출력심장충격기HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230127-05",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-5000 Heart PlusⅡ",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200526-28",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230127-05",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-5000 Heart PlusⅡ",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200604-84",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200609-73",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180628-19",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180628-19",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230109-75",
+        "manufacturer": "필립스",
+        "model": "하트스타트FBx",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20160628-51",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "CU-SPR",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221229-10",
+        "manufacturer": "메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200806-14",
+        "manufacturer": "(주)메디아나",
+        "model": "A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210524-10",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230210-65",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-701PLUS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200423-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "Reheart/NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230302-03",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "i-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230222-07",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HeartGuardian HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20110214-12",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A10-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200525-26",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200527-23",
+        "manufacturer": "메디아나",
+        "model": "Hear on AED A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20210215-00",
+        "manufacturer": "(주)필립스코리아",
+        "model": "Heart Start HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200525-19",
+        "manufacturer": "나눔테크",
+        "model": "Heartkeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200525-23",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "(i-PAD CU-SPI)",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230306-23",
+        "manufacturer": "필립스",
+        "model": "Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230306-23",
+        "manufacturer": "필립스",
+        "model": "A14I-02052",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230302-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230307-03",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20130813-32",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.O",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200520-09",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "I-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230306-23",
+        "manufacturer": "메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230302-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20150205-00",
+        "manufacturer": "필립스",
+        "model": "하트스타트FRx",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-73",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230222-07",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HeartGuardian HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200211-08",
+        "manufacturer": "라디안",
+        "model": "HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230306-23",
+        "manufacturer": "필립스",
+        "model": "Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200527-22",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "I/PAD.NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170410-15",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-701 Plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220408-10",
+        "manufacturer": "(주)메디아나",
+        "model": "Heart On A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230214-20",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200527-26",
+        "manufacturer": "(주)메디아나",
+        "model": "A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-36",
+        "manufacturer": "메디아나",
+        "model": "Hear on AED A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-32",
+        "manufacturer": "메디아나",
+        "model": "HeartON A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-32",
+        "manufacturer": "메디아나",
+        "model": "HeartON A15",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230306-23",
+        "manufacturer": "필립스",
+        "model": "Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230306-23",
+        "manufacturer": "필립스",
+        "model": "Heartstart HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-41",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A10-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-66",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-71",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "i-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-72",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230210-65",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230328-07",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-74",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200529-75",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200408-06",
+        "manufacturer": "(주)필립스코리아",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200408-06",
+        "manufacturer": "(주)필립스코리아",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200408-06",
+        "manufacturer": "(주)필립스코리아",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230210-50",
+        "manufacturer": "씨유메디칼",
+        "model": "cu-sp1plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220825-03",
+        "manufacturer": "(주)라디안",
+        "model": "Heart Guardian HR-503",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230327-23",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartON A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230328-07",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230403-15",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200408-06",
+        "manufacturer": "(주)필립스코리아",
+        "model": "HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200929-34",
+        "manufacturer": "메디아나",
+        "model": "Heart",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200727-06",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200730-15",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381C",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201021-07",
+        "manufacturer": "(주)메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201021-07",
+        "manufacturer": "(주)메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201021-07",
+        "manufacturer": "(주)메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201021-07",
+        "manufacturer": "(주)메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230328-07",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230328-07",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201021-07",
+        "manufacturer": "(주)메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201021-07",
+        "manufacturer": "(주)메디아나",
+        "model": "Hearton A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221227-07",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "i-PAD CU-SPI plue",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230403-15",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-381.B",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200630-24",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "I-PAD NFK200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230109-75",
+        "manufacturer": "필립스",
+        "model": "하트스타트FBx",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230214-20",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180903-23",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "I-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230327-24",
+        "manufacturer": "메디아나",
+        "model": "Heart-on A10",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230522-50",
+        "manufacturer": "필립스",
+        "model": "US/861304",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230428-10",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4-OK",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200921-31",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200602-38",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20220408-08",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "I-PAD CU SP1 PLUS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200602-44",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221227-07",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "i-PAD CU-SPI plue",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230420-06",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200609-80",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200609-80",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200828-23",
+        "manufacturer": "필립스",
+        "model": "HEARTSTART HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200902-07",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200902-21",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230522-50",
+        "manufacturer": "필립스",
+        "model": "US/861304",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200720-34",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20180620-28",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "CU-SPRC",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20201005-10",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230201-25",
+        "manufacturer": "메디아나",
+        "model": "HeartON A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200724-22",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200805-02",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230210-65",
+        "manufacturer": "㈜라디안큐바이오",
+        "model": "HR-701PLUS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200804-18",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "I-PAD C1-SP1 Plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230407-01",
+        "manufacturer": "메디아나",
+        "model": "HeartOnA15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200805-04",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200806-04",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartSaver-A",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230710-05",
+        "manufacturer": "(주)나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200618-29",
+        "manufacturer": "메디아나",
+        "model": "HeartON A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230703-15",
+        "manufacturer": "(주)라디안큐바이오",
+        "model": "HR-701Plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200922-18",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200924-05",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "저출력심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230703-23",
+        "manufacturer": "(주)나눔테크",
+        "model": "저출력심장충격기",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200819-14",
+        "manufacturer": "나눔테크",
+        "model": "하트세이브에이",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200826-11",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "I-PAD MC100",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200604-00",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230710-10",
+        "manufacturer": "씨유메디칼",
+        "model": "CU-SPR",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230710-08",
+        "manufacturer": "라디안큐바이오",
+        "model": "HR-701",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200715-10",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230511-01",
+        "manufacturer": "(주)씨유메디칼시스템",
+        "model": "CU-SPR",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200715-21",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200720-28",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200907-03",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221117-05",
+        "manufacturer": "씨유메디칼",
+        "model": "CU-SPI PLUS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221227-10",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230726-04",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20160713-07",
+        "manufacturer": "나눔테크",
+        "model": "ReHeart(NT-381)",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200908-03",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heart Keeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20101022-00",
+        "manufacturer": "필립스",
+        "model": "Heart start HS1",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20230210-50",
+        "manufacturer": "씨유메디칼",
+        "model": "cu-sp1plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221117-13",
+        "manufacturer": "메디아나",
+        "model": "A16M-DS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221227-10",
+        "manufacturer": "나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200608-207",
+        "manufacturer": "(주)나눔테크",
+        "model": "HeartKeeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20170315-50",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221117-13",
+        "manufacturer": "메디아나",
+        "model": "A16M-DS",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200901-09",
+        "manufacturer": "(주)메디아나",
+        "model": "HeartOn A15-G4",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200715-23",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200715-26",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "자동심장충격기NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200727-05",
+        "manufacturer": "나눔테크",
+        "model": "NT-3000",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20191106-71",
+        "manufacturer": "나눔테크",
+        "model": "NT-380.0",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200608-135",
+        "manufacturer": "씨유메디칼시스템",
+        "model": "I-PAD NF1200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20221227-07",
+        "manufacturer": "씨유메디칼",
+        "model": "i-PAD CU-SPI plus",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20161018-08",
+        "manufacturer": "씨유메디칼씨스템",
+        "model": "NFK200",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200608-138",
+        "manufacturer": "(주)나눔테크",
+        "model": "Heart Keeper",
+        "issue": "알려지지 않은 모델"
+      },
+      {
+        "managementNumber": "20200608-192",
+        "manufacturer": "메디아나",
+        "model": "A15-G4",
+        "issue": "알려지지 않은 모델"
+      }
+    ]
+  },
+  "summary": {
+    "totalRecords": 80766,
+    "duplicateSerialNumbers": 8,
+    "dateLogicErrors": 27,
+    "gpsErrors": 3,
+    "missingFieldTypes": 3,
+    "statusInconsistencies": 0,
+    "expiredBatteries": 4922,
+    "expiredPads": 6145,
+    "noInspectionHistory": 5263,
+    "categoryErrors": 374,
+    "contactFormatErrors": 63,
+    "manufacturerModelIssues": 508
+  }
+}

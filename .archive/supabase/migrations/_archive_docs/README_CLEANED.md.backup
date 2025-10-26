@@ -1,0 +1,174 @@
+# 정리된 Migration 파일 목록
+
+## 📅 정리 일자: 2025-10-04 (최종 업데이트)
+
+## 🎯 현재 상태
+- **총 Migration 파일**: 31개
+- **보관된 파일**: 19개 (_archive_failed_attempts/)
+- **핵심 RPC 함수**: 40_fix_varchar_text_mismatch.sql
+- **신규 추가 (2025-10-04)**: 41-47번 구비의무기관 매칭 시스템
+
+---
+
+## ✅ 현재 유지 중인 Migration (31개)
+
+### 기본 스키마 (01-06)
+1. `01_initial_schema.sql` - 기본 테이블 (organizations, user_profiles)
+2. `02_initial_data.sql` - 초기 데이터
+3. `03_rls_policies.sql` - Row Level Security 정책
+4. `04_aed_tables.sql` - AED 데이터 테이블
+5. `05_team_management.sql` - 팀 관리 기능
+6. `06_fix_inspection_schema.sql` - 점검 스키마 수정
+
+### 핵심 기능 (10-20)
+7. `10_aed_data_rls_policy.sql` - AED 데이터 RLS 정책
+8. `11_create_notifications.sql` - 알림 테이블 생성
+9. `12_fix_notification_policies.sql` - 알림 정책 수정
+10. `13_add_last_login.sql` - 마지막 로그인 추적
+11. `14_login_tracking.sql` - 로그인 이력 추적
+12. `15_organization_changes.sql` - 조직 구조 변경
+13. `16_inspection_schedule_entries.sql` - 점검 스케줄 관리
+14. `17_duplicate_equipment_handling.sql` - 중복 장비 처리
+15. `18_notification_system.sql` - 알림 시스템 개선
+16. `19_gps_issues_table.sql` - GPS 이슈 추적
+17. `20_create_inspection_sessions.sql` - 점검 세션 관리
+
+### 추가 기능 (25-31)
+18. `25_otp_rate_limiting.sql` - OTP 요청 제한
+19. `28_add_field_changes_to_sessions.sql` - 필드 변경 추적
+20. `31_add_coordinates_to_organizations.sql` - 조직 좌표 추가
+
+### 2025년 9월 추가 기능
+21. `20250927_create_missing_tables.sql` - 누락 테이블 생성 (2025년 9월)
+22. `20250927_create_audit_logs.sql` - 감사 로그 테이블 (2025년 9월)
+23. `20250927_safe_audit_logs_setup.sql` - 안전한 감사 로그 설정 (2025년 9월)
+
+### ⭐ 최종 RPC 함수
+24. **`40_fix_varchar_text_mismatch.sql`** - get_aed_data_filtered 최종 성공 버전
+    - ✅ VARCHAR 타입 정확히 매칭
+    - ✅ 실제 스키마 기반
+    - ✅ 존재하지 않는 컬럼 제거 완료
+
+### 🆕 2025-10-04 신규: 구비의무기관 매칭 시스템 (41-46)
+25. **`41_target_list_2024_upload.sql`** - 구비의무기관 리스트 테이블 생성
+    - target_list_2024 테이블 스키마 정의
+    - 26,724개 기관 데이터 구조
+
+26. **`42_target_key_generation.sql`** - target_key 자동 생성
+    - ROW_NUMBER() OVER (PARTITION BY target_keygroup)
+    - 고유 식별자 자동 생성
+
+27. **`43_aed_target_mapping.sql`** - AED ↔ 구비의무기관 영속성 매핑
+    - equipment_serial 기반 매핑
+    - 2024/2025 듀얼 지원
+    - 자동 추천 + 담당자 확정 워크플로우
+
+28. **`44_auto_matching_function.sql`** - 장비연번 기반 자동 매칭
+    - normalize_text(), simple_similarity() 함수
+    - auto_match_single_aed()
+    - auto_match_batch()
+    - confirm_target_match(), modify_target_match()
+
+29. **`45_fix_one_to_many_mapping.sql`** - 1:N 매핑 지원
+    - management_number_group_mapping 테이블 생성
+    - 1개 기관 → 여러 관리번호 지원
+    - aed_with_target_2024 뷰 업데이트
+    - target_management_number_groups 뷰
+
+30. **`46_auto_match_management_number.sql`** - 관리번호 기반 그룹 매칭
+    - auto_match_single_management_number()
+    - auto_match_management_numbers_batch()
+    - confirm_management_number_match()
+    - modify_management_number_match()
+    - get_sample_management_numbers()
+
+31. **`47_target_matching_ui_functions.sql`** - 매칭 관리 UI 지원 함수
+    - get_target_matching_list_2024() - UI용 매칭 목록 조회
+    - 신뢰도별 필터링 (high/medium/low/all)
+    - 지역/검색/확정 여부 필터 지원
+
+---
+
+## 🗑️ 보관된 파일 (_archive_failed_attempts/)
+
+### 실패한 RPC 함수 시도 (30-39)
+- 30-35, 36-39: 잘못된 스키마 참조로 실패
+
+### 잘못된 스키마 참조 파일
+- 07_health_center_mapping.sql
+- 08_health_center_initial_data.sql
+- 09_aed_query_functions.sql
+- 23_aed_query_functions_complete.sql
+
+### region_code 관련 실패 시도
+- 26_region_code_migration.sql
+- 26_region_code_migration_rollback.sql
+- 27_persistent_mapping_table.sql
+
+### 임시 실행 파일
+- APPLY_PENDING_MIGRATIONS.sql
+- ESSENTIAL_MIGRATIONS_2025_10_04_v3.sql (⚠️ 혼란의 근원)
+- RUN_THIS_FOR_AED_MAP.sql
+
+---
+
+## 📋 Migration 실행 순서
+
+프로덕션 DB에 새로 적용 시:
+```
+01 → 02 → 03 → 04 → 05 → 06 →
+10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 →
+25 → 28 → 31 →
+20250927 (missing_tables) → 20250927 (audit_logs) → 20250927 (safe_audit) →
+40 (최종 RPC 함수) →
+41 (target_list) → 42 (target_key) → 43 (mapping) → 44 (auto_match) → 45 (1:N) → 46 (mgmt_number) → 47 (UI 함수)
+```
+
+---
+
+## 🚨 중요 주의사항
+
+### RPC 함수 참조 시
+- ✅ **40번 파일만 참조**
+- ❌ 09번, 23번 절대 참조 금지 (잘못된 스키마)
+
+### 새 Migration 작성 시
+1. `/supabase/ACTUAL_SCHEMA_REFERENCE.md` 확인
+2. `/supabase/COMPLETE_MIGRATION_GUIDE.md` 숙지
+3. `information_schema.columns`로 실제 스키마 재확인
+
+### 절대 사용 금지 컬럼
+```
+health_center_id     ❌
+region_code          ❌
+city_code            ❌
+device_serial        ❌
+device_serial_number ❌
+institution_name     ❌ (실제: installation_institution)
+category             ❌ (실제: category_1, category_2, category_3)
+```
+
+### 41-46번 매칭 시스템 사용 시
+- ✅ 실제 스키마 확인: `installation_institution` (NOT `institution_name`)
+- ✅ category 주의: `category_1, category_2, category_3` (NOT `category`)
+- ✅ 실행 순서 준수: 41 → 42 → 43 → 44 → 45 → 46
+
+---
+
+## 📚 참조 문서
+- `ACTUAL_SCHEMA_REFERENCE.md` - 실제 스키마 정의
+- `COMPLETE_MIGRATION_GUIDE.md` - Migration 작성 가이드
+- `00_MIGRATION_WARNING.md` - 경고 및 주의사항
+- `MIGRATION_AUDIT_REPORT.md` - 전체 감사 보고서
+- `EXECUTE_MANAGEMENT_NUMBER_MATCHING.md` - 매칭 시스템 실행 가이드
+
+---
+
+## ✅ 정리 완료
+- 34개 → 30개로 최종 정리 (신규 6개 추가)
+- 잘못된 스키마 파일 모두 보관
+- 최종 성공 버전 (40번) 유지
+- 구비의무기관 매칭 시스템 (41-46번) 추가
+- 문서화 완료
+
+**최종 업데이트: 2025-10-04**

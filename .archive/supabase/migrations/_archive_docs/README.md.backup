@@ -1,0 +1,224 @@
+# PostgreSQL 함수 작성 가이드
+
+## ⚠️ 최우선 확인사항 (2025-10-04 업데이트)
+
+### 실제 스키마 필수 확인
+**함수 작성 전 반드시 읽을 문서**:
+- `/supabase/ACTUAL_SCHEMA_REFERENCE.md` - 실제 DB 스키마
+- `/supabase/migrations/00_MIGRATION_WARNING.md` - 경고 및 금지 컬럼
+- `/supabase/COMPLETE_MIGRATION_GUIDE.md` - 작성 가이드
+
+### 절대 사용 금지 컬럼
+```
+❌ health_center_id      (실제: jurisdiction_health_center VARCHAR)
+❌ region_code           (실제: sido VARCHAR)
+❌ city_code             (실제: gugun VARCHAR)
+❌ device_serial         (실제: equipment_serial VARCHAR)
+❌ device_serial_number  (실제: serial_number VARCHAR)
+❌ institution_name      (실제: installation_institution VARCHAR)
+❌ category              (실제: category_1, category_2, category_3 VARCHAR)
+```
+
+---
+
+## 중요: 타입 캐스팅 규칙
+
+### 문제 사례
+지도 기능 추가 중 `get_aed_data_filtered` 함수에서 반복적으로 발생한 타입 불일치 에러:
+```
+ERROR: 42804: structure of query does not match function result type
+DETAIL: Returned type character varying(255) does not match expected type text in column 2.
+```
+
+### 원인
+PostgreSQL의 `RETURNS TABLE`에서 정의한 타입과 실제 SELECT 결과의 타입이 정확히 일치하지 않으면 에러 발생.
+- `aed_data` 테이블의 많은 컬럼이 `character varying(255)` 타입
+- 함수에서는 `TEXT` 타입으로 반환하려고 했으나 암묵적 변환이 되지 않음
+
+### 해결 방법
+
+#### ❌ 잘못된 방법
+```sql
+RETURNS TABLE (
+  device_serial TEXT,
+  management_number TEXT,
+  ...
+)
+...
+SELECT
+  ad.equipment_serial AS device_serial,  -- VARCHAR(255) → TEXT 암묵적 변환 실패
+  ad.management_number,                  -- VARCHAR(255) → TEXT 암묵적 변환 실패
+```
+
+#### ✅ 올바른 방법
+```sql
+RETURNS TABLE (
+  equipment_serial TEXT,  -- ⚠️ 실제 컬럼명 사용!
+  management_number TEXT,
+  ...
+)
+...
+SELECT
+  ad.equipment_serial::TEXT,         -- 명시적 캐스팅
+  ad.management_number::TEXT,        -- 명시적 캐스팅
+```
+
+---
+
+## 필수 체크리스트
+
+### 1. 타입 확인
+함수 작성 전에 반드시 실제 테이블 스키마 확인:
+```sql
+SELECT column_name, data_type, character_maximum_length
+FROM information_schema.columns
+WHERE table_name = 'aed_data'
+ORDER BY ordinal_position;
+```
+
+### 2. VARCHAR 필드 처리
+`aed_data` 테이블의 VARCHAR 필드들 (모두 `::TEXT` 캐스팅 필요):
+- `equipment_serial` - character varying(255)
+- `management_number` - character varying(255)
+- `installation_institution` - character varying(255) ⚠️ **NOT institution_name**
+- `installation_address` - character varying(255)
+- `installation_position` - character varying(255)
+- `jurisdiction_health_center` - character varying(255) ⚠️ **NOT health_center_id**
+- `institution_contact` - character varying(255)
+- `sido` - character varying(255) ⚠️ **NOT region_code**
+- `gugun` - character varying(255) ⚠️ **NOT city_code**
+- `category_1`, `category_2`, `category_3` - character varying(255) ⚠️ **NOT category**
+
+### 3. COALESCE 결과도 캐스팅
+COALESCE나 CASE 문의 결과도 명시적으로 캐스팅:
+```sql
+-- ❌ 잘못된 예
+COALESCE(hc.region_code, ad.sido) AS region_code  -- region_code 컬럼 존재 안함!
+
+-- ✅ 올바른 예
+ad.sido::TEXT AS sido  -- 실제 컬럼명 사용
+```
+
+### 4. 함수 테스트
+마이그레이션 파일 작성 후 반드시 직접 실행 테스트:
+```sql
+-- 실제 함수 호출 테스트
+SELECT * FROM get_aed_data_filtered('master', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, 0);
+```
+
+### 5. 스키마 캐시 갱신
+Supabase에서 함수 변경 후 반드시 실행:
+```sql
+NOTIFY pgrst, 'reload schema';
+```
+
+---
+
+## 마이그레이션 이력
+
+### 실패 사례 (30-39번)
+- **30-39번**: 존재하지 않는 컬럼 참조 (`health_center_id`, `region_code` 등)
+- **교훈**: 절대 추측하지 말 것, 반드시 실제 스키마 확인
+
+### 성공 사례
+- **40번** ⭐: `40_fix_varchar_text_mismatch.sql` - 최종 성공 버전
+  - ✅ VARCHAR → TEXT 명시적 캐스팅
+  - ✅ 실제 컬럼명 사용 (`equipment_serial`, `sido`, `gugun`)
+  - ✅ 존재하지 않는 컬럼 완전 제거
+
+### 2025-10-04 신규: 구비의무기관 매칭 시스템 (41-46번)
+- **41번**: `target_list_2024` 테이블 생성
+- **42번**: `target_key` 자동 생성
+- **43번**: `aed_target_mapping` 영속성 매핑
+- **44번**: 장비연번 기반 자동 매칭
+- **45번**: 1:N 매핑 지원 (`management_number_group_mapping`)
+- **46번**: 관리번호 기반 그룹 매칭
+
+---
+
+## 교훈
+
+1. **PostgreSQL은 타입에 매우 엄격함** - TEXT와 VARCHAR는 암묵적 변환이 안 될 수 있음
+2. **명시적 캐스팅이 항상 안전함** - 의심스러우면 `::TEXT` 추가
+3. **함수 시그니처와 구현체의 완벽한 일치** - RETURNS TABLE과 SELECT 결과 타입이 정확히 동일해야 함
+4. **테스트는 실제 데이터로** - 마이그레이션 실행 후 반드시 SELECT 테스트
+5. **원본 작동 코드를 참고하되, 맹목적으로 따라하지 말 것** - 09번 마이그레이션도 캐스팅이 필요했음
+6. **절대 컬럼명을 추측하지 말 것** - `information_schema.columns` 필수 확인 ⭐
+7. **40번 이후 시행착오 끝** - 40번을 기준으로 삼을 것
+
+---
+
+## 참고: 다른 일반적인 타입 변환
+
+```sql
+-- 숫자 타입
+some_numeric_field::INTEGER
+some_float_field::NUMERIC
+some_id::BIGINT
+
+-- 날짜/시간
+some_timestamp::DATE
+some_date::TIMESTAMP
+
+-- 불린
+some_boolean::BOOLEAN
+
+-- UUID
+some_uuid_field::UUID
+
+-- JSON
+some_json_field::JSONB
+some_text::JSON
+```
+
+---
+
+## 디버깅 팁
+
+### 에러 메시지 읽기
+```
+DETAIL: Returned type character varying(255) does not match expected type text in column 2.
+```
+- **column 2**: RETURNS TABLE의 두 번째 컬럼 (0부터 시작 아님, 1부터 시작)
+- 해당 컬럼이 무엇인지 확인하고 SELECT 문에서 해당 필드 찾기
+
+### 컬럼 존재 여부 확인
+```sql
+-- 특정 컬럼 존재 확인
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = 'aed_data'
+  AND column_name IN ('category', 'institution_name', 'region_code');
+-- 결과가 0건이면 컬럼이 없는 것!
+```
+
+### 함수 정의 확인
+```sql
+-- 현재 함수 정의 보기
+\df+ get_aed_data_filtered
+
+-- 또는
+SELECT proname, prosrc
+FROM pg_proc
+WHERE proname = 'get_aed_data_filtered';
+```
+
+### Supabase PostgREST 캐시 문제
+함수를 수정했는데도 에러가 계속되면:
+1. `NOTIFY pgrst, 'reload schema';` 실행
+2. Supabase 프로젝트 재시작 (Dashboard > Settings > Restart)
+3. 개발 서버 재시작 (`npm run dev` 종료 후 재실행)
+
+---
+
+## 📚 필수 참조 문서
+
+1. **`/supabase/ACTUAL_SCHEMA_REFERENCE.md`** - 실제 스키마 정의
+2. **`/supabase/migrations/00_MIGRATION_WARNING.md`** - 경고 및 금지 컬럼
+3. **`/supabase/COMPLETE_MIGRATION_GUIDE.md`** - 상세 가이드
+4. **`/supabase/migrations/README_CLEANED.md`** - 정리된 Migration 목록
+5. **`/supabase/migrations/MIGRATION_AUDIT_REPORT.md`** - 감사 보고서
+
+---
+
+**최종 업데이트: 2025-10-04**
