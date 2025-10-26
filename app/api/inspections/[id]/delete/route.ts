@@ -10,9 +10,9 @@ const prisma = new PrismaClient();
  *
  * Prisma를 사용하므로 RLS가 없어 Service Role 불필요
  */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-  const inspectionId = params.id;
+  const { id: inspectionId } = await params;
 
   // 인증 확인
   const session = await getServerSession(authOptions);

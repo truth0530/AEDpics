@@ -17,9 +17,11 @@ const prisma = new PrismaClient();
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     // 1. 인증 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -62,7 +64,7 @@ export async function POST(
 
     // 5. 거부할 사용자 조회
     const targetUser = await prisma.userProfile.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!targetUser) {
@@ -86,9 +88,9 @@ export async function POST(
         user_id: adminProfile.id,
         action: 'user_rejected',
         resource_type: 'user_profile',
-        resource_id: params.id,
+        resource_id: id,
         details: {
-          target_user_id: params.id,
+          target_user_id: id,
           target_user_email: targetUser.email,
           target_user_role: targetUser.role,
           target_user_name: targetUser.full_name,
@@ -105,7 +107,7 @@ export async function POST(
     // 8. 사용자 삭제
     // Option 1: 완전 삭제 (권장)
     await prisma.userProfile.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     // Option 2: is_active만 false로 설정 (soft delete)

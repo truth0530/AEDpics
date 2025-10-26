@@ -10,8 +10,8 @@ import { apiHandler } from '@/lib/api/error-handler';
  * 점검 세션 취소 (Soft Delete)
  */
 // @ts-expect-error - apiHandler type issue with dynamic routes
-export const POST = apiHandler(async (request: NextRequest, { params }: { params: { id: string } }) => {
-  const sessionId = params.id;
+export const POST = apiHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  const { id: sessionId } = await params;
 
   // 인증 확인
   const session = await getServerSession(authOptions);

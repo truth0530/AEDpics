@@ -17,9 +17,11 @@ const prisma = new PrismaClient();
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     // 1. 인증 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -54,7 +56,7 @@ export async function POST(
 
     // 4. 조직 변경 요청 조회
     const changeRequest = await prisma.organizationChangeRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -92,7 +94,7 @@ export async function POST(
     const result = await prisma.$transaction(async (tx) => {
       // 6-1. 조직 변경 요청 승인
       const updatedRequest = await tx.organizationChangeRequest.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           status: 'approved',
           reviewed_by: adminProfile.id,
@@ -125,7 +127,7 @@ export async function POST(
           user_id: adminProfile.id,
           action: 'organization_change_approved',
           resource_type: 'organization_change_request',
-          resource_id: params.id,
+          resource_id: id,
           details: {
             user_id: changeRequest.user_id,
             user_email: changeRequest.user.email,

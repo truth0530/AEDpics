@@ -18,9 +18,11 @@ const prisma = new PrismaClient();
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     // 1. 인증 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -63,7 +65,7 @@ export async function POST(
 
     // 5. 승인할 사용자 조회
     const targetUser = await prisma.userProfile.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!targetUser) {
@@ -83,7 +85,7 @@ export async function POST(
 
     // 7. 사용자 승인 (role 변경)
     const updatedUser = await prisma.userProfile.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         role: role as UserRole,
         approved_by: adminProfile.id,
@@ -102,9 +104,9 @@ export async function POST(
         user_id: adminProfile.id,
         action: 'user_approved',
         resource_type: 'user_profile',
-        resource_id: params.id,
+        resource_id: id,
         details: {
-          target_user_id: params.id,
+          target_user_id: id,
           target_user_email: targetUser.email,
           approved_role: role,
           notes: notes || null

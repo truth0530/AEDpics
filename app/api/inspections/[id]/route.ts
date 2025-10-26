@@ -10,8 +10,8 @@ import { apiHandler } from '@/lib/api/error-handler';
  * 점검 이력 상세 조회
  */
 // @ts-expect-error - apiHandler type issue with dynamic routes
-export const GET = apiHandler(async (request: NextRequest, { params }: { params: { id: string } }) => {
-  const inspectionId = params.id;
+export const GET = apiHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  const { id: inspectionId } = await params;
 
   // 인증 확인
   const session = await getServerSession(authOptions);
@@ -62,8 +62,8 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
  * 점검 이력 수정
  */
 // @ts-expect-error - apiHandler type issue with dynamic routes
-export const PATCH = apiHandler(async (request: NextRequest, { params }: { params: { id: string } }) => {
-  const inspectionId = params.id;
+export const PATCH = apiHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  const { id: inspectionId } = await params;
 
   // 인증 확인
   const session = await getServerSession(authOptions);

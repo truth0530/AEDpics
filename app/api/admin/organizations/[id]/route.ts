@@ -19,9 +19,11 @@ const prisma = new PrismaClient();
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     // 1. 인증 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -46,7 +48,7 @@ export async function PUT(
 
     // 3. 조직 존재 확인
     const existingOrg = await prisma.organization.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingOrg) {
@@ -73,7 +75,7 @@ export async function PUT(
           name,
           region_code: region_code || existingOrg.region_code,
           id: {
-            not: params.id
+            not: id
           }
         }
       });
@@ -88,7 +90,7 @@ export async function PUT(
 
     // 7. 조직 수정
     const organization = await prisma.organization.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData
     });
 
@@ -98,7 +100,7 @@ export async function PUT(
         user_id: session.user.id,
         action: 'organization_updated',
         resource_type: 'organization',
-        resource_id: params.id,
+        resource_id: id,
         details: {
           old_data: existingOrg,
           new_data: organization
@@ -134,9 +136,11 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     // 1. 인증 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -161,7 +165,7 @@ export async function DELETE(
 
     // 3. 조직 존재 확인
     const organization = await prisma.organization.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: {
@@ -192,7 +196,7 @@ export async function DELETE(
         user_id: session.user.id,
         action: 'organization_deleted',
         resource_type: 'organization',
-        resource_id: params.id,
+        resource_id: id,
         details: {
           name: organization.name,
           type: organization.type,
@@ -207,7 +211,7 @@ export async function DELETE(
 
     // 6. 조직 삭제
     await prisma.organization.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     console.log(`[Organization Deleted] ${organization.name} deleted by ${session.user.email}`);

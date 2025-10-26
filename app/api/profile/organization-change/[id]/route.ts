@@ -13,9 +13,11 @@ const prisma = new PrismaClient();
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     // 1. 인증 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -27,7 +29,7 @@ export async function DELETE(
 
     // 2. 조직 변경 요청 조회
     const changeRequest = await prisma.organizationChangeRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -69,7 +71,7 @@ export async function DELETE(
 
     // 5. 요청 삭제
     await prisma.organizationChangeRequest.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     // 6. Audit Log 기록
@@ -78,7 +80,7 @@ export async function DELETE(
         user_id: session.user.id,
         action: 'organization_change_cancelled',
         resource_type: 'organization_change_request',
-        resource_id: params.id,
+        resource_id: id,
         details: {
           requested_organization_id: changeRequest.requested_organization_id,
           requested_organization_name: changeRequest.requested_organization?.name,
@@ -91,7 +93,7 @@ export async function DELETE(
       }
     });
 
-    console.log(`[Organization Change Cancelled] User ${changeRequest.user.email} cancelled request ${params.id}`);
+    console.log(`[Organization Change Cancelled] User ${changeRequest.user.email} cancelled request ${id}`);
 
     return NextResponse.json({
       success: true,

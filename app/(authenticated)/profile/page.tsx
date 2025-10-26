@@ -28,6 +28,7 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -52,23 +53,17 @@ export default function ProfilePage() {
 
   const loadProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
+      if (!session?.user?.id) {
         router.push('/auth/signin');
         return;
       }
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select(`
-          *,
-          organizations:organization_id (*)
-        `)
-        .eq('id', user.id)
-        .single();
+      const response = await fetch(`/api/user/profile/${session.user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load profile');
+      }
 
-      if (profileError) throw profileError;
+      const profileData = await response.json();
 
       console.log('[DEBUG] Profile data loaded:', {
         full_name: profileData.full_name,
@@ -104,17 +99,20 @@ export default function ProfilePage() {
 
     try {
       // 프로필 정보 업데이트
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
+      const updateResponse = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           full_name: formData.name,
           phone: formData.phone,
-          department: formData.department,
-          updated_at: new Date().toISOString()
+          department: formData.department
         })
-        .eq('id', profile?.id);
+      });
 
-      if (updateError) throw updateError;
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
 
       // 비밀번호 변경 (입력된 경우만)
       if (formData.new_password) {
@@ -131,21 +129,20 @@ export default function ProfilePage() {
           throw new Error('새 비밀번호는 6자 이상이어야 합니다.');
         }
 
-        // 현재 비밀번호 검증
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: profile?.email || '',
-          password: formData.current_password
+        // 비밀번호 변경 API 호출
+        const passwordResponse = await fetch('/api/auth/update-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: formData.current_password,
+            newPassword: formData.new_password
+          })
         });
 
-        if (signInError) {
-          throw new Error('현재 비밀번호가 일치하지 않습니다.');
+        if (!passwordResponse.ok) {
+          const errorData = await passwordResponse.json();
+          throw new Error(errorData.error || 'Failed to update password');
         }
-
-        const { error: passwordError } = await supabase.auth.updateUser({
-          password: formData.new_password
-        });
-
-        if (passwordError) throw passwordError;
       }
 
       setSuccess('프로필이 성공적으로 업데이트되었습니다.');
