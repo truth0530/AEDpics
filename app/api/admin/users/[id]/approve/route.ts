@@ -33,7 +33,7 @@ export async function POST(
     }
 
     // 2. 관리자 프로필 조회
-    const adminProfile = await prisma.userProfile.findUnique({
+    const adminProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -64,7 +64,7 @@ export async function POST(
     }
 
     // 5. 승인할 사용자 조회
-    const targetUser = await prisma.userProfile.findUnique({
+    const targetUser = await prisma.user_profiles.findUnique({
       where: { id }
     });
 
@@ -84,7 +84,7 @@ export async function POST(
     }
 
     // 7. 사용자 승인 (role 변경)
-    const updatedUser = await prisma.userProfile.update({
+    const updatedUser = await prisma.user_profiles.update({
       where: { id },
       data: {
         role: role as UserRole,
@@ -99,7 +99,7 @@ export async function POST(
     });
 
     // 8. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: adminProfile.id,
         action: 'user_approved',

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. 관리자 권한 확인
-    const currentProfile = await prisma.userProfile.findUnique({
+    const currentProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true }
     });
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. 관리자 권한 확인
-    const currentProfile = await prisma.userProfile.findUnique({
+    const currentProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true }
     });
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 7. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: 'organization_created',

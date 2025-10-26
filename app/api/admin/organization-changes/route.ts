@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. 관리자 권한 확인
-    const currentProfile = await prisma.userProfile.findUnique({
+    const currentProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true }
     });

@@ -34,7 +34,7 @@ export async function PUT(
     }
 
     // 2. 관리자 권한 확인
-    const currentProfile = await prisma.userProfile.findUnique({
+    const currentProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true }
     });
@@ -47,7 +47,7 @@ export async function PUT(
     }
 
     // 3. 조직 존재 확인
-    const existingOrg = await prisma.organization.findUnique({
+    const existingOrg = await prisma.organizations.findUnique({
       where: { id }
     });
 
@@ -70,7 +70,7 @@ export async function PUT(
 
     // 6. 동일한 이름의 다른 조직이 있는지 확인 (name이 변경되는 경우만)
     if (name && name !== existingOrg.name) {
-      const duplicateOrg = await prisma.organization.findFirst({
+      const duplicateOrg = await prisma.organizations.findFirst({
         where: {
           name,
           region_code: region_code || existingOrg.region_code,
@@ -89,13 +89,13 @@ export async function PUT(
     }
 
     // 7. 조직 수정
-    const organization = await prisma.organization.update({
+    const organization = await prisma.organizations.update({
       where: { id },
       data: updateData
     });
 
     // 8. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: 'organization_updated',
@@ -151,7 +151,7 @@ export async function DELETE(
     }
 
     // 2. 관리자 권한 확인
-    const currentProfile = await prisma.userProfile.findUnique({
+    const currentProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true }
     });
@@ -164,7 +164,7 @@ export async function DELETE(
     }
 
     // 3. 조직 존재 확인
-    const organization = await prisma.organization.findUnique({
+    const organization = await prisma.organizations.findUnique({
       where: { id },
       include: {
         _count: {
@@ -191,7 +191,7 @@ export async function DELETE(
     }
 
     // 5. Audit Log 기록 (삭제 전에)
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: 'organization_deleted',
@@ -210,7 +210,7 @@ export async function DELETE(
     });
 
     // 6. 조직 삭제
-    await prisma.organization.delete({
+    await prisma.organizations.delete({
       where: { id }
     });
 

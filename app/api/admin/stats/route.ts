@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. 사용자 프로필 및 권한 확인
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
 
     // 3. 사용자 통계
     const [totalUsers, pendingUsers, usersByRole] = await Promise.all([
-      prisma.userProfile.count(),
-      prisma.userProfile.count({
+      prisma.user_profiles.count(),
+      prisma.user_profiles.count({
         where: { role: 'pending_approval' }
       }),
-      prisma.userProfile.groupBy({
+      prisma.user_profiles.groupBy({
         by: ['role'],
         _count: true
       })
@@ -81,14 +81,14 @@ export async function GET(request: NextRequest) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const [totalInspections, inspectionsByResult] = await Promise.all([
-      prisma.inspection.count({
+      prisma.inspections.count({
         where: {
           inspection_date: {
             gte: thirtyDaysAgo
           }
         }
       }),
-      prisma.inspection.groupBy({
+      prisma.inspections.groupBy({
         by: ['result'],
         where: {
           inspection_date: {
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const recentLogs = await prisma.auditLog.findMany({
+    const recentLogs = await prisma.audit_logs.findMany({
       where: {
         created_at: {
           gte: today

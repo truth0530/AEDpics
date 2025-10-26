@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("이메일과 비밀번호를 입력해주세요")
         }
 
-        const user = await prisma.userProfile.findUnique({
+        const user = await prisma.user_profiles.findUnique({
           where: { email: credentials.email },
           include: { organization: true }
         })
@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         // lastLoginAt 업데이트
-        await prisma.userProfile.update({
+        await prisma.user_profiles.update({
           where: { id: user.id },
           data: { lastLoginAt: new Date() }
         })

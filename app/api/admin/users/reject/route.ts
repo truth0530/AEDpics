@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 현재 사용자의 프로필 및 권한 확인
-    const currentUserProfile = await prisma.userProfile.findUnique({
+    const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true }
     });
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 대상 사용자 확인
-    const targetUser = await prisma.userProfile.findUnique({
+    const targetUser = await prisma.user_profiles.findUnique({
       where: { id: userId }
     });
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // 사용자 상태 업데이트 (거부)
     try {
-      await prisma.userProfile.update({
+      await prisma.user_profiles.update({
         where: { id: userId },
         data: {
           role: 'rejected',

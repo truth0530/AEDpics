@@ -25,7 +25,7 @@ export const POST = apiHandler(async (request: NextRequest, { params }: { params
   const { reason } = body;
 
   // 세션 조회 (본인 세션인지 확인)
-  const inspectionSession = await prisma.inspectionSession.findUnique({
+  const inspectionSession = await prisma.inspectionsSession.findUnique({
     where: { id: sessionId },
     select: {
       id: true,
@@ -55,7 +55,7 @@ export const POST = apiHandler(async (request: NextRequest, { params }: { params
 
   // Soft Delete: status를 'cancelled'로 변경
   try {
-    await prisma.inspectionSession.update({
+    await prisma.inspectionsSession.update({
       where: { id: sessionId },
       data: {
         status: 'cancelled',

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 현재 사용자의 프로필 조회
-    const currentUserProfile = await prisma.userProfile.findUnique({
+    const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true, email: true }
     });
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 승인 대상 사용자 정보 조회 (도메인 검증 전에 미리 조회)
-    const targetUser = await prisma.userProfile.findUnique({
+    const targetUser = await prisma.user_profiles.findUnique({
       where: { id: userId },
       select: { email: true, role: true }
     });
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     console.log('[Approval API] Step 3: 프로필 업데이트 시도 -', updateData);
 
     try {
-      await prisma.userProfile.update({
+      await prisma.user_profiles.update({
         where: { id: userId },
         data: {
           role: updateData.role,
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 이메일 변경은 위 prisma.userProfile.update에서 이미 처리됨
+    // 이메일 변경은 위 prisma.user_profiles.update에서 이미 처리됨
     if (email && email !== targetUser.email) {
       console.log('[Approval API] Step 5: 이메일이 변경되었습니다 -', { from: targetUser.email, to: email });
     }
@@ -360,7 +360,7 @@ export async function POST(request: NextRequest) {
 
     // 승인 로그 기록 (에러 처리 강화)
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           action: 'user_approved',
           actorId: session.user.id,
@@ -458,7 +458,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 현재 사용자의 프로필 조회
-    const currentUserProfile = await prisma.userProfile.findUnique({
+    const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true, email: true }
     });
@@ -489,7 +489,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 거부 대상 사용자 정보 조회
-    const targetUser = await prisma.userProfile.findUnique({
+    const targetUser = await prisma.user_profiles.findUnique({
       where: { id: userId },
       select: { email: true, role: true }
     });
@@ -512,7 +512,7 @@ export async function DELETE(request: NextRequest) {
     // Soft Delete: role을 'rejected'로 변경하고 비활성화
     // 이렇게 하면 거부된 사용자가 다시 가입 시도할 수 있고, 감사 추적도 가능
     try {
-      await prisma.userProfile.update({
+      await prisma.user_profiles.update({
         where: { id: userId },
         data: {
           role: 'rejected' as any, // TypeScript에서 'rejected'가 정의되지 않을 수 있으므로 any로 캐스팅
@@ -582,7 +582,7 @@ export async function DELETE(request: NextRequest) {
 
     // 거부 로그 기록 (에러 처리 강화)
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           action: 'user_rejected',
           actorId: session.user.id,

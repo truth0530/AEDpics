@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 사용자 프로필 조회
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true, organizationId: true }
     });
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
               throw new Error('equipmentSerial이 필요합니다.');
             }
 
-            result = await prisma.inspectionAssignment.create({
+            result = await prisma.inspectionsAssignment.create({
               data: {
                 equipmentSerial: operation.data.equipmentSerial,
                 assignedTo: operation.data.assignedTo || session.user.id,
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
             if (operation.data?.scheduledDate) updateData.scheduledDate = operation.data.scheduledDate;
             if (operation.data?.scheduledTime !== undefined) updateData.scheduledTime = operation.data.scheduledTime;
 
-            result = await prisma.inspectionAssignment.update({
+            result = await prisma.inspectionsAssignment.update({
               where: { id: operation.id },
               data: updateData
             });
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
               throw new Error('id가 필요합니다.');
             }
 
-            await prisma.inspectionAssignment.delete({
+            await prisma.inspectionsAssignment.delete({
               where: { id: operation.id }
             });
 

@@ -19,7 +19,7 @@ export async function POST(
   }
 
   // 세션 조회
-  const inspectionSession = await prisma.inspectionSession.findUnique({
+  const inspectionSession = await prisma.inspectionsSession.findUnique({
     where: { id: sessionId },
     select: {
       equipmentSerial: true,
@@ -64,7 +64,7 @@ export async function POST(
     }
 
     // 세션에 최신 데이터 업데이트
-    await prisma.inspectionSession.update({
+    await prisma.inspectionsSession.update({
       where: { id: sessionId },
       data: {
         deviceInfo: latestData as any,

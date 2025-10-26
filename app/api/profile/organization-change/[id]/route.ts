@@ -75,7 +75,7 @@ export async function DELETE(
     });
 
     // 6. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: 'organization_change_cancelled',

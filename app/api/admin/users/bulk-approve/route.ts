@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 현재 사용자의 프로필 조회
-    const currentUserProfile = await prisma.userProfile.findUnique({
+    const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true, email: true, fullName: true }
     });
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 벌크 승인 대상 사용자들 조회
-    const targetUsers = await prisma.userProfile.findMany({
+    const targetUsers = await prisma.user_profiles.findMany({
       where: {
         id: { in: userIds }
       },
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
         // 사용자 프로필 업데이트
         try {
-          await prisma.userProfile.update({
+          await prisma.user_profiles.update({
             where: { id: targetUser.id },
             data: {
               role: suggestion.role,
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
     // 감사 로그 기록
     for (const result of results) {
       try {
-        await prisma.auditLog.create({
+        await prisma.audit_logs.create({
           data: {
             action: 'user_bulk_approved',
             actorId: session.user.id,
@@ -268,7 +268,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 현재 사용자의 프로필 조회
-    const currentUserProfile = await prisma.userProfile.findUnique({
+    const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true, email: true, fullName: true }
     });
@@ -299,7 +299,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 벌크 거부 대상 사용자들 조회
-    const targetUsers = await prisma.userProfile.findMany({
+    const targetUsers = await prisma.user_profiles.findMany({
       where: {
         id: { in: userIds }
       },
@@ -336,7 +336,7 @@ export async function DELETE(request: NextRequest) {
       try {
         // 사용자 프로필 삭제
         try {
-          await prisma.userProfile.delete({
+          await prisma.user_profiles.delete({
             where: { id: targetUser.id }
           });
         } catch (deleteError: any) {
@@ -436,7 +436,7 @@ export async function DELETE(request: NextRequest) {
     // 감사 로그 기록
     for (const result of results) {
       try {
-        await prisma.auditLog.create({
+        await prisma.audit_logs.create({
           data: {
             action: 'user_bulk_rejected',
             actorId: session.user.id,

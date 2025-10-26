@@ -32,7 +32,7 @@ export async function POST(
     }
 
     // 2. 관리자 프로필 조회
-    const adminProfile = await prisma.userProfile.findUnique({
+    const adminProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -63,7 +63,7 @@ export async function POST(
     }
 
     // 5. 거부할 사용자 조회
-    const targetUser = await prisma.userProfile.findUnique({
+    const targetUser = await prisma.user_profiles.findUnique({
       where: { id }
     });
 
@@ -83,7 +83,7 @@ export async function POST(
     }
 
     // 7. Audit Log 기록 (삭제 전에)
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: adminProfile.id,
         action: 'user_rejected',
@@ -106,12 +106,12 @@ export async function POST(
 
     // 8. 사용자 삭제
     // Option 1: 완전 삭제 (권장)
-    await prisma.userProfile.delete({
+    await prisma.user_profiles.delete({
       where: { id }
     });
 
     // Option 2: is_active만 false로 설정 (soft delete)
-    // await prisma.userProfile.update({
+    // await prisma.user_profiles.update({
     //   where: { id: params.id },
     //   data: {
     //     is_active: false,

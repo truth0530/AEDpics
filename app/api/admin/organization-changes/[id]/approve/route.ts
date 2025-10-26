@@ -32,7 +32,7 @@ export async function POST(
     }
 
     // 2. 관리자 권한 확인
-    const adminProfile = await prisma.userProfile.findUnique({
+    const adminProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 

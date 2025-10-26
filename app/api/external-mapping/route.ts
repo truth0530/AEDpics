@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. 권한 확인
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. 권한 확인
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: existingMapping ? 'external_mapping_updated' : 'external_mapping_created',
@@ -251,7 +251,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 2. 권한 확인
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -286,7 +286,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     // 6. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: verified ? 'external_mapping_verified' : 'external_mapping_unverified',
@@ -336,7 +336,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 2. 권한 확인
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -364,7 +364,7 @@ export async function DELETE(request: NextRequest) {
     });
 
     // 5. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: 'external_mapping_deleted',

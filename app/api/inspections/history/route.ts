@@ -38,7 +38,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
   }
 
   try {
-    const inspections = await prisma.inspection.findMany({
+    const inspections = await prisma.inspections.findMany({
       where,
       include: {
         inspector: {

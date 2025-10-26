@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 사용자 프로필 조회
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       include: {
         organization: {
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 1단계: 활성 세션이 있는 장비 목록 조회 (점검대상목록에서 제외하기 위함)
-    const activeSessions = await prisma.inspectionSession.findMany({
+    const activeSessions = await prisma.inspectionsSession.findMany({
       where: {
         inspectorId: session.user.id,
         completedAt: null
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     // 2단계: 할당된 장비 목록 조회
     try {
-      const assignments = await prisma.inspectionAssignment.findMany({
+      const assignments = await prisma.inspectionsAssignment.findMany({
         where: {
           assignedTo: session.user.id,
           status: {

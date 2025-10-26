@@ -32,7 +32,7 @@ export async function POST(
     }
 
     // 2. 관리자 권한 확인
-    const adminProfile = await prisma.userProfile.findUnique({
+    const adminProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -125,7 +125,7 @@ export async function POST(
     });
 
     // 8. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: adminProfile.id,
         action: 'organization_change_rejected',

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 관리자 권한 확인
-    const currentProfile = await prisma.userProfile.findUnique({
+    const currentProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true }
     });
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     // Prisma 쿼리 실행
     try {
       const [profiles, count] = await Promise.all([
-        prisma.userProfile.findMany({
+        prisma.user_profiles.findMany({
           where,
           include: {
             organization: {
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           skip: offset,
           take: limit
         }),
-        prisma.userProfile.count({ where })
+        prisma.user_profiles.count({ where })
       ]);
 
       console.log('Loaded profiles:', profiles?.length || 0, 'of', count || 0);

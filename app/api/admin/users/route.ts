@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. 사용자 프로필 조회
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     // 6. 사용자 목록 조회
     const [users, total] = await Promise.all([
-      prisma.userProfile.findMany({
+      prisma.user_profiles.findMany({
         where,
         include: {
           organizations: {
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit
       }),
-      prisma.userProfile.count({ where })
+      prisma.user_profiles.count({ where })
     ]);
 
     // 7. 응답 반환

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // 3. 프로필 변경 이력 조회
     // audit_logs 테이블에서 resource_type='user_profile'이고 user_id가 본인인 것만 조회
     const [logs, total] = await Promise.all([
-      prisma.auditLog.findMany({
+      prisma.audit_logs.findMany({
         where: {
           user_id: session.user.id,
           resource_type: 'user_profile'
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit
       }),
-      prisma.auditLog.count({
+      prisma.audit_logs.count({
         where: {
           user_id: session.user.id,
           resource_type: 'user_profile'

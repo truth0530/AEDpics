@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     // 사용자 프로필 조회 (Prisma)
-    const profile = await prisma.userProfile.findUnique({
+    const profile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       include: {
         organization: true

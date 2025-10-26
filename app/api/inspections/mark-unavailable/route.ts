@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // 해당 장비에 대한 할당 레코드 조회 (본인이 할당한 것만)
     try {
-      const existingAssignment = await prisma.inspectionAssignment.findFirst({
+      const existingAssignment = await prisma.inspectionsAssignment.findFirst({
         where: {
           equipmentSerial: equipmentSerial,
           assignedBy: session.user.id,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       if (!existingAssignment) {
         // 새 할당 레코드 생성
         try {
-          const newAssignment = await prisma.inspectionAssignment.create({
+          const newAssignment = await prisma.inspectionsAssignment.create({
             data: {
               equipmentSerial: equipmentSerial,
               assignedTo: session.user.id,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
       // 기존 할당이 있으면 업데이트
       try {
-        const updatedAssignment = await prisma.inspectionAssignment.update({
+        const updatedAssignment = await prisma.inspectionsAssignment.update({
           where: { id: existingAssignment.id },
           data: {
             status: 'unavailable',
@@ -164,7 +164,7 @@ export async function DELETE(request: NextRequest) {
 
     // 점검불가 상태인 할당 레코드 조회
     try {
-      const assignment = await prisma.inspectionAssignment.findFirst({
+      const assignment = await prisma.inspectionsAssignment.findFirst({
         where: {
           equipmentSerial: equipmentSerial,
           assignedBy: session.user.id,
@@ -181,7 +181,7 @@ export async function DELETE(request: NextRequest) {
 
       // 상태를 pending으로 변경하고 unavailable 필드 초기화
       try {
-        const updatedAssignment = await prisma.inspectionAssignment.update({
+        const updatedAssignment = await prisma.inspectionsAssignment.update({
           where: { id: assignment.id },
           data: {
             status: 'pending',

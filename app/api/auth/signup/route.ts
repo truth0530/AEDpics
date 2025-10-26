@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 이메일 중복 체크
-    const existingUser = await prisma.userProfile.findUnique({
+    const existingUser = await prisma.user_profiles.findUnique({
       where: { email }
     })
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10)
 
     // 사용자 프로필 생성
-    const user = await prisma.userProfile.create({
+    const user = await prisma.user_profiles.create({
       data: {
         id: uuidv4(),
         email: profileData.email,

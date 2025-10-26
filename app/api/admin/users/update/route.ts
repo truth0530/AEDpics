@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 현재 사용자의 프로필 조회
-    const currentUserProfile = await prisma.userProfile.findUnique({
+    const currentUserProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: { role: true, email: true }
       });
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 수정 대상 사용자 정보 조회
-    const targetUser = await prisma.userProfile.findUnique({
+    const targetUser = await prisma.user_profiles.findUnique({
       where: { id: userId },
       select: { email: true, role: true, fullName: true }
     });
@@ -133,7 +133,7 @@ export async function PATCH(request: NextRequest) {
       if (email !== undefined) prismaUpdateData.email = email;
       if (encryptedPhone) prismaUpdateData.phone = encryptedPhone;
 
-      await prisma.userProfile.update({
+      await prisma.user_profiles.update({
         where: { id: userId },
         data: prismaUpdateData
       });
@@ -148,7 +148,7 @@ export async function PATCH(request: NextRequest) {
 
     // 수정 로그 기록 (에러 처리 강화)
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           action: 'user_updated',
           actorId: session.user.id,

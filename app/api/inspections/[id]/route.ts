@@ -21,7 +21,7 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
   }
 
   // 점검 이력 조회 (inspector와 aedData 포함)
-  const inspection = await prisma.inspection.findUnique({
+  const inspection = await prisma.inspections.findUnique({
     where: { id: inspectionId },
     include: {
       inspector: {
@@ -76,7 +76,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
   const updates = await request.json();
 
   // 점검 이력 조회 (권한 확인)
-  const inspection = await prisma.inspection.findUnique({
+  const inspection = await prisma.inspections.findUnique({
     where: { id: inspectionId },
     select: {
       id: true,
@@ -89,7 +89,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
   }
 
   // 권한 확인: 본인만 수정 가능 (또는 관리자)
-  const profile = await prisma.userProfile.findUnique({
+  const profile = await prisma.user_profiles.findUnique({
     where: { id: session.user.id },
     select: { role: true }
   });
@@ -136,7 +136,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
 
   // 업데이트 실행
   try {
-    const updatedInspection = await prisma.inspection.update({
+    const updatedInspection = await prisma.inspections.update({
       where: { id: inspectionId },
       data: updateData
     });

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
     }
 
-    const profile = await prisma.userProfile.findUnique({
+    const profile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // inspections 테이블 사용
     try {
-      const inspection = await prisma.inspection.create({
+      const inspection = await prisma.inspections.create({
         data: {
           aedDataId: device.id,
           equipmentSerial: device.equipmentSerial,

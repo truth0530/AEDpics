@@ -42,7 +42,7 @@ async function requireAuthWithRole() {
   }
 
   // 사용자 프로필 조회하여 역할 확인
-  const profile = await prisma.userProfile.findUnique({
+  const profile = await prisma.user_profiles.findUnique({
     where: { id: session.user.id },
     select: {
       id: true,
@@ -132,7 +132,7 @@ async function refreshSnapshotInBackground(
     }
 
     // Week 2: 듀얼 쓰기 (양쪽 모두 업데이트)
-    await prisma.inspectionSession.update({
+    await prisma.inspectionsSession.update({
       where: { id: sessionId },
       data: {
         deviceInfo: latestData as any,
@@ -159,7 +159,7 @@ export const POST = async (request: NextRequest) => {
   }
 
   // 현재 진행 중인 세션이 있는지 확인 (최신 것만)
-  const activeSessions = await prisma.inspectionSession.findFirst({
+  const activeSessions = await prisma.inspectionsSession.findFirst({
     where: {
       inspectorId: userId,
       status: 'active'
@@ -181,7 +181,7 @@ export const POST = async (request: NextRequest) => {
   if (activeSessions) {
     console.log(`[Session Start] Auto-pausing existing active session ${activeSessions.id} for new inspection`);
     // 기존 세션을 자동으로 일시정지
-    await prisma.inspectionSession.update({
+    await prisma.inspectionsSession.update({
       where: { id: activeSessions.id },
       data: {
         status: 'paused',
@@ -191,7 +191,7 @@ export const POST = async (request: NextRequest) => {
   }
 
   // Priority 1: Assignment 확인 및 연동
-  const assignment = await prisma.inspectionAssignment.findFirst({
+  const assignment = await prisma.inspectionsAssignment.findFirst({
     where: {
       equipmentSerial: payload.equipmentSerial,
       assignedTo: userId,
@@ -222,7 +222,7 @@ export const POST = async (request: NextRequest) => {
   // Assignment 상태를 'in_progress'로 업데이트
   if (assignment.status === 'pending') {
     try {
-      await prisma.inspectionAssignment.update({
+      await prisma.inspectionsAssignment.update({
         where: { id: assignment.id },
         data: {
           status: 'in_progress',
@@ -253,7 +253,7 @@ export const POST = async (request: NextRequest) => {
   }
 
   // Week 2: 듀얼 쓰기 (device_info와 snapshots 동시 저장)
-  const data = await prisma.inspectionSession.create({
+  const data = await prisma.inspectionsSession.create({
     data: {
       equipmentSerial: payload.equipmentSerial,
       inspectorId: userId,
@@ -281,7 +281,7 @@ export const GET = async (request: NextRequest) => {
 
   if (sessionId) {
     // 1️⃣ 세션 즉시 조회 및 반환 (~50ms)
-    const data = await prisma.inspectionSession.findUnique({
+    const data = await prisma.inspectionsSession.findUnique({
       where: { id: sessionId }
     });
 
@@ -297,7 +297,7 @@ export const GET = async (request: NextRequest) => {
     const deviceData = data.deviceInfo;
 
     // 2️⃣ 업데이트 (비차단)
-    prisma.inspectionSession.update({
+    prisma.inspectionsSession.update({
       where: { id: sessionId },
       data: { updatedAt: new Date() }
     })
@@ -372,7 +372,7 @@ export const GET = async (request: NextRequest) => {
     where.status = status;
   }
 
-  const data = await prisma.inspectionSession.findMany({
+  const data = await prisma.inspectionsSession.findMany({
     where,
     orderBy: {
       createdAt: 'desc'
@@ -488,7 +488,7 @@ export const PATCH = async (request: NextRequest) => {
     );
   }
 
-  const session = await prisma.inspectionSession.findUnique({
+  const session = await prisma.inspectionsSession.findUnique({
     where: { id: payload.sessionId }
   });
 
@@ -608,7 +608,7 @@ export const PATCH = async (request: NextRequest) => {
 
       // 점검 완료 시 해당 장비의 assignment도 completed로 변경
       if (session.equipmentSerial) {
-        await prisma.inspectionAssignment.updateMany({
+        await prisma.inspectionsAssignment.updateMany({
           where: {
             equipmentSerial: session.equipmentSerial,
             assignedTo: userId,
@@ -634,7 +634,7 @@ export const PATCH = async (request: NextRequest) => {
     }
   }
 
-  const updated = await prisma.inspectionSession.update({
+  const updated = await prisma.inspectionsSession.update({
     where: { id: payload.sessionId },
     data: updates
   });
@@ -655,7 +655,7 @@ export const DELETE = async (request: NextRequest) => {
   }
 
   // 세션 조회 및 권한 확인
-  const session = await prisma.inspectionSession.findUnique({
+  const session = await prisma.inspectionsSession.findUnique({
     where: { id: sessionId },
     select: {
       id: true,
@@ -689,7 +689,7 @@ export const DELETE = async (request: NextRequest) => {
   }
 
   // 안전한 취소: 데이터 삭제 없이 상태만 변경
-  const cancelled = await prisma.inspectionSession.update({
+  const cancelled = await prisma.inspectionsSession.update({
     where: { id: sessionId },
     data: {
       status: 'cancelled',
@@ -699,7 +699,7 @@ export const DELETE = async (request: NextRequest) => {
 
   // 연관된 assignment도 취소 처리
   if (session.equipmentSerial) {
-    await prisma.inspectionAssignment.updateMany({
+    await prisma.inspectionsAssignment.updateMany({
       where: {
         equipmentSerial: session.equipmentSerial,
         assignedTo: userId,

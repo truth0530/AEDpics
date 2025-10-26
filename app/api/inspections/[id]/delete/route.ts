@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // 점검 이력 조회
-  const inspection = await prisma.inspection.findUnique({
+  const inspection = await prisma.inspections.findUnique({
     where: { id: inspectionId },
     select: {
       id: true,
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // 권한 확인: 본인만 삭제 가능 (또는 관리자)
-  const profile = await prisma.userProfile.findUnique({
+  const profile = await prisma.user_profiles.findUnique({
     where: { id: session.user.id },
     select: { role: true }
   });
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // 실제 DELETE 수행 (Prisma는 RLS가 없으므로 직접 삭제)
   try {
-    await prisma.inspection.delete({
+    await prisma.inspections.delete({
       where: { id: inspectionId }
     });
   } catch (deleteError) {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // 삭제 로그 기록
   try {
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         userId: session.user.id,
         action: 'delete_inspection',

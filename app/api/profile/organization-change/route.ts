@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. 현재 사용자 프로필 조회
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id }
     });
 
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 8. Audit Log 기록
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         user_id: session.user.id,
         action: 'organization_change_requested',
