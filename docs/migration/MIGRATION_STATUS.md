@@ -1382,3 +1382,161 @@ python3 scripts/upload_to_ncp.py
 **프로젝트 상태**: 프로덕션 배포 및 이메일 전환 완료, Nginx 설정 진행 중
 **다음 목표**: Nginx 리버스 프록시 설정 → 도메인 연결 → SSL 인증서 설치
 **국정원 인증**: 모든 기술 요구사항 100% 충족 완료
+
+---
+
+## Phase 7: DNS 및 Cloudflare 설정 (진행 중 - 2025-10-27)
+
+### 완료된 작업
+
+#### 1. Nginx 리버스 프록시 설치 완료
+- Nginx 1.24.0 설치 완료
+- 리버스 프록시 설정: `/etc/nginx/sites-available/aedpics`
+- PM2 (port 3000) → Nginx (port 80) 연결 완료
+- 서비스 상태: active (running)
+- 외부 접속 테스트: http://223.130.150.133 정상 작동
+
+#### 2. Certbot 설치 완료
+- Certbot 2.9.0 설치
+- python3-certbot-nginx 플러그인 설치
+- Let's Encrypt SSL 인증서 발급 준비 완료
+
+#### 3. Cloudflare DNS 설정 완료
+- Cloudflare 가입 및 도메인 추가
+- DNS A 레코드 설정:
+  - `aed.pics` → `223.130.150.133`
+  - `www.aed.pics` → `223.130.150.133`
+- Proxy status: DNS only (회색 구름)
+- Cloudflare 네임서버:
+  - `jasmine.ns.cloudflare.com`
+  - `sergi.ns.cloudflare.com`
+
+#### 4. hosting.kr 네임서버 변경 완료
+- 기존: `NS1.VERCEL-DNS.COM`, `NS2.VERCEL-DNS.COM`
+- 변경: `jasmine.ns.cloudflare.com`, `sergi.ns.cloudflare.com`
+- DNS 전파 대기 중 (최대 24-48시간)
+
+#### 5. 프로덕션 환경변수 템플릿 생성
+- 파일 위치: `/tmp/production.env`
+- 시크릿 키 생성 완료:
+  - NEXTAUTH_SECRET: 32자 랜덤
+  - JWT_SECRET: 32자 랜덤
+  - ENCRYPTION_KEY: 32자 랜덤
+- 민감한 정보 입력 대기:
+  - DATABASE_URL 비밀번호
+  - NCP_ACCESS_KEY
+  - NCP_ACCESS_SECRET
+  - NEXT_PUBLIC_KAKAO_MAP_APP_KEY
+
+#### 6. AED 데이터 임포트 준비 완료
+- 스크립트: `scripts/upload_to_ncp.py`
+- CSV 파일: 9개 (data/ 폴더)
+- PostgreSQL 직접 연결 (psycopg2)
+- 배치 UPSERT 처리 지원
+
+### 대기 중인 작업
+
+#### 1. DNS 전파 확인 (진행 중)
+- 현재 상태: Cloudflare DNS 레코드 설정 완료
+- 네임서버 변경 완료
+- 전파 시간: 최소 5분 ~ 최대 48시간
+- 확인 명령: `dig aed.pics +short`
+
+#### 2. SSL 인증서 발급 (DNS 전파 후)
+```bash
+certbot --nginx -d aed.pics -d www.aed.pics
+```
+
+#### 3. Nginx server_name 업데이트 (DNS 전파 후)
+```nginx
+server {
+  listen 80;
+  server_name aed.pics www.aed.pics;
+  # ...
+}
+```
+
+#### 4. 프로덕션 환경변수 적용 (민감한 정보 입력 후)
+- 서버에 .env 파일 생성
+- PM2 앱 재시작
+- 환경변수 검증
+
+#### 5. AED 데이터 임포트 (환경변수 적용 후)
+- 81,331개 레코드 import
+- 데이터 검증 및 정합성 확인
+
+### 시스템 구조
+
+```
+┌──────────────────────────────────────────┐
+│ hosting.kr (도메인 등록업체)                │
+│ - aed.pics 소유권 관리                     │
+│ - NS: jasmine.ns.cloudflare.com         │
+│ - NS: sergi.ns.cloudflare.com           │
+└──────────────────────────────────────────┘
+              ↓
+┌──────────────────────────────────────────┐
+│ Cloudflare (DNS 서비스)                   │
+│ - aed.pics → 223.130.150.133 (A 레코드)   │
+│ - www.aed.pics → 223.130.150.133         │
+│ - DDoS 보호, CDN 제공                     │
+└──────────────────────────────────────────┘
+              ↓
+┌──────────────────────────────────────────┐
+│ NCP Server (223.130.150.133)             │
+│ - Nginx 1.24.0 (port 80)                 │
+│   → PM2 (port 3000)                      │
+│   → Next.js 14                           │
+│   → Prisma                               │
+│   → NCP PostgreSQL                       │
+└──────────────────────────────────────────┘
+```
+
+### 기존 Vercel 프로젝트 보존
+- Vercel에서 aed.pics 도메인 제거 완료
+- 프로젝트 유지: https://aed-check-system-git-main-truth0530s-projects.vercel.app/
+- 용도: 레거시 시스템 참조 및 보존
+
+### 다음 단계 (우선순위 순)
+
+1. **DNS 전파 확인** (5분 ~ 48시간)
+   - 주기적으로 `dig aed.pics +short` 실행
+   - `223.130.150.133` 응답 확인
+
+2. **SSL 인증서 발급** (DNS 전파 후, 5분)
+   - Certbot으로 Let's Encrypt 인증서 발급
+   - 자동 갱신 설정
+
+3. **프로덕션 환경변수 적용** (30분)
+   - 민감한 정보 입력
+   - 서버에 .env 파일 생성
+   - PM2 재시작
+
+4. **AED 데이터 임포트** (1-2시간)
+   - Python 스크립트 실행
+   - 데이터 검증
+
+5. **통합 테스트** (1시간)
+   - 로그인/로그아웃
+   - 이메일 발송 (OTP, 비밀번호 재설정)
+   - AED 데이터 조회
+   - 점검 기능
+
+### 진행률
+
+- Nginx 리버스 프록시: 100%
+- Certbot 설치: 100%
+- Cloudflare DNS 설정: 100%
+- 네임서버 변경: 100%
+- DNS 전파: 진행 중 (0-100%)
+- SSL 인증서: 대기 중
+- 프로덕션 환경변수: 50% (템플릿 생성 완료, 민감한 정보 입력 대기)
+- AED 데이터 임포트: 준비 완료 (실행 대기)
+
+**Phase 7 전체 진행률: 60%**
+
+---
+
+**마지막 업데이트**: 2025-10-27 21:55 KST
+**현재 상태**: Nginx 설정 완료, Cloudflare DNS 전파 대기 중
+**다음 작업**: DNS 전파 확인 → SSL 인증서 발급

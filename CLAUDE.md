@@ -12,6 +12,12 @@
 - [docs/migration/MIGRATION_STATUS.md](docs/migration/MIGRATION_STATUS.md) - 현재 마이그레이션 상태
 - [docs/migration/NCP_MIGRATION_PHASE1_COMPLETE.md](docs/migration/NCP_MIGRATION_PHASE1_COMPLETE.md) - Phase 1 완료 보고서
 
+### 배포 및 운영
+- [docs/deployment/NCP_SERVER_SETUP.md](docs/deployment/NCP_SERVER_SETUP.md) - NCP 서버 설정 및 배포 가이드
+- [docs/deployment/GITHUB_SECRETS_SETUP.md](docs/deployment/GITHUB_SECRETS_SETUP.md) - GitHub Secrets 설정 가이드
+- [docs/GITHUB_ACTIONS_OPTIMIZATION.md](docs/GITHUB_ACTIONS_OPTIMIZATION.md) - GitHub Actions 최적화 가이드
+- [docs/SLACK_WEBHOOK_SETUP.md](docs/SLACK_WEBHOOK_SETUP.md) - Slack Webhook 연동 가이드
+
 ### 데이터 Import
 - [docs/AED_DATA_IMPORT_GUIDE.md](docs/AED_DATA_IMPORT_GUIDE.md) - AED 데이터 import 가이드
 - [docs/CSV_STRUCTURE_ANALYSIS.md](docs/CSV_STRUCTURE_ANALYSIS.md) - e-gen CSV 파일 구조 분석
