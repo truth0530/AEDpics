@@ -33,7 +33,8 @@
     "batch:sync": "ts-node ../scripts/batch/sync-all-regions.ts",
     "deploy:stage": "bash ../scripts/deploy-stage.sh",
     "deploy:prod": "bash ../scripts/deploy-prod.sh",
-    "benchmark:run": "ts-node ../scripts/run-benchmarks.ts"
+    "benchmark:run": "ts-node ../scripts/run-benchmarks.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.0",
