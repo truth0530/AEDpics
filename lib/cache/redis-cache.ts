@@ -1,13 +1,19 @@
 /**
  * Redis 캐싱 유틸리티
  *
- * Vercel KV를 사용하여 AED 데이터를 캐싱합니다.
+ * NCP 환경에서는 Vercel KV 대신 자체 Redis 또는 캐싱 없이 운영
  * - 하루 단위로 갱신되는 데이터 특성에 최적화
  * - TTL 24시간 설정
  * - Fallback 로직 포함
  */
 
-import { kv } from '@vercel/kv';
+// TODO: Vercel KV 제거 후 NCP Redis로 교체 필요
+// import { kv } from '@vercel/kv';
+const kv = {
+  get: async () => null,
+  set: async () => {},
+  del: async () => {},
+};
 
 export interface CacheConfig {
   key: string;

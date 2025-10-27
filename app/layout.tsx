@@ -4,13 +4,9 @@ import Script from "next/script";
 import { KAKAO_MAP_CONFIG } from "@/lib/constants/kakao";
 import "./globals.css";
 import { Providers } from "./providers";
-// Analytics temporarily disabled due to Vercel configuration
-// import { Analytics } from '@vercel/analytics/react';
-// import { SpeedInsights } from '@vercel/speed-insights/next';
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+// NCP 배포 환경 URL (Vercel에서 완전히 분리됨)
+const defaultUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 const kakaoMapSdkUrl = KAKAO_MAP_CONFIG.getScriptUrl();
 
@@ -104,7 +100,6 @@ export default function RootLayout({
           strategy="beforeInteractive"
         />
         <Providers>{children}</Providers>
-        {/* Analytics temporarily disabled - will enable after Vercel configuration */}
       </body>
     </html>
   );

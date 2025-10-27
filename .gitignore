@@ -55,8 +55,10 @@ scripts/supabase_config.json
 scripts/portal_to_ncp.py
 scripts/upload_to_ncp.py
 
-# vercel
+# vercel - NCP 마이그레이션 완료, Vercel 연결 완전 격리
 .vercel
+.vercelignore
+.env.vercel*
 
 # typescript
 *.tsbuildinfo

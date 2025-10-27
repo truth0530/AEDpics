@@ -1,13 +1,20 @@
 /**
  * Rate Limiter Middleware
  *
- * Vercel KV (Redis)를 사용한 요청 제한
+ * NCP 환경에서는 Redis 없이 운영 (또는 NCP Redis 추가 예정)
  * - IP 기반 rate limiting
  * - 사용자 ID 기반 rate limiting
  * - 엔드포인트별 다른 limit 설정
  */
 
-import { kv } from '@vercel/kv';
+// TODO: Vercel KV 제거 후 NCP Redis로 교체 필요
+// import { kv } from '@vercel/kv';
+const kv = {
+  get: async () => null,
+  set: async () => {},
+  incr: async () => 1,
+  ttl: async () => 60,
+};
 import { NextRequest, NextResponse } from 'next/server';
 
 export interface RateLimitConfig {
@@ -151,7 +158,7 @@ export function createRateLimitResponse(result: RateLimitResult): NextResponse {
  * 요청에서 식별자 추출 (IP 주소)
  */
 export function getIdentifier(request: NextRequest): string {
-  // Vercel에서는 x-forwarded-for 헤더 사용
+  // NCP 환경에서 x-forwarded-for 헤더 사용
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
 
