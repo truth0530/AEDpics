@@ -1540,3 +1540,215 @@ server {
 **마지막 업데이트**: 2025-10-27 21:55 KST
 **현재 상태**: Nginx 설정 완료, Cloudflare DNS 전파 대기 중
 **다음 작업**: DNS 전파 확인 → SSL 인증서 발급
+
+---
+
+## 데이터베이스 현황 확인 (2025-10-27 23:15 KST)
+
+### 테이블별 레코드 수
+
+```sql
+-- NCP PostgreSQL: aedpics_production.aedpics 스키마
+
+aed_data:                 81,464개 ✓ (Phase 2에서 import 완료)
+organizations:            291개 ✓
+user_profiles:            24개 ✓
+inspections:              0개 (점검 데이터 없음)
+inspection_assignments:   0개
+inspection_sessions:      0개
+```
+
+### 중요 발견
+
+**AED 데이터가 이미 81,464개 존재합니다!**
+
+- Phase 2 마이그레이션에서 Supabase → NCP PostgreSQL로 데이터 이전 완료
+- Organizations(291개), UserProfiles(24개)도 함께 마이그레이션 완료
+- 추가 데이터 import 불필요
+
+### 데이터 검증
+
+```bash
+# DB 연결 테스트
+✓ PostgreSQL 14.18 연결 성공
+✓ aedpics 스키마 접근 가능
+✓ 모든 테이블 정상 작동
+
+# 비밀번호 확인
+DB Password: AEDpics2025*NCP (스크립트에 하드코딩됨)
+```
+
+---
+
+## Phase 7 최종 상태 (2025-10-27)
+
+### 완료율: 90%
+
+#### 완료된 작업 (100%)
+
+**1. Nginx 리버스 프록시**
+- 설치: Nginx 1.24.0
+- 설정 파일: `/etc/nginx/sites-available/aedpics`
+- server_name: `aed.pics www.aed.pics`
+- 프록시: PM2 (port 3000) ← Nginx (port 80)
+- 상태: active (running)
+- 접속: http://223.130.150.133 정상
+
+**2. PM2 Startup (자동 재시작)**
+- systemd 서비스: `pm2-root.service` enabled
+- 앱 상태: online
+- 서버 재시작 시 자동 실행: ✓
+
+**3. SSL 준비**
+- Certbot 2.9.0 설치 완료
+- python3-certbot-nginx 플러그인 설치
+- DNS 전파 후 발급 가능
+
+**4. Cloudflare DNS**
+- 도메인 추가: aed.pics
+- A 레코드:
+  - `aed.pics` → `223.130.150.133`
+  - `www.aed.pics` → `223.130.150.133`
+- Proxy: DNS only (회색 구름)
+- 네임서버:
+  - `jasmine.ns.cloudflare.com`
+  - `sergi.ns.cloudflare.com`
+
+**5. hosting.kr 네임서버 변경**
+- 기존: NS1.VERCEL-DNS.COM, NS2.VERCEL-DNS.COM
+- 신규: jasmine.ns.cloudflare.com, sergi.ns.cloudflare.com
+- 변경 시간: 2025-10-27 22:00 KST
+
+**6. 프로덕션 환경변수**
+- 템플릿: `/tmp/production.env`
+- 시크릿 키 생성 완료:
+  - NEXTAUTH_SECRET (32자)
+  - JWT_SECRET (32자)
+  - ENCRYPTION_KEY (32자)
+- DB 비밀번호 확인: `AEDpics2025*NCP`
+
+**7. AED 데이터**
+- 현황: 81,464개 이미 존재 (Phase 2 완료)
+- 추가 import 불필요
+- 데이터 검증 완료
+
+**8. Vercel 프로젝트 분리**
+- Vercel에서 aed.pics 도메인 제거
+- 레거시 접속: https://aed-check-system-git-main-truth0530s-projects.vercel.app/
+- 용도: 보존 및 참조용
+
+#### 진행 중 (10%)
+
+**DNS 전파**
+- 시작: 2025-10-27 22:00 KST
+- 경과: 약 1시간 15분
+- 예상 완료: 1-24시간 (평균 2-4시간)
+- 확인 방법: `dig aed.pics +short` → `223.130.150.133`
+
+#### 대기 중
+
+**SSL 인증서 발급** (DNS 전파 후)
+```bash
+certbot --nginx -d aed.pics -d www.aed.pics
+```
+
+**민감한 환경변수 적용** (선택사항)
+- NCP_ACCESS_KEY
+- NCP_ACCESS_SECRET
+- NEXT_PUBLIC_KAKAO_MAP_APP_KEY
+
+---
+
+## 시스템 아키텍처 (현재)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ 도메인 등록: hosting.kr (aed.pics)                         │
+│ 네임서버: jasmine.ns.cloudflare.com                       │
+│          sergi.ns.cloudflare.com                         │
+└──────────────────────────────────────────────────────────┘
+                         ↓ DNS 전파 중
+┌──────────────────────────────────────────────────────────┐
+│ DNS 서비스: Cloudflare (무료)                              │
+│ A 레코드: aed.pics → 223.130.150.133                      │
+│          www.aed.pics → 223.130.150.133                  │
+└──────────────────────────────────────────────────────────┘
+                         ↓
+┌──────────────────────────────────────────────────────────┐
+│ NCP 서버: 223.130.150.133                                 │
+│ ├─ Nginx 1.24.0 (port 80) [active]                      │
+│ ├─ PM2 (systemd service) [enabled]                      │
+│ │   └─ Next.js 14 (port 3000) [online]                  │
+│ │       ├─ 115 pages                                     │
+│ │       ├─ React 18                                      │
+│ │       └─ Prisma ORM                                    │
+│ └─ PostgreSQL Client                                     │
+└──────────────────────────────────────────────────────────┘
+                         ↓
+┌──────────────────────────────────────────────────────────┐
+│ NCP PostgreSQL: pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com     │
+│ Database: aedpics_production                             │
+│ Schema: aedpics                                          │
+│ Version: PostgreSQL 14.18                                │
+│ Data:                                                    │
+│ ├─ aed_data: 81,464개                                    │
+│ ├─ organizations: 291개                                  │
+│ ├─ user_profiles: 24개                                   │
+│ └─ inspections: 0개                                      │
+└──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 접속 URL
+
+**현재 (IP 주소)**
+- HTTP: http://223.130.150.133 ✓ 작동 중
+
+**DNS 전파 후 (도메인)**
+- HTTP: http://aed.pics (DNS 전파 대기)
+- HTTP: http://www.aed.pics (DNS 전파 대기)
+
+**SSL 인증서 발급 후 (HTTPS)**
+- HTTPS: https://aed.pics
+- HTTPS: https://www.aed.pics
+
+---
+
+## 다음 세션 작업
+
+### 1. DNS 전파 확인 (1분)
+```bash
+dig aed.pics +short
+# 223.130.150.133이 나오면 완료
+```
+
+### 2. SSL 인증서 발급 (5분)
+```bash
+ssh root@223.130.150.133
+certbot --nginx -d aed.pics -d www.aed.pics
+# Let's Encrypt 자동 설정
+```
+
+### 3. HTTPS 접속 테스트 (1분)
+```bash
+curl -I https://aed.pics
+# HTTP/2 200 OK 확인
+```
+
+### 4. 통합 테스트 (30분)
+- https://aed.pics 접속
+- 로그인/로그아웃
+- 이메일 발송 (OTP, 비밀번호 재설정)
+- AED 데이터 조회 (81,464개)
+- 점검 기능
+
+### 5. Phase 7 완료 선언
+
+**예상 소요 시간**: 1시간 (DNS 전파 대기 제외)
+
+---
+
+**Phase 7 진행률**: 90%
+**Phase 전체 완료까지**: SSL 인증서 발급만 남음 (10%)
+**마지막 업데이트**: 2025-10-27 23:20 KST
