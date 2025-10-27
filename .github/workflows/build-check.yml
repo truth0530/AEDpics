@@ -36,13 +36,16 @@ jobs:
       run: npm run lint
 
     - name: Build Next.js
-      run: npm run build
+      run: NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}" NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}" npm run build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
         NEXT_PUBLIC_KAKAO_MAP_APP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APP_KEY }}
+        NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+        MASTER_EMAIL: ${{ secrets.MASTER_EMAIL }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
