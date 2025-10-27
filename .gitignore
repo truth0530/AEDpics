@@ -89,3 +89,7 @@ EXECUTE_THIS*.sql
 docs_backup_*/
 
 /lib/generated/prisma
+
+# act (GitHub Actions local testing)
+.secrets
+.actrc
