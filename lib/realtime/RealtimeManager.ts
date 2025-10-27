@@ -139,14 +139,14 @@ export class RealtimeManager {
         .on('presence', { event: 'sync' }, () => {
           this.handlePresenceSync()
         })
-        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-          this.handlePresenceJoin(key, newPresences)
+        .on('presence', { event: 'join' }, ({ key, newPresences }: any) => {
+          this.handlePresenceJoin(key, newPresences as PresenceUser[])
         })
-        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-          this.handlePresenceLeave(key, leftPresences)
+        .on('presence', { event: 'leave' }, ({ key, leftPresences }: any) => {
+          this.handlePresenceLeave(key, leftPresences as PresenceUser[])
         })
 
-      const { error } = await this.channel.subscribe((status) => {
+      const { error } = (await this.channel.subscribe((status) => {
         console.log('Realtime subscription status:', status)
         if (status === 'SUBSCRIBED') {
           this.connectionState = 'connected'
@@ -157,7 +157,7 @@ export class RealtimeManager {
           this.connectionState = 'disconnected'
           this.handleReconnect()
         }
-      })
+      })) as any
 
       if (error) {
         console.error('Failed to subscribe to channel:', error)

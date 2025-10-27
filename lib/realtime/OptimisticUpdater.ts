@@ -152,7 +152,7 @@ export class OptimisticUpdater<T extends { id: string; updated_at?: Date | strin
     }
 
     resolveCallback(resolvedValue)
-    this.confirmUpdate(updateId, resolvedValue)
+    this.confirmUpdate(updateId)
   }
 
   /**

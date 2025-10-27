@@ -120,7 +120,7 @@ export function InspectionSummaryStep() {
     const matched: SummaryItem[] = [];
     const modified: SummaryItem[] = [];
 
-    if (basicInfo.all_matched === true) {
+    if ((basicInfo.all_matched as any) === true) {
       matched.push({
         label: '관리책임자',
         corrected: basicInfo.manager || deviceInfo.manager || '-',
@@ -133,7 +133,7 @@ export function InspectionSummaryStep() {
         label: '분류체계',
         corrected: `${basicInfo.category_1 || deviceInfo.category_1 || '-'} > ${basicInfo.category_2 || deviceInfo.category_2 || '-'} > ${basicInfo.category_3 || deviceInfo.category_3 || '-'}`,
       });
-    } else if (basicInfo.all_matched === 'edited') {
+    } else if ((basicInfo.all_matched as any) === 'edited') {
       const fields = [
         { key: 'manager', label: '관리책임자' },
         { key: 'contact_info', label: '담당자 연락처' },
@@ -161,7 +161,7 @@ export function InspectionSummaryStep() {
         label: '주소 및 설치위치',
         corrected: basicInfo.address || deviceInfo.installation_address || '-',
       });
-    } else if (basicInfo.location_matched === 'edited') {
+    } else if ((basicInfo.location_matched as any) === 'edited') {
       const addressOriginal = deviceInfo.installation_address || '';
       const addressCorrected = basicInfo.address || '';
 
@@ -1002,7 +1002,7 @@ export function InspectionSummaryStep() {
             <div className="space-y-1">
               {storageChecklistSummary.issues.map((item, idx) => (
                 <div key={idx} className="text-sm text-red-300 leading-relaxed">
-                  • {item}
+                  • {item as unknown as React.ReactNode}
                 </div>
               ))}
             </div>

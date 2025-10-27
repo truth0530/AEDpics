@@ -246,7 +246,7 @@ export function TutorialPageClient() {
 
   // 전역 이벤트 리스너로 사이드바 클릭 감지
   if (typeof window !== 'undefined') {
-    window.tutorialNavigate = handleBottomNavNavigate;
+    (window as any).tutorialNavigate = handleBottomNavNavigate;
   }
 
   const currentStepConfig = TUTORIAL_STEPS[tutorialStep];
@@ -458,7 +458,7 @@ export function TutorialPageClient() {
 
   // 전역 이벤트로 헤더에 페이지 타이틀 전달
   if (typeof window !== 'undefined') {
-    window.tutorialPageTitle = pageTitle;
+    (window as any).tutorialPageTitle = pageTitle;
   }
 
   return (

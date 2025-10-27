@@ -39,6 +39,8 @@ interface AEDDataContextType {
   appliedFilterBadges: Array<{ key: string; label: string; value: string; rawValue?: string; removable: boolean }>;
   enforcedFilterLabels: string[];
   userProfile: UserProfile;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
   refetch: () => void;
   nextPage: () => void;
   prevPage: () => void;
@@ -508,6 +510,8 @@ export function AEDDataProvider({ children, initialFilters, userProfile, viewMod
     appliedFilterBadges,
     enforcedFilterLabels,
     userProfile,
+    searchQuery: undefined,
+    setSearchQuery: undefined,
     refetch,
     nextPage,
     prevPage,
@@ -516,7 +520,7 @@ export function AEDDataProvider({ children, initialFilters, userProfile, viewMod
     mapCenterRegion,
     setMapCenterRegion,
     // ✅ includeSchedule=true일 때만 scheduled 배열 포함
-    scheduled: response?.scheduled,
+    scheduled: (response as any)?.scheduled,
   };
 
   return (

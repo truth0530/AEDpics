@@ -33,7 +33,7 @@ export const getCachedUserProfile = cache(async (userId: string): Promise<UserPr
       fullName: profile.full_name || profile.email,
       phone: profile.phone || undefined,
       organizationId: profile.organization_id || undefined,
-      organization: profile.organizations || undefined,
+      organization: (profile.organizations as any) || undefined,
       region: profile.region || undefined,
       region_code: profile.region_code || undefined,
       role: profile.role,

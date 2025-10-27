@@ -83,6 +83,14 @@ export const ROLE_ACCESS_MATRIX = {
     fallbackRoute: '/verify-email',
     defaultLandingPage: '/verify-email',
     requiresAuth: true
+  },
+  rejected: {
+    canAccessInspection: false,
+    canAccessAEDData: false,
+    inspectionUIMode: null,
+    fallbackRoute: '/rejected',
+    defaultLandingPage: '/rejected',
+    requiresAuth: true
   }
 } as const satisfies Record<UserRole, RoleAccessConfig>;
 

@@ -446,7 +446,7 @@ export class ServiceWorkerManager {
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
       const subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidKey ? this.urlBase64ToUint8Array(vapidKey) : undefined
+        applicationServerKey: vapidKey ? (this.urlBase64ToUint8Array(vapidKey) as any) : undefined
       })
 
       console.log('Push 구독 성공:', subscription.endpoint)

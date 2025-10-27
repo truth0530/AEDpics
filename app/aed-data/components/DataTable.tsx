@@ -705,7 +705,7 @@ export function DataTable({
 
   const handlePageSizeChange = useCallback((limit: number) => {
     // ✅ 페이지 크기 변경 시 1페이지로 리셋 + 커서 초기화
-    setFilters((prev) => ({
+    (setFilters as any)((prev: any) => ({
       ...prev,
       limit,
       page: 1,
@@ -746,7 +746,7 @@ export function DataTable({
     }
 
     hasAppliedStoredLimit.current = true;
-    setFilters((prev) => ({ ...prev, limit: parsed }));
+    (setFilters as any)((prev: any) => ({ ...prev, limit: parsed }));
   }, [filters.limit, setFilters]);
 
   // 부모에서 전달된 selectedDeviceIds가 있으면 사용, 없으면 내부 상태 사용

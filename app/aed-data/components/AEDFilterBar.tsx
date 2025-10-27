@@ -251,12 +251,12 @@ export function AEDFilterBar() {
           ...prev,
           regions: [regionCode],
           cities: [gugun]
-        }));
+        }) as any);
 
         console.log('[AEDFilterBar] 📤 Calling setFilters with:', { regionCodes: [sido], cityCodes: [gugun] });
 
         // 필터 즉시 적용 (API 호출) - 기존 필터 유지하면서 지역만 업데이트
-        setFilters(prev => ({
+        (setFilters as any)((prev: any) => ({
           ...prev,
           regionCodes: [sido],
           cityCodes: [gugun],
@@ -294,10 +294,10 @@ export function AEDFilterBar() {
         ...prev,
         regions: [regionCode],
         cities: gugun === '구군' ? [] : [gugun]
-      }));
+      }) as any);
 
       // 필터 즉시 적용 (API 호출) - 기존 필터 유지하면서 지역만 업데이트
-      setFilters(prev => ({
+      (setFilters as any)((prev: any) => ({
         ...prev,
         regionCodes: [sido],
         cityCodes: gugun === '구군' ? undefined : [gugun],
@@ -315,7 +315,7 @@ export function AEDFilterBar() {
   const allowedRegions = useMemo(() => {
     const allRegions = Object.entries(REGION_LABELS)
       .filter(([code]) => code !== 'KR') // KR(중앙)은 실제 AED 데이터가 없으므로 제외
-      .map(([code, label]) => ({ code, label }));
+      .map(([code, label]) => ({ code, label }) as any);
 
     // accessScope가 없으면 빈 배열 반환 (권한 미확인 상태)
     if (!accessScope) {
@@ -400,10 +400,10 @@ export function AEDFilterBar() {
         ...prev,
         regions: [regionCode],
         cities: gugun ? [gugun] : [],
-      }));
+      }) as any);
 
       // 필터 즉시 적용 (API 호출)
-      setFilters(prev => ({ ...prev, regionCodes: [sido], cityCodes: gugun ? [gugun] : [] }));
+      (setFilters as any)((prev: any) => ({ ...prev, regionCodes: [sido], cityCodes: gugun ? [gugun] : [] }));
     }
   }, [mapCenterRegion, setFilters]);
 
@@ -486,7 +486,7 @@ export function AEDFilterBar() {
     }
 
     if (needsUpdate) {
-      setDraftFilters(prev => ({ ...prev, ...updates }));
+      setDraftFilters(prev => ({ ...prev, ...updates }) as any);
     }
   }, [draftFilters.category_1, filteredCategory2Options, filteredCategory3Options]);
 
@@ -762,7 +762,7 @@ export function AEDFilterBar() {
                     : value === 'mandatory'
                     ? ['구비의무기관']
                     : ['구비의무기관 외'],
-              }));
+              }) as any);
             }}
           >
             <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[46px] lg:w-[60px] xl:w-[120px]")}>
@@ -799,7 +799,7 @@ export function AEDFilterBar() {
               setDraftFilters((prev) => ({
                 ...prev,
                 category_2: value === 'all' ? undefined : [value],
-              }));
+              }) as any);
             }}
           >
             <SelectTrigger
@@ -832,7 +832,7 @@ export function AEDFilterBar() {
               setDraftFilters((prev) => ({
                 ...prev,
                 category_3: value === 'all' ? undefined : [value],
-              }));
+              }) as any);
             }}
           >
             <SelectTrigger
@@ -1053,7 +1053,7 @@ export function AEDFilterBar() {
                           cities: checked
                             ? [...(prev.cities || []), code]
                             : (prev.cities || []).filter((c) => c !== code),
-                        }));
+                        }) as any);
                       }}
                       triggerLabel={
                         draftFilters.cities && draftFilters.cities.length > 0
@@ -1069,7 +1069,7 @@ export function AEDFilterBar() {
             {/* ✅ 분류2, 분류3, 배터리, 패드, 교체예정일, 월간점검은 상단 첫 번째 줄에 이미 표시되므로 모바일 섹션에서 제거 */}
 
             {/* 검색창 + 버튼들 - admin 모드에서만 모바일 하단에 배치 (inspection은 상단에 표시) */}
-            {viewMode !== 'inspection' && (
+            {(viewMode as any) !== 'inspection' && (
               <div className="pt-1 px-0">
                 <div className="flex items-center gap-0.5">
                   {/* 필터 배지 - 좌측에 배치, 필요한 만큼만 공간 차지 (모바일에서만) */}

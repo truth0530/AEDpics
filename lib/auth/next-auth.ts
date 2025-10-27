@@ -22,9 +22,9 @@ export async function getCurrentUser() {
     return null
   }
 
-  const user = await prisma.userProfile.findUnique({
+  const user = await prisma.user_profiles.findUnique({
     where: { id: session.user.id },
-    include: { organization: true }
+    include: { organizations: true }
   })
 
   return user
@@ -35,7 +35,7 @@ export async function getCurrentUser() {
  */
 export async function hasPermission(permission: keyof Pick<
   Awaited<ReturnType<typeof getCurrentUser>>,
-  'canApproveUsers' | 'canManageDevices' | 'canViewReports' | 'canExportData'
+  'can_approve_users' | 'can_manage_devices' | 'can_view_reports' | 'can_export_data'
 >): Promise<boolean> {
   const user = await getCurrentUser()
 
@@ -43,7 +43,7 @@ export async function hasPermission(permission: keyof Pick<
     return false
   }
 
-  return user[permission] === true
+  return (user as any)[permission] === true
 }
 
 /**

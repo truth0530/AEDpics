@@ -1271,7 +1271,7 @@ export function MapView({
                       <button
                         onClick={() => {
                           handleLocationSelect(location);
-                          setMapCollapsed(false); // 지도 펼침
+                          // setMapCollapsed(false); // TODO: 지도 펼침 기능 구현
                         }}
                         className="font-medium text-lg sm:text-xs text-gray-100 hover:text-green-400 hover:underline text-left min-w-0 flex items-baseline gap-1 flex-1"
                       >

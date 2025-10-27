@@ -1,6 +1,11 @@
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
 
+// 임시: Supabase createClient stub
+const createClient = (): any => {
+  return null;
+};
+
 export interface OTPResponse {
   success: boolean;
   message: string;

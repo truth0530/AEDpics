@@ -50,7 +50,7 @@ const sanitizeFilters = (next: Partial<ParsedFilters>): ParsedFilters => {
 
   const status = sanitizeArray(merged.status ?? undefined);
   if (status) {
-    result.status = status;
+    result.status = status as any;
   }
 
   const regions = sanitizeArray(merged.regionCodes ?? undefined);

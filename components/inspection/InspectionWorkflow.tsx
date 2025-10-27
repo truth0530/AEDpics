@@ -772,11 +772,11 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
           <h1 className="text-base sm:text-2xl font-semibold text-white whitespace-nowrap">
-            {deviceData?.installation_institution || deviceData?.installation_org || '장비 정보'}
+            {(deviceData?.installation_institution || deviceData?.installation_org || '장비 정보') as React.ReactNode}
           </h1>
           <div className="flex items-center gap-1 text-[10px] sm:text-sm text-gray-400">
-            <span className="whitespace-nowrap">| 관리번호 {deviceData?.management_number || '-'} |</span>
-            <span className="whitespace-nowrap">장비연번 {deviceData?.equipment_serial || deviceData?.serial_number || '-'}</span>
+            <span className="whitespace-nowrap">| 관리번호 {(deviceData?.management_number || '-') as React.ReactNode} |</span>
+            <span className="whitespace-nowrap">장비연번 {(deviceData?.equipment_serial || deviceData?.serial_number || '-') as React.ReactNode}</span>
           </div>
         </div>
         <button

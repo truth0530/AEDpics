@@ -27,12 +27,14 @@ declare global {
           addListener: (target: any, type: string, callback: (...args: any[]) => void) => void;
           removeListener: (target: any, type: string, callback: (...args: any[]) => void) => void;
         };
+        Circle: new (options: any) => any;
         services: {
           Status: {
             OK: string;
             ZERO_RESULT: string;
             ERROR: string;
           };
+          Geocoder: new () => any;
         };
       };
     };

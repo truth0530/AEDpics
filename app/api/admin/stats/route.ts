@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [totalInspections, inspectionsByResult] = await Promise.all([
+    const [totalInspections, inspectionsByResult] = (await Promise.all([
       prisma.inspections.count({
         where: {
           inspection_date: {
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         },
         _count: true
       })
-    ]);
+    ])) as any;
 
     // 7. 오늘의 활동 로그 (최근 10개)
     const today = new Date();

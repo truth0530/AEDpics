@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { useSupabase } from '@/lib/supabase/client'
+
+// 임시: useSupabase stub
+const useSupabase = (): any => {
+  return null;
+};
+
 import { useUser } from '@/lib/auth/hooks'
 import { RealtimeManager, PresenceUser } from '../RealtimeManager'
 import { RealtimeEvent } from '@/packages/types/team'

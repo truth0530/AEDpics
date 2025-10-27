@@ -44,8 +44,16 @@ export const EXPIRY_FILTER_LABELS: Record<ExpiryFilter, string> = {
   in30: '30일 이내 만료',
   in60: '60일 이내 만료',
   in90: '90일 이내 만료',
+  in180: '180일 이내 만료',
+  in365: '365일 이내 만료',
   no_expiry: '만료일 미등록',
-  all_with_expiry: '만료일 등록됨'
+  all_with_expiry: '만료일 등록됨',
+  never: '만료 없음',
+  over365: '365일 초과',
+  over180: '180일 초과',
+  over90: '90일 초과',
+  over60: '60일 초과',
+  over30: '30일 초과'
 };
 
 export const EXTERNAL_DISPLAY_FILTER_LABELS: Record<ExternalDisplayFilter, string> = {
