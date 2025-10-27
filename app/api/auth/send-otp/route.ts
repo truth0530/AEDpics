@@ -7,12 +7,15 @@ import { sendResendEmail } from '@/lib/email/retry-helper';
 
 const prisma = new PrismaClient();
 
-// 환경변수 검증
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('Missing required environment variable: RESEND_API_KEY');
-}
-
 export async function POST(request: NextRequest) {
+  // 런타임 환경변수 검증 (빌드 시에는 체크하지 않음)
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json(
+      { error: 'Email service is not configured' },
+      { status: 503 }
+    );
+  }
+
   try {
     const { email } = await request.json();
 
