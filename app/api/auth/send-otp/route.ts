@@ -3,13 +3,13 @@ import { PrismaClient } from '@prisma/client';
 import { isAllowedEmailDomain } from '@/lib/auth/config';
 import { rateLimits } from '@/lib/rate-limit';
 import { checkOtpRateLimit } from '@/lib/auth/otp-rate-limiter';
-import { sendResendEmail } from '@/lib/email/retry-helper';
+import { sendSimpleEmail } from '@/lib/email/ncp-email';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   // 런타임 환경변수 검증 (빌드 시에는 체크하지 않음)
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.NCP_ACCESS_KEY || !process.env.NCP_ACCESS_SECRET || !process.env.NCP_SENDER_EMAIL) {
     return NextResponse.json(
       { error: 'Email service is not configured' },
       { status: 503 }
@@ -126,15 +126,19 @@ export async function POST(request: NextRequest) {
 
     const otpRecordId = insertedOtp.id;
 
-    // Resend API를 재시도 로직과 함께 호출
+    // NCP Cloud Outbound Mailer API를 재시도 로직과 함께 호출
     try {
-      await sendResendEmail(
-        process.env.RESEND_API_KEY,
+      await sendSimpleEmail(
         {
-          from: 'noreply@aed.pics',
-          to: email,
-          subject: `AED 점검 시스템 - 인증번호: ${otp}`,
-          html: `
+          accessKey: process.env.NCP_ACCESS_KEY!,
+          accessSecret: process.env.NCP_ACCESS_SECRET!,
+          senderAddress: process.env.NCP_SENDER_EMAIL!,
+          senderName: 'AED 픽스'
+        },
+        email,
+        '사용자',
+        `AED 점검 시스템 - 인증번호: ${otp}`,
+        `
             <!DOCTYPE html>
             <html>
             <head>
@@ -204,11 +208,10 @@ export async function POST(request: NextRequest) {
               </table>
             </body>
             </html>
-          `
-        },
+          `,
         {
           maxRetries: 3,
-          initialDelay: 1000, // 1초
+          initialDelay: 1000,
           exponentialBase: 2
         }
       );

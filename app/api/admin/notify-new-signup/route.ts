@@ -3,6 +3,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getMasterAdminEmails } from '@/lib/auth/config';
+import { sendSimpleEmail } from '@/lib/email/ncp-email';
 
 const prisma = new PrismaClient();
 
@@ -32,17 +33,17 @@ export async function POST(request: NextRequest) {
     // 각 관리자에게 이메일 발송
     const emailPromises = adminEmails.map(async (adminEmail) => {
       try {
-        const response = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json'
+        await sendSimpleEmail(
+          {
+            accessKey: process.env.NCP_ACCESS_KEY!,
+            accessSecret: process.env.NCP_ACCESS_SECRET!,
+            senderAddress: process.env.NCP_SENDER_EMAIL!,
+            senderName: 'AED 픽스'
           },
-          body: JSON.stringify({
-            from: 'noreply@aed.pics',
-            to: adminEmail,
-            subject: `[AED 시스템] 새로운 회원가입 승인 요청 - ${fullName}`,
-            html: `
+          adminEmail,
+          '관리자',
+          `[AED 시스템] 새로운 회원가입 승인 요청 - ${fullName}`,
+          `
               <h2>새로운 회원가입 승인 요청</h2>
               <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h3 style="color: #333;">가입자 정보</h3>
@@ -76,14 +77,9 @@ export async function POST(request: NextRequest) {
                 이 이메일은 AED 점검 시스템에서 자동으로 발송되었습니다.<br>
                 문의: truth0530@nmc.or.kr
               </p>
-            `
-          })
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          console.error('Failed to send admin notification email:', error);
-        }
+            `,
+          { maxRetries: 3, initialDelay: 1000, exponentialBase: 2 }
+        );
       } catch (error) {
         console.error('Error sending admin notification email:', error);
       }
