@@ -10,10 +10,10 @@
 // TODO: Vercel KV 제거 후 NCP Redis로 교체 필요
 // import { kv } from '@vercel/kv';
 const kv = {
-  get: async () => null,
-  set: async () => {},
-  incr: async () => 1,
-  ttl: async () => 60,
+  get: async <T>(_key: string): Promise<T | null> => null,
+  set: async (_key: string, _data: any, _options?: any): Promise<void> => {},
+  incr: async (_key: string): Promise<number> => 1,
+  ttl: async (_key: string): Promise<number> => 60,
 };
 import { NextRequest, NextResponse } from 'next/server';
 

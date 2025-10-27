@@ -10,9 +10,9 @@
 // TODO: Vercel KV 제거 후 NCP Redis로 교체 필요
 // import { kv } from '@vercel/kv';
 const kv = {
-  get: async () => null,
-  set: async () => {},
-  del: async () => {},
+  get: async <T>(_key: string): Promise<T | null> => null,
+  set: async (_key: string, _data: any, _options?: any): Promise<void> => {},
+  del: async (_key: string): Promise<void> => {},
 };
 
 export interface CacheConfig {
