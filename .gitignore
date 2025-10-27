@@ -41,7 +41,13 @@ yarn-error.log*
 # Sensitive files - NEVER commit
 **/credentials.json
 **/secrets.json
-**/*password*
+# **/*password* - 너무 광범위하여 주석 처리
+# 대신 구체적인 파일만 제외
+**/*password*.txt
+**/*password*.json
+**/*password*.conf
+**/*password*.cfg
+!lib/**/*validator*
 **/*secret*
 **/*private*
 .env.backup
