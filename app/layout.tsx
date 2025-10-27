@@ -12,7 +12,7 @@ const kakaoMapSdkUrl = KAKAO_MAP_CONFIG.getScriptUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "AED Smart Check - 전국 AED 통합 관리 시스템",
+  title: "AED 픽스 - 전국 AED 통합 관리 시스템",
   description: "전국 80,000대 AED 통합 관리 및 점검 시스템 - 중앙응급의료센터",
   icons: {
     icon: [
