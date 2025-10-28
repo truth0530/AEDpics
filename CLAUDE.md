@@ -169,14 +169,20 @@ git push origin main
 - Supabase에서 NCP PostgreSQL로 데이터베이스 마이그레이션
 - 자체 호스팅 환경 구축
 
-### 현재 상태 (2025-10-26)
+### 현재 상태 (2025-10-28)
 - Phase 1: 인프라 구축 완료
 - Phase 2: 데이터 마이그레이션 완료 (315개 레코드)
 - Phase 3: 프로덕션 배포 준비 완료
   - Critical 이슈 해결 (organization_change_requests API 비활성화)
   - 환경변수명 통일 완료
   - 프로덕션 빌드 성공
-- 배포 준비 상태
+- Phase 4: AED 데이터 Import 완료 (81,464개 레코드)
+- Phase 5: 점검 기능 현황 파악 완료
+  - 점검 이력 조회 API 버그 수정 완료
+  - 점검 관리 UI 이미 구현됨 확인
+  - 사진 업로드 UI 완성 (스토리지 레이어만 마이그레이션 필요)
+- NCP Cloud Outbound Mailer 이메일 서비스 연동 완료
+- 프로덕션 서버 배포 완료
 
 ### 기술 스택
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript
@@ -257,11 +263,12 @@ ENCRYPTION_KEY="generate-random-key"
 - [x] 프로덕션 빌드 성공 (118개 페이지)
 - [x] 배포 준비 완료
 
-### Phase 4: AED 데이터 Import (진행 예정)
-- [ ] e-gen CSV 파일 준비 (81,331개 레코드)
-- [ ] upload_to_ncp.py 실행
-- [ ] 데이터 검증 및 정합성 확인
-- [ ] GPS 좌표 검증
+### Phase 4: AED 데이터 Import (완료 - 2025-10-28)
+- [x] e-gen CSV 파일 준비 (81,331개 레코드)
+- [x] upload_to_ncp.py 실행
+- [x] 데이터 Import 완료 (81,464개 레코드)
+- [x] 프로덕션 DB 검증 완료
+- [x] GPS 좌표 포함 확인
 
 ### Phase 5: 기능 구현
 #### 인증 체계
@@ -284,16 +291,20 @@ ENCRYPTION_KEY="generate-random-key"
 - [ ] 데이터 정규화 로직
 - [ ] 중복 제거 알고리즘
 
-#### 점검 기능 (Stage 1 완료)
+#### 점검 기능 (2025-10-28 현황 파악 완료)
 - [x] 즉시 점검 기능 (QuickInspectPanel 구현)
 - [x] 점검 스케줄링 (ScheduleModal 구현)
 - [x] 역할 기반 액션 버튼 (ActionButtons.tsx)
 - [x] 점검 API 엔드포인트 (/api/inspections/quick)
 - [x] 스케줄 API 엔드포인트 (/api/schedules)
 - [x] inspection_schedule_entries 테이블 구축
-- [ ] 점검 이력 조회 화면
-- [ ] 사진 업로드 기능
-- [ ] 점검 결과 저장
+- [x] 점검 이력 조회 화면 (AdminFullView 완전 구현됨)
+- [x] 점검 이력 조회 API (field naming 버그 수정 완료)
+- [x] 점검 이력 상세 모달 (InspectionHistoryModal - 4단계 탭)
+- [x] 점검 결과 CRUD (조회/수정/삭제 모두 구현됨)
+- [x] 사진 업로드 UI (PhotoCaptureInput 완성)
+- [ ] 사진 스토리지 마이그레이션 (Supabase → NCP Object Storage)
+- [ ] 점검 통계 대시보드 구현
 
 #### PWA 모바일 앱
 - [ ] PWA 설정 (next-pwa)
@@ -452,6 +463,70 @@ migrate: 마이그레이션 관련
 4. [ ] 코드 리뷰 체크
 5. [ ] 다음 단계 준비
 
+## 점검 기능 상세 현황 (2025-10-28)
+
+### 구현 완료 기능
+
+#### 1. 점검 이력 조회 및 관리
+**위치**: [components/inspection/AdminFullView.tsx](components/inspection/AdminFullView.tsx)
+- 3가지 뷰 모드: 목록, 지도, 점검완료
+- 자동 갱신 (30초마다)
+- 완전한 CRUD 작업 지원:
+  - 조회: `handleViewInspectionHistory` (lines 199-213)
+  - 수정: `handleUpdateInspection` (lines 216-235)
+  - 삭제: `handleDeleteInspection`, `handleConfirmDelete` (lines 237-268)
+
+#### 2. 점검 이력 조회 API
+**위치**: [app/api/inspections/history/route.ts](app/api/inspections/history/route.ts)
+- 버그 수정 완료 (2025-10-28): snake_case 필드명 일치화
+- equipment_serial 기반 이력 조회
+- 최근 N개 레코드 제한 기능
+
+#### 3. 점검 상세 모달
+**위치**: [components/inspection/InspectionHistoryModal.tsx](components/inspection/InspectionHistoryModal.tsx)
+- 4단계 탭 인터페이스:
+  - 1단계: 기본정보 (ReadOnlyBasicInfoStep)
+  - 2단계: 장비정보 (ReadOnlyDeviceInfoStep)
+  - 3단계: 보관함 (ReadOnlyStorageChecklistStep)
+  - 4단계: 점검요약 (ReadOnlyInspectionSummaryStep)
+
+#### 4. 사진 촬영 UI
+**위치**: [components/inspection/PhotoCaptureInput.tsx](components/inspection/PhotoCaptureInput.tsx)
+- 카메라 API 통합 완료
+- MediaStream 처리 완료
+- Base64 인코딩 지원
+
+### 미완성 기능
+
+#### 1. 사진 스토리지 레이어
+**위치**: [lib/utils/photo-upload.ts](lib/utils/photo-upload.ts)
+- 현재 상태: Supabase Storage 함수 비활성화 (lines 3-37)
+- 필요 작업: NCP Object Storage로 마이그레이션
+- 영향받는 함수:
+  - `uploadPhotoToStorage`
+  - `deletePhotoFromStorage`
+  - `getPhotoPublicUrl`
+
+#### 2. 점검 통계 대시보드
+**위치**:
+- [app/admin/statistics/page.tsx](app/admin/statistics/page.tsx) - 기본 구조 존재
+- [app/dashboard/page.tsx](app/dashboard/page.tsx) - 기본 구조 존재
+- [app/performance/page.tsx](app/performance/page.tsx) - 기본 구조 존재
+- 필요 작업: 실제 통계 데이터 집계 및 시각화 구현
+
+### 데이터베이스 스키마
+**위치**: [prisma/schema.prisma](prisma/schema.prisma)
+- inspections 테이블 (lines 254-283):
+  - photos 필드: String[] (사진 URL 배열)
+  - issues_found: String[] (발견된 문제 목록)
+  - 모든 상태 필드: visual_status, battery_status, pad_status, operation_status, overall_status
+  - GPS 좌표: inspection_latitude, inspection_longitude
+
+### 다음 구현 우선순위
+1. NCP Object Storage 마이그레이션 (photo-upload.ts)
+2. 점검 통계 대시보드 구현
+3. 실시간 점검 현황 모니터링
+
 ## 연락처 정보
 
 - 시스템 관리자: truth0530@nmc.or.kr
@@ -460,8 +535,8 @@ migrate: 마이그레이션 관련
 
 ---
 
-**마지막 업데이트**: 2025-10-26
-**문서 버전**: 2.1.0
+**마지막 업데이트**: 2025-10-28
+**문서 버전**: 2.2.0
 
 ---
 
