@@ -113,17 +113,6 @@ export default function ForgotPasswordPage() {
                   로그인으로 돌아가기
                 </NeoButton>
               </div>
-
-              <div className="mt-3">
-                <NeoButton
-                  onClick={() => router.push('/auth/signin')}
-                  variant="secondary"
-                  fullWidth
-                  size="lg"
-                >
-                  로그인 페이지로 돌아가기
-                </NeoButton>
-              </div>
             </>
           ) : (
             <>

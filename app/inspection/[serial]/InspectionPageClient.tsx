@@ -133,7 +133,6 @@ export function InspectionPageClient({ serial }: InspectionPageClientProps) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serial, session?.equipment_serial, session?.id, activeSessionsQuery.isLoading]); // Wait for active sessions to load
 
   const heading = useMemo(() => {
