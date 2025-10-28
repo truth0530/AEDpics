@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { PrismaClient } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
+import { sendRejectionEmail } from '@/lib/email/rejection-email';
 
 const prisma = new PrismaClient();
 
@@ -106,7 +107,19 @@ export async function POST(
       }
     });
 
-    // 8. 사용자 삭제
+    // 8. 거부 이메일 발송 (삭제 전에 발송)
+    try {
+      await sendRejectionEmail(
+        targetUser.email,
+        targetUser.full_name,
+        reason
+      );
+    } catch (emailError) {
+      // 이메일 발송 실패해도 거부는 진행
+      console.error('[User Rejected] Email sending failed:', emailError);
+    }
+
+    // 9. 사용자 삭제
     // Option 1: 완전 삭제 (권장)
     await prisma.user_profiles.delete({
       where: { id }
@@ -120,9 +133,6 @@ export async function POST(
     //     updated_at: new Date()
     //   }
     // });
-
-    // 9. TODO: 거부 이메일 발송
-    // await sendRejectionEmail(targetUser.email, reason);
 
     console.log(`[User Rejected] ${targetUser.email} rejected by ${adminProfile.email}. Reason: ${reason}`);
 

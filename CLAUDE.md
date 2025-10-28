@@ -278,10 +278,12 @@ ENCRYPTION_KEY="generate-random-key"
 - [x] 프로필 설정 페이지 구현
 - [x] 승인 대기 페이지 구현
 - [x] 약관 동의 UX 개선
-- [x] Resend API 이메일 연동
-- [ ] 서버사이드 도메인 검증
-- [ ] 이메일 인증 플로우 테스트
-- [ ] 관리자 승인 기능 완성
+- [x] NCP Cloud Outbound Mailer 이메일 연동 (Resend 대체)
+- [x] 서버사이드 도메인 검증 (2025-10-28 완료)
+- [x] 이메일 인증 플로우 테스트 계획 문서화 (2025-10-28)
+- [x] 관리자 승인/거부 이메일 발송 기능 (approval-email.ts, rejection-email.ts) (2025-10-28 완료)
+- [x] API 엔드포인트 이메일 연동 (approve/reject routes) (2025-10-28 완료)
+- [x] 관리자 승인 페이지 UI 구현 (app/(authenticated)/admin/users/page.tsx) (2025-10-28 완료)
 
 #### 데이터 관리
 - [ ] 조직 관리 CRUD
@@ -307,12 +309,14 @@ ENCRYPTION_KEY="generate-random-key"
 - [ ] 점검 통계 대시보드 구현
 
 #### PWA 모바일 앱
-- [ ] PWA 설정 (next-pwa)
-- [ ] Service Worker 구현
+- [x] PWA 설정 (@ducanh2912/next-pwa) (2025-10-28 완료)
+- [x] Service Worker 자동 구현 (next-pwa workbox) (2025-10-28 완료)
+- [x] manifest.json 생성 (2025-10-28 완료)
 - [ ] 오프라인 모드 지원
 - [ ] IndexedDB 동기화
 - [ ] 모바일 최적화 UI
 - [ ] 카메라 API 연동
+- [ ] PWA 아이콘 생성 (192x192, 512x512)
 
 #### 시스템 테스트
 - [ ] 단위 테스트 작성
@@ -322,13 +326,18 @@ ENCRYPTION_KEY="generate-random-key"
 - [ ] 성능 최적화
 - [ ] 버그 수정
 
-#### 배포 준비
-- [x] 프로덕션 배포 준비 완료 (Phase 3)
-- [x] Critical 이슈 해결
+#### 프로덕션 배포 (완료 - 2025-10-28)
+- [x] NCP 서버 구축 (223.130.150.133)
+- [x] Node.js 20.x 설치
+- [x] PM2 프로세스 관리 설정
+- [x] Nginx 역방향 프록시 설정
+- [x] SSL/TLS 인증서 설정 (Let's Encrypt)
+- [x] HTTPS 활성화 (https://aed.pics)
+- [x] fail2ban 보안 설정
 - [x] 환경변수 통일 및 문서화
-- [ ] NCP 프로덕션 환경 설정
-- [ ] CI/CD 파이프라인
-- [ ] 모니터링 시스템
+- [x] 프로덕션 빌드 및 배포
+- [ ] CI/CD 파이프라인 구축
+- [ ] 모니터링 시스템 구축
 - [ ] 백업 체계 구축
 - [ ] 사용자 매뉴얼 작성
 - [ ] 교육 자료 제작

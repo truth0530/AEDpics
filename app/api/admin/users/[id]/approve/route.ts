@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { PrismaClient, user_role } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
+import { sendApprovalEmail } from '@/lib/email/approval-email';
 
 const prisma = new PrismaClient();
 
@@ -120,8 +121,19 @@ export async function POST(
       }
     });
 
-    // 9. TODO: 승인 이메일 발송
-    // await sendApprovalEmail(updatedUser.email, role);
+    // 9. 승인 이메일 발송
+    try {
+      await sendApprovalEmail(
+        updatedUser.email,
+        updatedUser.full_name,
+        updatedUser.role,
+        updatedUser.organizations?.name || '소속 조직 없음',
+        updatedUser.approved_at!
+      );
+    } catch (emailError) {
+      // 이메일 발송 실패해도 승인은 완료된 상태로 유지
+      console.error('[User Approved] Email sending failed:', emailError);
+    }
 
     console.log(`[User Approved] ${targetUser.email} approved as ${role} by ${adminProfile.email}`);
 
