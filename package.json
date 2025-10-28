@@ -5,6 +5,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "start:prod": "node -r dotenv/config node_modules/.bin/next start",
     "lint:next": "next lint",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
