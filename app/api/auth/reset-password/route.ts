@@ -6,6 +6,15 @@ const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
+    // NCP 이메일 환경변수 검증
+    if (!process.env.NCP_ACCESS_KEY || !process.env.NCP_ACCESS_SECRET || !process.env.NCP_SENDER_EMAIL) {
+      console.error('NCP Email 환경변수가 설정되지 않았습니다.');
+      return NextResponse.json(
+        { error: '이메일 서비스가 설정되지 않았습니다. 관리자에게 문의해주세요.' },
+        { status: 503 }
+      );
+    }
+
     // 환경변수 검증
     const appUrl = process.env.NEXT_PUBLIC_SITE_URL;
     if (!appUrl) {
