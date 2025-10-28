@@ -11,15 +11,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Validate secrets
+      run: |
+        if [ -z "${{ secrets.DB_HOST }}" ]; then
+          echo "Error: DB_HOST secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.DB_PORT }}" ]; then
+          echo "Error: DB_PORT secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.DB_USER }}" ]; then
+          echo "Error: DB_USER secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.DB_PASSWORD }}" ]; then
+          echo "Error: DB_PASSWORD secret is not set"
+          exit 1
+        fi
+        if [ -z "${{ secrets.DB_NAME }}" ]; then
+          echo "Error: DB_NAME secret is not set"
+          exit 1
+        fi
+        echo "All required secrets are configured"
+
     - name: Install PostgreSQL client
       run: |
         sudo apt-get update
         sudo apt-get install -y postgresql-client
 
+    - name: Test database connection
+      env:
+        PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+      run: |
+        psql -h ${{ secrets.DB_HOST }} \
+             -p ${{ secrets.DB_PORT }} \
+             -U ${{ secrets.DB_USER }} \
+             -d ${{ secrets.DB_NAME }} \
+             -c "SELECT version();" || {
+          echo "Error: Failed to connect to database"
+          exit 1
+        }
+        echo "Database connection successful"
+
     - name: Create backup
+      env:
+        PGPASSWORD: ${{ secrets.DB_PASSWORD }}
       run: |
         DATE=$(date +%Y%m%d_%H%M%S)
-        PGPASSWORD=${{ secrets.DB_PASSWORD }} pg_dump \
+        pg_dump \
           -h ${{ secrets.DB_HOST }} \
           -p ${{ secrets.DB_PORT }} \
           -U ${{ secrets.DB_USER }} \
@@ -28,6 +68,15 @@ jobs:
           --no-owner \
           --no-acl \
           -f backup_${DATE}.sql
+
+        if [ ! -f backup_${DATE}.sql ]; then
+          echo "Error: Backup file was not created"
+          exit 1
+        fi
+
+        BACKUP_SIZE=$(du -h backup_${DATE}.sql | cut -f1)
+        echo "Backup file created: backup_${DATE}.sql (${BACKUP_SIZE})"
+
         gzip backup_${DATE}.sql
         echo "BACKUP_FILE=backup_${DATE}.sql.gz" >> $GITHUB_ENV
 
