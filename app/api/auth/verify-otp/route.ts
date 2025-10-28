@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { rateLimits } from '@/lib/rate-limit';
+import { isAllowedEmailDomain } from '@/lib/auth/config';
 
 const prisma = new PrismaClient();
 
@@ -27,6 +28,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const { email, code } = await request.json();
+
+    // 서버사이드 이메일 도메인 검증 (보안 강화)
+    if (!isAllowedEmailDomain(email)) {
+      return NextResponse.json(
+        { error: '허용되지 않은 이메일 도메인입니다' },
+        { status: 400 }
+      );
+    }
 
     // user_profiles 테이블 확인
     const existingUser = await prisma.user_profiles.findUnique({

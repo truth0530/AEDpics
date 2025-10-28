@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
+import { isAllowedEmailDomain } from '@/lib/auth/config'
 
 const prisma = new PrismaClient()
 
@@ -13,6 +14,14 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { success: false, error: '이메일과 비밀번호를 입력해주세요' },
+        { status: 400 }
+      )
+    }
+
+    // 서버사이드 이메일 도메인 검증 (보안 강화)
+    if (!isAllowedEmailDomain(email)) {
+      return NextResponse.json(
+        { success: false, error: '허용되지 않은 이메일 도메인입니다' },
         { status: 400 }
       )
     }
