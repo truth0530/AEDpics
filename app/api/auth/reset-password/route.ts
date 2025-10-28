@@ -149,8 +149,9 @@ export async function POST(request: NextRequest) {
     `;
 
     // NCP Cloud Outbound Mailer로 이메일 발송
+    console.log(`[비밀번호 재설정] 이메일 발송 시작: ${email}, 토큰: ${resetToken}`);
     try {
-      await sendSimpleEmail(
+      const emailResult = await sendSimpleEmail(
         {
           accessKey: process.env.NCP_ACCESS_KEY!,
           accessSecret: process.env.NCP_ACCESS_SECRET!,
@@ -167,14 +168,16 @@ export async function POST(request: NextRequest) {
           exponentialBase: 2
         }
       );
+      console.log(`[비밀번호 재설정] NCP 이메일 발송 성공:`, emailResult);
     } catch (emailError) {
-      console.error('NCP Email 발송 실패:', emailError);
+      console.error('[비밀번호 재설정] NCP Email 발송 실패:', emailError);
       return NextResponse.json(
         { error: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.' },
         { status: 500 }
       );
     }
 
+    console.log(`[비밀번호 재설정] 처리 완료: ${email}`);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('비밀번호 재설정 오류:', error);
