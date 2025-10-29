@@ -146,13 +146,14 @@ function encodeCursor(id: number, updated_at?: string | null): string {
 }
 
 export const GET = async (request: NextRequest) => {
-  console.log('AED data API called with URL:', request.url);
+  try {
+    console.log('AED data API called with URL:', request.url);
 
-  // NextAuth 인증 확인
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    // NextAuth 인증 확인
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
   // 사용자 프로필 및 organization 정보 한 번에 조회 (N+1 최적화)
   const userProfile = await prisma.user_profiles.findUnique({
@@ -1106,6 +1107,17 @@ export const GET = async (request: NextRequest) => {
         }
       }
     });
+  } catch (error) {
+    console.error('[AED API] Unexpected error:', error);
+    console.error('[AED API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('[AED API] Request URL:', request.url);
+
+    return NextResponse.json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
 };
 
 function matchesExpiryFilter(filter: ExpiryFilter, days: number | null | undefined) {
