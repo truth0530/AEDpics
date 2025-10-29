@@ -72,7 +72,7 @@ jobs:
           npm ci
           npx prisma generate
           npm run build
-          pm2 reload aedpics
+          pm2 restart aedpics
 
     - name: Health Check
       uses: appleboy/ssh-action@v1.0.0
