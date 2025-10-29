@@ -1,0 +1,62 @@
+name: Diagnose Production Server
+
+on:
+  workflow_dispatch:  # 수동 실행만 가능
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Check Server Status
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== 1. PM2 Status ==="
+          pm2 status
+
+          echo ""
+          echo "=== 2. Environment Variables Check ==="
+          cd /var/www/aedpics
+          if [ -f .env ]; then
+            echo "Environment file exists"
+            echo "Checking key variables:"
+            grep -c '^DATABASE_URL=' .env && echo "✓ DATABASE_URL exists" || echo "✗ DATABASE_URL missing"
+            grep -c '^NEXTAUTH_SECRET=' .env && echo "✓ NEXTAUTH_SECRET exists" || echo "✗ NEXTAUTH_SECRET missing"
+            grep -c '^NEXT_PUBLIC_KAKAO_MAP_APP_KEY=' .env && echo "✓ KAKAO_MAP_APP_KEY exists" || echo "✗ KAKAO_MAP_APP_KEY missing"
+            grep -c '^NCP_ACCESS_KEY=' .env && echo "✓ NCP_ACCESS_KEY exists" || echo "✗ NCP_ACCESS_KEY missing"
+          else
+            echo "✗ .env file not found!"
+          fi
+
+          echo ""
+          echo "=== 3. Recent PM2 Logs (last 30 lines) ==="
+          pm2 logs aedpics --lines 30 --nostream
+
+          echo ""
+          echo "=== 4. Recent Error Logs ==="
+          pm2 logs aedpics --err --lines 20 --nostream || echo "No error logs"
+
+          echo ""
+          echo "=== 5. Build Status ==="
+          if [ -d ".next" ]; then
+            echo "✓ .next directory exists"
+            ls -lh .next/ | head -10
+          else
+            echo "✗ .next directory not found!"
+          fi
+
+          echo ""
+          echo "=== 6. System Resources ==="
+          df -h | grep -E 'Filesystem|/var' || df -h
+          free -h || vm_stat | head -5
+
+          echo ""
+          echo "=== 7. Node.js Version ==="
+          node --version
+          npm --version
