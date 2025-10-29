@@ -67,10 +67,10 @@ jobs:
         port: ${{ secrets.NCP_SSH_PORT }}
         script: |
           cd /var/www/aedpics
-          git pull origin main
+          git fetch origin
+          git reset --hard origin/main
           npm ci
           npx prisma generate
-          node scripts/generate-pwa-icons.mjs || echo "PWA icons script not found, skipping..."
           npm run build
           pm2 reload aedpics
 
