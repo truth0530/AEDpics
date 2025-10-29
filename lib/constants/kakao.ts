@@ -27,13 +27,14 @@ let kakaoLoadPromise: Promise<void> | null = null;
  * 루트 레이아웃(head)에서 SDK 스크립트를 동기적으로 삽입한 후
  * 개별 페이지에서는 이 함수만 호출하면 된다.
  */
-export function waitForKakaoMaps(timeoutMs = 8000): Promise<void> {
+export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
   if (typeof window === 'undefined') {
     return Promise.reject(new Error('Kakao Maps SDK는 브라우저 환경에서만 로드됩니다.'));
   }
 
   // 이미 로드된 경우 즉시 resolve
   if (window.kakao?.maps) {
+    console.log('[Kakao Maps] Already loaded');
     return new Promise((resolve) => {
       window.kakao.maps.load(() => resolve());
     });
@@ -47,8 +48,14 @@ export function waitForKakaoMaps(timeoutMs = 8000): Promise<void> {
     const script = document.getElementById('kakao-map-sdk') as HTMLScriptElement | null;
     const startedAt = Date.now();
 
+    console.log('[Kakao Maps] Starting to wait for SDK...');
+    console.log('[Kakao Maps] Script element found:', !!script);
+    console.log('[Kakao Maps] Script src:', script?.src);
+
     const pollId = window.setInterval(() => {
       if (window.kakao?.maps) {
+        const elapsed = Date.now() - startedAt;
+        console.log(`[Kakao Maps] SDK loaded successfully in ${elapsed}ms`);
         window.clearInterval(pollId);
         script?.removeEventListener('error', handleError);
         window.kakao.maps.load(() => {
@@ -56,6 +63,10 @@ export function waitForKakaoMaps(timeoutMs = 8000): Promise<void> {
           kakaoLoadPromise = Promise.resolve();
         });
       } else if (Date.now() - startedAt > timeoutMs) {
+        const elapsed = Date.now() - startedAt;
+        console.error(`[Kakao Maps] Timeout after ${elapsed}ms`);
+        console.error('[Kakao Maps] window.kakao:', window.kakao);
+        console.error('[Kakao Maps] Script loaded:', script?.getAttribute('data-loaded'));
         window.clearInterval(pollId);
         script?.removeEventListener('error', handleError);
         kakaoLoadPromise = null;
@@ -63,7 +74,9 @@ export function waitForKakaoMaps(timeoutMs = 8000): Promise<void> {
       }
     }, 50);
 
-    const handleError = () => {
+    const handleError = (e: Event) => {
+      console.error('[Kakao Maps] Script load error:', e);
+      console.error('[Kakao Maps] Failed script src:', (e.target as HTMLScriptElement)?.src);
       window.clearInterval(pollId);
       kakaoLoadPromise = null;
       reject(new Error('카카오맵 SDK 스크립트를 불러오지 못했습니다.'));
@@ -71,6 +84,8 @@ export function waitForKakaoMaps(timeoutMs = 8000): Promise<void> {
 
     if (script) {
       script.addEventListener('error', handleError, { once: true });
+    } else {
+      console.warn('[Kakao Maps] Script element not found in DOM');
     }
   });
 
@@ -79,6 +94,7 @@ export function waitForKakaoMaps(timeoutMs = 8000): Promise<void> {
 
 // 디버깅용 로그
 if (typeof window !== 'undefined') {
-  console.log('Kakao Map API Key loaded:', KAKAO_MAP_CONFIG.JS_KEY);
-  console.log('Current domain:', window.location.origin);
+  console.log('[Kakao Maps] API Key:', KAKAO_MAP_CONFIG.JS_KEY?.slice(0, 10) + '...');
+  console.log('[Kakao Maps] Current domain:', window.location.origin);
+  console.log('[Kakao Maps] Script URL:', KAKAO_MAP_CONFIG.getScriptUrl());
 }
