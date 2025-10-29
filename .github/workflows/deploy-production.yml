@@ -70,7 +70,7 @@ jobs:
           git pull origin main
           npm ci
           npx prisma generate
-          node scripts/generate-pwa-icons.mjs
+          node scripts/generate-pwa-icons.mjs || echo "PWA icons script not found, skipping..."
           npm run build
           pm2 reload aedpics
 
