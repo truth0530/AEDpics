@@ -14,6 +14,12 @@ import { mapCityCodesToNames } from '@/lib/constants/cities';
 import { REGION_LABEL_TO_CODE, REGION_LONG_LABELS, REGION_CODE_TO_LABEL } from '@/lib/constants/regions';
 import type { UserProfile } from '@/packages/types';
 import type { AEDDevice } from '@/packages/types/aed';
+import type {
+  DateFilterResult,
+  OrganizationsWhereInput,
+  AedDataWhereInput,
+  RawQueryParams
+} from '@/lib/types/api-filters';
 
 import { prisma } from '@/lib/prisma';
 type DecodedCursor = { id: number; updated_at?: string };
@@ -33,7 +39,7 @@ function addDaysToDate(date: Date, days: number): Date {
 }
 
 // 날짜 필터를 Prisma where 조건으로 변환
-function buildDateFilter(filterValue: string): any {
+function buildDateFilter(filterValue: string): DateFilterResult | undefined {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -56,7 +62,7 @@ function buildDateFilter(filterValue: string): any {
 }
 
 // 점검일 필터를 Prisma where 조건으로 변환
-function buildInspectionDateFilter(filterValue: string): any {
+function buildInspectionDateFilter(filterValue: string): DateFilterResult | undefined {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -351,7 +357,7 @@ export const GET = async (request: NextRequest) => {
       try {
         // Build SQL WHERE clauses dynamically
         const sqlConditions: string[] = [];
-        const sqlParams: any[] = [];
+        const sqlParams: RawQueryParams = [];
         let paramIndex = 1;
 
         // Assignment status filter (required for inspection mode)
@@ -453,19 +459,22 @@ export const GET = async (request: NextRequest) => {
         // 점검일 필터
         if (filters.last_inspection_date) {
           const inspectionFilter = buildInspectionDateFilter(filters.last_inspection_date);
-          if (inspectionFilter === null) {
+          if (inspectionFilter?.equals === null) {
             sqlConditions.push(`a.last_inspection_date IS NULL`);
-          } else if (inspectionFilter?.not) {
-            sqlConditions.push(`a.last_inspection_date IS NOT NULL`);
-          } else {
-            if (inspectionFilter?.gte) {
+          } else if (inspectionFilter) {
+            if (inspectionFilter.gte) {
               sqlConditions.push(`a.last_inspection_date >= $${paramIndex}`);
               sqlParams.push(inspectionFilter.gte);
               paramIndex++;
             }
-            if (inspectionFilter?.lte) {
+            if (inspectionFilter.lte) {
               sqlConditions.push(`a.last_inspection_date <= $${paramIndex}`);
               sqlParams.push(inspectionFilter.lte);
+              paramIndex++;
+            }
+            if (inspectionFilter.lt) {
+              sqlConditions.push(`a.last_inspection_date < $${paramIndex}`);
+              sqlParams.push(inspectionFilter.lt);
               paramIndex++;
             }
           }
@@ -528,7 +537,7 @@ export const GET = async (request: NextRequest) => {
           console.log('[API] Using jurisdiction-based query with Prisma');
 
           // Step 1: 관할보건소 조회 (region/city code 기준)
-          const whereOrgs: any = {
+          const whereOrgs: OrganizationsWhereInput = {
             type: 'health_center'
           };
 
@@ -623,7 +632,7 @@ export const GET = async (request: NextRequest) => {
 
             const whereClause = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
-            const params: any[] = [...normalizedNames];
+            const params: RawQueryParams = [...normalizedNames];
             if (filters.category_1 && filters.category_1.length > 0) params.push(filters.category_1);
             if (filters.category_2 && filters.category_2.length > 0) params.push(filters.category_2);
             if (filters.category_3 && filters.category_3.length > 0) params.push(filters.category_3);
@@ -652,7 +661,7 @@ export const GET = async (request: NextRequest) => {
       } else {
         // 주소 기준 쿼리 (Prisma)
         try {
-          const whereConditions: any = {};
+          const whereConditions: AedDataWhereInput = {};
 
           // 지역 필터
           if (regionFiltersForQuery && regionFiltersForQuery.length > 0) {
@@ -678,9 +687,11 @@ export const GET = async (request: NextRequest) => {
             console.log('[API] Applying external_display filter:', filters.external_display);
             if (filters.external_display === 'blocked') {
               whereConditions.external_display = 'N';
-              whereConditions.external_non_display_reason = {
-                not: { in: [null, '', '구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박'] }
-              };
+              whereConditions.AND = [
+                { external_non_display_reason: { not: null } },
+                { external_non_display_reason: { not: '' } },
+                { external_non_display_reason: { not: '구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박' } }
+              ];
             } else {
               whereConditions.external_display = filters.external_display.toUpperCase();
             }
@@ -866,7 +877,7 @@ export const GET = async (request: NextRequest) => {
     const in30Days = addDaysToDate(today, 30);
 
     // 통계용 base where 조건 (메인 쿼리와 동일한 필터 사용)
-    const summaryWhere: any = {};
+    const summaryWhere: AedDataWhereInput = {};
 
     let summary: {
       totalCount: number;

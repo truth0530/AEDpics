@@ -2,13 +2,43 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 import { isAllowedEmailDomain } from '@/lib/auth/config'
+import { checkRateLimitWithMessage } from '@/lib/security/rate-limit-middleware'
 
 import { prisma } from '@/lib/prisma';
+
+// 비밀번호 강도 검증 함수
+function validatePasswordStrength(password: string): { valid: boolean; error?: string } {
+  if (password.length < 8) {
+    return { valid: false, error: '비밀번호는 최소 8자 이상이어야 합니다' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, error: '비밀번호는 최소 1개의 소문자를 포함해야 합니다' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, error: '비밀번호는 최소 1개의 대문자를 포함해야 합니다' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: '비밀번호는 최소 1개의 숫자를 포함해야 합니다' };
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return { valid: false, error: '비밀번호는 최소 1개의 특수문자를 포함해야 합니다' };
+  }
+  return { valid: true };
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // 1. Rate limiting 체크 (1시간에 3회)
+    const rateLimitResult = await checkRateLimitWithMessage(request, 'SIGNUP');
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
+    // 2. 요청 데이터 파싱
     const body = await request.json()
     const { email, password, profileData } = body
 
+    // 3. 필수 필드 검증
     if (!email || !password) {
       return NextResponse.json(
         { success: false, error: '이메일과 비밀번호를 입력해주세요' },
@@ -16,7 +46,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 서버사이드 이메일 도메인 검증 (보안 강화)
+    // 4. 비밀번호 강도 검증
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { success: false, error: passwordValidation.error },
+        { status: 400 }
+      )
+    }
+
+    // 5. 서버사이드 이메일 도메인 검증 (보안 강화)
     if (!isAllowedEmailDomain(email)) {
       return NextResponse.json(
         { success: false, error: '허용되지 않은 이메일 도메인입니다' },
@@ -24,7 +63,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 이메일 중복 체크
+    // 6. 이메일 중복 체크
     const existingUser = await prisma.user_profiles.findUnique({
       where: { email }
     })
@@ -36,10 +75,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 비밀번호 해싱 (bcrypt, salt rounds 10)
+    // 7. 비밀번호 해싱 (bcrypt, salt rounds 10)
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // 사용자 프로필 생성
+    // 8. 사용자 프로필 생성
     const user = await prisma.user_profiles.create({
       data: {
         id: randomUUID(),
@@ -59,7 +98,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 로그인 히스토리 기록
+    // 9. 로그인 히스토리 기록
     await prisma.login_history.create({
       data: {
         id: randomUUID(),

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
+import type { AedDataWhereInput } from '@/lib/types/api-filters';
+import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // AED 데이터 조회 (관할 지역 기반)
-    const where: any = {};
+    const where: AedDataWhereInput = {};
 
     // 지역 필터링 (local_admin은 본인 관할만)
     if (userProfile.role === 'local_admin' && userProfile.organizations) {
@@ -70,7 +72,7 @@ export async function GET(request: NextRequest) {
     const equipmentSerials = (aedList || []).map(aed => aed.equipment_serial).filter(Boolean);
 
     // Query assignments only for this page's equipment, scoped to assigned_to for inspectors
-    const assignmentWhere: any = {
+    const assignmentWhere: Prisma.inspection_assignmentsWhereInput = {
       equipment_serial: { in: equipmentSerials },
       status: { in: ['pending', 'in_progress'] }
     };

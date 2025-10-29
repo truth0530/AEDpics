@@ -8,7 +8,7 @@ export const KAKAO_MAP_CONFIG = {
   // 스크립트 URL 생성
   getScriptUrl: ({
     libraries = ['services', 'clusterer'],
-    autoload = false,
+    autoload = true,
   }: {
     libraries?: string[];
     autoload?: boolean;
