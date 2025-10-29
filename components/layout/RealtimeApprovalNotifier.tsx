@@ -195,6 +195,12 @@ export function RealtimeApprovalNotifier({ userRole, userRegionCode, canApproveU
       return;
     }
 
+    // Supabase가 비활성화되어 있으면 실행하지 않음
+    if (!supabase) {
+      console.log('[Realtime] Supabase 비활성화 - Realtime 기능 사용 불가');
+      return;
+    }
+
     // 음성 목록 미리 로드 (Web Speech API)
     if ('speechSynthesis' in window) {
       window.speechSynthesis.getVoices();
@@ -322,6 +328,11 @@ export function RealtimeApprovalNotifier({ userRole, userRegionCode, canApproveU
 
     // 승인 권한이 없으면 체크하지 않음
     if (!canApproveUsers) {
+      return;
+    }
+
+    // Supabase가 비활성화되어 있으면 실행하지 않음
+    if (!supabase) {
       return;
     }
 
