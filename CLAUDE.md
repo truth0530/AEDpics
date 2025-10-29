@@ -190,7 +190,7 @@ git push origin main
 - **Database**: NCP PostgreSQL (pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com)
 - **ORM**: Prisma (23개 모델, 25개 enum)
 - **Map**: Kakao Maps API
-- **Email**: Resend API
+- **Email**: NCP Cloud Outbound Mailer
 
 ### 데이터베이스 연결 정보
 ```bash
@@ -210,7 +210,9 @@ NEXTAUTH_URL="http://localhost:3001"
 NEXTAUTH_SECRET="generate-random-32-chars"
 JWT_SECRET="generate-random-secret"
 NEXT_PUBLIC_KAKAO_MAP_APP_KEY="your_kakao_key"
-RESEND_API_KEY="your_resend_key"
+NCP_ACCESS_KEY="your_ncp_access_key"
+NCP_ACCESS_SECRET="your_ncp_access_secret"
+NCP_SENDER_EMAIL="noreply@nmc.or.kr"
 MASTER_EMAIL="admin@nmc.or.kr"
 NEXT_PUBLIC_SITE_URL="http://localhost:3001"
 ENCRYPTION_KEY="generate-random-key"
