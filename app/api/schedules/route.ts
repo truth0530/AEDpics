@@ -1,12 +1,9 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
 import { buildScheduledTimestamp, isValidAssigneeIdentifier } from '@/lib/utils/schedule';
 import { AccessContext, canAccessDevice, canManageSchedules } from '@/lib/auth/access-control';
-
-const prisma = new PrismaClient();
+import { requireAuthWithProfile, isErrorResponse } from '@/lib/auth/session-helpers';
+import { prisma } from '@/lib/prisma';
 
 interface SchedulePayload {
   deviceId?: string;
@@ -19,11 +16,20 @@ interface SchedulePayload {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // 인증 및 프로필 조회 (헬퍼 함수 사용)
+    const authResult = await requireAuthWithProfile({
+      id: true,
+      role: true,
+      account_type: true,
+      assigned_devices: true,
+      organization_id: true,
+    });
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isErrorResponse(authResult)) {
+      return authResult;
     }
+
+    const { profile } = authResult;
 
     if (!isFeatureEnabled('schedule')) {
       return NextResponse.json({ error: 'Scheduling feature is currently disabled.' }, { status: 403 });
@@ -47,21 +53,6 @@ export async function POST(request: NextRequest) {
 
     if (!scheduledFor) {
       return NextResponse.json({ error: 'Invalid scheduled date or time' }, { status: 400 });
-    }
-
-    const profile = await prisma.user_profiles.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        role: true,
-        account_type: true,
-        assigned_devices: true,
-        organization_id: true,
-      },
-    });
-
-    if (!profile) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 403 });
     }
 
     const accessContext: AccessContext = {
@@ -131,7 +122,7 @@ export async function POST(request: NextRequest) {
           assignee_identifier: payload.assignee,
           priority: payload.priority || 'normal',
           notes: payload.notes,
-          created_by: session.user.id,
+          created_by: profile.id,
         },
         select: {
           id: true,

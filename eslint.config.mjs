@@ -37,6 +37,7 @@ const eslintConfig = [
       '**/*.generated.tsx',
       '**/supabase/functions/**',
       '**/scripts/**/*.js',
+      '**/scripts/**/*.cjs',
       '**/.eslintrc.json',
       '**/.eslintignore',
     ],
