@@ -30,10 +30,7 @@ export const EMAIL_RATE_LIMITS = {
   MAX_SAME_DOMAIN_PER_5MIN: 2,
 
   /** 같은 수신자에게 연속 발송 시 최소 대기 시간 (분) */
-  COOLDOWN_MINUTES: 5,
-
-  /** 전체 시간당 최대 발송 횟수 (시스템 전체) */
-  MAX_TOTAL_PER_HOUR: 50
+  COOLDOWN_MINUTES: 5
 } as const;
 
 export interface RateLimitResult {
@@ -238,76 +235,37 @@ async function checkDomainFrequency(email: string): Promise<RateLimitResult> {
 }
 
 /**
- * 전체 시스템 시간당 발송 횟수 체크
- */
-async function checkSystemHourlyLimit(): Promise<RateLimitResult> {
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-
-  const count = await prisma.email_verification_codes.count({
-    where: {
-      created_at: {
-        gte: oneHourAgo
-      }
-    }
-  });
-
-  if (count >= EMAIL_RATE_LIMITS.MAX_TOTAL_PER_HOUR) {
-    const nextHour = new Date(Date.now() + 60 * 60 * 1000);
-
-    return {
-      allowed: false,
-      reason: `시스템 전체 시간당 발송 한도 초과 (${EMAIL_RATE_LIMITS.MAX_TOTAL_PER_HOUR}회). 잠시 후 다시 시도해주세요.`,
-      resetAt: nextHour,
-      retryAfterSeconds: Math.ceil((nextHour.getTime() - Date.now()) / 1000),
-      remaining: 0
-    };
-  }
-
-  return {
-    allowed: true,
-    remaining: EMAIL_RATE_LIMITS.MAX_TOTAL_PER_HOUR - count
-  };
-}
-
-/**
  * 모든 Rate Limiting 규칙 체크
  *
  * 체크 순서:
- * 1. 시스템 전체 한도 (빠른 실패)
- * 2. 도메인 빈도 (NCP 스팸 필터 회피)
- * 3. 수신자 일일 한도
- * 4. 수신자 시간당 한도
- * 5. 쿨다운
+ * 1. 도메인 빈도 (NCP 스팸 필터 회피)
+ * 2. 수신자 일일 한도
+ * 3. 수신자 시간당 한도
+ * 4. 쿨다운
  *
  * @param email 수신자 이메일 주소
  * @returns Rate Limiting 결과
  */
 export async function checkEmailRateLimit(email: string): Promise<RateLimitResult> {
-  // 1. 시스템 전체 한도 체크 (가장 먼저)
-  const systemCheck = await checkSystemHourlyLimit();
-  if (!systemCheck.allowed) {
-    return systemCheck;
-  }
-
-  // 2. 도메인 빈도 체크 (NCP 스팸 필터 회피 - 중요!)
+  // 1. 도메인 빈도 체크 (NCP 스팸 필터 회피 - 중요!)
   const domainCheck = await checkDomainFrequency(email);
   if (!domainCheck.allowed) {
     return domainCheck;
   }
 
-  // 3. 수신자별 일일 한도 체크
+  // 2. 수신자별 일일 한도 체크
   const dailyCheck = await checkDailyLimit(email);
   if (!dailyCheck.allowed) {
     return dailyCheck;
   }
 
-  // 4. 수신자별 시간당 한도 체크
+  // 3. 수신자별 시간당 한도 체크
   const hourlyCheck = await checkHourlyLimit(email);
   if (!hourlyCheck.allowed) {
     return hourlyCheck;
   }
 
-  // 5. 쿨다운 체크
+  // 4. 쿨다운 체크
   const cooldownCheck = await checkCooldown(email);
   if (!cooldownCheck.allowed) {
     return cooldownCheck;
@@ -335,7 +293,7 @@ export async function getEmailRateLimitStats(email: string) {
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   const domain = extractDomain(email);
 
-  const [dailyCount, hourlyCount, domainCount, totalHourlyCount] = await Promise.all([
+  const [dailyCount, hourlyCount, domainCount] = await Promise.all([
     // 일일 발송 수
     prisma.email_verification_codes.count({
       where: {
@@ -358,13 +316,6 @@ export async function getEmailRateLimitStats(email: string) {
         email: { contains: `%@${domain}` },
         created_at: { gte: fiveMinutesAgo }
       }
-    }),
-
-    // 시스템 전체 시간당 발송 수
-    prisma.email_verification_codes.count({
-      where: {
-        created_at: { gte: oneHourAgo }
-      }
     })
   ]);
 
@@ -385,11 +336,6 @@ export async function getEmailRateLimitStats(email: string) {
       count: domainCount,
       limit: EMAIL_RATE_LIMITS.MAX_SAME_DOMAIN_PER_5MIN,
       remaining: EMAIL_RATE_LIMITS.MAX_SAME_DOMAIN_PER_5MIN - domainCount
-    },
-    systemHourly: {
-      count: totalHourlyCount,
-      limit: EMAIL_RATE_LIMITS.MAX_TOTAL_PER_HOUR,
-      remaining: EMAIL_RATE_LIMITS.MAX_TOTAL_PER_HOUR - totalHourlyCount
     }
   };
 }
