@@ -1,12 +1,10 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 /**
  * GET /api/admin/organizations
  * 조직 목록 조회

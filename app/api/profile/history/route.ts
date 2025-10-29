@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '@/lib/auth/auth-options';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 /**
  * GET /api/profile/history
  * 사용자 프로필 변경 이력 조회

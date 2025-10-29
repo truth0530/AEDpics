@@ -1,11 +1,9 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 export const POST = async (request: NextRequest) => {
   try {
     // NextAuth 세션 확인

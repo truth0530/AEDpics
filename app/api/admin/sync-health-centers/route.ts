@@ -1,10 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 /**
  * 데이터베이스에서 보건소 정보를 가져와서
  * 하드코딩된 마스터 데이터 파일을 업데이트합니다.

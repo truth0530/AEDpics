@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
-
-const prisma = new PrismaClient();
+import { requireAuthWithProfile, isErrorResponse } from '@/lib/auth/session-helpers';
+import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/admin/users
@@ -19,28 +16,16 @@ const prisma = new PrismaClient();
  */
 export async function GET(request: NextRequest) {
   try {
-    // 1. 인증 확인
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    // 인증 및 프로필 조회 (헬퍼 함수 사용)
+    const authResult = await requireAuthWithProfile();
+
+    if (isErrorResponse(authResult)) {
+      return authResult;
     }
 
-    // 2. 사용자 프로필 조회
-    const userProfile = await prisma.user_profiles.findUnique({
-      where: { id: session.user.id }
-    });
+    const { profile: userProfile } = authResult;
 
-    if (!userProfile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
-
-    // 3. 권한 확인
+    // 권한 확인
     if (!checkPermission(userProfile.role, 'LIST_USERS')) {
       return NextResponse.json(
         { error: getPermissionError('LIST_USERS') },

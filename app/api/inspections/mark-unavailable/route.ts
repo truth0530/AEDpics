@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { authOptions } from '@/lib/auth/auth-options';
 
+import { prisma } from '@/lib/prisma';
 /**
  * POST /api/inspections/mark-unavailable
  * 점검불가 상태로 변경 (inspection_assignments의 status를 'unavailable'로 변경)

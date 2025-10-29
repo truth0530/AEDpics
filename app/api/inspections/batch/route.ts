@@ -1,14 +1,13 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 /**
  * Batch API for Inspection Assignments
  * 여러 작업을 하나의 트랜잭션으로 처리
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 
+import { prisma } from '@/lib/prisma';
 interface BatchOperation {
   type: 'create' | 'update' | 'delete';
   data?: any;

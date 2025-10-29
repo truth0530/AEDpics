@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth/auth-options';
 import { PrismaClient, user_role } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
 import { sendApprovalEmail } from '@/lib/email/approval-email';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 /**
  * POST /api/admin/users/[id]/approve
  * 사용자 승인

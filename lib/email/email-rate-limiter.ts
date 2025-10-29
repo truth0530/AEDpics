@@ -12,9 +12,7 @@
  *       이 파일은 실제 이메일 발송 빈도를 제한
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 /**
  * Rate Limiting 설정

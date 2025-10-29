@@ -1,8 +1,6 @@
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { authOptions } from '@/lib/auth/auth-options'
+import { prisma } from '@/lib/prisma'
 
 /**
  * 서버 컴포넌트에서 현재 세션 가져오기

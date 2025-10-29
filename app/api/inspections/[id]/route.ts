@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { authOptions } from '@/lib/auth/auth-options';
 import { apiHandler } from '@/lib/api/error-handler';
 
+import { prisma } from '@/lib/prisma';
 /**
  * GET /api/inspections/[id]
  * 점검 이력 상세 조회

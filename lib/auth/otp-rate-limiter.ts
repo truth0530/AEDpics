@@ -7,9 +7,7 @@
  * - IP 우회 불가능 (이메일 기반)
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 const MAX_REQUESTS = 3; // 15분당 최대 요청 수
 const WINDOW_MINUTES = 15; // 윈도우 시간 (분)

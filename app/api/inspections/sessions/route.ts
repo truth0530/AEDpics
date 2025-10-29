@@ -1,12 +1,11 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 import { apiHandler } from '@/lib/api/error-handler';
 import { canPerformInspection, AccessContext } from '@/lib/auth/access-control';
 import { LRUCache } from 'lru-cache';
 
+import { prisma } from '@/lib/prisma';
 // Week 2: 중복 갱신 방지용 메모리 캐시
 const refreshingSessionsCache = new LRUCache<string, boolean>({
   max: 1000,

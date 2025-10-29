@@ -1,18 +1,24 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
 import { canPerformInspection, canAccessDevice, AccessContext } from '@/lib/auth/access-control';
+import { requireAuthWithProfile, isErrorResponse } from '@/lib/auth/session-helpers';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // 인증 및 프로필 조회 (헬퍼 함수 사용)
+    const authResult = await requireAuthWithProfile({
+      id: true,
+      role: true,
+      assigned_devices: true,
+      organization_id: true,
+    });
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isErrorResponse(authResult)) {
+      return authResult;
     }
+
+    const { session, profile } = authResult;
 
     if (!isFeatureEnabled('quickInspect')) {
       return NextResponse.json({ error: 'Quick inspect feature is currently disabled.' }, { status: 403 });
@@ -23,20 +29,6 @@ export async function POST(request: NextRequest) {
 
     if (!deviceId) {
       return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
-    }
-
-    const profile = await prisma.user_profiles.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        role: true,
-        assigned_devices: true,
-        organization_id: true
-      }
-    });
-
-    if (!profile) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 403 });
     }
 
     // account_type 컬럼이 존재하지 않으므로 기본값 'public' 사용

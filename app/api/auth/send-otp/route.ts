@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { isAllowedEmailDomain } from '@/lib/auth/config';
 import { rateLimits } from '@/lib/rate-limit';
 import { checkOtpRateLimit } from '@/lib/auth/otp-rate-limiter';
 import { sendSimpleEmail } from '@/lib/email/ncp-email';
 import { checkEmailRateLimit } from '@/lib/email/email-rate-limiter';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   // 런타임 환경변수 검증 (빌드 시에는 체크하지 않음)
   if (!process.env.NCP_ACCESS_KEY || !process.env.NCP_ACCESS_SECRET || !process.env.NCP_SENDER_EMAIL) {

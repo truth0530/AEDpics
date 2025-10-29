@@ -1,12 +1,10 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getMasterAdminEmails } from '@/lib/auth/config';
 import { sendSimpleEmail } from '@/lib/email/ncp-email';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const { email, fullName, organizationName, region, accountType } = await request.json();

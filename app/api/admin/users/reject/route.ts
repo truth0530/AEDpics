@@ -1,9 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 
+import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     // 현재 사용자 확인

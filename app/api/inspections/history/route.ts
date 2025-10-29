@@ -1,10 +1,9 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 import { apiHandler } from '@/lib/api/error-handler';
 
+import { prisma } from '@/lib/prisma';
 /**
  * GET /api/inspections/history
  * 완료된 점검 이력 조회 (최근 24시간 또는 특정 장비)

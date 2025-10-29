@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 /**
  * Organizations 데이터 자동 시딩 API
  *
@@ -8,12 +8,10 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { hasSystemAdminAccess } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 // 서울 보건소 데이터
 const SEOUL_HEALTH_CENTERS = [
   { name: '서울특별시 강남구보건소', region: '서울', region_code: 'SEO', city_code: '강남구', contact_phone: '02-3423-7200', address: '서울특별시 강남구 선릉로 668' },

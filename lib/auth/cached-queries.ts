@@ -1,10 +1,8 @@
 import { cache } from 'react';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '@/lib/auth/auth-options';
+import { prisma } from '@/lib/prisma';
 import type { UserProfile } from '@/packages/types';
-
-const prisma = new PrismaClient();
 
 /**
  * 사용자 프로필 조회 (React Cache API 사용)

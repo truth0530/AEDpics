@@ -117,8 +117,7 @@ export function canManageSchedules(role: UserRole): boolean {
 // Get user access context
 export async function getUserAccessContext(userId: string): Promise<AccessContext | null> {
   try {
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    const { prisma } = await import('@/lib/prisma');
 
     const profile = await prisma.user_profiles.findUnique({
       where: { id: userId },

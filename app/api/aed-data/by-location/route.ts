@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '@/lib/auth/auth-options';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 // Haversine 공식으로 두 좌표 간 거리 계산 (km)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // 지구 반지름 (km)

@@ -1,9 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 
+import { prisma } from '@/lib/prisma';
 // 대량 일정추가 핸들러
 async function handleBulkAssignment(
   equipmentSerials: string[],

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { isAllowedEmailDomain } from '@/lib/auth/config';
 import { rateLimits } from '@/lib/rate-limit';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   // Rate Limiting 체크
   const rateLimitResult = await rateLimits.checkEmail(request);

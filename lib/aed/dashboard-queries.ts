@@ -1,9 +1,7 @@
 import { cache } from 'react';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import type { UserProfile } from '@/packages/types';
 import { normalizeRegionName } from '@/lib/constants/regions';
-
-const prisma = new PrismaClient();
 
 interface DashboardStats {
   total: number;
@@ -59,104 +57,98 @@ export const getCachedDashboardData = cache(async (userProfile: UserProfile): Pr
     const isNationalView = ['master', 'ministry_admin', 'emergency_center_admin', 'regional_emergency_center_admin'].includes(userProfile.role);
 
     if (isNationalView) {
-      // 전국 시도별 통계 집계
-      const regions = await prisma.aed_data.groupBy({
-        by: ['sido'],
-        _count: {
-          _all: true
-        },
-        where: {
-          sido: { not: null }
-        }
+      // 전국 시도별 통계 집계 (단일 쿼리로 최적화)
+      const aggregatedStats = await prisma.$queryRaw<Array<{
+        sido: string;
+        total: bigint;
+        mandatory: bigint;
+        completed: bigint;
+        blocked: bigint;
+        uninspected: bigint;
+        completed_mandatory: bigint;
+      }>>`
+        SELECT
+          sido,
+          COUNT(*) as total,
+          SUM(CASE
+            WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+            THEN 1
+            ELSE 0
+          END) as mandatory,
+          SUM(CASE
+            WHEN last_inspection_date IS NOT NULL
+            THEN 1
+            ELSE 0
+          END) as completed,
+          SUM(CASE
+            WHEN external_display = 'N'
+            THEN 1
+            ELSE 0
+          END) as blocked,
+          SUM(CASE
+            WHEN last_inspection_date IS NULL
+            THEN 1
+            ELSE 0
+          END) as uninspected,
+          SUM(CASE
+            WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              AND last_inspection_date IS NOT NULL
+            THEN 1
+            ELSE 0
+          END) as completed_mandatory
+        FROM aedpics.aed_data
+        WHERE sido IS NOT NULL
+        GROUP BY sido
+        ORDER BY total DESC
+      `;
+
+      const regionStats: RegionStats[] = aggregatedStats.map((stat) => {
+        const total = Number(stat.total);
+        const mandatory = Number(stat.mandatory);
+        const completed = Number(stat.completed);
+        const blocked = Number(stat.blocked);
+        const uninspected = Number(stat.uninspected);
+        const completedMandatory = Number(stat.completed_mandatory);
+        const nonMandatory = total - mandatory;
+        const completedNonMandatory = completed - completedMandatory;
+
+        return {
+          region: stat.sido || '알 수 없음',
+          total,
+          mandatory,
+          nonMandatory,
+          completed,
+          completedMandatory,
+          completedNonMandatory,
+          urgent: 0,
+          blocked,
+          blockedMandatory: 0,
+          blockedNonMandatory: 0,
+          blockedInspected: 0,
+          blockedInspectedMandatory: 0,
+          blockedInspectedNonMandatory: 0,
+          uninspected,
+          uninspectedMandatory: mandatory - completedMandatory,
+          uninspectedNonMandatory: nonMandatory - completedNonMandatory,
+          fieldInspected: 0,
+          fieldInspectedMandatory: 0,
+          fieldInspectedNonMandatory: 0,
+          assigned: 0,
+          assignedMandatory: 0,
+          assignedNonMandatory: 0,
+          unavailable: 0,
+          unavailableMandatory: 0,
+          unavailableNonMandatory: 0,
+          rate: total > 0 ? (completed / total) * 100 : 0
+        };
       });
-
-      const regionStats: RegionStats[] = await Promise.all(
-        regions.map(async (region) => {
-          const baseWhere = { sido: region.sido };
-
-          // 각 통계를 개별로 계산
-          const [
-            total,
-            mandatory,
-            completed,
-            blocked,
-            uninspected
-          ] = await Promise.all([
-            prisma.aed_data.count({ where: baseWhere }),
-            prisma.aed_data.count({
-              where: {
-                ...baseWhere,
-                category_1: { in: MANDATORY_CATEGORIES }
-              }
-            }),
-            prisma.aed_data.count({
-              where: {
-                ...baseWhere,
-                last_inspection_date: { not: null }
-              }
-            }),
-            prisma.aed_data.count({
-              where: {
-                ...baseWhere,
-                external_display: 'N'
-              }
-            }),
-            prisma.aed_data.count({
-              where: {
-                ...baseWhere,
-                last_inspection_date: null
-              }
-            })
-          ]);
-
-          const nonMandatory = total - mandatory;
-          const completedMandatory = await prisma.aed_data.count({
-            where: {
-              ...baseWhere,
-              category_1: { in: MANDATORY_CATEGORIES },
-              last_inspection_date: { not: null }
-            }
-          });
-          const completedNonMandatory = completed - completedMandatory;
-
-          return {
-            region: region.sido || '알 수 없음',
-            total,
-            mandatory,
-            nonMandatory,
-            completed,
-            completedMandatory,
-            completedNonMandatory,
-            urgent: 0,
-            blocked,
-            blockedMandatory: 0,
-            blockedNonMandatory: 0,
-            blockedInspected: 0,
-            blockedInspectedMandatory: 0,
-            blockedInspectedNonMandatory: 0,
-            uninspected,
-            uninspectedMandatory: mandatory - completedMandatory,
-            uninspectedNonMandatory: nonMandatory - completedNonMandatory,
-            fieldInspected: 0,
-            fieldInspectedMandatory: 0,
-            fieldInspectedNonMandatory: 0,
-            assigned: 0,
-            assignedMandatory: 0,
-            assignedNonMandatory: 0,
-            unavailable: 0,
-            unavailableMandatory: 0,
-            unavailableNonMandatory: 0,
-            rate: total > 0 ? (completed / total) * 100 : 0
-          };
-        })
-      );
 
       const totalAED = regionStats.reduce((sum, r) => sum + r.total, 0);
       const totalCompleted = regionStats.reduce((sum, r) => sum + r.completed, 0);
 
       return {
         title: '전국 시도별 AED 점검 현황',
-        data: regionStats.sort((a, b) => b.total - a.total),
+        data: regionStats,
         totalAED,
         totalCompleted,
         totalUrgent: 0,

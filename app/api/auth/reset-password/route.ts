@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { sendSimpleEmail } from '@/lib/email/ncp-email';
 import { checkEmailRateLimit } from '@/lib/email/email-rate-limiter';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     // NCP 이메일 환경변수 검증

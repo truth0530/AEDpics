@@ -1,9 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 
+import { prisma } from '@/lib/prisma';
 // GET /api/inspections/field/assigned - 현장점검용 할당된 AED 목록
 export async function GET(request: NextRequest) {
   try {

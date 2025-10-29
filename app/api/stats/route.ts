@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 // 폴백 데이터 (데이터베이스 연결 실패 시 사용)
 const FALLBACK_STATS = {
   aed_count: 81443,

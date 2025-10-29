@@ -1,12 +1,11 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 import { UserRole } from '@/packages/types';
 import { isValidRegionForRole } from '@/lib/constants/regions';
 import { randomUUID } from 'crypto';
 
+import { prisma } from '@/lib/prisma';
 /**
  * PATCH /api/admin/users/update
  * 이미 승인된 사용자의 정보를 수정합니다.

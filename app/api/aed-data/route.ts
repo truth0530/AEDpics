@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import { authOptions } from '@/lib/auth/auth-options';
 import { resolveAccessScope, canAccessAEDData } from '@/lib/auth/access-control';
 
-const prisma = new PrismaClient();
 import { parseQueryParams, type ParsedFilters } from '@/lib/utils/query-parser';
 import { maskSensitiveData } from '@/lib/data/masking';
 import { logDataAccess, logAccessRejection } from '@/lib/audit/access-logger';
@@ -17,6 +15,7 @@ import { REGION_LABEL_TO_CODE, REGION_LONG_LABELS, REGION_CODE_TO_LABEL } from '
 import type { UserProfile } from '@/packages/types';
 import type { AEDDevice } from '@/packages/types/aed';
 
+import { prisma } from '@/lib/prisma';
 type DecodedCursor = { id: number; updated_at?: string };
 
 // 날짜에 일수 추가 헬퍼 함수
@@ -155,26 +154,24 @@ export const GET = async (request: NextRequest) => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 사용자 프로필 조회
+  // 사용자 프로필 및 organization 정보 한 번에 조회 (N+1 최적화)
   const userProfile = await prisma.user_profiles.findUnique({
-    where: { id: session.user.id }
+    where: { id: session.user.id },
+    include: {
+      organizations: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          region_code: true,
+          latitude: true,
+          longitude: true
+        }
+      }
+    }
   });
 
-  // organization 정보 별도 조회 (relation이 스키마에 없음)
-  let organization: any = null;
-  if (userProfile?.organization_id) {
-    organization = await prisma.organizations.findUnique({
-      where: { id: userProfile.organization_id },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        region_code: true,
-        latitude: true,
-        longitude: true
-      }
-    });
-  }
+  const organization = userProfile?.organizations || null;
 
   if (!userProfile) {
     console.error('Profile not found for user:', session.user.id);
@@ -342,143 +339,171 @@ export const GET = async (request: NextRequest) => {
       console.log('[inspection mode] Using Prisma two-step query');
 
       try {
-        // Step 1: Get all assigned equipment serials
-        const assignments = await prisma.inspection_assignments.findMany({
-          where: {
-            status: { in: ['pending', 'in_progress', 'completed', 'unavailable'] }
-          },
-          select: {
-            equipment_serial: true,
-            status: true,
-            assigned_to: true,
-            assigned_by: true,
-            scheduled_date: true
-          }
-        });
+        // Build SQL WHERE clauses dynamically
+        const sqlConditions: string[] = [];
+        const sqlParams: any[] = [];
+        let paramIndex = 1;
 
-        const equipmentSerials = assignments.map(a => a.equipment_serial);
+        // Assignment status filter (required for inspection mode)
+        sqlConditions.push(`ia.status IN ('pending', 'in_progress', 'completed', 'unavailable')`);
 
-        if (equipmentSerials.length === 0) {
-          rawData = [];
-          queryError = null;
-          console.log('[inspection mode] No assigned equipment found');
-        } else {
-          // Step 2: Build where conditions for AED data
-          const whereConditions: any = {
-            equipment_serial: { in: equipmentSerials }
-          };
-
-          // 지역 필터
-          if (regionFiltersForQuery && regionFiltersForQuery.length > 0) {
-            whereConditions.sido = { in: regionFiltersForQuery };
-          }
-          if (cityFiltersForQuery && cityFiltersForQuery.length > 0) {
-            whereConditions.gugun = { in: cityFiltersForQuery };
-          }
-
-          // 카테고리 필터
-          if (filters.category_1 && filters.category_1.length > 0) {
-            whereConditions.category_1 = { in: filters.category_1 };
-          }
-          if (filters.category_2 && filters.category_2.length > 0) {
-            whereConditions.category_2 = { in: filters.category_2 };
-          }
-          if (filters.category_3 && filters.category_3.length > 0) {
-            whereConditions.category_3 = { in: filters.category_3 };
-          }
-
-          // 외부표출 필터
-          if (filters.external_display) {
-            if (filters.external_display === 'blocked') {
-              whereConditions.external_display = 'N';
-              whereConditions.external_non_display_reason = {
-                not: { in: [null, '', '구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박'] }
-              };
-            } else {
-              whereConditions.external_display = filters.external_display.toUpperCase();
-            }
-          }
-
-          // 상태 필터
-          if (filters.status && filters.status.length > 0) {
-            whereConditions.operation_status = { in: filters.status };
-          }
-
-          // 배터리 만료일 필터
-          if (filters.battery_expiry_date) {
-            const dateFilter = buildDateFilter(filters.battery_expiry_date);
-            if (dateFilter) {
-              whereConditions.battery_expiry_date = dateFilter;
-            }
-          }
-
-          // 패드 만료일 필터
-          if (filters.patch_expiry_date) {
-            const dateFilter = buildDateFilter(filters.patch_expiry_date);
-            if (dateFilter) {
-              whereConditions.patch_expiry_date = dateFilter;
-            }
-          }
-
-          // 교체예정일 필터
-          if (filters.replacement_date) {
-            const dateFilter = buildDateFilter(filters.replacement_date);
-            if (dateFilter) {
-              whereConditions.replacement_date = dateFilter;
-            }
-          }
-
-          // 점검일 필터
-          if (filters.last_inspection_date) {
-            const inspectionFilter = buildInspectionDateFilter(filters.last_inspection_date);
-            if (inspectionFilter) {
-              whereConditions.last_inspection_date = inspectionFilter;
-            }
-          }
-
-          // 검색 필터 (OR 조건)
-          if (filters.search) {
-            whereConditions.OR = [
-              { management_number: { contains: filters.search, mode: 'insensitive' } },
-              { equipment_serial: { contains: filters.search, mode: 'insensitive' } },
-              { installation_institution: { contains: filters.search, mode: 'insensitive' } },
-              { installation_address: { contains: filters.search, mode: 'insensitive' } }
-            ];
-          }
-
-          // Cursor 페이지네이션
-          if (cursorId) {
-            whereConditions.id = { gt: cursorId };
-          }
-
-          // 쿼리 실행
-          const aedData = await prisma.aed_data.findMany({
-            where: whereConditions,
-            orderBy: { id: 'asc' },
-            take: queryLimit
-          });
-
-          console.log(`[inspection mode] Successfully fetched ${aedData.length} AED records`);
-
-          // Step 3: Create assignment map
-          const assignmentMap = new Map<string, any>();
-          assignments.forEach(assignment => {
-            assignmentMap.set(assignment.equipment_serial, assignment);
-          });
-
-          // Transform data and add inspection_status from assignment map
-          rawData = aedData.map((device: any) => {
-            const assignment = assignmentMap.get(device.equipment_serial);
-            return {
-              ...device,
-              inspection_status: assignment?.status || 'pending',
-              scheduled_date: assignment?.scheduled_date,
-              assigned_to: assignment?.assigned_to,
-              assigned_by: assignment?.assigned_by,
-            };
-          });
-          queryError = null;
+        // 지역 필터
+        if (regionFiltersForQuery && regionFiltersForQuery.length > 0) {
+          sqlConditions.push(`a.sido = ANY($${paramIndex}::text[])`);
+          sqlParams.push(regionFiltersForQuery);
+          paramIndex++;
         }
+        if (cityFiltersForQuery && cityFiltersForQuery.length > 0) {
+          sqlConditions.push(`a.gugun = ANY($${paramIndex}::text[])`);
+          sqlParams.push(cityFiltersForQuery);
+          paramIndex++;
+        }
+
+        // 카테고리 필터
+        if (filters.category_1 && filters.category_1.length > 0) {
+          sqlConditions.push(`a.category_1 = ANY($${paramIndex}::text[])`);
+          sqlParams.push(filters.category_1);
+          paramIndex++;
+        }
+        if (filters.category_2 && filters.category_2.length > 0) {
+          sqlConditions.push(`a.category_2 = ANY($${paramIndex}::text[])`);
+          sqlParams.push(filters.category_2);
+          paramIndex++;
+        }
+        if (filters.category_3 && filters.category_3.length > 0) {
+          sqlConditions.push(`a.category_3 = ANY($${paramIndex}::text[])`);
+          sqlParams.push(filters.category_3);
+          paramIndex++;
+        }
+
+        // 외부표출 필터
+        if (filters.external_display) {
+          if (filters.external_display === 'blocked') {
+            sqlConditions.push(`a.external_display = 'N'`);
+            sqlConditions.push(`a.external_non_display_reason IS NOT NULL AND a.external_non_display_reason != '' AND a.external_non_display_reason != '구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박'`);
+          } else {
+            sqlConditions.push(`a.external_display = $${paramIndex}`);
+            sqlParams.push(filters.external_display.toUpperCase());
+            paramIndex++;
+          }
+        }
+
+        // 상태 필터
+        if (filters.status && filters.status.length > 0) {
+          sqlConditions.push(`a.operation_status = ANY($${paramIndex}::text[])`);
+          sqlParams.push(filters.status);
+          paramIndex++;
+        }
+
+        // 배터리 만료일 필터
+        if (filters.battery_expiry_date) {
+          const dateFilter = buildDateFilter(filters.battery_expiry_date);
+          if (dateFilter?.gte) {
+            sqlConditions.push(`a.battery_expiry_date >= $${paramIndex}`);
+            sqlParams.push(dateFilter.gte);
+            paramIndex++;
+          }
+          if (dateFilter?.lte) {
+            sqlConditions.push(`a.battery_expiry_date <= $${paramIndex}`);
+            sqlParams.push(dateFilter.lte);
+            paramIndex++;
+          }
+        }
+
+        // 패드 만료일 필터
+        if (filters.patch_expiry_date) {
+          const dateFilter = buildDateFilter(filters.patch_expiry_date);
+          if (dateFilter?.gte) {
+            sqlConditions.push(`a.patch_expiry_date >= $${paramIndex}`);
+            sqlParams.push(dateFilter.gte);
+            paramIndex++;
+          }
+          if (dateFilter?.lte) {
+            sqlConditions.push(`a.patch_expiry_date <= $${paramIndex}`);
+            sqlParams.push(dateFilter.lte);
+            paramIndex++;
+          }
+        }
+
+        // 교체예정일 필터
+        if (filters.replacement_date) {
+          const dateFilter = buildDateFilter(filters.replacement_date);
+          if (dateFilter?.gte) {
+            sqlConditions.push(`a.replacement_date >= $${paramIndex}`);
+            sqlParams.push(dateFilter.gte);
+            paramIndex++;
+          }
+          if (dateFilter?.lte) {
+            sqlConditions.push(`a.replacement_date <= $${paramIndex}`);
+            sqlParams.push(dateFilter.lte);
+            paramIndex++;
+          }
+        }
+
+        // 점검일 필터
+        if (filters.last_inspection_date) {
+          const inspectionFilter = buildInspectionDateFilter(filters.last_inspection_date);
+          if (inspectionFilter === null) {
+            sqlConditions.push(`a.last_inspection_date IS NULL`);
+          } else if (inspectionFilter?.not) {
+            sqlConditions.push(`a.last_inspection_date IS NOT NULL`);
+          } else {
+            if (inspectionFilter?.gte) {
+              sqlConditions.push(`a.last_inspection_date >= $${paramIndex}`);
+              sqlParams.push(inspectionFilter.gte);
+              paramIndex++;
+            }
+            if (inspectionFilter?.lte) {
+              sqlConditions.push(`a.last_inspection_date <= $${paramIndex}`);
+              sqlParams.push(inspectionFilter.lte);
+              paramIndex++;
+            }
+          }
+        }
+
+        // 검색 필터 (OR 조건)
+        if (filters.search) {
+          sqlConditions.push(`(
+            a.management_number ILIKE $${paramIndex} OR
+            a.equipment_serial ILIKE $${paramIndex} OR
+            a.installation_institution ILIKE $${paramIndex} OR
+            a.installation_address ILIKE $${paramIndex}
+          )`);
+          sqlParams.push(`%${filters.search}%`);
+          paramIndex++;
+        }
+
+        // Cursor 페이지네이션
+        if (cursorId) {
+          sqlConditions.push(`a.id > $${paramIndex}`);
+          sqlParams.push(cursorId);
+          paramIndex++;
+        }
+
+        // Build final SQL query with LEFT JOIN
+        const whereClause = sqlConditions.length > 0 ? `WHERE ${sqlConditions.join(' AND ')}` : '';
+
+        const query = `
+          SELECT
+            a.*,
+            ia.status as inspection_status,
+            ia.scheduled_date,
+            ia.assigned_to,
+            ia.assigned_by
+          FROM aedpics.aed_data a
+          INNER JOIN aedpics.inspection_assignments ia ON a.equipment_serial = ia.equipment_serial
+          ${whereClause}
+          ORDER BY a.id ASC
+          LIMIT ${queryLimit}
+        `;
+
+        console.log(`[inspection mode] Executing optimized JOIN query with ${sqlParams.length} parameters`);
+
+        // Execute optimized query
+        rawData = await prisma.$queryRawUnsafe(query, ...sqlParams);
+        queryError = null;
+
+        console.log(`[inspection mode] Successfully fetched ${rawData.length} AED records with assignments`);
       } catch (error) {
         console.error('[inspection mode] Query error:', error);
         queryError = error;

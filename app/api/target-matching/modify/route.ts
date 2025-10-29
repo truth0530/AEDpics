@@ -1,9 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { prisma } from '@/lib/prisma';
 // 임시: Supabase createClient 대체
 const createClient = async (): Promise<any> => {
   throw new Error('Supabase client not available. Please use Prisma instead.');

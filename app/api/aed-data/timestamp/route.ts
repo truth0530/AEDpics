@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
+import { prisma } from '@/lib/prisma';
 // 1분마다 재검증 (ISR - Incremental Static Regeneration)
 export const revalidate = 60;
 

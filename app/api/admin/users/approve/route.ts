@@ -1,13 +1,12 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-const prisma = new PrismaClient();
 import { canApproveUsers, getMasterAdminEmails } from '@/lib/auth/config';
 import { UserRole } from '@/packages/types';
 import { isValidRegionForRole } from '@/lib/constants/regions';
 
+import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     console.log('[Approval API] ========== 승인 프로세스 시작 ==========');
