@@ -1,0 +1,31 @@
+name: Verify Production Code
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Check Production Code
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          cd /var/www/aedpics
+
+          echo "=== Git Status ==="
+          git log -1 --oneline
+          git status
+
+          echo ""
+          echo "=== Date Filter Code (Lines 860-870) ==="
+          sed -n '860,870p' app/api/aed-data/route.ts
+
+          echo ""
+          echo "=== Build Query Code (Lines 950-962) ==="
+          sed -n '950,962p' app/api/aed-data/route.ts
