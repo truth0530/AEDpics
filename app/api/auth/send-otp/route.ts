@@ -4,6 +4,7 @@ import { isAllowedEmailDomain } from '@/lib/auth/config';
 import { rateLimits } from '@/lib/rate-limit';
 import { checkOtpRateLimit } from '@/lib/auth/otp-rate-limiter';
 import { sendSimpleEmail } from '@/lib/email/ncp-email';
+import { checkEmailRateLimit } from '@/lib/email/email-rate-limiter';
 
 const prisma = new PrismaClient();
 
@@ -43,6 +44,27 @@ export async function POST(request: NextRequest) {
             'X-RateLimit-Remaining': dbRateLimit.remaining.toString(),
             'X-RateLimit-Reset': dbRateLimit.resetAt.toISOString(),
             'Retry-After': dbRateLimit.retryAfterSeconds!.toString()
+          }
+        }
+      );
+    }
+
+    // 이메일 발송 빈도 체크 (NCP 스팸 필터 차단 방지)
+    const emailRateLimit = await checkEmailRateLimit(email);
+    if (!emailRateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: emailRateLimit.reason,
+          retryAfter: emailRateLimit.resetAt?.toISOString(),
+          retryAfterSeconds: emailRateLimit.retryAfterSeconds
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Type': 'Email-Frequency',
+            'X-RateLimit-Remaining': emailRateLimit.remaining?.toString() || '0',
+            'X-RateLimit-Reset': emailRateLimit.resetAt?.toISOString() || '',
+            'Retry-After': emailRateLimit.retryAfterSeconds?.toString() || '300'
           }
         }
       );
