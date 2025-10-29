@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      // Custom API를 사용하여 비밀번호 재설정 이메일 발송
+      // 비밀번호 재설정 이메일 발송
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
