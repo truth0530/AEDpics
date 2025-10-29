@@ -155,6 +155,27 @@ function VerifyResetContent() {
               </p>
             </div>
 
+            <div className="bg-gray-800/30 backdrop-blur-xl rounded-xl p-4 mb-4 border border-gray-700/50 space-y-3">
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                <p className="text-xs text-green-400 font-semibold mb-1">
+                  비밀번호 재설정 링크가 발송되었습니다
+                </p>
+                <p className="text-xs text-gray-400">
+                  이메일에서 &quot;비밀번호 재설정하기&quot; 버튼을 클릭하세요
+                </p>
+              </div>
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                <p className="text-xs text-yellow-400 font-semibold mb-1">
+                  이메일이 도착하지 않았나요?
+                </p>
+                <ul className="text-xs text-gray-400 space-y-1">
+                  <li>• 스팸메일함 또는 프로모션 폴더 확인</li>
+                  <li>• noreply@nmc.or.kr에서 발송된 메일 찾기</li>
+                  <li>• 이메일 도착까지 최대 15분 소요 가능</li>
+                </ul>
+              </div>
+            </div>
+
             {error && (
               <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-3 rounded-xl mb-4 text-sm">
                 {error}

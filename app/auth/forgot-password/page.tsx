@@ -8,7 +8,6 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,12 +24,13 @@ export default function ForgotPasswordPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || '비밀번호 재설정 요청에 실패했습니다.');
       }
-      
-      setSuccess(true);
+
+      // 이메일 발송 성공 시 즉시 인증 코드 화면으로 이동
+      router.push(`/auth/verify-reset?email=${encodeURIComponent(email)}`);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : '오류가 발생했습니다');
     } finally {
@@ -49,73 +49,6 @@ export default function ForgotPasswordPage() {
         </button>
 
         <GlassCard glow>
-          {success ? (
-            <>
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-green-500/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h1 className="text-2xl font-bold text-white mb-2">
-                  이메일을 확인하세요
-                </h1>
-                <p className="text-gray-400 text-sm">
-                  비밀번호 재설정 링크를 발송했습니다
-                </p>
-              </div>
-              
-              <div className="bg-gray-800/30 backdrop-blur-xl rounded-xl p-5 mb-6 border border-gray-700/50">
-                <p className="text-sm text-gray-300 leading-relaxed mb-3">
-                  <strong className="text-green-400">{email}</strong>로 비밀번호 재설정 링크를 발송했습니다.
-                </p>
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-3">
-                  <p className="text-xs text-green-400 font-semibold mb-1">
-                    ✓ 비밀번호 재설정 링크가 발송되었습니다
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    이메일에서 &quot;비밀번호 재설정하기&quot; 버튼을 클릭하세요
-                  </p>
-                </div>
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                  <p className="text-xs text-yellow-400">
-                    ⚠️ 이메일이 도착하지 않았나요?
-                  </p>
-                  <ul className="text-xs text-gray-400 mt-1 space-y-1">
-                    <li>• 스팸메일함 또는 프로모션 폴더 확인</li>
-                    <li>• noreply@aed.pics에서 발송된 메일 찾기</li>
-                    <li>• 이메일 도착까지 최대 15분 소요 가능</li>
-                  </ul>
-                </div>
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mt-3">
-                  <p className="text-xs text-blue-400 font-semibold mb-1">
-                    🔗 링크가 작동하지 않는 경우
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    이메일에 포함된 6자리 인증 코드를 사용하세요
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <NeoButton
-                  onClick={() => router.push(`/auth/verify-reset?email=${encodeURIComponent(email)}`)}
-                  variant="secondary"
-                  fullWidth
-                >
-                  인증 코드로 재설정
-                </NeoButton>
-                <NeoButton
-                  onClick={() => router.push('/auth/signin')}
-                  variant="ghost"
-                  fullWidth
-                >
-                  로그인으로 돌아가기
-                </NeoButton>
-              </div>
-            </>
-          ) : (
-            <>
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-white mb-2">
                   비밀번호 재설정
@@ -176,8 +109,6 @@ export default function ForgotPasswordPage() {
                   로그인 페이지로 돌아가기
                 </button>
               </div>
-            </>
-          )}
         </GlassCard>
       </div>
     </div>

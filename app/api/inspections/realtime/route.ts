@@ -71,10 +71,10 @@ export async function GET(request: NextRequest) {
           select: {
             equipment_serial: true,
             management_number: true,
-            facility_name: true,
+            installation_institution: true,
             sido: true,
             gugun: true,
-            installation_location_detail: true
+            installation_location_address: true
           }
         }
       },
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
             select: {
               equipment_serial: true,
               management_number: true,
-              facility_name: true,
+              installation_institution: true,
               sido: true,
               gugun: true
             }
@@ -209,10 +209,10 @@ export async function GET(request: NextRequest) {
         aed: {
           serial: session.aed_data?.equipment_serial,
           managementNumber: session.aed_data?.management_number,
-          facilityName: session.aed_data?.facility_name,
+          facilityName: session.aed_data?.installation_institution,
           sido: session.aed_data?.sido,
           gugun: session.aed_data?.gugun,
-          location: session.aed_data?.installation_location_detail
+          location: session.aed_data?.installation_location_address
         },
         startedAt: session.started_at,
         duration: Math.floor((new Date().getTime() - new Date(session.started_at).getTime()) / 1000 / 60), // 분 단위

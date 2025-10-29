@@ -79,6 +79,7 @@ model aed_data {
   search_vector                 Unsupported("tsvector")?
   gps_issues                    gps_issues[]
   inspection_schedules          inspection_schedules[]
+  inspection_sessions           inspection_sessions[]     @relation("SessionToAedData")
   inspections                   inspections[]             @relation("InspectionToAedData")
 
   @@index([latitude, longitude], map: "idx_aed_data_coordinates")
@@ -243,6 +244,7 @@ model inspection_sessions {
   refresh_error       String?
   created_at          DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?      @default(now()) @db.Timestamptz(6)
+  aed_data            aed_data?      @relation("SessionToAedData", fields: [equipment_serial], references: [equipment_serial], onDelete: NoAction, onUpdate: NoAction)
   user_profiles       user_profiles? @relation(fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([equipment_serial], map: "idx_inspection_sessions_equipment")

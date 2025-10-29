@@ -96,8 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 이메일 URL 생성 (환경변수 확인됨)
-    const resetPasswordUrl = `${appUrl}/auth/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
-    const verifyResetUrl = `${appUrl}/auth/verify-reset`;
+    const resetPasswordUrl = `${appUrl}/auth/verify-reset?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
     // HTML 템플릿 생성
     const htmlTemplate = `
@@ -143,18 +142,6 @@ export async function POST(request: NextRequest) {
               ${resetPasswordUrl}
             </p>
 
-            <div style="background: #f0f9ff; border: 1px solid #0284c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p style="color: #0284c7; font-weight: bold; margin: 0 0 10px 0;">🔐 링크가 작동하지 않는 경우:</p>
-              <p style="color: #666; font-size: 14px; margin: 5px 0;">아래 인증 코드를 사용하세요:</p>
-              <div class="code-box">
-                <div class="code">${resetToken}</div>
-                <p style="color: #666; font-size: 14px;">유효시간: 15분</p>
-              </div>
-              <p style="color: #666; font-size: 12px; margin-top: 10px;">
-                이 코드를 <a href="${verifyResetUrl}" style="color: #0284c7;">비밀번호 재설정 페이지</a>에 입력하세요.
-              </p>
-            </div>
-            
             <div class="warning">
               <strong>⚠️ 보안 안내:</strong><br>
               본인이 요청하지 않은 경우, 이 이메일을 무시하시고 계정 보안을 확인해주세요.
