@@ -910,8 +910,20 @@ export const GET = async (request: NextRequest) => {
           where: {
             ...summaryWhere,
             OR: [
-              { battery_expiry_date: { lt: today } },
-              { patch_expiry_date: { lt: today } }
+              {
+                AND: [
+                  { battery_expiry_date: { not: null } },
+                  { battery_expiry_date: { not: "" } },
+                  { battery_expiry_date: { lt: today } }
+                ]
+              },
+              {
+                AND: [
+                  { patch_expiry_date: { not: null } },
+                  { patch_expiry_date: { not: "" } },
+                  { patch_expiry_date: { lt: today } }
+                ]
+              }
             ]
           }
         }),
@@ -921,8 +933,20 @@ export const GET = async (request: NextRequest) => {
           where: {
             ...summaryWhere,
             OR: [
-              { battery_expiry_date: { gte: today, lte: in30Days } },
-              { patch_expiry_date: { gte: today, lte: in30Days } }
+              {
+                AND: [
+                  { battery_expiry_date: { not: null } },
+                  { battery_expiry_date: { not: "" } },
+                  { battery_expiry_date: { gte: today, lte: in30Days } }
+                ]
+              },
+              {
+                AND: [
+                  { patch_expiry_date: { not: null } },
+                  { patch_expiry_date: { not: "" } },
+                  { patch_expiry_date: { gte: today, lte: in30Days } }
+                ]
+              }
             ]
           }
         }),

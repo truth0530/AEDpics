@@ -1,0 +1,34 @@
+
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#000000"/>
+
+  <!-- AED Heart Symbol -->
+  <g transform="translate(256, 256)">
+    <!-- Heart shape -->
+    <path d="M 0,-102.4
+             C -76.8,-179.2 -179.2,-179.2 -179.2,-76.8
+             C -179.2,25.6 -102.4,102.4 0,179.2
+             C 102.4,102.4 179.2,25.6 179.2,-76.8
+             C 179.2,-179.2 76.8,-179.2 0,-102.4 Z"
+          fill="#FF0000" stroke="#FFFFFF" stroke-width="10.24"/>
+
+    <!-- Lightning bolt (defibrillator symbol) -->
+    <path d="M -40.96,-51.2
+             L 15.36,-51.2
+             L -15.36,10.24
+             L 40.96,10.24
+             L -15.36,76.8
+             L 15.36,-10.24
+             L -40.96,-10.24 Z"
+          fill="#FFFFFF"/>
+  </g>
+
+  <!-- Text: AED -->
+  <text x="256" y="435.2"
+        font-family="Arial, sans-serif"
+        font-size="61.44"
+        font-weight="bold"
+        fill="#FFFFFF"
+        text-anchor="middle">AED</text>
+</svg>
