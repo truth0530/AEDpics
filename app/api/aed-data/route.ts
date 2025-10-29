@@ -22,26 +22,34 @@ type DecodedCursor = { id: number; updated_at?: string };
 function addDays(dateStr: string, days: number): string {
   const date = new Date(dateStr);
   date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0];
+  return date.toISOString();
+}
+
+// Date 객체에 일수 추가 헬퍼 함수
+function addDaysToDate(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
 }
 
 // 날짜 필터를 Prisma where 조건으로 변환
 function buildDateFilter(filterValue: string): any {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   switch (filterValue) {
     case 'expired':
       return { lt: today };
     case 'in30':
-      return { gte: today, lte: addDays(today, 30) };
+      return { gte: today, lte: addDaysToDate(today, 30) };
     case 'in60':
-      return { gte: today, lte: addDays(today, 60) };
+      return { gte: today, lte: addDaysToDate(today, 60) };
     case 'in90':
-      return { gte: today, lte: addDays(today, 90) };
+      return { gte: today, lte: addDaysToDate(today, 90) };
     case 'in180':
-      return { gte: today, lte: addDays(today, 180) };
+      return { gte: today, lte: addDaysToDate(today, 180) };
     case 'in365':
-      return { gte: today, lte: addDays(today, 365) };
+      return { gte: today, lte: addDaysToDate(today, 365) };
     default:
       return undefined;
   }
@@ -49,21 +57,22 @@ function buildDateFilter(filterValue: string): any {
 
 // 점검일 필터를 Prisma where 조건으로 변환
 function buildInspectionDateFilter(filterValue: string): any {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   switch (filterValue) {
     case 'never':
       return { equals: null };
     case 'over365':
-      return { lt: addDays(today, -365) };
+      return { lt: addDaysToDate(today, -365) };
     case 'over180':
-      return { lt: addDays(today, -180) };
+      return { lt: addDaysToDate(today, -180) };
     case 'over90':
-      return { lt: addDays(today, -90) };
+      return { lt: addDaysToDate(today, -90) };
     case 'over60':
-      return { lt: addDays(today, -60) };
+      return { lt: addDaysToDate(today, -60) };
     case 'over30':
-      return { lt: addDays(today, -30) };
+      return { lt: addDaysToDate(today, -30) };
     default:
       return undefined;
   }
@@ -851,8 +860,10 @@ export const GET = async (request: NextRequest) => {
     // 전체 통계 계산 (Prisma - 상세 버전)
     const summaryStartedAt = Date.now();
 
-    const today = new Date().toISOString().split('T')[0];
-    const in30Days = addDays(today, 30);
+    // Date 객체로 직접 사용 (Prisma DateTime 필드와 호환)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const in30Days = addDaysToDate(today, 30);
 
     // 통계용 base where 조건 (메인 쿼리와 동일한 필터 사용)
     const summaryWhere: any = {};
