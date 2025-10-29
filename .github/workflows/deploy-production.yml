@@ -74,9 +74,16 @@ jobs:
           pm2 reload aedpics
 
     - name: Health Check
-      run: |
-        sleep 10
-        curl -f https://aedpics.nmc.or.kr/api/health || exit 1
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          sleep 10
+          curl -f http://localhost:3000 || exit 1
+          pm2 status aedpics | grep online || exit 1
 
     - name: Notify deployment success
       if: success()
