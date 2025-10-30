@@ -4,67 +4,59 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-// 임시: Supabase 비활성화
-const supabase: any = null;
-
 export default function InspectionLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
-   
-  }, []);
+  }, [status, session]);
 
   const checkAuth = async () => {
-    try {
-      // 1. 세션 확인
-      const { data: { session } } = await supabase.auth.getSession();
+    // NextAuth 세션 로딩 중
+    if (status === 'loading') {
+      return;
+    }
 
-      if (!session) {
-        // 로그인 페이지로 리다이렉트
-        router.push('/auth/signin?redirect=/inspection');
-        return;
-      }
+    // 세션이 없으면 로그인 페이지로
+    if (status === 'unauthenticated' || !session) {
+      router.push('/auth/signin?redirect=/inspection');
+      return;
+    }
 
-      // 2. 사용자 프로필 및 권한 확인
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('role, organization_id')
-        .eq('id', session.user.id)
-        .single();
+    // 세션이 있고 사용자 정보가 있는 경우
+    if (session?.user) {
+      try {
+        // NextAuth 세션에서 사용자 프로필 정보를 가져옴
+        const response = await fetch('/api/auth/profile');
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
 
-      if (error || !profile) {
+        const profile = await response.json();
+
+        // 권한 확인 (점검 권한이 있는 역할만 허용)
+        const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'regional_admin', 'local_admin'];
+        if (!profile.role || !allowedRoles.includes(profile.role)) {
+          router.push('/auth/signin?error=권한이 없습니다');
+          return;
+        }
+
+        setUserRole(profile.role);
+      } catch (error) {
         console.error('프로필 조회 실패:', error);
         router.push('/auth/signin');
-        return;
       }
-
-      // 3. 권한 확인 (점검 권한이 있는 역할만 허용)
-      const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'regional_admin', 'local_admin'];
-      if (!allowedRoles.includes(profile.role)) {
-        router.push('/auth/signin?error=권한이 없습니다');
-        return;
-      }
-
-      setUserRole(profile.role);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('인증 확인 실패:', error);
-      router.push('/auth/signin');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // 로딩 중 표시
-  if (isLoading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
@@ -76,7 +68,7 @@ export default function InspectionLayout({
   }
 
   // 인증되지 않은 경우 (리다이렉트 전 잠시 표시)
-  if (!isAuthenticated) {
+  if (status === 'unauthenticated' || !session) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">

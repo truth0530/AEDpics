@@ -19,10 +19,38 @@ export interface InspectionSession {
  * @returns Map<equipment_serial, session>
  */
 export async function getActiveInspectionSessions(): Promise<Map<string, InspectionSession>> {
-  // TODO: API 엔드포인트로 전환 필요
-  // fetch('/api/inspections/sessions?status=active')
-  console.warn('getActiveInspectionSessions is temporarily disabled - needs API endpoint');
-  return new Map();
+  try {
+    const response = await fetch('/api/inspections/sessions?status=active');
+    if (!response.ok) {
+      console.error('[getActiveInspectionSessions] API error:', response.status);
+      return new Map();
+    }
+
+    const data = await response.json();
+    const sessions = data.sessions || [];
+
+    const sessionMap = new Map<string, InspectionSession>();
+    sessions.forEach((session: any) => {
+      if (session.equipment_serial) {
+        sessionMap.set(session.equipment_serial, {
+          id: session.id,
+          equipment_serial: session.equipment_serial,
+          inspector_id: session.inspector_id,
+          inspector_name: session.inspector_name || '알 수 없음',
+          status: session.status,
+          current_step: session.current_step,
+          started_at: session.started_at,
+          created_at: session.created_at || session.started_at,
+          updated_at: session.updated_at,
+        });
+      }
+    });
+
+    return sessionMap;
+  } catch (error) {
+    console.error('[getActiveInspectionSessions] Error:', error);
+    return new Map();
+  }
 
   /* TODO: 아래 코드는 Supabase 의존성 제거 후 재활성화
   const supabase = createClient();
@@ -87,9 +115,21 @@ export async function getActiveInspectionSessions(): Promise<Map<string, Inspect
  * @returns Set<equipment_serial>
  */
 export async function getCompletedInspections(hoursAgo: number = 24): Promise<Set<string>> {
-  // TODO: API 엔드포인트로 전환 필요
-  console.warn('getCompletedInspections is temporarily disabled - needs API endpoint');
-  return new Set();
+  try {
+    const response = await fetch(`/api/inspections/completed?hours=${hoursAgo}`);
+    if (!response.ok) {
+      console.error('[getCompletedInspections] API error:', response.status);
+      return new Set();
+    }
+
+    const data = await response.json();
+    const inspections = data.inspections || [];
+
+    return new Set(inspections.map((i: any) => i.equipment_serial));
+  } catch (error) {
+    console.error('[getCompletedInspections] Error:', error);
+    return new Set();
+  }
 
   /* TODO: 아래 코드는 Supabase 의존성 제거 후 재활성화
   const supabase = createClient();
