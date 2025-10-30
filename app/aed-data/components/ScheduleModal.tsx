@@ -150,19 +150,19 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
   };
 
   const handleContinueAdding = () => {
-    onClose();
     onScheduled?.('continue');
+    onClose();
   };
 
   const handleViewScheduled = () => {
-    onClose();
     onScheduled?.('view-scheduled');
+    onClose();
   };
 
   const handleGoToInspection = () => {
+    onScheduled?.('start-inspection');
     router.push('/inspection');
     onClose();
-    onScheduled?.('start-inspection');
   };
 
   return (

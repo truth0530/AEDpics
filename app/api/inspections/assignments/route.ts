@@ -551,11 +551,11 @@ export async function PATCH(request: NextRequest) {
 
     // 타임스탬프 수동 설정 (Prisma에는 DB 트리거가 없으므로)
     if (newStatus === 'in_progress' && currentStatus === 'pending') {
-      updateData.startedAt = new Date();
+      updateData.started_at = new Date();
     } else if (newStatus === 'completed') {
-      updateData.completedAt = new Date();
+      updateData.completed_at = new Date();
     } else if (newStatus === 'cancelled') {
-      updateData.cancelledAt = new Date();
+      updateData.cancelled_at = new Date();
     }
 
     const updatedAssignment = await prisma.inspection_assignments.update({
