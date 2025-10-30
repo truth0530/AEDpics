@@ -102,7 +102,7 @@ const READ_ONLY_ADMIN_ROLES: UserRole[] = ['ministry_admin', 'regional_admin'];
 const SCHEDULE_MANAGER_ROLES: UserRole[] = [
   'master',
   'emergency_center_admin',
-  'regional_emergency_center_admin',  // 권역응급의료센터 관리자 추가
+  'regional_emergency_center_admin',  // 응급의료지원센터 관리자 추가
   'local_admin'
 ];
 

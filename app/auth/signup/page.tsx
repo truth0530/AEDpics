@@ -895,7 +895,7 @@ export default function ImprovedSignUpPage() {
                           🏥 응급의료센터 이메일 (@nmc.or.kr)
                         </p>
                         <ul className="text-gray-300 text-xs space-y-1">
-                          <li>• 승인 가능 역할: 중앙응급의료센터, 권역응급의료센터</li>
+                          <li>• 승인 가능 역할: 중앙응급의료센터, 응급의료지원센터</li>
                           <li>• AED 시스템 전체 관리 권한</li>
                           <li>• 전국 데이터 통계 및 분석 가능</li>
                         </ul>

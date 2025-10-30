@@ -334,7 +334,7 @@ export function TutorialPageClient() {
                 onClick={() => {
                   // 6단계 시작 전에 샘플 장비 추가
                   setScheduledSerials(new Set(['AED2024001']));
-                  setPageView('inspection');
+                  setPageView('aed-data');  // Step 6은 aed-data 페이지에서 시작
                   setTutorialStep(6);
                 }}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 md:py-3 px-3 md:px-6 rounded-lg transition-colors duration-200 shadow-lg hover:shadow-emerald-500/50 whitespace-nowrap text-xs md:text-base"

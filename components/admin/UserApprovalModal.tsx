@@ -214,7 +214,7 @@ export function UserApprovalModal({
     { value: 'regional_admin', label: '시도 관리자', description: '시도 단위 AED 관리 및 통계' },
     { value: 'ministry_admin', label: '보건복지부', description: '전국 AED 정책 및 관리' },
     { value: 'emergency_center_admin', label: '중앙응급의료센터', description: 'AED 시스템 전체 관리' },
-    { value: 'regional_emergency_center_admin', label: '권역응급의료센터', description: '권역 단위 응급의료 관리' },
+    { value: 'regional_emergency_center_admin', label: '응급의료지원센터', description: '시도 응급의료 관리 (17개 센터)' },
     { value: 'temporary_inspector', label: '임시 점검원', description: '배정된 AED 점검만 가능' }
   ];
 

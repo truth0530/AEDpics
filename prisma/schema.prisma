@@ -660,6 +660,12 @@ model user_profiles {
   @@index([email], map: "idx_user_profiles_email")
   @@index([organization_name], map: "idx_user_profiles_organization_name")
   @@index([role], map: "idx_user_profiles_role")
+  @@index([created_at, role], map: "idx_user_profiles_created_at_role")
+  @@index([region_code, role], map: "idx_user_profiles_region_role")
+
+  approval_notifications_sent     approval_notifications[] @relation("approval_notifications_sender")
+  approval_notifications_received approval_notifications[] @relation("approval_notifications_recipient")
+  notification_settings           notification_settings?
 }
 
 model verification_tokens {
@@ -781,6 +787,7 @@ enum notification_type {
   system_update
   organization_change_request
   role_updated
+  reminder
 }
 
 enum organization_type {
@@ -893,4 +900,48 @@ enum user_role {
   rejected
   regional_emergency_center_admin
   temporary_inspector
+}
+
+// ========== 알림 시스템 ==========
+
+model approval_notifications {
+  id                String         @id @default(uuid()) @db.Uuid
+  recipient_id      String         @db.Uuid
+  sender_id         String?        @db.Uuid
+  new_user_id       String         @db.Uuid
+  new_user_email    String
+  new_user_name     String
+  new_user_region   String?
+  new_user_org      String?
+  notification_type String         @db.VarChar(50) // 'new_signup', 'reminder'
+  is_read           Boolean        @default(false)
+  read_at           DateTime?      @db.Timestamptz(6)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+
+  recipient         user_profiles  @relation("approval_notifications_recipient", fields: [recipient_id], references: [id], onDelete: Cascade)
+  sender            user_profiles? @relation("approval_notifications_sender", fields: [sender_id], references: [id], onDelete: SetNull)
+
+  @@index([recipient_id, is_read, created_at], map: "idx_approval_notif_recipient")
+  @@index([new_user_id], map: "idx_approval_notif_new_user")
+  @@index([created_at], map: "idx_approval_notif_created_at")
+}
+
+model notification_settings {
+  id                    String        @id @default(uuid()) @db.Uuid
+  user_id               String        @unique @db.Uuid
+  sound_enabled         Boolean       @default(true)
+  voice_enabled         Boolean       @default(true)
+  browser_push_enabled  Boolean       @default(true)
+  toast_enabled         Boolean       @default(true)
+  reminder_enabled      Boolean       @default(true)
+  reminder_interval     Int           @default(60) // 초 단위 (기본: 60초 = 1분)
+  quiet_hours_enabled   Boolean       @default(false)
+  quiet_hours_start     String?       @db.VarChar(5) // "22:00" 형식
+  quiet_hours_end       String?       @db.VarChar(5) // "08:00" 형식
+  created_at            DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user                  user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_notification_settings_user")
 }
