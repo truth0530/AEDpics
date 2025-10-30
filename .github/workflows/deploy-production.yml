@@ -65,15 +65,59 @@ jobs:
         username: ${{ secrets.NCP_USERNAME }}
         key: ${{ secrets.NCP_SSH_KEY }}
         port: ${{ secrets.NCP_SSH_PORT }}
+        envs: DATABASE_URL,NEXTAUTH_URL,NEXTAUTH_SECRET,JWT_SECRET,NEXT_PUBLIC_KAKAO_MAP_APP_KEY,NEXT_PUBLIC_SITE_URL,RESEND_API_KEY,MASTER_EMAIL,ENCRYPTION_KEY,NCP_ACCESS_KEY,NCP_ACCESS_SECRET,NCP_SENDER_EMAIL
         script: |
           cd /var/www/aedpics
+
+          echo "Creating .env.production file..."
+          cat > .env.production << EOF
+DATABASE_URL="$DATABASE_URL"
+NEXTAUTH_URL="$NEXTAUTH_URL"
+NEXTAUTH_SECRET="$NEXTAUTH_SECRET"
+JWT_SECRET="$JWT_SECRET"
+NEXT_PUBLIC_KAKAO_MAP_APP_KEY="$NEXT_PUBLIC_KAKAO_MAP_APP_KEY"
+NEXT_PUBLIC_SITE_URL="$NEXT_PUBLIC_SITE_URL"
+RESEND_API_KEY="$RESEND_API_KEY"
+MASTER_EMAIL="$MASTER_EMAIL"
+ENCRYPTION_KEY="$ENCRYPTION_KEY"
+NCP_ACCESS_KEY="$NCP_ACCESS_KEY"
+NCP_ACCESS_SECRET="$NCP_ACCESS_SECRET"
+NCP_SENDER_EMAIL="$NCP_SENDER_EMAIL"
+EOF
+
+          echo "Updating code from repository..."
           git fetch origin
           git reset --hard origin/main
+
+          echo "Installing dependencies..."
           npm ci
+
+          echo "Generating Prisma client..."
           npx prisma generate
+
+          echo "Cleaning build cache..."
           rm -rf .next
+
+          echo "Building application..."
           npm run build
+
+          echo "Restarting PM2..."
           pm2 restart aedpics
+
+          echo "Deployment complete!"
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        NEXT_PUBLIC_KAKAO_MAP_APP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APP_KEY }}
+        NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        MASTER_EMAIL: ${{ secrets.MASTER_EMAIL }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+        NCP_ACCESS_KEY: ${{ secrets.NCP_ACCESS_KEY }}
+        NCP_ACCESS_SECRET: ${{ secrets.NCP_ACCESS_SECRET }}
+        NCP_SENDER_EMAIL: ${{ secrets.NCP_SENDER_EMAIL }}
 
     - name: Health Check
       uses: appleboy/ssh-action@v1.0.0
