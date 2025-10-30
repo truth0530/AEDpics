@@ -1,0 +1,33 @@
+name: Force PM2 Restart
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Force restart PM2 on server
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: |
+          echo "=== Force PM2 Restart ==="
+          cd /home/aedpics/AEDpics
+          echo "1. Stopping PM2..."
+          pm2 stop aedpics
+          echo "2. Clearing PM2 logs..."
+          pm2 flush
+          echo "3. Starting PM2..."
+          pm2 start aedpics
+          echo "4. Saving PM2 config..."
+          pm2 save
+          echo "5. Current status..."
+          pm2 status
+          echo "6. Recent logs..."
+          pm2 logs aedpics --lines 10 --nostream
+          echo "=== Restart Complete ==="
