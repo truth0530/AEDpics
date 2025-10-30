@@ -134,7 +134,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ equipmentSerial }),
+        body: JSON.stringify({ equipment_serial: equipmentSerial }),
       });
 
       const { session } = await parseResponse<{ session: InspectionSession }>(response);

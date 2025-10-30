@@ -61,12 +61,14 @@ export default async function AuthenticatedLayout({
             {/* 데이터 업데이트 알림 배너 */}
             <DataRefreshBanner />
 
-            {/* 실시간 승인 알림 */}
-            <RealtimeApprovalNotifier
-              userRole={typedProfile.role}
-              userRegionCode={typedProfile.region_code || ''}
-              canApproveUsers={hasApproveUsersPermission}
-            />
+            {/* 실시간 승인 알림 - 승인 권한이 있는 사용자만 렌더링 */}
+            {hasApproveUsersPermission && (
+              <RealtimeApprovalNotifier
+                userRole={typedProfile.role}
+                userRegionCode={typedProfile.region_code || ''}
+                canApproveUsers={hasApproveUsersPermission}
+              />
+            )}
             <AppSidebar
               canAccessAedData={canAccessAedData}
               canAccessInspection={canAccessInspection}
