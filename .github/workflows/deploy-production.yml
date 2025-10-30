@@ -100,7 +100,10 @@ jobs:
           npm run build
 
           echo "Restarting PM2..."
-          pm2 restart aedpics
+          pm2 stop aedpics
+          pm2 flush aedpics
+          pm2 start aedpics
+          pm2 save
 
           echo "Deployment complete!"
       env:
