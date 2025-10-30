@@ -714,7 +714,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
             setShowScheduleModal(false);
             setSelectedDevices([]);
           }}
-          onScheduled={() => {
+          onScheduled={(action) => {
             setShowScheduleModal(false);
 
             // ✅ React Query 캐시 직접 업데이트 (낙관적 업데이트)
@@ -739,6 +739,15 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
 
             // ✅ 리스트 새로고침하여 추가된 장비를 목록에서 제거
             refetch();
+
+            // 사용자 선택에 따라 탭 전환
+            if (action === 'view-scheduled') {
+              setViewMode('scheduled');
+            } else if (action === 'start-inspection') {
+              // '/inspection' 페이지로 이동은 ScheduleModal에서 처리됨
+              // 여기서는 아무것도 하지 않음
+            }
+            // action === 'continue'일 경우 현재 탭 유지
           }}
         />
       )}

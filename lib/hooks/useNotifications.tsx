@@ -29,7 +29,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // TODO: Temporary stub - implement with NextAuth + API endpoints
-    console.warn('NotificationProvider is temporarily disabled - needs NextAuth migration');
+    // NotificationProvider is temporarily disabled - needs NextAuth migration
     mountedRef.current = true;
     setIsLoading(false);
 

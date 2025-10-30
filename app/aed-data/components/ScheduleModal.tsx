@@ -10,12 +10,12 @@ import { useToast } from '@/components/ui/Toast';
 interface ScheduleModalProps {
   devices: AEDDevice[];
   onClose: () => void;
-  onScheduled?: () => void;
+  onScheduled?: (action?: 'continue' | 'view-scheduled' | 'start-inspection') => void;
 }
 
 export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<'confirm' | 'start-inspection'>('confirm');
+  const [step, setStep] = useState<'confirm' | 'start-inspection' | 'success'>('confirm');
   const [addedEquipmentSerial, setAddedEquipmentSerial] = useState<string | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -107,14 +107,8 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
         setAddedEquipmentSerial(equipmentSerials[0]);
         setStep('start-inspection');
       } else {
-        // 다중 장비일 경우 바로 완료
-        showSuccess(
-          result.message || '일정이 추가되었습니다.',
-          { message: '현장점검 메뉴에서 확인할 수 있습니다.' }
-        );
-        onClose();
-        onScheduled?.();
-        router.refresh();
+        // 다중 장비일 경우 성공 모달 표시
+        setStep('success');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
@@ -156,13 +150,19 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
   };
 
   const handleContinueAdding = () => {
-    showSuccess(
-      '일정이 추가되었습니다.',
-      { message: '현장점검 메뉴에서 확인할 수 있습니다.' }
-    );
     onClose();
-    onScheduled?.();
-    router.refresh();
+    onScheduled?.('continue');
+  };
+
+  const handleViewScheduled = () => {
+    onClose();
+    onScheduled?.('view-scheduled');
+  };
+
+  const handleGoToInspection = () => {
+    router.push('/inspection');
+    onClose();
+    onScheduled?.('start-inspection');
   };
 
   return (
@@ -202,8 +202,8 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
                 </Button>
               </div>
             </>
-          ) : (
-            // 2단계: 점검 시작 확인
+          ) : step === 'start-inspection' ? (
+            // 2단계: 점검 시작 확인 (단일 장비)
             <>
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-white mb-3">일정에 추가되었습니다</h2>
@@ -227,6 +227,39 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
                   className="w-full py-3 text-gray-300 border-gray-600 hover:bg-gray-800"
                 >
                   아니오, 다른 장비 계속 추가
+                </Button>
+              </div>
+            </>
+          ) : (
+            // 3단계: 성공 - 3가지 선택지 (다중 장비)
+            <>
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-green-400 mb-3">일정이 추가되었습니다</h2>
+                <p className="text-base text-gray-300">
+                  {deviceList.length}개의 장비가 일정에 추가되었습니다
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={handleContinueAdding}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  계속 추가
+                </Button>
+                <Button
+                  onClick={handleViewScheduled}
+                  variant="outline"
+                  className="w-full py-3 text-gray-300 border-gray-600 hover:bg-gray-800"
+                >
+                  추가된 목록
+                </Button>
+                <Button
+                  onClick={handleGoToInspection}
+                  variant="outline"
+                  className="w-full py-3 text-gray-300 border-gray-600 hover:bg-gray-800"
+                >
+                  현장점검
                 </Button>
               </div>
             </>
