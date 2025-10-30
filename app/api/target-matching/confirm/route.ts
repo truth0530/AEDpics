@@ -1,16 +1,10 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
-
 import { prisma } from '@/lib/prisma';
-// 임시: Supabase createClient 대체
-const createClient = async (): Promise<any> => {
-  throw new Error('Supabase client not available. Please use Prisma instead.');
-};
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
     const body = await request.json();
     const { managementNumber, year = '2024' } = body;
 
@@ -29,23 +23,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // Get current user from NextAuth
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Call confirm function (2024년 함수)
-    const { data, error } = await supabase.rpc('confirm_management_number_match', {
-      p_management_number: managementNumber,
+    // Update the mapping to confirmed
+    const updatedMapping = await prisma.management_number_group_mapping.update({
+      where: {
+        management_number: managementNumber,
+      },
+      data: {
+        confirmed_2024: true,
+        confirmed_by_2024: session.user.id,
+        confirmed_at_2024: new Date(),
+        updated_at: new Date(),
+      },
     });
 
-    if (error) throw error;
+    if (!updatedMapping) {
+      return NextResponse.json(
+        { error: 'Mapping not found' },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data: updatedMapping
+    });
   } catch (error) {
     console.error('Failed to confirm matching:', error);
     return NextResponse.json(
