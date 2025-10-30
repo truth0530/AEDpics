@@ -46,9 +46,28 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   const userRegionCode = (user.organization as any)?.region_code || user.region_code;
   const userRegionLabel = userRegionCode ? REGIONS.find(r => r.code === userRegionCode)?.label || '서울' : '서울';
 
+  // 보건소 담당자: 시군구 고정
+  const isHealthCenterStaff = user.role === 'local_admin';
+
+  const userCityCode = (user.organization as any)?.city_code;
+  const userCity = userCityCode || '구군';
+
   // regional_emergency_center_admin는 자신의 관할 지역을 기본값으로 설정
   // ministry_admin, emergency_center_admin, master는 '시도' (전체)를 기본값으로 설정
   const getInitialSido = () => {
+    // sessionStorage 값이 있으면 우선 사용 (위치 기반)
+    if (typeof window !== 'undefined') {
+      const storedSido = window.sessionStorage.getItem('selectedSido');
+      if (storedSido && storedSido !== '시도') {
+        // 권한 체크: 시도 변경 불가능한 사용자는 자신의 지역만
+        if (!canChangeSidoRole && storedSido !== userRegionLabel) {
+          console.log('[RegionFilter] User cannot change sido, using user region:', userRegionLabel);
+          return userRegionLabel;
+        }
+        return storedSido;
+      }
+    }
+
     if (user.role === 'regional_emergency_center_admin') {
       return userRegionLabel; // 자신의 관할 지역
     } else if (canChangeSidoRole) {
@@ -58,8 +77,30 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     }
   };
 
+  const getInitialGugun = () => {
+    // sessionStorage 값이 있으면 우선 사용 (위치 기반)
+    if (typeof window !== 'undefined') {
+      const storedGugun = window.sessionStorage.getItem('selectedGugun');
+      if (storedGugun && storedGugun !== '구군') {
+        // 보건소 담당자: 자신의 구군만 허용
+        if (isHealthCenterStaff && storedGugun !== userCity) {
+          console.log('[RegionFilter] Health center staff can only view their city:', userCity);
+          return userCity;
+        }
+        return storedGugun;
+      }
+    }
+
+    // 보건소 담당자는 자신의 구군으로 고정
+    if (isHealthCenterStaff) {
+      return userCity;
+    }
+
+    return '구군';
+  };
+
   const [selectedSido, setSelectedSido] = useState(getInitialSido());
-  const [selectedGugun, setSelectedGugun] = useState('구군');
+  const [selectedGugun, setSelectedGugun] = useState(getInitialGugun());
   const [gugunList, setGugunList] = useState<string[]>(['구군', ...(GUGUN_MAP[userRegionLabel] || GUGUN_MAP['서울'] || [])]);
   const onChangeRef = useRef(onChange);
 
@@ -67,6 +108,38 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  // sessionStorage 값 변경 감지 (지도에서 위치 이동 시)
+  useEffect(() => {
+    const handleStorageChange = (e: CustomEvent) => {
+      const { sido, gugun } = e.detail;
+
+      console.log('[RegionFilter] Map region changed:', { sido, gugun });
+
+      // 시도 체크 및 업데이트
+      if (sido && sido !== '시도') {
+        // 권한 체크: 시도 변경 불가능한 사용자는 자신의 지역만
+        if (!canChangeSidoRole && sido !== userRegionLabel) {
+          console.log('[RegionFilter] Cannot change sido for this user role');
+          return;
+        }
+        setSelectedSido(sido);
+      }
+
+      // 구군 체크 및 업데이트
+      if (gugun && gugun !== '구군') {
+        // 보건소 담당자: 자신의 구군만 허용
+        if (isHealthCenterStaff && gugun !== userCity) {
+          console.log('[RegionFilter] Health center staff cannot view other cities');
+          return;
+        }
+        setSelectedGugun(gugun);
+      }
+    };
+
+    window.addEventListener('mapRegionChanged', handleStorageChange as EventListener);
+    return () => window.removeEventListener('mapRegionChanged', handleStorageChange as EventListener);
+  }, [canChangeSidoRole, userRegionLabel, isHealthCenterStaff, userCity]);
 
   // 권한 체크:
   // - local_admin(보건소) + 비정부 이메일: 필터 숨김 (자신의 조직 지역만 조회)
@@ -145,7 +218,11 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
         </SelectContent>
       </Select>
 
-      <Select value={selectedGugun} onValueChange={setSelectedGugun}>
+      <Select
+        value={selectedGugun}
+        onValueChange={setSelectedGugun}
+        disabled={isHealthCenterStaff}
+      >
         <SelectTrigger className="bg-gray-800 border-gray-700 text-white h-7 md:h-8 w-20 md:w-24 text-[11px] md:text-xs">
           <SelectValue />
         </SelectTrigger>

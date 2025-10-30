@@ -561,6 +561,52 @@ export function AEDFilterBar() {
     setQueryCriteria(filters.queryCriteria || defaultCriteria);
   }, [syncedDraftFilters, filters.search, filters.queryCriteria, defaultCriteria]);
 
+  // 컴포넌트 마운트 시 sessionStorage 값으로 draftFilters 초기화 (위치 기반 우선)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const selectedSido = window.sessionStorage.getItem('selectedSido');
+    const selectedGugun = window.sessionStorage.getItem('selectedGugun');
+
+    if (!selectedSido || selectedSido === '시도') return;
+
+    console.log('[AEDFilterBar] 📍 Initial sessionStorage sync:', { selectedSido, selectedGugun });
+
+    // 라벨 → 코드 변환
+    const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === selectedSido)?.[0];
+
+    if (!regionCode) {
+      console.warn('[AEDFilterBar] Region code not found for:', selectedSido);
+      return;
+    }
+
+    // 권한 체크: 허용되지 않은 지역이면 무시
+    if (accessScope?.allowedRegionCodes && !accessScope.allowedRegionCodes.includes(regionCode)) {
+      console.warn('[AEDFilterBar] Region not allowed for current user:', regionCode);
+      return;
+    }
+
+    // 구군 권한 체크
+    let validGugun: string[] = [];
+    if (selectedGugun && selectedGugun !== '구군') {
+      // 구군 권한이 있는지 확인 (accessScope.allowedCityCodes가 null이면 모든 구군 허용)
+      if (!accessScope?.allowedCityCodes || accessScope.allowedCityCodes.includes(selectedGugun)) {
+        validGugun = [selectedGugun];
+      } else {
+        console.warn('[AEDFilterBar] City not allowed for current user:', selectedGugun);
+      }
+    }
+
+    // draftFilters 초기화 (드롭다운 동기화)
+    setDraftFilters(prev => ({
+      ...prev,
+      regions: [regionCode],
+      cities: validGugun,
+    }) as any);
+
+    console.log('[AEDFilterBar] ✅ Initial draft filters updated:', { regionCode, gugun: validGugun });
+  }, []); // 마운트 시 한 번만 실행
+
   const normalizeExpiryFilter = (value?: ExpiryFilter | 'all') => (value && value !== 'all' ? value : undefined);
 
   const activeFilterCount = useMemo(() => {
@@ -610,6 +656,12 @@ export function AEDFilterBar() {
     if (selectedSido && selectedSido !== '시도') {
       const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === selectedSido)?.[0];
       if (regionCode) {
+        // 권한 체크: 시도 접근 권한 검증
+        if (accessScope?.allowedRegionCodes && !accessScope.allowedRegionCodes.includes(regionCode)) {
+          console.error('[AEDFilterBar] Access denied: User cannot access region:', selectedSido);
+          alert(`접근 권한이 없는 지역입니다: ${selectedSido}`);
+          return;
+        }
         regionCodesToUse = [regionCode];
       }
     }
@@ -620,12 +672,26 @@ export function AEDFilterBar() {
     // 구군 필터링 ('구군' 기본값 제거)
     const cityToUse = (selectedGugun && selectedGugun !== '구군') ? [selectedGugun] : draftFilters.cities;
 
+    // 권한 체크: 구군 접근 권한 검증
+    if (cityToUse && cityToUse.length > 0 && accessScope?.allowedCityCodes) {
+      const unauthorizedCities = cityToUse.filter(city => !accessScope.allowedCityCodes!.includes(city));
+      if (unauthorizedCities.length > 0) {
+        console.error('[AEDFilterBar] Access denied: User cannot access cities:', unauthorizedCities);
+        alert(`접근 권한이 없는 시군구입니다: ${unauthorizedCities.join(', ')}`);
+        return;
+      }
+    }
+
     console.log('[AEDFilterBar] handleApply - Region conversion:', {
       selectedSido,
       regionCode: regionCodesToUse?.[0],
       regionLabels,
       selectedGugun,
       cityToUse,
+      accessScope: {
+        allowedRegions: accessScope?.allowedRegionCodes,
+        allowedCities: accessScope?.allowedCityCodes,
+      }
     });
 
     // 헤더에서 선택한 값이 있으면 우선 사용, 없으면 draftFilters 사용
@@ -651,7 +717,7 @@ export function AEDFilterBar() {
     // 지도 이동은 데이터 로드 후 자동으로 처리됨 (regionSelected 이벤트 발송 제거)
     // 이유: handleApply에서 이벤트를 발송하면 regionSelected 핸들러가 트리거되어
     // 필터가 덮어씌워지는 문제 발생
-  }, [draftFilters, searchTerm, queryCriteria, setFilters]);
+  }, [draftFilters, searchTerm, queryCriteria, setFilters, accessScope]);
 
   const handleClear = useCallback(() => {
     // 초기화 시 세션 플래그 제거 (다음 페이지 로드 시 기본값 다시 적용)

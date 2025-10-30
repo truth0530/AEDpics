@@ -106,6 +106,22 @@ export function MapView({
   // 실제 사용할 locations (props 또는 지도 기반 로딩)
   const displayLocations = useMapBasedLoading ? mapLocations : locations;
 
+  // 디버깅: displayLocations 데이터 추적
+  useEffect(() => {
+    console.log('[MapView] 🗺️ Display locations updated:', {
+      useMapBasedLoading,
+      propsLocationsCount: locations.length,
+      mapLocationsCount: mapLocations.length,
+      displayLocationsCount: displayLocations.length,
+      sampleData: displayLocations.slice(0, 2).map(loc => ({
+        serial: loc.equipment_serial,
+        lat: loc.latitude,
+        lng: loc.longitude,
+        address: loc.installation_address || loc.address
+      }))
+    });
+  }, [displayLocations, useMapBasedLoading, locations.length, mapLocations.length]);
+
   // 두 좌표 간 거리 계산 (Haversine formula, 결과: kilometers)
   const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const R = 6371; // 지구 반지름 (km)
@@ -393,11 +409,21 @@ export function MapView({
 
   // 마커 추가
   const addMarkers = useCallback(() => {
+    console.log('[MapView] 📍 addMarkers called:', {
+      hasMap: !!map,
+      hasKakao: !!window.kakao,
+      displayLocationsCount: displayLocations.length,
+      searchRadius,
+      timestamp: new Date().toISOString()
+    });
+
     if (!map || !window.kakao) {
+      console.warn('[MapView] ⚠️ addMarkers aborted: map or kakao not ready');
       return;
     }
 
     if (displayLocations.length === 0) {
+      console.warn('[MapView] ⚠️ addMarkers aborted: no displayLocations');
       return;
     }
 
@@ -413,6 +439,8 @@ export function MapView({
     const centerLat = mapCenter.getLat();
     const centerLng = mapCenter.getLng();
     const radiusInKm = searchRadius; // km 단위
+
+    console.log('[MapView] 📍 Map center:', { centerLat, centerLng, radiusInKm });
 
     let filteredCount = 0;
     let totalCount = 0;
@@ -519,6 +547,12 @@ export function MapView({
     // 마커 표시
     markers.forEach(marker => marker.setMap(map));
     markersRef.current = markers;
+
+    console.log('[MapView] ✅ Markers added to map:', {
+      totalMarkers: markers.length,
+      visibleOnMap: markersRef.current.length,
+      timestamp: new Date().toISOString()
+    });
 
     // 초기 로드 시에만 모든 마커가 보이도록 지도 범위 조정
     // ⚠️ 비활성화: 잘못된 좌표 데이터로 인한 자동 줌아웃 문제 방지
