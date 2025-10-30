@@ -27,20 +27,20 @@ export class RealtimeManager {
   private channel: RealtimeChannel | null = null
   private listeners: Map<string, ChannelListener[]> = new Map()
   private presenceState: Map<string, PresenceUser> = new Map()
-  private supabase: SupabaseClient<any, any, any>
+  private supabase: SupabaseClient<any, any>
   private user: User | null = null
   private connectionState: 'connected' | 'connecting' | 'disconnected' = 'disconnected'
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
 
-  private constructor(supabaseClient: SupabaseClient<any, any, any>, user: User) {
+  private constructor(supabaseClient: SupabaseClient<any, any>, user: User) {
     this.supabase = supabaseClient
     this.user = user
   }
 
   static getInstance(
-    supabaseClient: SupabaseClient<any, any, any>,
+    supabaseClient: SupabaseClient<any, any>,
     user: User
   ): RealtimeManager {
     if (!RealtimeManager.instance) {
@@ -235,7 +235,7 @@ export class RealtimeManager {
     this.presenceState.clear()
 
     Object.entries(state).forEach(([key, presences]) => {
-      if (presences && presences.length > 0) {
+      if (presences && Array.isArray(presences) && presences.length > 0) {
         const presence = presences[0] as PresenceUser
         this.presenceState.set(key, presence)
       }

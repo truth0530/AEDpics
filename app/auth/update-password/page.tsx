@@ -17,13 +17,10 @@ export default function UpdatePasswordPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // 현재 세션 확인
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    };
-    checkSession();
-  }, [supabase]);
+    // Password update functionality is disabled during migration
+    // TODO: Implement with NextAuth password update flow
+    setIsAuthenticated(false);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,23 +40,12 @@ export default function UpdatePasswordPage() {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
+      // Password update is temporarily disabled during migration from Supabase
+      // TODO: Implement password update with NextAuth
+      setError('비밀번호 변경 기능이 시스템 마이그레이션 중입니다. 지원팀에 문의해주세요.');
 
-      if (error) throw error;
-
-      // 비밀번호 변경 성공
-      alert('비밀번호가 성공적으로 변경되었습니다');
-      
-      // 세션이 있으면 대시보드로, 없으면 로그인 페이지로
-      if (isAuthenticated) {
-        router.push('/dashboard');
-      } else {
-        router.push('/auth/signin');
-      }
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : '비밀번호 변경 중 오류가 발생했습니다');
+      // Log the attempt for debugging
+      console.warn('Password update attempted but feature is disabled during migration');
     } finally {
       setLoading(false);
     }
