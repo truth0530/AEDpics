@@ -476,86 +476,94 @@ const MobileCard = memo(({
         )}
 
         {/* 콘텐츠 영역 */}
-        <div className="flex-1 space-y-0">
-          {/* 첫 줄: 설치기관명 + 장비연번 + 버튼 */}
+        <div className="flex-1 space-y-0.5">
+          {/* 첫 줄: 설치기관명 + 버튼 */}
           <div className="flex items-center gap-1.5">
             <button
-            onClick={handleViewDetailsClick}
-            className={`font-medium text-lg sm:text-xs hover:text-green-400 hover:underline text-left min-w-0 flex items-baseline gap-1 flex-1 ${
-              isScheduled ? 'text-gray-400' : 'text-gray-100'
-            }`}
-          >
-            <span className="truncate">{device.installation_institution || '미등록'}</span>
-            <span className="text-[9px] text-gray-500 flex-shrink-0">
-              {device.equipment_serial || device.management_number || '-'}
-            </span>
-            {isCriticalDevice && (
-              <span className="text-[8px] px-1 py-[1px] bg-red-500 text-white rounded flex-shrink-0 font-semibold leading-tight">
-                차단
-              </span>
-            )}
-          </button>
-          {device.assignment_status === 'unavailable' ? (
-            <button
-              onClick={() => onShowUnavailable && onShowUnavailable(device)}
-              className="text-[10px] px-1.5 py-0.5 h-5 bg-red-900/20 text-red-400 border border-red-800 rounded cursor-pointer hover:bg-red-900/30 transition-colors flex-shrink-0"
+              onClick={handleViewDetailsClick}
+              className={`font-medium text-sm hover:text-green-400 hover:underline text-left truncate flex-1 min-w-0 ${
+                isScheduled ? 'text-gray-400' : 'text-gray-100'
+              }`}
             >
-              불가
+              {device.installation_institution || '미등록'}
+              {isCriticalDevice && (
+                <span className="ml-1.5 text-[8px] px-1 py-[1px] bg-red-500 text-white rounded font-semibold leading-tight">
+                  차단
+                </span>
+              )}
             </button>
-          ) : showInspectionStatus ? (
-            device.inspection_status === 'unavailable' ? (
-              <span className="px-2 py-0.5 text-[10px] bg-red-500/20 text-red-400 rounded flex-shrink-0">
-                점검불가
-              </span>
-            ) : device.inspection_status === 'completed' || inspectionCompleted?.has(device.equipment_serial) ? (
+            {device.assignment_status === 'unavailable' ? (
               <button
-                onClick={() => onViewInspectionHistory?.(device.equipment_serial)}
-                className="px-2 py-0.5 text-[10px] bg-green-500/20 text-green-400 rounded flex-shrink-0 hover:bg-green-500/30 transition-colors cursor-pointer"
+                onClick={() => onShowUnavailable && onShowUnavailable(device)}
+                className="text-[10px] px-1.5 py-0.5 h-5 bg-red-900/20 text-red-400 border border-red-800 rounded cursor-pointer hover:bg-red-900/30 transition-colors flex-shrink-0"
               >
-                점검완료
+                불가
               </button>
-            ) : (
-              <span className="px-2 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-400 rounded flex-shrink-0">
-                점검진행중
-              </span>
-            )
-          ) : viewMode === 'inspection' ? (
-            <Button
-              size="sm"
-              variant="default"
-              onClick={handleQuickInspectClick}
-              className="text-[10px] px-1.5 py-0.5 h-5 bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0"
-            >
-              점검
-            </Button>
-          ) : scheduledEquipment?.has(device.equipment_serial) ? (
-            device.inspection_status === 'unavailable' ? (
-              <span className="text-[10px] px-1.5 py-0.5 h-5 text-red-400 flex items-center flex-shrink-0">
-                점검불가
-              </span>
+            ) : showInspectionStatus ? (
+              device.inspection_status === 'unavailable' ? (
+                <span className="px-2 py-0.5 text-[10px] bg-red-500/20 text-red-400 rounded flex-shrink-0">
+                  점검불가
+                </span>
+              ) : device.inspection_status === 'completed' || inspectionCompleted?.has(device.equipment_serial) ? (
+                <button
+                  onClick={() => onViewInspectionHistory?.(device.equipment_serial)}
+                  className="px-2 py-0.5 text-[10px] bg-green-500/20 text-green-400 rounded flex-shrink-0 hover:bg-green-500/30 transition-colors cursor-pointer"
+                >
+                  점검완료
+                </button>
+              ) : (
+                <span className="px-2 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-400 rounded flex-shrink-0">
+                  점검진행중
+                </span>
+              )
+            ) : viewMode === 'inspection' ? (
+              <Button
+                size="sm"
+                variant="default"
+                onClick={handleQuickInspectClick}
+                className="text-[10px] px-1.5 py-0.5 h-5 bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0"
+              >
+                점검
+              </Button>
+            ) : scheduledEquipment?.has(device.equipment_serial) ? (
+              device.inspection_status === 'unavailable' ? (
+                <span className="text-[10px] px-1.5 py-0.5 h-5 text-red-400 flex items-center flex-shrink-0">
+                  점검불가
+                </span>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onCancelSchedule && onCancelSchedule(device.equipment_serial)}
+                  className="text-[10px] px-1.5 py-0.5 h-5 text-red-400 border-red-700 hover:bg-red-900/20 flex-shrink-0"
+                >
+                  취소
+                </Button>
+              )
             ) : (
               <Button
                 size="sm"
-                variant="outline"
-                onClick={() => onCancelSchedule && onCancelSchedule(device.equipment_serial)}
-                className="text-[10px] px-1.5 py-0.5 h-5 text-red-400 border-red-700 hover:bg-red-900/20 flex-shrink-0"
+                variant="default"
+                onClick={handleScheduleClick}
+                className="text-[10px] px-1.5 py-0.5 h-5 bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0"
               >
-                취소
+                추가
               </Button>
-            )
-          ) : (
-            <Button
-              size="sm"
-              variant="default"
-              onClick={handleScheduleClick}
-              className="text-[10px] px-1.5 py-0.5 h-5 bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0"
-            >
-              추가
-            </Button>
-          )}
+            )}
           </div>
 
-          {/* 둘째 줄: 주소 + 최종점검일 */}
+          {/* 둘째 줄: 관리번호 | 장비연번 */}
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+            <span className="truncate">
+              {device.management_number || '-'}
+            </span>
+            <span className="flex-shrink-0">|</span>
+            <span className="truncate">
+              {device.equipment_serial || '-'}
+            </span>
+          </div>
+
+          {/* 셋째 줄: 주소 + 최종점검일 */}
           <div className="flex items-center justify-between gap-1.5 text-[10px]">
             <span className="text-gray-400 truncate flex-1">
               {device.installation_address || device.installation_location_address || '주소 미등록'}
