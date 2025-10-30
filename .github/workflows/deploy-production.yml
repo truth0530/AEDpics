@@ -70,20 +70,18 @@ jobs:
           cd /var/www/aedpics
 
           echo "Creating .env.production file..."
-          cat > .env.production << EOF
-DATABASE_URL="$DATABASE_URL"
-NEXTAUTH_URL="$NEXTAUTH_URL"
-NEXTAUTH_SECRET="$NEXTAUTH_SECRET"
-JWT_SECRET="$JWT_SECRET"
-NEXT_PUBLIC_KAKAO_MAP_APP_KEY="$NEXT_PUBLIC_KAKAO_MAP_APP_KEY"
-NEXT_PUBLIC_SITE_URL="$NEXT_PUBLIC_SITE_URL"
-RESEND_API_KEY="$RESEND_API_KEY"
-MASTER_EMAIL="$MASTER_EMAIL"
-ENCRYPTION_KEY="$ENCRYPTION_KEY"
-NCP_ACCESS_KEY="$NCP_ACCESS_KEY"
-NCP_ACCESS_SECRET="$NCP_ACCESS_SECRET"
-NCP_SENDER_EMAIL="$NCP_SENDER_EMAIL"
-EOF
+          echo "DATABASE_URL=\"$DATABASE_URL\"" > .env.production
+          echo "NEXTAUTH_URL=\"$NEXTAUTH_URL\"" >> .env.production
+          echo "NEXTAUTH_SECRET=\"$NEXTAUTH_SECRET\"" >> .env.production
+          echo "JWT_SECRET=\"$JWT_SECRET\"" >> .env.production
+          echo "NEXT_PUBLIC_KAKAO_MAP_APP_KEY=\"$NEXT_PUBLIC_KAKAO_MAP_APP_KEY\"" >> .env.production
+          echo "NEXT_PUBLIC_SITE_URL=\"$NEXT_PUBLIC_SITE_URL\"" >> .env.production
+          echo "RESEND_API_KEY=\"$RESEND_API_KEY\"" >> .env.production
+          echo "MASTER_EMAIL=\"$MASTER_EMAIL\"" >> .env.production
+          echo "ENCRYPTION_KEY=\"$ENCRYPTION_KEY\"" >> .env.production
+          echo "NCP_ACCESS_KEY=\"$NCP_ACCESS_KEY\"" >> .env.production
+          echo "NCP_ACCESS_SECRET=\"$NCP_ACCESS_SECRET\"" >> .env.production
+          echo "NCP_SENDER_EMAIL=\"$NCP_SENDER_EMAIL\"" >> .env.production
 
           echo "Updating code from repository..."
           git fetch origin
