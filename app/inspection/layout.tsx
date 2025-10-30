@@ -31,27 +31,17 @@ export default function InspectionLayout({
 
     // 세션이 있고 사용자 정보가 있는 경우
     if (session?.user) {
-      try {
-        // NextAuth 세션에서 사용자 프로필 정보를 가져옴
-        const response = await fetch('/api/auth/profile');
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile');
-        }
+      // NextAuth 세션에서 직접 사용자 역할 확인
+      const userRole = (session.user as any).role;
 
-        const profile = await response.json();
-
-        // 권한 확인 (점검 권한이 있는 역할만 허용)
-        const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'regional_admin', 'local_admin'];
-        if (!profile.role || !allowedRoles.includes(profile.role)) {
-          router.push('/auth/signin?error=권한이 없습니다');
-          return;
-        }
-
-        setUserRole(profile.role);
-      } catch (error) {
-        console.error('프로필 조회 실패:', error);
-        router.push('/auth/signin');
+      // 권한 확인 (점검 권한이 있는 역할만 허용)
+      const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'regional_admin', 'local_admin'];
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        router.push('/auth/signin?error=권한이 없습니다');
+        return;
       }
+
+      setUserRole(userRole);
     }
   };
 

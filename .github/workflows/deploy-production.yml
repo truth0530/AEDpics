@@ -96,19 +96,39 @@ jobs:
           echo "Generating Prisma client..."
           npx prisma generate
 
-          echo "Cleaning build cache..."
+          echo "Cleaning ALL cache directories..."
           rm -rf .next
+          rm -rf public/sw.js
+          rm -rf public/sw.js.map
+          rm -rf public/workbox-*.js
+          rm -rf public/workbox-*.js.map
+          rm -rf public/swe-worker-*.js
+          rm -rf public/swe-worker-*.js.map
 
-          echo "Building application..."
+          echo "Building application with timestamp..."
+          export BUILD_TIMESTAMP=$(date +%s)
           npm run build
 
-          echo "Restarting PM2..."
-          pm2 stop aedpics
-          pm2 flush aedpics
-          pm2 start aedpics
-          pm2 save
+          echo "Creating cache bust file..."
+          echo "$BUILD_TIMESTAMP" > .next/BUILD_ID
+          echo "$BUILD_TIMESTAMP" > public/build-timestamp.txt
 
-          echo "Deployment complete!"
+          echo "Stopping PM2 completely..."
+          pm2 stop aedpics || true
+          pm2 delete aedpics || true
+          pm2 flush || true
+
+          echo "Starting PM2 with fresh instance..."
+          pm2 start ecosystem.config.js --update-env
+          pm2 save --force
+
+          echo "Clearing Nginx cache if exists..."
+          rm -rf /var/cache/nginx/* || true
+
+          echo "Reloading Nginx..."
+          systemctl reload nginx || true
+
+          echo "Deployment complete! Build timestamp: $BUILD_TIMESTAMP"
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
