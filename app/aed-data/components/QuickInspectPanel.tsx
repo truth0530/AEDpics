@@ -37,7 +37,28 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
         throw new Error('장비 식별 정보가 없습니다.');
       }
 
-      // Sessions API 사용 (스냅샷 자동 저장, 중복 체크 포함)
+      // Step 1: 먼저 장비를 자신에게 할당 (이미 할당되어 있으면 409 응답)
+      const assignmentResponse = await fetch('/api/inspections/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          equipmentSerial: serial, // assignments API는 camelCase 사용
+          assignmentType: 'immediate', // 즉시 점검
+          priorityLevel: 1, // 기본 우선순위
+          notes: '즉시 점검을 위한 자동 할당',
+        }),
+      });
+
+      // 409(Conflict)는 이미 할당되어 있다는 의미이므로 정상 진행
+      if (!assignmentResponse.ok && assignmentResponse.status !== 409) {
+        const assignmentError = await assignmentResponse.json().catch(() => ({}));
+        console.error('[QuickInspectPanel] Assignment failed:', assignmentError);
+        // 할당 실패는 경고만 하고 계속 진행 (이미 할당되어 있을 수 있음)
+      }
+
+      // Step 2: 점검 세션 시작
       const response = await fetch('/api/inspections/sessions', {
         method: 'POST',
         headers: {
@@ -100,6 +121,9 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
               <DialogTitle className="text-xl font-semibold text-gray-100">
                 점검 기록 등록
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                AED 장비 점검을 시작하거나 점검불가 사유를 등록할 수 있습니다.
+              </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
