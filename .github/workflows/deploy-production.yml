@@ -87,8 +87,11 @@ jobs:
           git fetch origin
           git reset --hard origin/main
 
+          echo "Cleaning node_modules..."
+          rm -rf node_modules package-lock.json
+
           echo "Installing dependencies..."
-          npm ci
+          npm install
 
           echo "Generating Prisma client..."
           npx prisma generate
