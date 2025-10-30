@@ -54,16 +54,8 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canApprove
     },
     {
       title: "의무기관매칭",
-      customLabel: "24" as string | undefined,
-      icon: undefined as any,
-      href: "/admin/target-matching-2024",
-      show: canAccessAedData,
-    },
-    {
-      title: "의무기관매칭",
-      customLabel: "25" as string | undefined,
-      icon: undefined as any,
-      href: "/admin/target-matching-2025",
+      icon: GitMerge as any,
+      href: "/admin/compliance",
       show: canAccessAedData,
     },
     {
@@ -76,9 +68,8 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canApprove
   ]
 
   const getPageTitle = () => {
-    if (pathname === "/admin/target-matching-2024") return "2024년 구비의무기관 매칭"
-    if (pathname === "/admin/target-matching-2025") return "2025년 구비의무기관 매칭"
-    if (pathname === "/admin/target-matching") return "2024년 구비의무기관 매칭"
+    if (pathname === "/admin/compliance") return "의무기관매칭"
+    if (pathname === "/admin/compliance/completed") return "설치확인"
     if (pathname === "/admin/users") return "사용자 승인 관리"
     return menuItems.find(item => pathname === item.href)?.title || "대시보드"
   }
@@ -115,14 +106,10 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canApprove
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href} prefetch={false}>
                   <SidebarMenuButton isActive={pathname === item.href}>
-                    {/* 뱃지가 있으면 아이콘 대신 뱃지 표시, customLabel이 있으면 숫자 표시, 없으면 아이콘 표시 */}
+                    {/* 뱃지가 있으면 아이콘 대신 뱃지 표시, 없으면 아이콘 표시 */}
                     {item.badge ? (
                       <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
                         {item.badge}
-                      </span>
-                    ) : item.customLabel ? (
-                      <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 text-sm font-bold text-blue-400 bg-blue-950/50 rounded border border-blue-800">
-                        {item.customLabel}
                       </span>
                     ) : item.icon ? (
                       <item.icon className={cn(
