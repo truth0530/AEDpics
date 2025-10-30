@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { year = '2024' } = body;
+    const { year = '2024' } = body || {};
 
     // 2025년은 아직 준비 중
     if (year === '2025') {

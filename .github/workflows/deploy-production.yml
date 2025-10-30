@@ -119,7 +119,7 @@ jobs:
           pm2 flush || true
 
           echo "Starting PM2 with fresh instance..."
-          pm2 start ecosystem.config.js --update-env
+          pm2 start ecosystem.config.cjs --update-env
           pm2 save --force
 
           echo "Clearing Nginx cache if exists..."
