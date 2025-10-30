@@ -8,7 +8,7 @@ export const KAKAO_MAP_CONFIG = {
   // 스크립트 URL 생성
   getScriptUrl: ({
     libraries = ['services', 'clusterer'],
-    autoload = true,
+    autoload = false,
   }: {
     libraries?: string[];
     autoload?: boolean;
@@ -32,15 +32,20 @@ export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
     return Promise.reject(new Error('Kakao Maps SDK는 브라우저 환경에서만 로드됩니다.'));
   }
 
-  // 이미 로드된 경우 즉시 resolve
-  if (window.kakao?.maps) {
-    console.log('[Kakao Maps] Already loaded');
-    return new Promise((resolve) => {
-      window.kakao.maps.load(() => resolve());
-    });
+  // 이미 로딩 중인 Promise가 있으면 재사용
+  if (kakaoLoadPromise) {
+    return kakaoLoadPromise;
   }
 
-  if (kakaoLoadPromise) {
+  // kakao.maps가 존재하면 load() 호출 (autoload=false 모드)
+  if (window.kakao?.maps) {
+    console.log('[Kakao Maps] SDK object found, calling load()');
+    kakaoLoadPromise = new Promise<void>((resolve) => {
+      window.kakao.maps.load(() => {
+        console.log('[Kakao Maps] Load complete');
+        resolve();
+      });
+    });
     return kakaoLoadPromise;
   }
 
