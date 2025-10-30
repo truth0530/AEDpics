@@ -71,7 +71,7 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          equipmentSerial: serial,
+          equipment_serial: serial,
           reason: selectedReason,
           note: selectedReason === 'other' ? customNote.trim() : undefined,
         }),

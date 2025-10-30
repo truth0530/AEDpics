@@ -44,7 +44,7 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          equipmentSerial: serial,
+          equipment_serial: serial,
         }),
       });
 
