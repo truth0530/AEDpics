@@ -4,7 +4,9 @@ import { UserRole } from '@/packages/types';
 interface RoleAccessConfig {
   canAccessInspection: boolean;
   canAccessAEDData: boolean;
+  canAccessDashboard: boolean;
   inspectionUIMode: 'admin-full' | 'local-full' | 'read-only' | 'assigned-only' | null;
+  dashboardUIMode: 'admin-full' | 'local-full' | 'read-only' | 'inspector-only' | null;
   fallbackRoute: string;
   defaultLandingPage: string;
   requiresAuth: boolean;
@@ -15,7 +17,9 @@ export const ROLE_ACCESS_MATRIX = {
   master: {
     canAccessInspection: true,
     canAccessAEDData: true,
+    canAccessDashboard: true,
     inspectionUIMode: 'admin-full',
+    dashboardUIMode: 'admin-full',
     fallbackRoute: '/dashboard',
     defaultLandingPage: '/admin/users',
     requiresAuth: true
@@ -23,7 +27,9 @@ export const ROLE_ACCESS_MATRIX = {
   emergency_center_admin: {
     canAccessInspection: true,
     canAccessAEDData: true,
+    canAccessDashboard: true,
     inspectionUIMode: 'admin-full',
+    dashboardUIMode: 'admin-full',
     fallbackRoute: '/dashboard',
     defaultLandingPage: '/admin/users',
     requiresAuth: true
@@ -31,7 +37,9 @@ export const ROLE_ACCESS_MATRIX = {
   regional_emergency_center_admin: {
     canAccessInspection: true,
     canAccessAEDData: true,
+    canAccessDashboard: true,
     inspectionUIMode: 'admin-full',
+    dashboardUIMode: 'admin-full',
     fallbackRoute: '/dashboard',
     defaultLandingPage: '/admin/users',
     requiresAuth: true
@@ -39,7 +47,9 @@ export const ROLE_ACCESS_MATRIX = {
   ministry_admin: {
     canAccessInspection: true,
     canAccessAEDData: true,
+    canAccessDashboard: true,
     inspectionUIMode: 'read-only',
+    dashboardUIMode: 'read-only',
     fallbackRoute: '/dashboard',
     defaultLandingPage: '/dashboard',
     requiresAuth: true
@@ -47,7 +57,9 @@ export const ROLE_ACCESS_MATRIX = {
   regional_admin: {
     canAccessInspection: true,
     canAccessAEDData: true,
+    canAccessDashboard: true,
     inspectionUIMode: 'read-only',
+    dashboardUIMode: 'read-only',
     fallbackRoute: '/dashboard',
     defaultLandingPage: '/dashboard',
     requiresAuth: true
@@ -55,7 +67,9 @@ export const ROLE_ACCESS_MATRIX = {
   local_admin: {
     canAccessInspection: true,
     canAccessAEDData: true,
+    canAccessDashboard: true,
     inspectionUIMode: 'local-full',
+    dashboardUIMode: 'local-full',
     fallbackRoute: '/dashboard',
     defaultLandingPage: '/inspection',
     requiresAuth: true
@@ -63,7 +77,9 @@ export const ROLE_ACCESS_MATRIX = {
   temporary_inspector: {
     canAccessInspection: true,
     canAccessAEDData: false,
+    canAccessDashboard: true,
     inspectionUIMode: 'assigned-only',
+    dashboardUIMode: 'inspector-only',
     fallbackRoute: '/inspection',
     defaultLandingPage: '/inspection',
     requiresAuth: true
@@ -71,7 +87,9 @@ export const ROLE_ACCESS_MATRIX = {
   pending_approval: {
     canAccessInspection: false,
     canAccessAEDData: false,
+    canAccessDashboard: false,
     inspectionUIMode: null,
+    dashboardUIMode: null,
     fallbackRoute: '/pending-approval',
     defaultLandingPage: '/pending-approval',
     requiresAuth: true
@@ -79,7 +97,9 @@ export const ROLE_ACCESS_MATRIX = {
   email_verified: {
     canAccessInspection: false,
     canAccessAEDData: false,
+    canAccessDashboard: false,
     inspectionUIMode: null,
+    dashboardUIMode: null,
     fallbackRoute: '/verify-email',
     defaultLandingPage: '/verify-email',
     requiresAuth: true
@@ -87,7 +107,9 @@ export const ROLE_ACCESS_MATRIX = {
   rejected: {
     canAccessInspection: false,
     canAccessAEDData: false,
+    canAccessDashboard: false,
     inspectionUIMode: null,
+    dashboardUIMode: null,
     fallbackRoute: '/rejected',
     defaultLandingPage: '/rejected',
     requiresAuth: true
@@ -98,6 +120,7 @@ export const ROLE_ACCESS_MATRIX = {
 export type RoleAccessMatrix = typeof ROLE_ACCESS_MATRIX;
 export type AccessibleRole = keyof RoleAccessMatrix;
 export type InspectionUIMode = RoleAccessConfig['inspectionUIMode'];
+export type DashboardUIMode = RoleAccessConfig['dashboardUIMode'];
 
 // 헬퍼 함수들
 export function getRoleAccess(role: UserRole): RoleAccessConfig {
@@ -112,8 +135,16 @@ export function canAccessAEDData(role: UserRole): boolean {
   return ROLE_ACCESS_MATRIX[role]?.canAccessAEDData ?? false;
 }
 
+export function canAccessDashboard(role: UserRole): boolean {
+  return ROLE_ACCESS_MATRIX[role]?.canAccessDashboard ?? false;
+}
+
 export function getInspectionUIMode(role: UserRole): InspectionUIMode {
   return ROLE_ACCESS_MATRIX[role]?.inspectionUIMode ?? null;
+}
+
+export function getDashboardUIMode(role: UserRole): DashboardUIMode {
+  return ROLE_ACCESS_MATRIX[role]?.dashboardUIMode ?? null;
 }
 
 export function getFallbackRoute(role: UserRole): string {

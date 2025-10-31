@@ -1,11 +1,8 @@
 import { redirect } from 'next/navigation';
-import AEDDashboardNew from '@/components/dashboard/AEDDashboardNew';
+import { Suspense } from 'react';
+import { ROLE_ACCESS_MATRIX } from '@/lib/auth/role-matrix';
+import DashboardPageClient from './DashboardPageClient';
 import { getCachedAuthUser, getCachedUserProfile } from '@/lib/auth/cached-queries';
-import {
-  getCachedDashboardData,
-  getCachedHourlyInspections,
-  getCachedDailyInspections
-} from '@/lib/aed/dashboard-queries';
 
 export default async function DashboardPage() {
   // 캐싱된 사용자 조회
@@ -23,19 +20,20 @@ export default async function DashboardPage() {
     redirect('/auth/signin');
   }
 
-  // 캐싱된 대시보드 데이터 조회 (병렬 처리)
-  const [dashboardData, hourlyData, dailyData] = await Promise.all([
-    getCachedDashboardData(typedProfile),
-    getCachedHourlyInspections(typedProfile),
-    getCachedDailyInspections(typedProfile),
-  ]);
+  // 역할 검증
+  const accessRights = ROLE_ACCESS_MATRIX[typedProfile.role];
+  if (!accessRights?.canAccessDashboard) {
+    redirect(accessRights?.fallbackRoute || '/inspection');
+  }
 
+  // Suspense로 감싸서 로딩 중 fallback 표시
   return (
-    <AEDDashboardNew
-      dashboardData={dashboardData}
-      hourlyData={hourlyData}
-      dailyData={dailyData}
-      userRole={typedProfile.role}
-    />
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+      </div>
+    }>
+      <DashboardPageClient initialProfile={typedProfile} />
+    </Suspense>
   );
 }
