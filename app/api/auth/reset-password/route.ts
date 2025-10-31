@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
             </div>
             
             <div class="footer">
-              <p>중앙응급의료센터 AED 점검 시스템</p>
+              <p>보건소 자동심장충격기 현장점검등록지</p>
               <p>문의: truth0530@nmc.or.kr</p>
             </div>
           </div>

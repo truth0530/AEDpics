@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
                             본 메일은 발신 전용입니다. 문의사항은 관할 응급의료지원센터로 연락해주세요.
                           </p>
                           <p style="margin: 0; color: #4b5563; font-size: 11px;">
-                            © 2025 AED 픽스 aed.pics · 국립중앙의료원 중앙응급의료센터
+                            © 2025 AED 픽스 aed.pics · 보건소 자동심장충격기 현장점검등록지
                           </p>
                         </td>
                       </tr>

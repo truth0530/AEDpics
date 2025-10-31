@@ -354,11 +354,8 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center text-gray-400">
             <p className="text-xs md:text-base mb-1 md:mb-2">© 2025 AED 픽스 aed.pics</p>
-            <p className="text-xs md:text-sm mb-2">
-              국립중앙의료원 중앙응급의료센터
-            </p>
-            <p className="text-xs md:text-sm mb-2">
-              사업자 번호: 104-82-11329
+            <p className="text-xs md:text-sm mb-4">
+              보건소 자동심장충격기 현장점검등록지
             </p>
             <div className="flex justify-center space-x-4 text-xs">
               <Link href="/terms" className="hover:text-green-400 transition-colors">

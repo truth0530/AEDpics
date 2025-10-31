@@ -358,7 +358,7 @@ export function TutorialPageClient() {
 
           <div className="text-xs md:text-sm text-gray-500 mt-4 md:mt-6 text-center">
             <p>© 2025 AED 픽스 aed.pics</p>
-            <p className="mt-1">국립중앙의료원 중앙응급의료센터</p>
+            <p className="mt-1">보건소 자동심장충격기 현장점검등록지</p>
           </div>
         </div>
       </div>
