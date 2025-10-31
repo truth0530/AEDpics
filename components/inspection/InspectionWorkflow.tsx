@@ -66,7 +66,8 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
   // ✅ lastSavedStepData 초기화: 세션 로드 시 기존 step_data로 초기화
   useEffect(() => {
-    if (session?.step_data && Object.keys(lastSavedStepData).length === 0) {
+    // 세션이 처음 로드될 때만 초기화
+    if (session?.id && session?.step_data) {
       console.log('[lastSavedStepData] Initializing from session.step_data:', session.step_data);
       setLastSavedStepData(session.step_data as Record<string, unknown>);
     }
@@ -86,6 +87,8 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     },
     onSuccess: () => {
       console.log('Progress saved successfully');
+      // ✅ 자동 저장 성공 시에도 lastSavedStepData 업데이트
+      setLastSavedStepData(cloneDeep(stepData));
     },
     onError: (error) => {
       console.error('Failed to save progress:', error);
@@ -160,21 +163,22 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
   // 미입력 필드로 자동 포커스 이동
   const focusFirstMissingField = () => {
-    const stepData = useInspectionSessionStore.getState().stepData;
+    try {
+      const stepData = useInspectionSessionStore.getState().stepData;
 
-    if (currentStep === 0) {
-      // BasicInfoStep
-      const basicInfo = stepData.basicInfo as Record<string, any> | undefined;
+      if (currentStep === 0) {
+        // BasicInfoStep
+        const basicInfo = stepData.basicInfo as Record<string, any> | undefined;
 
-      // all_matched 체크 안됨
-      if (!basicInfo?.all_matched) {
-        const radioButton = document.querySelector('input[name="all_matched"]') as HTMLInputElement;
-        if (radioButton) {
-          radioButton.focus();
-          radioButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // all_matched 체크 안됨
+        if (!basicInfo?.all_matched) {
+          const radioButton = document.querySelector('input[name="all_matched"]') as HTMLInputElement;
+          if (radioButton) {
+            radioButton.focus();
+            radioButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
         }
-        return;
-      }
 
       // location_matched 체크 안됨
       if (!basicInfo?.location_matched) {
@@ -243,6 +247,10 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         }
         return;
       }
+    }
+    } catch (error) {
+      // 브라우저 확장 프로그램 오류 무시 (예: 비밀번호 관리자)
+      console.log('[focusFirstMissingField] Error ignored:', error);
     }
   };
 
@@ -533,6 +541,8 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     setError(null);
     try {
       await saveProgressMutation.mutateAsync();
+      // ✅ 저장 성공 시 현재 stepData를 깊은 복사로 저장
+      setLastSavedStepData(cloneDeep(stepData));
       showSaveSuccess('저장 후 닫기가 완료되었습니다');
       resetSession();
       router.push('/inspection');
@@ -562,6 +572,8 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     try {
       // 데이터만 저장하고 세션은 유지 (점검중 상태 유지)
       await saveProgressMutation.mutateAsync();
+      // ✅ 저장 성공 시 현재 stepData를 깊은 복사로 저장
+      setLastSavedStepData(cloneDeep(stepData));
       showSaveSuccess('중간저장 후 닫기가 완료되었습니다');
       // ✅ resetSession() 호출하지 않음 - 세션을 '점검중' 상태로 유지
       router.push('/inspection');
