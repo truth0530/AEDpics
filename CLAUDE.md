@@ -28,6 +28,10 @@
 - [docs/reference/REGION_CODE_GUIDELINES.md](docs/reference/REGION_CODE_GUIDELINES.md) - 지역 코드 가이드라인
 - [docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md](docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md) - 프로젝트 구조 재정리 보고서
 
+### 문제 해결 (Troubleshooting)
+- [docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md](docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md) - NCP 이메일 발송 문제 해결 전체 문서
+- [docs/troubleshooting/EMAIL_DEBUGGING_CHECKLIST.md](docs/troubleshooting/EMAIL_DEBUGGING_CHECKLIST.md) - 이메일 발송 실패 디버깅 체크리스트
+
 ## 절대 준수 사항
 
 ### 1. 이모지 사용 절대 금지
@@ -90,6 +94,43 @@
 - 한 번에 하나의 작업만 수행
 - 이전 단계 완료 확인 후 다음 단계 진행
 - 건너뛰기나 병렬 작업 금지 (명시적 요청 제외)
+
+## 필수: NCP 이메일 발송 문제 해결
+
+### 이메일 발송 실패 시 최우선 체크
+
+**중요**: 과거 정상 작동했던 `noreply@nmc.or.kr`가 갑자기 실패하면 **인증 문제가 아닙니다!**
+
+#### 빠른 진단 (30초)
+```bash
+# 1. 환경변수 확인
+cat .env.local | grep NCP
+
+# 2. 로컬 테스트
+npm run test:email
+
+# 3. 최근 변경사항 확인
+git log --oneline -5
+```
+
+#### 올바른 환경변수 (2025-10-31 기준)
+```bash
+NCP_ACCESS_KEY="ncp_iam_BPAMKR***********"  # NCP 콘솔에서 확인
+NCP_ACCESS_SECRET="ncp_iam_BPKMKRF***********"  # NCP 콘솔에서 확인
+NCP_SENDER_EMAIL="noreply@nmc.or.kr"  # 개인 이메일 사용 금지
+```
+
+**참고**: 실제 API 키는 NCP 콘솔 > 마이페이지 > 인증키 관리에서 확인하거나 GitHub Secrets에서 복사
+
+#### 자주 하는 실수 (절대 금지)
+1. 인증 문제로 오인: `noreply@nmc.or.kr`는 이미 인증된 계정
+2. 개인 이메일 사용: `truth0530@nmc.or.kr` 사용 금지
+3. DMARC/SPF 설정 변경: 이미 IT 관리자가 설정 완료
+4. API 키 임의 재발급: 다른 시스템 영향 가능
+
+#### 상세 문서
+- 전체 해결 과정: [docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md](docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md)
+- 디버깅 체크리스트: [docs/troubleshooting/EMAIL_DEBUGGING_CHECKLIST.md](docs/troubleshooting/EMAIL_DEBUGGING_CHECKLIST.md)
 
 ## 필수: GitHub 푸시 전 검사 절차
 
