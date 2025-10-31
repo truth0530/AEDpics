@@ -456,12 +456,11 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
         }),
       });
 
-      const { session: cancelledSession, message } = await parseResponse<{
+      const { session: cancelledSession } = await parseResponse<{
         session: InspectionSession;
-        message: string;
       }>(response);
 
-      console.log('[Inspection] 세션 취소:', { sessionId: session.id, reason, message });
+      console.log('[Inspection] 세션 취소:', { sessionId: session.id, reason });
 
       // 세션 상태 초기화
       set({

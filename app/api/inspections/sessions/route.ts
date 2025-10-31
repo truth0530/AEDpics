@@ -536,13 +536,13 @@ export const PATCH = async (request: NextRequest) => {
   if (payload.status && payload.status !== session.status) {
     updates.status = payload.status;
     if (payload.status === 'paused') {
-      updates.pausedAt = new Date();
+      updates.paused_at = new Date();
     }
     if (payload.status === 'active') {
-      updates.resumedAt = new Date();
+      updates.resumed_at = new Date();
     }
     if (payload.status === 'cancelled') {
-      updates.cancelledAt = new Date();
+      updates.cancelled_at = new Date();
     }
   }
 

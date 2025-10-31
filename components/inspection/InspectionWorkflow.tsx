@@ -158,6 +158,94 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     }
   };
 
+  // 미입력 필드로 자동 포커스 이동
+  const focusFirstMissingField = () => {
+    const stepData = useInspectionSessionStore.getState().stepData;
+
+    if (currentStep === 0) {
+      // BasicInfoStep
+      const basicInfo = stepData.basicInfo as Record<string, any> | undefined;
+
+      // all_matched 체크 안됨
+      if (!basicInfo?.all_matched) {
+        const radioButton = document.querySelector('input[name="all_matched"]') as HTMLInputElement;
+        if (radioButton) {
+          radioButton.focus();
+          radioButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
+      // location_matched 체크 안됨
+      if (!basicInfo?.location_matched) {
+        const radioButton = document.querySelector('input[name="location_matched"]') as HTMLInputElement;
+        if (radioButton) {
+          radioButton.focus();
+          radioButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
+      // 수정 모드에서 빈 필드 찾기
+      if (basicInfo?.all_matched === 'edited') {
+        const fields = ['manager', 'contact_info', 'category_1', 'category_2', 'category_3'];
+        for (const field of fields) {
+          if (!basicInfo[field]?.trim()) {
+            const input = document.querySelector(`input[name="${field}"], select[name="${field}"]`) as HTMLElement;
+            if (input) {
+              input.focus();
+              input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              return;
+            }
+          }
+        }
+      }
+
+      if (basicInfo?.location_matched === 'edited') {
+        if (!basicInfo.address?.trim()) {
+          const input = document.querySelector('input[name="address"]') as HTMLInputElement;
+          if (input) {
+            input.focus();
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
+        }
+      }
+    } else if (currentStep === 1) {
+      // DeviceInfoStep
+      const deviceInfo = stepData.deviceInfo as Record<string, any> | undefined;
+
+      // all_matched 체크 안됨
+      if (!deviceInfo?.all_matched) {
+        const radioButton = document.querySelector('input[name="device_all_matched"]') as HTMLInputElement;
+        if (radioButton) {
+          radioButton.focus();
+          radioButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
+      // 소모품 체크 안됨
+      if (!deviceInfo?.battery_expiry_date_matched) {
+        const radioButton = document.querySelector('input[name="battery_expiry_date_matched"]') as HTMLInputElement;
+        if (radioButton) {
+          radioButton.focus();
+          radioButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
+      if (!deviceInfo?.pad_expiry_date_matched) {
+        const radioButton = document.querySelector('input[name="pad_expiry_date_matched"]') as HTMLInputElement;
+        if (radioButton) {
+          radioButton.focus();
+          radioButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+    }
+  };
+
   // 필수 항목 검증 함수
   const checkRequiredFields = (step: number): string[] => {
     const missing: string[] = [];
@@ -166,8 +254,11 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       case 0: // BasicInfoStep
         const basicInfo = stepData.basicInfo as Record<string, any> | undefined;
 
-        // 기본정보 검증 (수정했으면 값 필요)
-        if (basicInfo?.all_matched === 'edited') {
+        // 필수: all_matched 체크 여부 확인
+        if (!basicInfo?.all_matched) {
+          missing.push('기본 정보 - 일치 여부를 확인해주세요');
+        } else if (basicInfo?.all_matched === 'edited') {
+          // 기본정보 검증 (수정했으면 값 필요)
           const fields = [
             { key: 'manager', label: '관리책임자' },
             { key: 'contact_info', label: '담당자 연락처' },
@@ -181,8 +272,11 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           }
         }
 
-        // 위치정보 검증
-        if (basicInfo?.location_matched === 'edited') {
+        // 필수: location_matched 체크 여부 확인
+        if (!basicInfo?.location_matched) {
+          missing.push('위치 정보 - 일치 여부를 확인해주세요');
+        } else if (basicInfo?.location_matched === 'edited') {
+          // 위치정보 검증
           if (!basicInfo.address?.trim()) {
             missing.push('주소 값이 비어있음');
           }
@@ -678,10 +772,16 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             </p>
             <div className="flex flex-col gap-2">
               <button
-                onClick={() => setShowRequiredFieldsModal(false)}
+                onClick={() => {
+                  setShowRequiredFieldsModal(false);
+                  // 미입력 필드로 자동 포커스 이동
+                  setTimeout(() => {
+                    focusFirstMissingField();
+                  }, 100);
+                }}
                 className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                입력하기 (이 화면에 남기)
+                입력하기 (미입력 항목으로 이동)
               </button>
               <button
                 onClick={() => {
