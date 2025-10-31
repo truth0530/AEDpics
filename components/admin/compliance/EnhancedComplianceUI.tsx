@@ -84,6 +84,12 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
   const [selectedBatch, setSelectedBatch] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Pagination state - start with smaller pages for faster loading
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize] = useState(10); // Smaller page size for faster response
+
   // 키보드 단축키 설정
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -140,39 +146,86 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
   // 데이터 로드
   useEffect(() => {
     fetchComplianceData();
-  }, [year, searchTerm, filterStatus, userJurisdiction]);
+  }, [year, searchTerm, filterStatus, userJurisdiction, currentPage]);
 
   const fetchComplianceData = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         year,
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
         ...(userJurisdiction?.sido && { sido: userJurisdiction.sido }),
         ...(userJurisdiction?.gugun && { gugun: userJurisdiction.gugun }),
         ...(searchTerm && { search: searchTerm }),
         confidence_level: filterStatus === 'pending' ? 'all' : filterStatus
       });
 
-      const response = await fetch(`/api/compliance/check?${params}`);
+      // Use optimized endpoint for better performance
+      const response = await fetch(`/api/compliance/check-optimized?${params}`);
+
+      if (!response.ok) {
+        if (response.status === 504) {
+          toast.error('서버 응답 시간 초과. 필터를 적용하여 검색 범위를 줄여주세요.');
+        } else {
+          toast.error(`오류 발생: ${response.status}`);
+        }
+        return;
+      }
+
       const data = await response.json();
 
-      setTargets(data.matches || []);
-      setStats({
-        total: data.statistics?.total || 0,
-        completed: data.statistics?.completed || 0,
-        pending: data.statistics?.pending || 0
-      });
+      // Transform the data structure to match component expectations
+      const transformedTargets = (data.matches || []).map((match: any) => ({
+        ...match.targetInstitution,
+        status: match.status,
+        matched_devices: match.matches?.map((m: any) => ({
+          management_number: m.management_number,
+          equipment_name: m.institution_name,
+          installation_location_name: m.institution_name,
+          detailed_location: m.address,
+          sido: match.targetInstitution.sido,
+          gugun: match.targetInstitution.gugun,
+          road_address: m.address,
+          land_address: m.address,
+          matching_score: m.confidence,
+          matching_details: {
+            name_similarity: m.matchingReason?.nameSimilarity || 0,
+            address_similarity: m.matchingReason?.addressSimilarity || 0,
+            keyword_match: m.matchingReason?.keywordMatch || false
+          }
+        }))
+      }));
+
+      // Handle paginated response
+      setTargets(transformedTargets);
+      setTotalPages(data.totalPages || 0);
+      setTotalCount(data.totalCount || 0);
+
+      // Calculate stats from current page
+      const pageStats = {
+        total: data.totalCount || 0,
+        completed: transformedTargets.filter((t: any) => t.status !== 'pending').length || 0,
+        pending: transformedTargets.filter((t: any) => t.status === 'pending').length || 0
+      };
+      setStats(pageStats);
 
       // 첫 번째 항목 자동 선택
-      if (data.matches?.length > 0 && !selectedTarget) {
-        setSelectedTarget(data.matches[0]);
+      if (transformedTargets.length > 0 && !selectedTarget) {
+        setSelectedTarget(transformedTargets[0]);
       }
     } catch (error) {
+      console.error('Compliance data fetch error:', error);
       toast.error('데이터 로드 실패');
     } finally {
       setLoading(false);
     }
   };
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
 
   const navigateTargets = (direction: number) => {
     const currentIndex = targets.findIndex(t => t.target_key === selectedTarget?.target_key);
@@ -468,6 +521,36 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
               })}
             </div>
           </ScrollArea>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-4 py-3 bg-white dark:bg-gray-900 border-t dark:border-gray-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || loading}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || loading}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                총 {totalCount}개
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 중앙: 매칭 결과 및 비교 */}

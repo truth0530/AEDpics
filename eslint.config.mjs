@@ -32,6 +32,7 @@ const eslintConfig = [
       '**/public/swe-worker-*.js',
       '**/public/workbox-*.js',
       '**/public/*-worker*.js',
+      '**/public/fallback-*.js',
       '**/generated/**',
       '**/*.generated.ts',
       '**/*.generated.tsx',
