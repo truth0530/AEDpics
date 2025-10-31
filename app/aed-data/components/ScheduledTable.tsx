@@ -119,7 +119,8 @@ export function ScheduledTable({ userId }: ScheduledTableProps) {
       }
 
       showSuccess('점검이 시작되었습니다.');
-      router.push(`/inspection/${equipmentSerial}`);
+      // URL 인코딩을 추가하여 특수문자가 있는 시리얼 번호도 안전하게 처리
+      router.push(`/inspection/${encodeURIComponent(equipmentSerial)}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
       showError('점검 시작 실패', { message });
@@ -239,7 +240,7 @@ export function ScheduledTable({ userId }: ScheduledTableProps) {
                     {assignment.status === 'in_progress' && (
                       <Button
                         size="sm"
-                        onClick={() => router.push(`/inspection/${assignment.equipment_serial}`)}
+                        onClick={() => router.push(`/inspection/${encodeURIComponent(assignment.equipment_serial)}`)}
                         className="bg-green-600 hover:bg-green-700 text-white text-xs"
                       >
                         점검 계속하기
@@ -313,7 +314,7 @@ export function ScheduledTable({ userId }: ScheduledTableProps) {
               {assignment.status === 'in_progress' && (
                 <Button
                   size="sm"
-                  onClick={() => router.push(`/inspection/${assignment.equipment_serial}`)}
+                  onClick={() => router.push(`/inspection/${encodeURIComponent(assignment.equipment_serial)}`)}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 >
                   점검 계속하기

@@ -13,7 +13,8 @@ interface InspectionPageClientProps {
 }
 
 async function fetchDeviceData(serial: string) {
-  const response = await fetch(`/api/aed-data?equipment_serial=${serial}`);
+  // URL 파라미터를 인코딩하여 특수문자가 있는 시리얼 번호도 안전하게 처리
+  const response = await fetch(`/api/aed-data?equipment_serial=${encodeURIComponent(serial)}`);
   if (!response.ok) {
     throw new Error('장비 데이터를 가져올 수 없습니다.');
   }
