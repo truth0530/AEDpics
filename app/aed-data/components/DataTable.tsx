@@ -620,7 +620,7 @@ interface DataTableProps {
   selectedDeviceIds?: Set<string>;
   onDeviceSelect?: (deviceId: string, checked: boolean) => void;
   onSelectAll?: (checked: boolean) => void;
-  scheduleFilter?: 'unscheduled' | 'scheduled';
+  scheduleFilter?: 'unscheduled' | 'scheduled' | 'all';
   // 점검 세션 관련
   inspectionSessions?: Map<string, InspectionSession>;
   onInspectionInProgress?: (equipmentSerial: string) => void;
@@ -837,8 +837,11 @@ export function DataTable({
     // 서브 필터 적용
     if (scheduleFilter === 'unscheduled') {
       return rawDevices.filter(device => !scheduledEquipment.has(device.equipment_serial));
-    } else {
+    } else if (scheduleFilter === 'scheduled') {
       return rawDevices.filter(device => scheduledEquipment.has(device.equipment_serial));
+    } else {
+      // 'all' - 모든 장비 표시
+      return rawDevices;
     }
   }, [data, scheduleFilter, scheduledEquipment]);
 

@@ -236,6 +236,23 @@ export function AEDFilterBar() {
           window.sessionStorage.setItem('selectedGugun', gugun);
         }
 
+        // "시도"는 전체 선택을 의미함
+        if (sido === '시도') {
+          setDraftFilters(prev => ({
+            ...prev,
+            regions: [],
+            cities: []
+          }) as any);
+
+          (setFilters as any)((prev: any) => ({
+            ...prev,
+            regionCodes: undefined,
+            cityCodes: undefined,
+            queryCriteria: queryCriteria,
+          }));
+          return;
+        }
+
         // 지역 라벨 → 코드 변환
         const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === sido)?.[0];
 
@@ -253,13 +270,13 @@ export function AEDFilterBar() {
           cities: [gugun]
         }) as any);
 
-        console.log('[AEDFilterBar] 📤 Calling setFilters with:', { regionCodes: [sido], cityCodes: [gugun] });
+        console.log('[AEDFilterBar] 📤 Calling setFilters with:', { regionCodes: [sido], cityCodes: gugun === '구군' ? undefined : [gugun] });
 
         // 필터 즉시 적용 (API 호출) - 기존 필터 유지하면서 지역만 업데이트
         (setFilters as any)((prev: any) => ({
           ...prev,
           regionCodes: [sido],
-          cityCodes: [gugun],
+          cityCodes: gugun === '구군' ? undefined : [gugun],
           queryCriteria: queryCriteria,
         }));
       }, 300);
@@ -280,6 +297,23 @@ export function AEDFilterBar() {
     const handleRegionSelected = (event: CustomEvent) => {
       const { sido, gugun } = event.detail;
       console.log('[AEDFilterBar] 📍 regionSelected received from header:', { sido, gugun });
+
+      // "시도"는 전체 선택을 의미함
+      if (sido === '시도') {
+        // 전체 시도 선택 - 필터 초기화
+        setDraftFilters(prev => ({
+          ...prev,
+          regions: [],
+          cities: []
+        }) as any);
+
+        (setFilters as any)((prev: any) => ({
+          ...prev,
+          regionCodes: undefined,
+          cityCodes: undefined,
+        }));
+        return;
+      }
 
       // 지역 라벨 → 코드 변환
       const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === sido)?.[0];
@@ -389,6 +423,18 @@ export function AEDFilterBar() {
       const { sido, gugun } = mapCenterRegion;
       console.log('[AEDFilterBar] 🗺️ Map center changed, updating draft filters:', { sido, gugun });
 
+      // "시도"는 전체 선택을 의미함
+      if (sido === '시도') {
+        setDraftFilters(prev => ({
+          ...prev,
+          regions: [],
+          cities: []
+        }) as any);
+
+        (setFilters as any)((prev: any) => ({ ...prev, regionCodes: undefined, cityCodes: undefined }));
+        return;
+      }
+
       const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === sido)?.[0];
       if (!regionCode) {
         console.warn('[AEDFilterBar] Region code not found for:', sido);
@@ -399,11 +445,11 @@ export function AEDFilterBar() {
       setDraftFilters(prev => ({
         ...prev,
         regions: [regionCode],
-        cities: gugun ? [gugun] : [],
+        cities: gugun && gugun !== '구군' ? [gugun] : [],
       }) as any);
 
       // 필터 즉시 적용 (API 호출)
-      (setFilters as any)((prev: any) => ({ ...prev, regionCodes: [sido], cityCodes: gugun ? [gugun] : [] }));
+      (setFilters as any)((prev: any) => ({ ...prev, regionCodes: [sido], cityCodes: gugun && gugun !== '구군' ? [gugun] : undefined }));
     }
   }, [mapCenterRegion, setFilters]);
 

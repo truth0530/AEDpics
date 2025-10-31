@@ -704,7 +704,7 @@ export function MapView({
         let zoomLevel = 8;
 
         // 구군이 지정된 경우: 보건소 좌표로 이동
-        if (gugun && gugun !== '전체') {
+        if (gugun && gugun !== '전체' && gugun !== '구군') {
           try {
             console.log('[MapView] 📍 Fetching health center coords for:', { sido, gugun });
             const response = await fetch(`/api/health-center-coords?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`);

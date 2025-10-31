@@ -50,6 +50,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
   const filterBarRef = useRef<HTMLDivElement>(null);
   const isRegionChangeInProgress = useRef(false);
   const hasInitializedDefaultFilters = useRef(false);
+  const previousViewMode = useRef<string | null>(null);
 
   // 체크박스 선택 핸들러
   const handleDeviceSelect = (deviceId: string, checked: boolean) => {
@@ -382,6 +383,54 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
     };
   }, [setFilters, viewMode, userProfile.id]);
 
+  // viewMode가 'map'으로 변경될 때 필터 설정
+  useEffect(() => {
+    // viewMode가 실제로 변경되었는지 확인
+    if (previousViewMode.current === viewMode) {
+      return;
+    }
+
+    // viewMode 업데이트
+    const prevMode = previousViewMode.current;
+    previousViewMode.current = viewMode;
+
+    // map 탭으로 전환했을 때만 실행
+    if (viewMode !== 'map') {
+      console.log('[AEDDataPageClient] ViewMode changed from', prevMode, 'to', viewMode);
+      return;
+    }
+
+    console.log('[AEDDataPageClient] Map mode activated: initializing filters');
+
+    const initMapFilters = async () => {
+      try {
+        const response = await fetch('/api/user/profile');
+        if (!response.ok) {
+          console.error('[AEDDataPageClient] Failed to fetch user profile for map');
+          return;
+        }
+
+        const profile = await response.json();
+
+        if (profile?.organization) {
+          const regionCode = profile.organization.region_code;
+
+          const mapFilters: any = {
+            regionCodes: regionCode ? [regionCode] : undefined,
+            queryCriteria: 'address',
+          };
+
+          console.log('[AEDDataPageClient] Setting map filters:', mapFilters);
+          setFilters(mapFilters);
+        }
+      } catch (error) {
+        console.error('[AEDDataPageClient] Error initializing map filters:', error);
+      }
+    };
+
+    initMapFilters();
+  }, [viewMode, setFilters]);
+
   // 스마트 자동 접기: 필터 영역 외부 클릭 시 자동으로 접기
   useEffect(() => {
     if (filterCollapsed) return; // 이미 접혀있으면 실행 안함
@@ -672,7 +721,8 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
               onSelectAll={handleSelectAll}
               scheduleFilter={
                 viewMode === 'toAdd' ? 'unscheduled' : // 추가할목록: 미추가 장비만
-                'scheduled' // 추가된목록 및 전체목록: 추가된 장비 표시
+                viewMode === 'scheduled' ? 'scheduled' : // 추가된목록: 추가된 장비만
+                'all' // 전체목록: 모든 장비 표시
               }
               totalDataCount={data?.length || 0}
               currentViewMode={viewMode === 'toAdd' ? 'list' : viewMode === 'scheduled' ? 'completed' : 'map'}
