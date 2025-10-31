@@ -19,7 +19,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
   const [addedEquipmentSerial, setAddedEquipmentSerial] = useState<string | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
 
   const deviceList = devices.length > 0 ? devices : [];
   const isMultiple = deviceList.length > 1;
@@ -128,7 +128,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          equipmentSerial: addedEquipmentSerial,
+          equipment_serial: addedEquipmentSerial,  // snake_case로 변경 (API 요구사항과 일치)
         }),
       });
 
