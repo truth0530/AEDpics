@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendSimpleEmail } from '@/lib/email/ncp-email';
+import { sendSmartEmail } from '@/lib/email/ncp-email';
 import { checkEmailRateLimit } from '@/lib/email/email-rate-limiter';
 
 import { prisma } from '@/lib/prisma';
@@ -156,13 +156,14 @@ export async function POST(request: NextRequest) {
     `;
 
     // NCP Cloud Outbound Mailer로 이메일 발송
+    // sendSmartEmail: 수신자 도메인에 따라 최적의 발신자 자동 선택
     console.log(`[비밀번호 재설정] 이메일 발송 시작: ${email}, 토큰: ${resetToken}`);
     try {
-      const emailResult = await sendSimpleEmail(
+      const emailResult = await sendSmartEmail(
         {
           accessKey: process.env.NCP_ACCESS_KEY!,
           accessSecret: process.env.NCP_ACCESS_SECRET!,
-          senderAddress: process.env.NCP_SENDER_EMAIL!,
+          senderAddress: '', // sendSmartEmail이 자동 선택
           senderName: 'AED 픽스'
         },
         email,

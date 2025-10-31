@@ -160,6 +160,23 @@ export async function sendNCPEmail(
 }
 
 /**
+ * 수신자 도메인에 따라 최적의 발신자 이메일 선택
+ *
+ * DMARC 정책 준수:
+ * - @nmc.or.kr 수신자 → noreply@nmc.or.kr (도메인 일치)
+ * - 기타 도메인 → noreply@aed.pics (SPF/DKIM 설정됨)
+ */
+function selectSenderEmail(recipientEmail: string): string {
+  const domain = recipientEmail.split('@')[1]?.toLowerCase();
+
+  if (domain === 'nmc.or.kr') {
+    return 'noreply@nmc.or.kr';
+  }
+
+  return 'noreply@aed.pics';
+}
+
+/**
  * 간단한 텍스트 이메일 발송 헬퍼
  */
 export async function sendSimpleEmail(
@@ -170,6 +187,46 @@ export async function sendSimpleEmail(
   htmlBody: string,
   retryOptions?: RetryOptions
 ): Promise<any> {
+  return sendNCPEmail(
+    config,
+    {
+      title: subject,
+      body: htmlBody,
+      recipients: [
+        {
+          address: to,
+          name: toName,
+          type: 'R'
+        }
+      ],
+      individual: true,
+      advertising: false
+    },
+    retryOptions
+  );
+}
+
+/**
+ * 수신자 도메인에 따라 발신자를 자동 선택하는 이메일 발송 헬퍼
+ *
+ * DMARC 정책 준수를 위해 수신자 도메인에 따라 최적의 발신자를 선택합니다.
+ */
+export async function sendSmartEmail(
+  baseConfig: NCPEmailConfig,
+  to: string,
+  toName: string,
+  subject: string,
+  htmlBody: string,
+  retryOptions?: RetryOptions
+): Promise<any> {
+  const senderEmail = selectSenderEmail(to);
+
+  const config: NCPEmailConfig = {
+    ...baseConfig,
+    senderAddress: senderEmail,
+    senderName: 'AED 픽스'
+  };
+
   return sendNCPEmail(
     config,
     {

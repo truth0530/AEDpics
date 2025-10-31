@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAllowedEmailDomain } from '@/lib/auth/config';
 import { rateLimits } from '@/lib/rate-limit';
 import { checkOtpRateLimit } from '@/lib/auth/otp-rate-limiter';
-import { sendSimpleEmail } from '@/lib/email/ncp-email';
+import { sendSmartEmail } from '@/lib/email/ncp-email';
 import { checkEmailRateLimit } from '@/lib/email/email-rate-limiter';
 
 import { prisma } from '@/lib/prisma';
@@ -147,12 +147,13 @@ export async function POST(request: NextRequest) {
     const otpRecordId = insertedOtp.id;
 
     // NCP Cloud Outbound Mailer API를 재시도 로직과 함께 호출
+    // sendSmartEmail: 수신자 도메인에 따라 최적의 발신자 자동 선택
     try {
-      await sendSimpleEmail(
+      await sendSmartEmail(
         {
           accessKey: process.env.NCP_ACCESS_KEY!,
           accessSecret: process.env.NCP_ACCESS_SECRET!,
-          senderAddress: process.env.NCP_SENDER_EMAIL!,
+          senderAddress: '', // sendSmartEmail이 자동 선택
           senderName: 'AED 픽스'
         },
         email,
