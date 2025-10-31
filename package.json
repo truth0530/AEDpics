@@ -35,6 +35,7 @@
     "deploy:stage": "bash ../scripts/deploy-stage.sh",
     "deploy:prod": "bash ../scripts/deploy-prod.sh",
     "benchmark:run": "ts-node ../scripts/run-benchmarks.ts",
+    "test:email": "npx tsx scripts/test/test-ncp-email.ts",
     "prepare": "husky"
   },
   "dependencies": {
