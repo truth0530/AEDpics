@@ -293,17 +293,17 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
   return (
     <div className="h-full flex flex-col" ref={containerRef}>
       {/* 상단 툴바 */}
-      <div className="bg-white border-b px-4 py-3">
+      <div className="bg-white dark:bg-gray-900 border-b dark:border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1">
             {/* 검색 */}
             <div className="relative w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
               <Input
                 placeholder="기관명 또는 주소 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4"
+                className="pl-10 pr-4 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
               />
             </div>
 
@@ -339,8 +339,8 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
           {/* 진행률 */}
           <div className="flex items-center gap-4">
             <div className="text-sm">
-              <span className="text-gray-500">완료:</span>
-              <span className="font-semibold ml-1">{stats.completed}/{stats.total}</span>
+              <span className="text-gray-500 dark:text-gray-400">완료:</span>
+              <span className="font-semibold ml-1 dark:text-gray-200">{stats.completed}/{stats.total}</span>
             </div>
             <Progress value={(stats.completed / stats.total) * 100} className="w-32" />
           </div>
@@ -354,8 +354,8 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
 
         {/* 배치 모드 액션바 */}
         {batchMode && selectedBatch.size > 0 && (
-          <div className="mt-3 flex items-center gap-3 p-2 bg-blue-50 rounded">
-            <span className="text-sm font-medium">{selectedBatch.size}개 선택됨</span>
+          <div className="mt-3 flex items-center gap-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+            <span className="text-sm font-medium dark:text-gray-200">{selectedBatch.size}개 선택됨</span>
             <Button
               size="sm"
               variant="default"
@@ -386,10 +386,10 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
       {/* 메인 콘텐츠 - 3단 레이아웃 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 좌측: 의무기관 목록 */}
-        <div className="w-96 border-r bg-gray-50 flex flex-col">
-          <div className="px-4 py-2 bg-white border-b">
-            <h3 className="font-semibold">의무설치기관</h3>
-            <p className="text-xs text-gray-500">{targets.length}개 항목</p>
+        <div className="w-96 border-r dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex flex-col">
+          <div className="px-4 py-2 bg-white dark:bg-gray-900 border-b dark:border-gray-700">
+            <h3 className="font-semibold dark:text-gray-200">의무설치기관</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{targets.length}개 항목</p>
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-2">
@@ -401,10 +401,11 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
                   <Card
                     key={target.target_key}
                     className={cn(
-                      "cursor-pointer transition-all hover:shadow-md",
-                      isSelected && "ring-2 ring-blue-500 bg-blue-50",
-                      target.status === 'installed' && "border-green-500 bg-green-50/30",
-                      target.status === 'not_installed' && "border-red-500 bg-red-50/30"
+                      "cursor-pointer transition-all hover:shadow-md dark:hover:shadow-gray-700",
+                      isSelected && "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/30",
+                      target.status === 'installed' && "border-green-500 bg-green-50/30 dark:bg-green-900/20",
+                      target.status === 'not_installed' && "border-red-500 bg-red-50/30 dark:bg-red-900/20",
+                      !isSelected && !target.status && "dark:bg-gray-900 dark:border-gray-700"
                     )}
                     onClick={() => {
                       if (batchMode) {
@@ -433,12 +434,12 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
                                 onClick={(e) => e.stopPropagation()}
                               />
                             )}
-                            <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <p className="font-medium text-sm line-clamp-1">{target.institution_name}</p>
+                            <Building2 className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                            <p className="font-medium text-sm line-clamp-1 dark:text-gray-200">{target.institution_name}</p>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
-                            <MapPin className="w-3 h-3 text-gray-400" />
-                            <p className="text-xs text-gray-500">
+                            <MapPin className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {target.sido} {target.gugun}
                             </p>
                           </div>
@@ -470,15 +471,15 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
         </div>
 
         {/* 중앙: 매칭 결과 및 비교 */}
-        <div className="flex-1 bg-white flex flex-col">
+        <div className="flex-1 bg-white dark:bg-gray-900 flex flex-col">
           {selectedTarget ? (
             <>
               {/* 헤더 */}
-              <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-white">
+              <div className="px-6 py-4 border-b dark:border-gray-700 bg-gradient-to-r from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-900">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold">{selectedTarget.institution_name}</h2>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <h2 className="text-xl font-bold dark:text-gray-200">{selectedTarget.institution_name}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {selectedTarget.sido} {selectedTarget.gugun} | {selectedTarget.division} - {selectedTarget.sub_division}
                     </p>
                   </div>
@@ -543,16 +544,16 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
                     {/* 비교 테이블 */}
                     <div className="grid grid-cols-2 gap-6">
                       {/* 의무기관 정보 */}
-                      <Card>
-                        <CardHeader className="pb-3 bg-blue-50">
-                          <CardTitle className="text-base flex items-center gap-2">
+                      <Card className="dark:bg-gray-800 dark:border-gray-700">
+                        <CardHeader className="pb-3 bg-blue-50 dark:bg-blue-900/20">
+                          <CardTitle className="text-base flex items-center gap-2 dark:text-gray-200">
                             <Target className="w-5 h-5" />
                             의무설치기관
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4 space-y-3">
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">기관명</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">기관명</p>
                             <p
                               className="font-medium"
                               dangerouslySetInnerHTML={{
@@ -725,62 +726,62 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
         </div>
 
         {/* 우측: 빠른 액션 패널 */}
-        <div className="w-80 border-l bg-gray-50 p-4 space-y-4">
+        <div className="w-80 border-l dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 space-y-4">
           {/* 단축키 가이드 */}
-          <Card>
+          <Card className="dark:bg-gray-900 dark:border-gray-700">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2 dark:text-gray-200">
                 <Keyboard className="w-4 h-4" />
                 단축키
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <kbd className="px-2 py-1 bg-white rounded border">1</kbd>
+              <div className="flex justify-between text-xs dark:text-gray-300">
+                <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border dark:border-gray-600">1</kbd>
                 <span>설치 확인</span>
               </div>
-              <div className="flex justify-between text-xs">
-                <kbd className="px-2 py-1 bg-white rounded border">2</kbd>
+              <div className="flex justify-between text-xs dark:text-gray-300">
+                <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border dark:border-gray-600">2</kbd>
                 <span>미설치 처리</span>
               </div>
-              <div className="flex justify-between text-xs">
-                <kbd className="px-2 py-1 bg-white rounded border">↑↓</kbd>
+              <div className="flex justify-between text-xs dark:text-gray-300">
+                <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border dark:border-gray-600">↑↓</kbd>
                 <span>목록 이동</span>
               </div>
-              <div className="flex justify-between text-xs">
-                <kbd className="px-2 py-1 bg-white rounded border">Tab</kbd>
+              <div className="flex justify-between text-xs dark:text-gray-300">
+                <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border dark:border-gray-600">Tab</kbd>
                 <span>매칭 전환</span>
               </div>
-              <div className="flex justify-between text-xs">
-                <kbd className="px-2 py-1 bg-white rounded border">Shift+Space</kbd>
+              <div className="flex justify-between text-xs dark:text-gray-300">
+                <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border dark:border-gray-600">Shift+Space</kbd>
                 <span>일괄처리</span>
               </div>
             </CardContent>
           </Card>
 
           {/* 통계 */}
-          <Card>
+          <Card className="dark:bg-gray-900 dark:border-gray-700">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">오늘의 진행 상황</CardTitle>
+              <CardTitle className="text-sm dark:text-gray-200">오늘의 진행 상황</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm dark:text-gray-300">
                   <span>전체</span>
                   <span className="font-medium">{stats.total}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm dark:text-gray-300">
                   <span>완료</span>
-                  <span className="font-medium text-green-600">{stats.completed}</span>
+                  <span className="font-medium text-green-600 dark:text-green-400">{stats.completed}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm dark:text-gray-300">
                   <span>대기</span>
-                  <span className="font-medium text-yellow-600">{stats.pending}</span>
+                  <span className="font-medium text-yellow-600 dark:text-yellow-400">{stats.pending}</span>
                 </div>
               </div>
               <Separator />
               <Progress value={(stats.completed / stats.total) * 100} className="h-2" />
-              <p className="text-xs text-center text-gray-500">
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400">
                 {Math.round((stats.completed / stats.total) * 100)}% 완료
               </p>
             </CardContent>
@@ -788,15 +789,15 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
 
           {/* 다음 추천 작업 */}
           {targets.filter(t => !t.status).length > 0 && (
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className="border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 dark:text-gray-200">
                   <SparklesIcon className="w-4 h-4" />
                   다음 추천 작업
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-gray-600 mb-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                   높은 신뢰도 항목을 우선 처리하면 효율적입니다
                 </p>
                 {targets

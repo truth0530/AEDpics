@@ -17,10 +17,10 @@ export default function ComplianceMainLayout() {
   return (
     <div className="h-full flex flex-col">
       {/* 헤더: 연도 선택 및 타이틀 */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="bg-white dark:bg-gray-900 border-b dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">의무설치기관 매칭</h1>
+            <h1 className="text-2xl font-bold dark:text-gray-200">의무설치기관 매칭</h1>
             <p className="text-muted-foreground text-sm mt-1">
               구비의무기관의 AED 설치 현황을 확인하고 관리합니다
             </p>
@@ -30,7 +30,7 @@ export default function ComplianceMainLayout() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">대상년도:</span>
+              <span className="text-sm font-medium dark:text-gray-300">대상년도:</span>
             </div>
             <ToggleGroup type="single" value={selectedYear} onValueChange={(value) => value && setSelectedYear(value as '2024' | '2025')}>
               <ToggleGroupItem value="2024" className="px-4">
@@ -75,11 +75,11 @@ export default function ComplianceMainLayout() {
               {selectedYear === '2024' ? (
                 <EnhancedComplianceUI year={selectedYear} />
               ) : (
-                <Card className="border-dashed">
+                <Card className="border-dashed dark:border-gray-700">
                   <CardContent className="flex flex-col items-center justify-center py-20">
                     <div className="text-center space-y-3">
                       <div className="text-6xl">📋</div>
-                      <h3 className="text-lg font-semibold">2025년 데이터 준비 중</h3>
+                      <h3 className="text-lg font-semibold dark:text-gray-200">2025년 데이터 준비 중</h3>
                       <p className="text-sm text-muted-foreground">
                         2025년 의무설치기관 목록이 업로드되면<br />
                         이곳에서 확인할 수 있습니다
@@ -94,11 +94,11 @@ export default function ComplianceMainLayout() {
               {selectedYear === '2024' ? (
                 <ComplianceCompletedList year={selectedYear} />
               ) : (
-                <Card className="border-dashed">
+                <Card className="border-dashed dark:border-gray-700">
                   <CardContent className="flex flex-col items-center justify-center py-20">
                     <div className="text-center space-y-3">
                       <div className="text-6xl">✅</div>
-                      <h3 className="text-lg font-semibold">2025년 데이터 준비 중</h3>
+                      <h3 className="text-lg font-semibold dark:text-gray-200">2025년 데이터 준비 중</h3>
                       <p className="text-sm text-muted-foreground">
                         2025년 설치확인 현황이 업로드되면<br />
                         이곳에서 확인할 수 있습니다
@@ -113,7 +113,7 @@ export default function ComplianceMainLayout() {
       </div>
 
       {/* 빠른 통계 (하단 고정) */}
-      <div className="border-t bg-gray-50 px-6 py-3">
+      <div className="border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-6 py-3">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-6">
             <span className="text-muted-foreground">
@@ -121,15 +121,15 @@ export default function ComplianceMainLayout() {
             </span>
             {activeTab === 'targets' ? (
               <div className="flex items-center gap-4">
-                <span>작업 대기 중</span>
+                <span className="dark:text-gray-300">작업 대기 중</span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium">매칭 작업을 진행하세요</span>
+                <span className="font-medium dark:text-gray-200">매칭 작업을 진행하세요</span>
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <span>완료된 작업</span>
+                <span className="dark:text-gray-300">완료된 작업</span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium">확인 이력을 검토하세요</span>
+                <span className="font-medium dark:text-gray-200">확인 이력을 검토하세요</span>
               </div>
             )}
           </div>
