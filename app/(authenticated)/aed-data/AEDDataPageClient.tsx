@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { AEDDataProvider, useAEDData } from '@/app/aed-data/components/AEDDataProvider';
 import { DataTable } from '@/app/aed-data/components/DataTable';
 import { AEDFilterBar } from '@/app/aed-data/components/AEDFilterBar';
@@ -12,6 +13,7 @@ import type { UserProfile } from '@/packages/types';
 import { normalizeRegionName } from '@/lib/constants/regions';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
 import { useAEDDataFreshness } from '@/lib/hooks/use-aed-data-cache';
+import { getActiveInspectionSessions, InspectionSession } from '@/lib/inspections/session-utils';
 
 interface AEDDataPageClientProps {
   initialFilters: Record<string, string | string[] | undefined>;
@@ -19,6 +21,7 @@ interface AEDDataPageClientProps {
 }
 
 function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'toAdd' | 'map' | 'scheduled' | 'all'>('toAdd'); // 기본 탭을 '추가할목록'으로 변경
   const { data, isLoading, isFetching, error, setFilters, scheduled, refetch } = useAEDData();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -26,6 +29,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
   const [initialLocationLoading, setInitialLocationLoading] = useState(true);
   const [filterCollapsed, setFilterCollapsed] = useState(false);
+  const [resumeInspectionEquipment, setResumeInspectionEquipment] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // ✅ 매일 교체되는 데이터셋 캐시 무효화 훅
@@ -46,6 +50,15 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
     () => new Set(scheduled || []),
     [scheduled]
   );
+
+  // ✅ 활성 점검 세션 조회 (30초마다 자동 갱신)
+  const { data: inspectionSessions = new Map() } = useQuery({
+    queryKey: ['active-inspection-sessions'],
+    queryFn: getActiveInspectionSessions,
+    refetchInterval: 30000, // 30초마다 갱신
+    staleTime: 25000,
+  });
+
   const contentRef = useRef<HTMLDivElement>(null);
   const filterBarRef = useRef<HTMLDivElement>(null);
   const isRegionChangeInProgress = useRef(false);
@@ -79,6 +92,11 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
     ) || [];
     setSelectedDevices(selected);
     setShowScheduleModal(true);
+  };
+
+  // 점검중 버튼 클릭 - 이어서 점검할지 확인
+  const handleInspectionInProgress = (equipmentSerial: string) => {
+    setResumeInspectionEquipment(equipmentSerial);
   };
 
   // 일정 취소 mutation
@@ -712,9 +730,11 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
           ) : (
             <DataTable
               scheduledEquipment={scheduledEquipment}
+              inspectionSessions={inspectionSessions}
               onCancelSchedule={(equipmentSerial) => {
                 cancelScheduleMutation.mutate(equipmentSerial);
               }}
+              onInspectionInProgress={handleInspectionInProgress}
               isFetching={isFetching}
               selectedDeviceIds={selectedDeviceIds}
               onDeviceSelect={handleDeviceSelect}
@@ -738,6 +758,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
               userProfile={userProfile}
               viewMode="admin"
               scheduledEquipment={scheduledEquipment}
+              inspectionSessions={inspectionSessions}
               onSchedule={(locations) => {
                 const devices = locations.map(loc => ({
                   id: loc.equipment_serial,
@@ -800,6 +821,35 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
             // action === 'continue'일 경우 현재 탭 유지
           }}
         />
+      )}
+
+      {/* Resume Inspection Confirmation Modal */}
+      {resumeInspectionEquipment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4 text-white">점검 계속하기</h3>
+            <p className="text-gray-300 mb-6">
+              이 장비는 현재 점검이 진행 중입니다. 이어서 점검을 계속하시겠습니까?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setResumeInspectionEquipment(null)}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  router.push(`/inspection/${resumeInspectionEquipment}`);
+                  setResumeInspectionEquipment(null);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                이어서 점검하기
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

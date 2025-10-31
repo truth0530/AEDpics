@@ -302,6 +302,15 @@ const DesktopTableRow = memo(({
             <span className="text-[10px] lg:text-xs xl:text-sm px-2 py-1 h-6 lg:h-7 xl:h-8 text-red-400 flex items-center">
               점검불가
             </span>
+          ) : inspectionSession?.status === 'active' ? (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => onInspectionInProgress && onInspectionInProgress(device.equipment_serial)}
+              className="text-[10px] lg:text-xs xl:text-sm px-2 py-1 h-6 lg:h-7 xl:h-8 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              점검중
+            </Button>
           ) : (
             <Button
               size="sm"
@@ -530,6 +539,15 @@ const MobileCard = memo(({
                 <span className="text-[10px] px-1.5 py-0.5 h-5 text-red-400 flex items-center flex-shrink-0">
                   점검불가
                 </span>
+              ) : inspectionSession?.status === 'active' ? (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => onInspectionInProgress && onInspectionInProgress(device.equipment_serial)}
+                  className="text-[10px] px-1.5 py-0.5 h-5 bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+                >
+                  점검중
+                </Button>
               ) : (
                 <Button
                   size="sm"

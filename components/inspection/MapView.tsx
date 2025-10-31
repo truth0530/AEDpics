@@ -23,6 +23,15 @@ interface AEDMapLocation {
   external_non_display_reason?: string;
 }
 
+interface InspectionSession {
+  id: string;
+  equipment_serial: string;
+  inspector_id: string;
+  inspector_name?: string;
+  status: 'active' | 'completed' | 'cancelled' | 'paused';
+  current_step: number;
+}
+
 interface MapViewProps {
   locations?: AEDMapLocation[];
   isLoading?: boolean;
@@ -34,6 +43,8 @@ interface MapViewProps {
   onSchedule?: (locations: AEDMapLocation[]) => void; // 일정 추가 핸들러
   onCancelSchedule?: (equipmentSerial: string) => void; // 일정 취소 핸들러
   scheduledEquipment?: Set<string>; // 일정추가된 장비 시리얼 목록
+  inspectionSessions?: Map<string, InspectionSession>; // 활성 점검 세션
+  onInspectionInProgress?: (equipmentSerial: string) => void; // 점검 진행중 핸들러
   filters?: any; // AEDFilterBar의 필터 상태
 }
 
@@ -48,6 +59,8 @@ export function MapView({
   onSchedule,
   onCancelSchedule,
   scheduledEquipment = new Set(),
+  inspectionSessions = new Map(),
+  onInspectionInProgress,
   filters
 }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -1216,18 +1229,33 @@ export function MapView({
                     </button>
                   ) : viewMode === 'admin' && (
                     scheduledEquipment.has(selectedAED.equipment_serial) ? (
-                      <button
-                        onClick={() => {
-                          if (onCancelSchedule) {
-                            onCancelSchedule(selectedAED.equipment_serial);
-                          }
-                          setSelectedAED(null);
-                          setPopupPosition(null);
-                        }}
-                        className="flex-1 bg-red-600 text-white py-1.5 px-2 rounded hover:bg-red-700 transition-colors text-xs font-semibold shadow-sm"
-                      >
-                        일정 취소
-                      </button>
+                      inspectionSessions.get(selectedAED.equipment_serial)?.status === 'active' ? (
+                        <button
+                          onClick={() => {
+                            if (onInspectionInProgress) {
+                              onInspectionInProgress(selectedAED.equipment_serial);
+                            }
+                            setSelectedAED(null);
+                            setPopupPosition(null);
+                          }}
+                          className="flex-1 bg-blue-600 text-white py-1.5 px-2 rounded hover:bg-blue-700 transition-colors text-xs font-semibold shadow-sm"
+                        >
+                          점검중
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (onCancelSchedule) {
+                              onCancelSchedule(selectedAED.equipment_serial);
+                            }
+                            setSelectedAED(null);
+                            setPopupPosition(null);
+                          }}
+                          className="flex-1 bg-red-600 text-white py-1.5 px-2 rounded hover:bg-red-700 transition-colors text-xs font-semibold shadow-sm"
+                        >
+                          일정 취소
+                        </button>
+                      )
                     ) : (
                       <button
                         onClick={() => {
@@ -1330,15 +1358,27 @@ export function MapView({
                           점검
                         </button>
                       ) : scheduledEquipment.has(location.equipment_serial) ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onCancelSchedule) onCancelSchedule(location.equipment_serial);
-                          }}
-                          className="text-[10px] px-1.5 py-0.5 h-5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors flex-shrink-0"
-                        >
-                          취소
-                        </button>
+                        inspectionSessions.get(location.equipment_serial)?.status === 'active' ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onInspectionInProgress) onInspectionInProgress(location.equipment_serial);
+                            }}
+                            className="text-[10px] px-1.5 py-0.5 h-5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0"
+                          >
+                            점검중
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onCancelSchedule) onCancelSchedule(location.equipment_serial);
+                            }}
+                            className="text-[10px] px-1.5 py-0.5 h-5 bg-red-500 hover:bg-red-600 text-white rounded transition-colors flex-shrink-0"
+                          >
+                            취소
+                          </button>
+                        )
                       ) : (
                         <button
                           onClick={(e) => {
