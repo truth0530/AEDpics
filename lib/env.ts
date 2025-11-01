@@ -7,15 +7,20 @@
 
 import { z } from 'zod';
 
+// CI 환경 감지 (GitHub Actions 등)
+const isBuildTime = process.env.CI === 'true' || process.env.NEXT_PHASE === 'phase-production-build';
+
 // 환경변수 스키마 정의
 const envSchema = z.object({
   // ========================================
-  // Database (필수)
+  // Database (런타임에만 필수)
   // ========================================
-  DATABASE_URL: z
-    .string()
-    .min(1, 'DATABASE_URL is required')
-    .regex(/^postgresql:\/\//, 'DATABASE_URL must be a valid PostgreSQL connection string'),
+  DATABASE_URL: isBuildTime
+    ? z.string().optional()
+    : z
+        .string()
+        .min(1, 'DATABASE_URL is required')
+        .regex(/^postgresql:\/\//, 'DATABASE_URL must be a valid PostgreSQL connection string'),
 
   DIRECT_URL: z
     .string()
@@ -23,57 +28,59 @@ const envSchema = z.object({
     .optional(),
 
   // ========================================
-  // Authentication (필수)
+  // Authentication (런타임에만 필수)
   // ========================================
-  NEXTAUTH_URL: z
-    .string()
-    .url('NEXTAUTH_URL must be a valid URL'),
+  NEXTAUTH_URL: isBuildTime
+    ? z.string().optional()
+    : z.string().url('NEXTAUTH_URL must be a valid URL'),
 
-  NEXTAUTH_SECRET: z
-    .string()
-    .min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
+  NEXTAUTH_SECRET: isBuildTime
+    ? z.string().optional()
+    : z.string().min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
 
-  JWT_SECRET: z
-    .string()
-    .min(16, 'JWT_SECRET must be at least 16 characters'),
+  JWT_SECRET: isBuildTime
+    ? z.string().optional()
+    : z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
 
-  ENCRYPTION_KEY: z
-    .string()
-    .min(16, 'ENCRYPTION_KEY must be at least 16 characters'),
+  ENCRYPTION_KEY: isBuildTime
+    ? z.string().optional()
+    : z.string().min(16, 'ENCRYPTION_KEY must be at least 16 characters'),
 
   // ========================================
-  // Application (필수)
+  // Application (런타임에만 필수)
   // ========================================
-  MASTER_EMAIL: z
-    .string()
-    .email('MASTER_EMAIL must be a valid email address')
-    .or(z.string().regex(/^[^@]+@[^@]+\.[^@]+(,[^@]+@[^@]+\.[^@]+)*$/, 'MASTER_EMAIL must be valid email(s)')),
+  MASTER_EMAIL: isBuildTime
+    ? z.string().optional()
+    : z
+        .string()
+        .email('MASTER_EMAIL must be a valid email address')
+        .or(z.string().regex(/^[^@]+@[^@]+\.[^@]+(,[^@]+@[^@]+\.[^@]+)*$/, 'MASTER_EMAIL must be valid email(s)')),
 
   NEXT_PUBLIC_SITE_URL: z
     .string()
     .url('NEXT_PUBLIC_SITE_URL must be a valid URL'),
 
   // ========================================
-  // Kakao Maps (필수)
+  // Kakao Maps (빌드/런타임 모두 필수)
   // ========================================
   NEXT_PUBLIC_KAKAO_MAP_APP_KEY: z
     .string()
     .min(1, 'NEXT_PUBLIC_KAKAO_MAP_APP_KEY is required'),
 
   // ========================================
-  // NCP Email Service (필수)
+  // NCP Email Service (런타임에만 필수)
   // ========================================
-  NCP_ACCESS_KEY: z
-    .string()
-    .min(1, 'NCP_ACCESS_KEY is required'),
+  NCP_ACCESS_KEY: isBuildTime
+    ? z.string().optional()
+    : z.string().min(1, 'NCP_ACCESS_KEY is required'),
 
-  NCP_ACCESS_SECRET: z
-    .string()
-    .min(1, 'NCP_ACCESS_SECRET is required'),
+  NCP_ACCESS_SECRET: isBuildTime
+    ? z.string().optional()
+    : z.string().min(1, 'NCP_ACCESS_SECRET is required'),
 
-  NCP_SENDER_EMAIL: z
-    .string()
-    .email('NCP_SENDER_EMAIL must be a valid email address'),
+  NCP_SENDER_EMAIL: isBuildTime
+    ? z.string().optional()
+    : z.string().email('NCP_SENDER_EMAIL must be a valid email address'),
 
   // ========================================
   // NCP Object Storage (선택적)
@@ -192,8 +199,10 @@ function validateEnv(): Env {
     // 환경변수 파싱
     const parsed = envSchema.parse(process.env);
 
-    // 검증 성공 로그 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
+    // 검증 성공 로그
+    if (isBuildTime) {
+      console.log('[ENV] Build-time validation passed (runtime variables skipped)');
+    } else if (process.env.NODE_ENV === 'development') {
       console.log('[ENV] Environment variables validated successfully');
     }
 
@@ -214,13 +223,20 @@ function validateEnv(): Env {
       console.error('[ENV] Refer to .env.example for required variables');
       console.error('');
 
-      // 프로세스 종료
-      process.exit(1);
+      // 빌드 타임이 아닌 경우에만 프로세스 종료
+      if (!isBuildTime) {
+        process.exit(1);
+      }
     }
 
     // 예상치 못한 오류
     console.error('[ENV] Unexpected error during environment validation:', error);
-    process.exit(1);
+    if (!isBuildTime) {
+      process.exit(1);
+    }
+
+    // 빌드 타임에는 빈 객체 반환 (타입 안전성을 위해)
+    return {} as Env;
   }
 }
 
