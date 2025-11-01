@@ -52,56 +52,142 @@ const MANDATORY_CATEGORIES = ['공동주택', '공항·항만·역사', '학교'
 /**
  * 역할별 대시보드 데이터 조회 (Prisma 버전)
  */
-export const getCachedDashboardData = cache(async (userProfile: UserProfile): Promise<DashboardData> => {
+export const getCachedDashboardData = cache(async (
+  userProfile: UserProfile,
+  selectedSido?: string,
+  selectedGugun?: string
+): Promise<DashboardData> => {
   try {
     // 전국 또는 지역별 통계 집계
     const isNationalView = ['master', 'ministry_admin', 'emergency_center_admin', 'regional_emergency_center_admin'].includes(userProfile.role);
 
     if (isNationalView) {
       // 전국 시도별 통계 집계 (단일 쿼리로 최적화)
-      const aggregatedStats = await prisma.$queryRaw<Array<{
-        sido: string;
+      // selectedSido가 있으면 해당 시도만, selectedGugun이 있으면 해당 구군만
+      const groupByField = (selectedSido && selectedSido !== '전체') ? 'gugun' : 'sido';
+
+      let aggregatedStats: Array<{
+        region: string;
         total: bigint;
         mandatory: bigint;
         completed: bigint;
         blocked: bigint;
         uninspected: bigint;
         completed_mandatory: bigint;
-      }>>`
-        SELECT
-          sido,
-          COUNT(*) as total,
-          SUM(CASE
-            WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
-            THEN 1
-            ELSE 0
-          END) as mandatory,
-          SUM(CASE
-            WHEN last_inspection_date IS NOT NULL
-            THEN 1
-            ELSE 0
-          END) as completed,
-          SUM(CASE
-            WHEN external_display = 'N'
-            THEN 1
-            ELSE 0
-          END) as blocked,
-          SUM(CASE
-            WHEN last_inspection_date IS NULL
-            THEN 1
-            ELSE 0
-          END) as uninspected,
-          SUM(CASE
-            WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
-              AND last_inspection_date IS NOT NULL
-            THEN 1
-            ELSE 0
-          END) as completed_mandatory
-        FROM aedpics.aed_data
-        WHERE sido IS NOT NULL
-        GROUP BY sido
-        ORDER BY total DESC
-      `;
+      }>;
+
+      if (selectedGugun && selectedGugun !== '전체') {
+        // 특정 구군만 조회
+        aggregatedStats = await prisma.$queryRaw`
+          SELECT
+            gugun as region,
+            COUNT(*) as total,
+            SUM(CASE
+              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              THEN 1
+              ELSE 0
+            END) as mandatory,
+            SUM(CASE
+              WHEN last_inspection_date IS NOT NULL
+              THEN 1
+              ELSE 0
+            END) as completed,
+            SUM(CASE
+              WHEN external_display = 'N'
+              THEN 1
+              ELSE 0
+            END) as blocked,
+            SUM(CASE
+              WHEN last_inspection_date IS NULL
+              THEN 1
+              ELSE 0
+            END) as uninspected,
+            SUM(CASE
+              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+                AND last_inspection_date IS NOT NULL
+              THEN 1
+              ELSE 0
+            END) as completed_mandatory
+          FROM aedpics.aed_data
+          WHERE gugun = ${selectedGugun}
+          GROUP BY gugun
+          ORDER BY total DESC
+        `;
+      } else if (selectedSido && selectedSido !== '전체') {
+        // 특정 시도의 구군별 통계
+        aggregatedStats = await prisma.$queryRaw`
+          SELECT
+            gugun as region,
+            COUNT(*) as total,
+            SUM(CASE
+              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              THEN 1
+              ELSE 0
+            END) as mandatory,
+            SUM(CASE
+              WHEN last_inspection_date IS NOT NULL
+              THEN 1
+              ELSE 0
+            END) as completed,
+            SUM(CASE
+              WHEN external_display = 'N'
+              THEN 1
+              ELSE 0
+            END) as blocked,
+            SUM(CASE
+              WHEN last_inspection_date IS NULL
+              THEN 1
+              ELSE 0
+            END) as uninspected,
+            SUM(CASE
+              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+                AND last_inspection_date IS NOT NULL
+              THEN 1
+              ELSE 0
+            END) as completed_mandatory
+          FROM aedpics.aed_data
+          WHERE sido = ${selectedSido}
+          GROUP BY gugun
+          ORDER BY total DESC
+        `;
+      } else {
+        // 전국 시도별 통계
+        aggregatedStats = await prisma.$queryRaw`
+          SELECT
+            sido as region,
+            COUNT(*) as total,
+            SUM(CASE
+              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              THEN 1
+              ELSE 0
+            END) as mandatory,
+            SUM(CASE
+              WHEN last_inspection_date IS NOT NULL
+              THEN 1
+              ELSE 0
+            END) as completed,
+            SUM(CASE
+              WHEN external_display = 'N'
+              THEN 1
+              ELSE 0
+            END) as blocked,
+            SUM(CASE
+              WHEN last_inspection_date IS NULL
+              THEN 1
+              ELSE 0
+            END) as uninspected,
+            SUM(CASE
+              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+                AND last_inspection_date IS NOT NULL
+              THEN 1
+              ELSE 0
+            END) as completed_mandatory
+          FROM aedpics.aed_data
+          WHERE sido IS NOT NULL
+          GROUP BY sido
+          ORDER BY total DESC
+        `;
+      }
 
       const regionStats: RegionStats[] = aggregatedStats.map((stat) => {
         const total = Number(stat.total);
@@ -114,7 +200,7 @@ export const getCachedDashboardData = cache(async (userProfile: UserProfile): Pr
         const completedNonMandatory = completed - completedMandatory;
 
         return {
-          region: stat.sido || '알 수 없음',
+          region: stat.region || '알 수 없음',
           total,
           mandatory,
           nonMandatory,
@@ -147,8 +233,15 @@ export const getCachedDashboardData = cache(async (userProfile: UserProfile): Pr
       const totalAED = regionStats.reduce((sum, r) => sum + r.total, 0);
       const totalCompleted = regionStats.reduce((sum, r) => sum + r.completed, 0);
 
+      let title = '전국 시도별 AED 점검 현황';
+      if (selectedGugun && selectedGugun !== '전체') {
+        title = `${selectedGugun} AED 점검 현황`;
+      } else if (selectedSido && selectedSido !== '전체') {
+        title = `${selectedSido} 시군구별 AED 점검 현황`;
+      }
+
       return {
-        title: '전국 시도별 AED 점검 현황',
+        title,
         data: regionStats,
         totalAED,
         totalCompleted,
@@ -157,7 +250,14 @@ export const getCachedDashboardData = cache(async (userProfile: UserProfile): Pr
       };
     } else {
       // 지역별 상세 통계
-      const regionWhere = userProfile.region ? { sido: userProfile.region } : {};
+      const regionWhere: any = {};
+      if (selectedGugun && selectedGugun !== '전체') {
+        regionWhere.gugun = selectedGugun;
+      } else if (selectedSido) {
+        regionWhere.sido = selectedSido;
+      } else if (userProfile.region) {
+        regionWhere.sido = userProfile.region;
+      }
 
       const [total, completed] = await Promise.all([
         prisma.aed_data.count({ where: regionWhere }),
@@ -185,7 +285,7 @@ export const getCachedDashboardData = cache(async (userProfile: UserProfile): Pr
       });
 
       const regionStat: RegionStats = {
-        region: userProfile.region || '전체',
+        region: selectedGugun || selectedSido || userProfile.region || '전체',
         total,
         mandatory,
         nonMandatory: total - mandatory,
@@ -215,7 +315,7 @@ export const getCachedDashboardData = cache(async (userProfile: UserProfile): Pr
       };
 
       return {
-        title: `${userProfile.region || '지역'} AED 점검 현황`,
+        title: `${selectedGugun || selectedSido || userProfile.region || '지역'} AED 점검 현황`,
         data: [regionStat],
         totalAED: total,
         totalCompleted: completed,

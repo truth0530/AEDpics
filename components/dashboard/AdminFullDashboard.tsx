@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { UserProfile } from '@/packages/types';
-import AEDDashboardNew from './AEDDashboardNew';
+import ImprovedDashboard from './ImprovedDashboard';
 import {
   getCachedDashboardData,
   getCachedHourlyInspections,
@@ -18,27 +18,54 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
   const [hourlyData, setHourlyData] = useState<any>(null);
   const [dailyData, setDailyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedSido, setSelectedSido] = useState<string>('전체');
+  const [selectedGugun, setSelectedGugun] = useState<string>('전체');
+
+  const loadDashboardData = async (sido: string, gugun: string) => {
+    try {
+      setLoading(true);
+      const [dashboard, hourly, daily] = await Promise.all([
+        getCachedDashboardData(user, sido, gugun),
+        getCachedHourlyInspections(user),
+        getCachedDailyInspections(user),
+      ]);
+
+      setDashboardData(dashboard);
+      setHourlyData(hourly);
+      setDailyData(daily);
+    } catch (error) {
+      console.error('[AdminFullDashboard] Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadDashboardData() {
-      try {
-        const [dashboard, hourly, daily] = await Promise.all([
-          getCachedDashboardData(user),
-          getCachedHourlyInspections(user),
-          getCachedDailyInspections(user),
-        ]);
+    // 초기 로드 시 sessionStorage에서 지역 정보 복원
+    const storedSido = window.sessionStorage.getItem('selectedSido') || '전체';
+    const storedGugun = window.sessionStorage.getItem('selectedGugun') || '전체';
 
-        setDashboardData(dashboard);
-        setHourlyData(hourly);
-        setDailyData(daily);
-      } catch (error) {
-        console.error('[AdminFullDashboard] Error loading data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+    setSelectedSido(storedSido);
+    setSelectedGugun(storedGugun);
+    loadDashboardData(storedSido, storedGugun);
+  }, [user]);
 
-    loadDashboardData();
+  useEffect(() => {
+    // regionSelected 이벤트 리스너 등록
+    const handleRegionSelected = (event: Event) => {
+      const customEvent = event as CustomEvent<{ sido: string; gugun: string }>;
+      const { sido, gugun } = customEvent.detail;
+
+      setSelectedSido(sido);
+      setSelectedGugun(gugun);
+      loadDashboardData(sido, gugun);
+    };
+
+    window.addEventListener('regionSelected', handleRegionSelected as EventListener);
+
+    return () => {
+      window.removeEventListener('regionSelected', handleRegionSelected as EventListener);
+    };
   }, [user]);
 
   if (loading) {
@@ -50,7 +77,7 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
   }
 
   return (
-    <AEDDashboardNew
+    <ImprovedDashboard
       dashboardData={dashboardData}
       hourlyData={hourlyData}
       dailyData={dailyData}

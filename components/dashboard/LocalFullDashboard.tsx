@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { UserProfile } from '@/packages/types';
-import AEDDashboardNew from './AEDDashboardNew';
+import ImprovedDashboard from './ImprovedDashboard';
 import {
   getCachedDashboardData,
   getCachedHourlyInspections,
@@ -22,9 +22,12 @@ export default function LocalFullDashboard({ user }: LocalFullDashboardProps) {
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        // 지역 보건소는 자신의 관할 지역 데이터만 로드
+        // 지역 보건소는 자신의 관할 지역 데이터만 로드 (지역 고정)
+        // user.region에는 시도 정보가 저장됨 (예: "서울특별시")
+        const sido = user.region;
+
         const [dashboard, hourly, daily] = await Promise.all([
-          getCachedDashboardData(user),
+          getCachedDashboardData(user, sido, undefined),
           getCachedHourlyInspections(user),
           getCachedDailyInspections(user),
         ]);
@@ -51,7 +54,7 @@ export default function LocalFullDashboard({ user }: LocalFullDashboardProps) {
   }
 
   return (
-    <AEDDashboardNew
+    <ImprovedDashboard
       dashboardData={dashboardData}
       hourlyData={hourlyData}
       dailyData={dailyData}
