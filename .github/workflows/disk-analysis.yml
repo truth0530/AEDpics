@@ -1,0 +1,72 @@
+name: Disk Usage Analysis
+
+on:
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Analyze Disk Usage
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== System Disk Info ==="
+          df -h
+
+          echo ""
+          echo "=== Root Directory Usage ==="
+          du -sh /* 2>/dev/null | sort -hr | head -20
+
+          echo ""
+          echo "=== /var Directory Usage ==="
+          du -sh /var/* 2>/dev/null | sort -hr | head -20
+
+          echo ""
+          echo "=== AEDpics Directory Detailed Usage ==="
+          du -sh /var/www/aedpics/* 2>/dev/null | sort -hr
+
+          echo ""
+          echo "=== node_modules Size ==="
+          du -sh /var/www/aedpics/node_modules 2>/dev/null
+
+          echo ""
+          echo "=== .next Build Cache ==="
+          du -sh /var/www/aedpics/.next 2>/dev/null
+
+          echo ""
+          echo "=== PM2 Logs ==="
+          du -sh /var/www/aedpics/logs/* 2>/dev/null
+          ls -lh /var/www/aedpics/logs/ 2>/dev/null
+
+          echo ""
+          echo "=== Home Directory Cache ==="
+          du -sh ~/.npm 2>/dev/null
+          du -sh ~/.cache 2>/dev/null
+          du -sh ~/.pm2 2>/dev/null
+
+          echo ""
+          echo "=== Database Size (if local) ==="
+          du -sh /var/lib/postgresql 2>/dev/null || echo "PostgreSQL not local"
+
+          echo ""
+          echo "=== Log Files ==="
+          du -sh /var/log 2>/dev/null
+
+          echo ""
+          echo "=== Docker (if exists) ==="
+          du -sh /var/lib/docker 2>/dev/null || echo "Docker not found"
+
+          echo ""
+          echo "=== Largest Files in /var/www/aedpics ==="
+          find /var/www/aedpics -type f -size +10M -exec ls -lh {} \; 2>/dev/null | head -20
+
+          echo ""
+          echo "=== Inode Usage ==="
+          df -i
