@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AEDDevice } from '@/packages/types/aed';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/Toast';
+import { TeamMemberSelector } from '@/components/team/TeamMemberSelector';
 
 interface ScheduleModalProps {
   devices: AEDDevice[];
@@ -15,8 +16,9 @@ interface ScheduleModalProps {
 
 export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<'confirm' | 'start-inspection' | 'success'>('confirm');
+  const [step, setStep] = useState<'confirm' | 'assign-member' | 'start-inspection' | 'success'>('confirm');
   const [addedEquipmentSerial, setAddedEquipmentSerial] = useState<string | null>(null);
+  const [assignedToUserId, setAssignedToUserId] = useState<string | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showError } = useToast();
@@ -44,7 +46,12 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
     }
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
+    // Step 1: 확인 → Step 2: 팀원 선택으로 이동
+    setStep('assign-member');
+  };
+
+  const handleAssignAndCreate = async () => {
     setIsSubmitting(true);
 
     try {
@@ -55,16 +62,16 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
         throw new Error('유효한 장비 시리얼 번호가 없습니다.');
       }
 
-      // 대량 일정추가 API 호출 (assignedTo를 생략하면 서버에서 자동으로 auth.uid()로 설정됨)
+      // 대량 일정추가 API 호출
       const response = await fetch('/api/inspections/assignments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          equipmentSerials, // 대량 처리
-          // assignedTo를 생략하여 서버에서 자동으로 현재 사용자에게 할당
-          scheduledDate: new Date().toISOString().split('T')[0], // 오늘 날짜
+          equipmentSerials,
+          assignedTo: assignedToUserId, // null = 본인, string = 팀원 user_profile_id
+          scheduledDate: new Date().toISOString().split('T')[0],
           scheduledTime: null,
           assignmentType: 'scheduled',
           priorityLevel: 0,
@@ -78,31 +85,28 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
         throw new Error(result.error || '일정을 저장하지 못했습니다.');
       }
 
-      // ✅ 캐시 무효화 (UI 즉시 업데이트)
-      // 1. inspection 페이지 캐시 무효화
-      queryClient.invalidateQueries({ 
+      // 캐시 무효화 (UI 즉시 업데이트)
+      queryClient.invalidateQueries({
         queryKey: ['aed-data'],
         predicate: (query) => {
           const key = query.queryKey as any[];
           return key[0] === 'aed-data' && key[2] === 'inspection';
         }
       });
-      
-      // 2. 일정관리 페이지(admin viewMode) 캐시 무효화
-      queryClient.invalidateQueries({ 
+
+      queryClient.invalidateQueries({
         queryKey: ['aed-data'],
         predicate: (query) => {
           const key = query.queryKey as any[];
           return key[0] === 'aed-data' && key[2] === 'admin';
         }
       });
-      
-      // 3. scheduled-equipment 캐시 무효화 ("추가된일정" 탭 업데이트)
-      queryClient.invalidateQueries({ 
+
+      queryClient.invalidateQueries({
         queryKey: ['scheduled-equipment']
       });
 
-      // 단일 장비일 경우에만 2단계로 진행
+      // 단일 장비일 경우에만 점검 시작 단계로 진행
       if (!isMultiple && equipmentSerials[0]) {
         setAddedEquipmentSerial(equipmentSerials[0]);
         setStep('start-inspection');
@@ -170,11 +174,11 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
       onClick={handleBackdropClick}
     >
-      <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 shadow-xl">
-        <div className="px-6 py-8 text-center">
+      <div className="w-full max-w-2xl rounded-xl border border-gray-700 bg-gray-900 shadow-xl">
+        <div className="px-6 py-8">
           {step === 'confirm' ? (
             // 1단계: 일정 추가 확인
-            <>
+            <div className="text-center">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-white mb-3">일정 추가 확인</h2>
                 <p className="text-base text-gray-300">
@@ -191,14 +195,52 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
                   variant="outline"
                   className="px-8 py-2 text-gray-300 border-gray-600 hover:bg-gray-800"
                 >
-                  아니오
+                  취소
                 </Button>
                 <Button
                   onClick={handleConfirm}
                   disabled={isSubmitting}
                   className="px-8 py-2 bg-green-600 hover:bg-green-700 text-white"
                 >
-                  {isSubmitting ? '처리 중...' : '네'}
+                  다음
+                </Button>
+              </div>
+            </div>
+          ) : step === 'assign-member' ? (
+            // 2단계: 팀원 선택 (NEW!)
+            <>
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-white mb-2">담당자 선택</h2>
+                <p className="text-sm text-gray-400">
+                  {isMultiple
+                    ? `${deviceList.length}개 AED를 담당할 팀원을 선택하세요`
+                    : '이 AED를 담당할 팀원을 선택하세요'}
+                </p>
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto">
+                <TeamMemberSelector
+                  onSelect={setAssignedToUserId}
+                  defaultValue={null}
+                  showSelfOption={true}
+                />
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-700">
+                <Button
+                  onClick={() => setStep('confirm')}
+                  variant="outline"
+                  className="flex-1 text-gray-300 border-gray-600 hover:bg-gray-800"
+                  disabled={isSubmitting}
+                >
+                  이전
+                </Button>
+                <Button
+                  onClick={handleAssignAndCreate}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isSubmitting ? '추가 중...' : '일정 추가'}
                 </Button>
               </div>
             </>

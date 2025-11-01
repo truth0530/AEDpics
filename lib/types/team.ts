@@ -238,3 +238,33 @@ export interface ConflictResolution<T = unknown> {
   user_choice?: 'local' | 'server' | 'merge' | 'manual';
   merged_data?: T;
 }
+
+/**
+ * 팀원 할당 기능 관련 타입 정의
+ */
+export type MemberType = 'permanent' | 'temporary' | 'volunteer';
+
+export interface TeamMemberWithStats {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  position: string | null;
+  member_type: MemberType;
+  user_profile_id: string | null;
+  current_assigned: number;
+  completed_this_month: number;
+}
+
+export interface TeamMembersResponse {
+  success: boolean;
+  data: {
+    members: TeamMemberWithStats[];
+    groupedByDept: Record<string, TeamMemberWithStats[]>;
+    currentUser: {
+      id: string;
+      name: string;
+      role: string;
+    };
+  };
+}
