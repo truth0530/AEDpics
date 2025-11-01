@@ -5,6 +5,7 @@ import { PrismaClient, user_role } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
 import { sendApprovalEmail } from '@/lib/email/approval-email';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -131,10 +132,16 @@ export async function POST(
       );
     } catch (emailError) {
       // 이메일 발송 실패해도 승인은 완료된 상태로 유지
-      console.error('[User Approved] Email sending failed:', emailError);
+      logger.error('AdminUsersApprove:POST', 'Email sending failed',
+        emailError instanceof Error ? emailError : { emailError }
+      );
     }
 
-    console.log(`[User Approved] ${targetUser.email} approved as ${role} by ${adminProfile.email}`);
+    logger.info('AdminUsersApprove:POST', 'User approved successfully', {
+      targetEmail: targetUser.email,
+      approvedRole: role,
+      approvedBy: adminProfile.email
+    });
 
     return NextResponse.json({
       success: true,
@@ -143,7 +150,9 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('[POST /api/admin/users/[id]/approve] Error:', error);
+    logger.error('AdminUsersApprove:POST', 'User approval error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

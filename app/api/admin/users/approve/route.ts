@@ -597,7 +597,9 @@ export async function DELETE(request: NextRequest) {
         }
       });
     } catch (auditLogError) {
-      console.error('⚠️ Audit log exception (non-critical):', auditLogError);
+      logger.error('API:reject', 'Audit log exception (non-critical)',
+        auditLogError instanceof Error ? auditLogError : { auditLogError }
+      );
       // 예외 발생해도 거부는 성공으로 처리
     }
 

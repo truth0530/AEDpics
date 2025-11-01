@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
 import { sendRejectionEmail } from '@/lib/email/rejection-email';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -114,7 +115,9 @@ export async function POST(
       );
     } catch (emailError) {
       // 이메일 발송 실패해도 거부는 진행
-      console.error('[User Rejected] Email sending failed:', emailError);
+      logger.error('AdminUsersReject:POST', 'Email sending failed',
+        emailError instanceof Error ? emailError : { emailError }
+      );
     }
 
     // 9. 사용자 삭제
@@ -132,7 +135,11 @@ export async function POST(
     //   }
     // });
 
-    console.log(`[User Rejected] ${targetUser.email} rejected by ${adminProfile.email}. Reason: ${reason}`);
+    logger.info('AdminUsersReject:POST', 'User rejected successfully', {
+      targetEmail: targetUser.email,
+      rejectedBy: adminProfile.email,
+      reason
+    });
 
     return NextResponse.json({
       success: true,
@@ -140,7 +147,9 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('[POST /api/admin/users/[id]/reject] Error:', error);
+    logger.error('AdminUsersReject:POST', 'User rejection error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

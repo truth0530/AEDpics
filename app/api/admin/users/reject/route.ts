@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -71,7 +72,9 @@ export async function POST(request: NextRequest) {
         }
       });
     } catch (updateError: any) {
-      console.error('Rejection update error:', updateError);
+      logger.error('AdminUsersReject:POST', 'Rejection update error',
+        updateError instanceof Error ? updateError : { updateError }
+      );
       return NextResponse.json(
         { error: '거부 처리 중 오류가 발생했습니다.', details: updateError.message },
         { status: 500 }
@@ -108,7 +111,9 @@ export async function POST(request: NextRequest) {
         })
       });
     } catch (notifyError) {
-      console.error('Failed to send rejection notification:', notifyError);
+      logger.error('AdminUsersReject:POST', 'Failed to send rejection notification',
+        notifyError instanceof Error ? notifyError : { notifyError }
+      );
     }
 
     return NextResponse.json({
@@ -117,7 +122,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('User rejection error:', error);
+    logger.error('AdminUsersReject:POST', 'User rejection error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: '거부 처리 중 오류가 발생했습니다.' },
       { status: 500 }
