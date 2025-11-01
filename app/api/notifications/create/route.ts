@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -80,7 +81,9 @@ export async function POST(request: NextRequest) {
       count: createdNotifications.count
     });
   } catch (error) {
-    console.error('Notification creation error:', error);
+    logger.error('NotificationCreate:POST', 'Notification creation error',
+      error instanceof Error ? error : { error }
+    );
     return Response.json({
       error: 'Failed to create notifications',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -142,7 +145,9 @@ export async function GET(request: NextRequest) {
       hasMore: (notifications?.length || 0) === limit
     });
   } catch (error) {
-    console.error('Get notifications error:', error);
+    logger.error('NotificationCreate:GET', 'Get notifications error',
+      error instanceof Error ? error : { error }
+    );
     return Response.json({
       error: 'Failed to get notifications'
     }, { status: 500 });
@@ -182,7 +187,9 @@ export async function PATCH(request: NextRequest) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('Update notification error:', error);
+    logger.error('NotificationCreate:PATCH', 'Update notification error',
+      error instanceof Error ? error : { error }
+    );
     return Response.json({
       error: 'Failed to update notification'
     }, { status: 500 });
@@ -213,7 +220,9 @@ export async function DELETE(request: NextRequest) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    logger.error('NotificationCreate:DELETE', 'Delete notification error',
+      error instanceof Error ? error : { error }
+    );
     return Response.json({
       error: 'Failed to delete notification'
     }, { status: 500 });

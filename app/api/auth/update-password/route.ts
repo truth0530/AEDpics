@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!userData) {
-      console.error('사용자 조회 오류: 사용자를 찾을 수 없음');
+      logger.error('UpdatePassword:POST', 'User not found', { email });
       return NextResponse.json(
         { error: '사용자를 찾을 수 없습니다.' },
         { status: 404 }
@@ -67,9 +68,11 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      console.log('비밀번호 업데이트 성공:', userData.id);
+      logger.info('UpdatePassword:POST', 'Password updated successfully', { userId: userData.id });
     } catch (updateError) {
-      console.error('비밀번호 업데이트 오류:', updateError);
+      logger.error('UpdatePassword:POST', 'Password update error',
+        updateError instanceof Error ? updateError : { updateError }
+      );
       return NextResponse.json(
         { error: '비밀번호 변경에 실패했습니다.' },
         { status: 500 }
@@ -82,7 +85,9 @@ export async function POST(request: NextRequest) {
         where: { id: verificationCode.id },
       });
     } catch (deleteError) {
-      console.error('토큰 삭제 오류:', deleteError);
+      logger.error('UpdatePassword:POST', 'Token delete error',
+        deleteError instanceof Error ? deleteError : { deleteError }
+      );
     }
 
     return NextResponse.json({
@@ -90,7 +95,9 @@ export async function POST(request: NextRequest) {
       message: '비밀번호가 성공적으로 변경되었습니다.'
     });
   } catch (error) {
-    console.error('비밀번호 업데이트 오류:', error);
+    logger.error('UpdatePassword:POST', 'Password update error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

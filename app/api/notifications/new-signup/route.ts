@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!admins || admins.length === 0) {
-      console.log('No active admins found to notify');
+      logger.info('NewSignupNotification:POST', 'No active admins found to notify');
       return Response.json({
         success: true,
         message: 'No admins to notify',
@@ -42,7 +43,9 @@ export async function POST(request: NextRequest) {
       return false;
     });
 
-    console.log(`Found ${relevantAdmins.length} relevant admins to notify`);
+    logger.info('NewSignupNotification:POST', 'Found relevant admins', {
+      count: relevantAdmins.length
+    });
 
     if (relevantAdmins.length === 0) {
       return Response.json({
@@ -83,13 +86,16 @@ export async function POST(request: NextRequest) {
 
     if (!notificationResponse.ok) {
       const errorText = await notificationResponse.text();
-      console.error('Notification API error:', errorText);
+      logger.error('NewSignupNotification:POST', 'Notification API error', { errorText });
       throw new Error(`Failed to create notifications: ${errorText}`);
     }
 
     const result = await notificationResponse.json();
 
-    console.log(`Successfully created ${result.count} notifications for new signup: ${userName}`);
+    logger.info('NewSignupNotification:POST', 'Notifications created successfully', {
+      count: result.count,
+      userName
+    });
 
     return Response.json({
       success: true,
@@ -101,7 +107,9 @@ export async function POST(request: NextRequest) {
       }))
     });
   } catch (error) {
-    console.error('New signup notification error:', error);
+    logger.error('NewSignupNotification:POST', 'New signup notification error',
+      error instanceof Error ? error : { error }
+    );
     return Response.json({
       error: 'Failed to send new signup notifications',
       details: error instanceof Error ? error.message : 'Unknown error'
