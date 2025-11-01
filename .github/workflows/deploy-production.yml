@@ -101,8 +101,7 @@ jobs:
           echo "Generating Prisma client..."
           npx prisma generate
 
-          echo "Cleaning ALL cache directories..."
-          rm -rf .next
+          echo "Cleaning PWA cache files only..."
           rm -rf public/sw.js
           rm -rf public/sw.js.map
           rm -rf public/workbox-*.js
