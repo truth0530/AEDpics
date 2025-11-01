@@ -1,0 +1,42 @@
+name: Check Server Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-logs:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Check PM2 and Application Logs
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== PM2 Status ==="
+          pm2 status
+
+          echo ""
+          echo "=== PM2 Logs (Last 100 lines) ==="
+          pm2 logs aedpics --nostream --lines 100
+
+          echo ""
+          echo "=== Check if app is listening on port 3000 ==="
+          netstat -tlnp | grep 3000 || echo "Nothing listening on port 3000"
+
+          echo ""
+          echo "=== Process list ==="
+          ps aux | grep -E "node|next" | grep -v grep
+
+          echo ""
+          echo "=== Environment check ==="
+          cd /var/www/aedpics
+          ls -la .env*
+
+          echo ""
+          echo "=== Disk space ==="
+          df -h
