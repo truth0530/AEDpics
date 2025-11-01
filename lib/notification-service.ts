@@ -1,5 +1,8 @@
 // Notification service for push and email notifications
 
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
 interface NotificationAction {
   action: string;
   title: string;
@@ -45,7 +48,7 @@ export class NotificationService {
   // Initialize push notifications
   async initializePush(): Promise<boolean> {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Push notifications not supported');
+      logger.warn('Notification:Push', 'Push notifications not supported in this browser');
       return false;
     }
 
@@ -53,7 +56,7 @@ export class NotificationService {
       // Request notification permission
       const permission = await this.requestPermission();
       if (permission !== 'granted') {
-        console.warn('Notification permission denied');
+        logger.warn('Notification:Push', 'Notification permission denied by user');
         return false;
       }
 
@@ -61,25 +64,25 @@ export class NotificationService {
       const registration = await navigator.serviceWorker.ready;
 
       // Subscribe to push notifications
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const vapidKey = env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!vapidKey) {
-        console.warn('VAPID public key not configured');
+        logger.warn('Notification:Push', 'VAPID public key not configured');
         return false;
       }
-      
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: this.urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer
       });
 
       this.pushSubscription = subscription;
-      
+
       // Send subscription to server
       await this.sendSubscriptionToServer(subscription);
-      
+
       return true;
     } catch (error) {
-      console.error('Failed to initialize push notifications:', error);
+      logger.error('Notification:Push', 'Failed to initialize push notifications', error instanceof Error ? error : { error });
       return false;
     }
   }
@@ -87,7 +90,7 @@ export class NotificationService {
   // Request notification permission
   async requestPermission(): Promise<NotificationPermission> {
     if (!('Notification' in window)) {
-      console.warn('Notifications not supported');
+      logger.warn('Notification:Permission', 'Notifications API not supported in this browser');
       return 'denied';
     }
 
@@ -106,7 +109,7 @@ export class NotificationService {
   async showNotification(payload: NotificationPayload): Promise<void> {
     const permission = await this.requestPermission();
     if (permission !== 'granted') {
-      console.warn('Cannot show notification: permission denied');
+      logger.warn('Notification:Show', 'Cannot show notification: permission denied');
       return;
     }
 
@@ -152,7 +155,7 @@ export class NotificationService {
         throw new Error('Failed to send push notification');
       }
     } catch (error) {
-      console.error('Push notification error:', error);
+      logger.error('Notification:Push', 'Push notification error', error instanceof Error ? error : { error });
       throw error;
     }
   }
@@ -170,7 +173,7 @@ export class NotificationService {
         throw new Error('Failed to send email');
       }
     } catch (error) {
-      console.error('Email notification error:', error);
+      logger.error('Notification:Email', 'Email notification error', error instanceof Error ? error : { error });
       throw error;
     }
   }

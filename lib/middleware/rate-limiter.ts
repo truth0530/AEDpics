@@ -7,6 +7,10 @@
  * - 엔드포인트별 다른 limit 설정
  */
 
+import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
 // TODO: Vercel KV 제거 후 NCP Redis로 교체 필요
 // import { kv } from '@vercel/kv';
 const kv = {
@@ -15,7 +19,6 @@ const kv = {
   incr: async (_key: string): Promise<number> => 1,
   ttl: async (_key: string): Promise<number> => 60,
 };
-import { NextRequest, NextResponse } from 'next/server';
 
 export interface RateLimitConfig {
   /**
@@ -51,8 +54,8 @@ export async function checkRateLimit(
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
   // Vercel KV가 설정되지 않은 경우 (로컬 개발 환경)
-  if (!process.env.KV_REST_API_URL) {
-    console.log('[Rate Limiter] KV not configured, allowing all requests');
+  if (!env.KV_REST_API_URL) {
+    logger.info('RateLimit:Check', 'KV not configured, allowing all requests', { identifier, key: config.key });
     return {
       success: true,
       limit: config.maxRequests,
@@ -104,7 +107,11 @@ export async function checkRateLimit(
       reset: now + config.windowSeconds,
     };
   } catch (error) {
-    console.error('[Rate Limiter] Error checking rate limit:', error);
+    logger.error('RateLimit:Check', 'Error checking rate limit, allowing request (fail open)', error instanceof Error ? error : {
+      error,
+      identifier,
+      key: config.key
+    });
 
     // Redis 오류 시 요청 허용 (Fail open)
     return {

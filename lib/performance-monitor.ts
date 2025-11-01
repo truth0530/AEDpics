@@ -3,7 +3,10 @@
  * API 응답 시간 측정 및 로깅
  */
 
-const DEBUG = process.env.NEXT_PUBLIC_DEBUG === 'true';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
+const DEBUG = env.NEXT_PUBLIC_DEBUG ?? false;
 const SLOW_THRESHOLD_MS = 1000; // 1초 이상 걸리면 경고
 
 export interface PerformanceMetrics {
@@ -50,12 +53,22 @@ export function withPerformanceMonitoring<T>(
 
       // 느린 요청 경고
       if (duration > SLOW_THRESHOLD_MS) {
-        console.warn(`[SLOW API] ${method} ${endpoint} took ${duration.toFixed(2)}ms (status: ${status})`);
+        logger.warn('Performance:API', 'Slow API request detected', {
+          method,
+          endpoint,
+          duration: `${duration.toFixed(2)}ms`,
+          status
+        });
       }
 
       // 디버그 모드에서 모든 요청 로깅
       if (DEBUG) {
-        console.log(`[API Performance] ${method} ${endpoint}: ${duration.toFixed(2)}ms (status: ${status})`);
+        logger.info('Performance:API', 'API request completed', {
+          method,
+          endpoint,
+          duration: `${duration.toFixed(2)}ms`,
+          status
+        });
       }
 
       // Response header에 duration 추가 (프로덕션에서도 유용)
@@ -92,18 +105,28 @@ export class QueryPerformanceTracker {
       this.queries.push({ name, duration });
 
       if (DEBUG) {
-        console.log(`[Query] ${name}: ${duration.toFixed(2)}ms`);
+        logger.info('Performance:Query', 'Database query completed', {
+          query: name,
+          duration: `${duration.toFixed(2)}ms`
+        });
       }
 
       if (duration > SLOW_THRESHOLD_MS) {
-        console.warn(`[SLOW Query] ${name} took ${duration.toFixed(2)}ms`);
+        logger.warn('Performance:Query', 'Slow database query detected', {
+          query: name,
+          duration: `${duration.toFixed(2)}ms`
+        });
       }
 
       return result;
     } catch (error) {
       const duration = performance.now() - start;
       this.totalDuration += duration;
-      console.error(`[Query Error] ${name} failed after ${duration.toFixed(2)}ms`, error);
+      logger.error('Performance:Query', 'Database query failed', error instanceof Error ? error : {
+        error,
+        query: name,
+        duration: `${duration.toFixed(2)}ms`
+      });
       throw error;
     }
   }
@@ -127,7 +150,8 @@ export class QueryPerformanceTracker {
     const metrics = this.getMetrics();
 
     if (DEBUG || metrics.totalDuration > SLOW_THRESHOLD_MS) {
-      console.log(`[Performance Summary] ${endpoint}:`, {
+      logger.info('Performance:Summary', 'Performance metrics summary', {
+        endpoint,
         queries: metrics.queryCount,
         total: `${metrics.totalDuration.toFixed(2)}ms`,
         average: `${metrics.averageDuration.toFixed(2)}ms`,
@@ -148,7 +172,10 @@ export function createTimer() {
     log: (label: string) => {
       const elapsed = performance.now() - start;
       if (DEBUG) {
-        console.log(`[Timer] ${label}: ${elapsed.toFixed(2)}ms`);
+        logger.info('Performance:Timer', 'Timer measurement', {
+          label,
+          elapsed: `${elapsed.toFixed(2)}ms`
+        });
       }
       return elapsed;
     }

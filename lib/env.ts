@@ -210,6 +210,13 @@ const envSchema = z.object({
     .transform(val => val === 'true'),
 
   // ========================================
+  // Notifications (선택적)
+  // ========================================
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z
+    .string()
+    .optional(),
+
+  // ========================================
   // Deprecated (Supabase)
   // ========================================
   NEXT_PUBLIC_SUPABASE_URL: z
