@@ -401,7 +401,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
     };
   }, [setFilters, viewMode, userProfile.id]);
 
-  // viewMode가 'map'으로 변경될 때 필터 설정
+  // viewMode 변경 추적 (지도 탭 전환 시 기존 필터 유지)
   useEffect(() => {
     // viewMode가 실제로 변경되었는지 확인
     if (previousViewMode.current === viewMode) {
@@ -412,42 +412,11 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
     const prevMode = previousViewMode.current;
     previousViewMode.current = viewMode;
 
-    // map 탭으로 전환했을 때만 실행
-    if (viewMode !== 'map') {
-      console.log('[AEDDataPageClient] ViewMode changed from', prevMode, 'to', viewMode);
-      return;
-    }
+    console.log('[AEDDataPageClient] ViewMode changed from', prevMode, 'to', viewMode);
 
-    console.log('[AEDDataPageClient] Map mode activated: initializing filters');
-
-    const initMapFilters = async () => {
-      try {
-        const response = await fetch('/api/user/profile');
-        if (!response.ok) {
-          console.error('[AEDDataPageClient] Failed to fetch user profile for map');
-          return;
-        }
-
-        const profile = await response.json();
-
-        if (profile?.organization) {
-          const regionCode = profile.organization.region_code;
-
-          const mapFilters: any = {
-            regionCodes: regionCode ? [regionCode] : undefined,
-            queryCriteria: 'address',
-          };
-
-          console.log('[AEDDataPageClient] Setting map filters:', mapFilters);
-          setFilters(mapFilters);
-        }
-      } catch (error) {
-        console.error('[AEDDataPageClient] Error initializing map filters:', error);
-      }
-    };
-
-    initMapFilters();
-  }, [viewMode, setFilters]);
+    // 기존 필터 유지 - 필터 초기화하지 않음
+    // 초기 필터는 lines 216-403의 useEffect에서 설정됨
+  }, [viewMode]);
 
   // 스마트 자동 접기: 필터 영역 외부 클릭 시 자동으로 접기
   useEffect(() => {
