@@ -1,5 +1,8 @@
 // 에러 처리 유틸리티
 
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
 export type ErrorType =
   | 'AUTH_ERROR'
   | 'VALIDATION_ERROR'
@@ -231,11 +234,15 @@ export function getErrorMessage(error: unknown): ErrorMessage {
  * 에러 로깅 (개발 환경에서만)
  */
 export function logError(error: unknown, context?: string): void {
-  if (process.env.NODE_ENV === 'development') {
-    console.group(`🔴 Error ${context ? `in ${context}` : ''}`);
-    console.error('Original error:', error);
-    console.error('Error message:', getErrorMessage(error));
-    console.groupEnd();
+  const errorMessage = getErrorMessage(error);
+
+  if (env.NODE_ENV === 'development') {
+    logger.error(context || 'ErrorHandler', errorMessage.message, {
+      type: errorMessage.type,
+      title: errorMessage.title,
+      action: errorMessage.action,
+      originalError: error
+    });
   }
 }
 

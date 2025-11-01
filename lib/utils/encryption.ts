@@ -4,6 +4,8 @@
  */
 
 import crypto from 'crypto';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // GCM 표준 IV 길이
@@ -14,7 +16,7 @@ const SALT_LENGTH = 32; // 키 유도용 솔트 길이
  * 환경변수에서 암호화 키 가져오기
  */
 function getEncryptionKey(): Buffer {
-  const key = process.env.ENCRYPTION_KEY;
+  const key = env.ENCRYPTION_KEY;
 
   if (!key) {
     throw new Error('ENCRYPTION_KEY 환경변수가 설정되지 않았습니다.');
@@ -52,7 +54,7 @@ export function encryptPhone(phone: string): string {
 
     return result.toString('base64');
   } catch (error) {
-    console.error('전화번호 암호화 실패:', error);
+    logger.error('Encryption', 'Phone encryption failed', error instanceof Error ? error : { error });
     throw new Error('전화번호 암호화에 실패했습니다.');
   }
 }
@@ -74,13 +76,13 @@ export function decryptPhone(encryptedPhone: string): string {
       buffer = Buffer.from(encryptedPhone, 'base64');
     } catch {
       // Base64가 아니면 이미 평문인 것으로 간주 (하위 호환성)
-      console.warn('암호화되지 않은 전화번호 감지:', encryptedPhone.substring(0, 3) + '***');
+      logger.warn('Encryption', 'Unencrypted phone detected', { preview: encryptedPhone.substring(0, 3) + '***' });
       return encryptedPhone;
     }
 
     // 최소 길이 체크 (IV + AuthTag만 해도 32바이트)
     if (buffer.length < IV_LENGTH + AUTH_TAG_LENGTH) {
-      console.warn('잘못된 암호화 형식, 평문으로 간주:', encryptedPhone.substring(0, 3) + '***');
+      logger.warn('Encryption', 'Invalid encryption format, treating as plaintext', { preview: encryptedPhone.substring(0, 3) + '***' });
       return encryptedPhone;
     }
 
@@ -100,10 +102,10 @@ export function decryptPhone(encryptedPhone: string): string {
 
     return decrypted.toString('utf8');
   } catch (error) {
-    console.error('전화번호 복호화 실패:', error);
+    logger.error('Encryption', 'Phone decryption failed', error instanceof Error ? error : { error });
 
     // 복호화 실패 시 평문으로 간주 (하위 호환성)
-    console.warn('복호화 실패, 평문으로 처리:', encryptedPhone.substring(0, 3) + '***');
+    logger.warn('Encryption', 'Decryption failed, treating as plaintext', { preview: encryptedPhone.substring(0, 3) + '***' });
     return encryptedPhone;
   }
 }

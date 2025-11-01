@@ -1,3 +1,6 @@
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
 // TODO: Supabase 서버 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/server';
 
@@ -40,22 +43,26 @@ export class ErrorLogger {
       const errorData = this.formatError(error, context);
 
       // 콘솔에 출력 (개발 환경)
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error logged:', errorData);
+      if (env.NODE_ENV === 'development') {
+        logger.error('ErrorLogger', 'Error logged', {
+          message: errorData.message,
+          stack: errorData.stack,
+          context: errorData.context
+        });
       }
 
       // Supabase에 저장 (옵션)
-      if (process.env.ENABLE_ERROR_LOGGING === 'true') {
+      if (env.ENABLE_ERROR_LOGGING) {
         await this.saveToSupabase(errorData);
       }
 
       // 프로덕션에서 크리티컬 에러는 알림 전송
-      if (process.env.NODE_ENV === 'production' && this.isCritical(error)) {
+      if (env.NODE_ENV === 'production' && this.isCritical(error)) {
         await this.sendAlert(errorData);
       }
     } catch (logError) {
       // 로깅 자체가 실패해도 앱이 중단되지 않도록
-      console.error('Failed to log error:', logError);
+      logger.error('ErrorLogger', 'Failed to log error', logError instanceof Error ? logError : { logError });
     }
   }
 
@@ -141,11 +148,11 @@ export class ErrorLogger {
         });
 
       if (error) {
-        console.warn('Failed to save error to Supabase:', error);
+        logger.warn('ErrorLogger', 'Failed to save error to Supabase', error instanceof Error ? error : { error });
       }
     } catch (e) {
       // Supabase 저장 실패는 조용히 무시
-      console.warn('Supabase logging failed:', e);
+      logger.warn('ErrorLogger', 'Supabase logging failed', e instanceof Error ? e : { e });
     }
   }
 
@@ -155,9 +162,9 @@ export class ErrorLogger {
   private async sendAlert(errorLog: ErrorLog): Promise<void> {
     // Slack, Discord, 이메일 등으로 알림 전송
     // 예시: Discord Webhook
-    if (process.env.DISCORD_WEBHOOK_URL) {
+    if (env.DISCORD_WEBHOOK_URL) {
       try {
-        await fetch(process.env.DISCORD_WEBHOOK_URL, {
+        await fetch(env.DISCORD_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -173,7 +180,7 @@ export class ErrorLogger {
           }),
         });
       } catch (e) {
-        console.error('Failed to send alert:', e);
+        logger.error('ErrorLogger', 'Failed to send alert', e instanceof Error ? e : { e });
       }
     }
   }
