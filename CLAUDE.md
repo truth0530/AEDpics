@@ -224,6 +224,152 @@ grep -r "KAKAO_MAP" --include="*.ts" --include="*.tsx"
 - 신규 변수는 명확한 네이밍 (목적_서비스_타입)
 - deprecated 변수는 주석으로 표시 후 제거
 
+### 6. NCP API 키 통합 관리
+
+**문제**: 서비스마다 별도 API 키 생성 시도
+```bash
+NCP_STORAGE_KEY="..."  # ❌ Object Storage용
+NCP_EMAIL_KEY="..."    # ❌ Email용
+NCP_ACCESS_KEY="..."   # ✅ 통합 사용
+```
+
+**해결**: NCP는 하나의 API 키로 모든 서비스 사용
+```bash
+# 2025년 11월 생성 키로 통일 (최신 권한 포함)
+NCP_ACCESS_KEY="ncp_iam_BPAMKR***********"
+NCP_ACCESS_SECRET="ncp_iam_BPKMKRSH***********"
+```
+
+**NCP 서비스별 API 키 사용**:
+- Cloud Outbound Mailer (이메일): 동일 키 사용
+- Object Storage (파일): 동일 키 사용
+- Server (VM 관리): 동일 키 사용
+
+**교훈**:
+- NCP는 통합 API 키 체계 (AWS IAM과 유사)
+- 서비스별 권한은 NCP 콘솔에서 IAM 역할로 관리
+- 키 재발급 시 모든 서비스 영향 → 신중히 결정
+- **절대 금지**: 여러 키 중복 생성하여 혼란 야기
+
+### 7. DMARC 정책과 발신자 이메일
+
+**문제**: 임의로 다른 도메인 발신자 사용 시도
+```typescript
+NCP_SENDER_EMAIL="noreply@aed.pics"  // ❌ DMARC 정책 위반 가능
+NCP_SENDER_EMAIL="truth0530@nmc.or.kr"  // ❌ 개인 계정 사용 금지
+```
+
+**해결**: 공식 도메인의 인증된 계정만 사용
+```typescript
+NCP_SENDER_EMAIL="noreply@nmc.or.kr"  // ✅ IT 관리자 인증 완료
+```
+
+**DMARC 정책 이해**:
+- `@nmc.or.kr` 도메인은 IT 관리자가 SPF/DKIM/DMARC 설정 완료
+- 인증되지 않은 계정에서 발송 시 수신 서버가 거부/스팸 처리
+- `noreply@aed.pics` 사용하려면 별도 DMARC 설정 필요
+
+**교훈**:
+- 발신자 이메일 변경 전 IT 관리자와 협의 필수
+- 공식 도메인 정책 준수
+- 테스트 시에도 인증된 계정만 사용
+
+### 8. 서버 디스크 용량 관리
+
+**문제**: 빌드 캐시 누적으로 디스크 풀 (10GB 중 95% 사용)
+```bash
+df -h  # ❌ Filesystem: 9.5G / 10G (95%)
+```
+
+**긴급 대응**:
+```bash
+# 1. Next.js 캐시 삭제 (안전)
+rm -rf .next/cache
+rm -rf .next/static
+
+# 2. Node modules 재설치 (필요시)
+rm -rf node_modules
+npm ci
+
+# 3. PM2 로그 정리
+pm2 flush
+```
+
+**근본 해결**: Object Storage 활용
+- 정적 파일 (이미지, PDF) → NCP Object Storage로 이동
+- 빌드 결과물 경량화
+- 로그 로테이션 설정
+
+**예방 조치**:
+```bash
+# 주간 디스크 모니터링
+df -h
+du -sh .next/
+du -sh node_modules/
+```
+
+**교훈**:
+- 10GB 서버는 지속적 용량 관리 필수
+- 빌드 전 캐시 정리 습관화
+- 대용량 파일은 Object Storage 사용
+- 프로덕션 서버에서 불필요한 devDependencies 설치 금지
+
+### 9. 무중단 서비스 유지보수 전략
+
+**문제**: 서비스 중단 없이 배포 및 유지보수 방법
+```bash
+# ❌ 잘못된 방법
+ssh server
+pm2 stop all  # 서비스 중단!
+git pull
+npm install
+npm run build
+pm2 start
+```
+
+**올바른 방법**: GitHub Actions + PM2 Reload
+```yaml
+# .github/workflows/deploy-production.yml
+- name: Deploy with Zero Downtime
+  run: |
+    # 빌드는 로컬에서 완료
+    npm run build
+
+    # 서버에 배포만 수행
+    ssh server << 'EOF'
+      cd /path/to/app
+      git pull
+      npm ci --production
+      pm2 reload ecosystem.config.js  # Zero-Downtime!
+    EOF
+```
+
+**배포 전 로컬 검증 필수**:
+```bash
+# 1. 타입 검사
+npm run tsc
+
+# 2. 린트 검사
+npm run lint
+
+# 3. 로컬 빌드
+npm run build
+
+# 4. 모두 통과 시에만 푸시
+git push origin main  # GitHub Actions 자동 배포
+```
+
+**유지보수 시간대 권장**:
+- **일반 업데이트**: 언제든지 (PM2 reload는 무중단)
+- **DB 스키마 변경**: 새벽 2-4시 (사용량 최소)
+- **긴급 핫픽스**: 즉시 (테스트 후 배포)
+
+**교훈**:
+- 프로덕션 서버에서 직접 작업 금지
+- GitHub을 통한 배포 자동화 필수
+- 로컬 검증 없이 푸시 절대 금지
+- PM2 reload로 사용자 경험 보호
+
 ## 필수: NCP 이메일 발송 문제 해결
 
 ### 이메일 발송 실패 시 최우선 체크
@@ -716,8 +862,8 @@ migrate: 마이그레이션 관련
 
 ---
 
-**마지막 업데이트**: 2025-10-31
-**문서 버전**: 2.3.0
+**마지막 업데이트**: 2025-11-01
+**문서 버전**: 2.4.0
 
 ---
 
