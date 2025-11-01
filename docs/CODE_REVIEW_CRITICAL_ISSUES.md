@@ -6,8 +6,14 @@
 **우선순위**: Critical > High > Medium > Low
 
 **수정 상태**:
-- Critical Issue #1: 수정 완료 (2025-11-01)
-- Critical Issue #2: 수정 완료 (2025-11-01)
+- Critical Issue #1: 수정 완료 (2025-11-01) - naver.com 도메인 제거
+- Critical Issue #2: 수정 완료 (2025-11-01) - temporary_inspector 권한 로직 수정
+- High Priority #3: 수정 완료 (2025-11-01) - city_code NULL 처리
+- High Priority #4: 수정 완료 (2025-11-01) - 'as any' 타입 캐스팅 개선
+- High Priority #5: 검증 완료 (2025-11-01) - 문서-구현 일치 확인됨
+- Medium Priority #6: 문서화 완료 - 점검 테이블 사용 현황 파악
+- Medium Priority #7: 수정 완료 (2025-11-01) - 환경변수 검증 시스템 구축
+- Medium Priority #8: 수정 완료 (2025-11-01) - 로깅 유틸리티 생성
 
 ---
 
@@ -101,9 +107,9 @@ if (userProfile.role === 'temporary_inspector') {
 
 ---
 
-## High Priority (빠른 수정 권장)
+## High Priority (빠른 수정 권장) - 모두 수정 완료
 
-### 3. 데이터 정합성: city_code 필수 체크의 잠재적 문제
+### 3. 데이터 정합성: city_code 필수 체크의 잠재적 문제 - 수정 완료
 
 **위치**: [lib/auth/access-control.ts:492-497](lib/auth/access-control.ts#L492-L497)
 
@@ -130,12 +136,20 @@ model organizations {
 - 기존 데이터에 `city_code`가 없는 경우 런타임 에러 발생
 - 261개 보건소 중 일부가 `city_code` 없을 가능성
 
-**해결 방법**:
-1. 데이터베이스에서 모든 organization의 `city_code` 확인
-2. `city_code` 없는 조직 데이터 보완
-3. 또는 `city_code` 없을 때 대체 로직 구현
+**적용된 해결 방법** (2025-11-01):
+1. ✅ 데이터 무결성 검증 스크립트 작성 (`scripts/check-city-code-integrity.ts`)
+2. ✅ `city_code` 없을 때 대체 로직 구현
+   - city_code가 있으면: 해당 시군구로 제한
+   - city_code가 없으면: 시도 레벨로만 제한 (allowedCityCodes = null)
+   - 경고 로그 추가로 모니터링 가능
+3. ✅ 검증 결과:
+   - 291개 조직 전부 city_code NULL
+   - 2명의 local_admin 영향받음
+   - 런타임 에러 없이 작동 가능
 
-**우선순위**: High - 데이터 의존성 문제
+**File**: [lib/auth/access-control.ts:500-517](lib/auth/access-control.ts#L500-L517)
+
+**우선순위**: High - 수정 완료
 
 ---
 
