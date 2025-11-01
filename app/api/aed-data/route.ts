@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { resolveAccessScope, canAccessAEDData } from '@/lib/auth/access-control';
+import { logger } from '@/lib/logger';
 
 import { parseQueryParams, type ParsedFilters } from '@/lib/utils/query-parser';
 import { maskSensitiveData } from '@/lib/data/masking';
@@ -142,7 +143,10 @@ function decodeCursor(cursor: string): DecodedCursor | null {
       return { id };
     }
   } catch (error) {
-    console.warn('[decodeCursor] Failed to decode cursor:', error, 'Input:', cursor?.substring(0, 50));
+    logger.warn('AEDDataAPI:decodeCursor', 'Failed to decode cursor', {
+      error: error instanceof Error ? error.message : String(error),
+      cursorPreview: cursor?.substring(0, 50)
+    });
   }
   return null;
 }
@@ -163,7 +167,7 @@ function encodeCursor(id: number, updated_at?: string | null): string {
 
 export const GET = async (request: NextRequest) => {
   try {
-    console.log('AED data API called with URL:', request.url);
+    logger.info('AEDDataAPI:GET', 'AED data API called', { url: request.url });
 
     // NextAuth 인증 확인
     const session = await getServerSession(authOptions);
@@ -195,7 +199,7 @@ export const GET = async (request: NextRequest) => {
   });
 
   if (!prismaUserProfile) {
-    console.error('Profile not found for user:', session.user.id);
+    logger.error('AEDDataAPI:GET', 'Profile not found', { userId: session.user.id });
     return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
   }
 
@@ -221,7 +225,9 @@ export const GET = async (request: NextRequest) => {
     }
 
     // 개선된 쿼리 파라미터 파싱
-    console.log('[API route] request.nextUrl.searchParams:', Object.fromEntries(request.nextUrl.searchParams));
+    logger.info('AEDDataAPI:GET', 'Parsing search params', {
+      searchParams: Object.fromEntries(request.nextUrl.searchParams)
+    });
     const filters: ParsedFilters = parseQueryParams(request.nextUrl.searchParams);
 
     // ✅ includeSchedule 파라미터 체크 (일정추가 정보 포함 여부)
@@ -231,11 +237,14 @@ export const GET = async (request: NextRequest) => {
     const viewMode = request.nextUrl.searchParams.get('viewMode');
     const isInspectionMode = viewMode === 'inspection';
 
-    console.log('[API route] Parsed filters:', filters);
-    console.log('[API route] filters.external_display:', filters.external_display);
-    console.log('[API route] viewMode:', viewMode, 'isInspectionMode:', isInspectionMode);
-    console.log('User role:', userProfile.role);
-    console.log('Access scope:', accessScope);
+    logger.info('AEDDataAPI:GET', 'Request parameters parsed', {
+      filters,
+      externalDisplay: filters.external_display,
+      viewMode,
+      isInspectionMode,
+      userRole: userProfile.role,
+      accessScope
+    });
 
     // management_number 또는 equipment_serial로 조회하는 경우 지역 필터 불필요
     // local_admin/regional_admin의 경우 enforceFilterPolicy에서 자동으로 기본 지역 적용하므로 여기서는 체크하지 않음
@@ -251,7 +260,7 @@ export const GET = async (request: NextRequest) => {
       requestedFilters: filters,
     });
 
-    console.log('Enforcement result:', enforcementResult);
+    logger.info('AEDDataAPI:GET', 'Filter policy enforcement result', { enforcementResult });
 
     if (!enforcementResult.success) {
       // Explicitly narrow type to FilterEnforcementFailure
@@ -301,7 +310,7 @@ export const GET = async (request: NextRequest) => {
     const cursorId = decodedCursor?.id ?? null;
 
     // ✅ 커서 디버깅 로그
-    console.log('[API route] Cursor debug:', {
+    logger.info('AEDDataAPI:GET', 'Cursor debug info', {
       cursorParam: cursorParam ? cursorParam.substring(0, 50) + '...' : 'none',
       decodedCursor,
       cursorId,
@@ -339,7 +348,7 @@ export const GET = async (request: NextRequest) => {
           filters: { applied: { management_number: filters.management_number, equipment_serial: filters.equipment_serial }, enforced: {}, available: {} }
         });
       } catch (deviceError) {
-        console.error('Single device query error:', deviceError);
+        logger.error('AEDDataAPI:GET', 'Single device query error', deviceError instanceof Error ? deviceError : { deviceError });
         return NextResponse.json({ error: `Query failed: ${deviceError instanceof Error ? deviceError.message : 'Unknown error'}` }, { status: 500 });
       }
     }
@@ -348,7 +357,7 @@ export const GET = async (request: NextRequest) => {
     // ✅ Cursor 기반 페이지네이션: offset 제거, limit만 사용
     // (cursorId가 있을 때 .gt()로 필터링하므로 offset 불필요)
 
-    console.log('[API route] Direct query params:', {
+    logger.info('AEDDataAPI:GET', 'Direct query params', {
       regionCodes: regionFiltersForQuery,
       cityCodes: cityFiltersForQuery,
       category_1: filters.category_1
@@ -361,7 +370,7 @@ export const GET = async (request: NextRequest) => {
     let queryError;
 
     if (isInspectionMode) {
-      console.log('[inspection mode] Using Prisma two-step query');
+      logger.info('AEDDataAPI:GET', 'Inspection mode: Using Prisma two-step query');
 
       try {
         // Build SQL WHERE clauses dynamically
@@ -537,15 +546,19 @@ export const GET = async (request: NextRequest) => {
           LIMIT ${queryLimit}
         `;
 
-        console.log(`[inspection mode] Executing optimized JOIN query with ${sqlParams.length} parameters`);
+        logger.info('AEDDataAPI:GET', 'Inspection mode: Executing optimized JOIN query', {
+          paramCount: sqlParams.length
+        });
 
         // Execute optimized query
         rawData = await prisma.$queryRawUnsafe(query, ...sqlParams);
         queryError = null;
 
-        console.log(`[inspection mode] Successfully fetched ${rawData.length} AED records with assignments`);
+        logger.info('AEDDataAPI:GET', 'Inspection mode: Successfully fetched AED records', {
+          count: rawData.length
+        });
       } catch (error) {
-        console.error('[inspection mode] Query error:', error);
+        logger.error('AEDDataAPI:GET', 'Inspection mode: Query error', error instanceof Error ? error : { error });
         queryError = error;
         rawData = [];
       }
@@ -555,7 +568,7 @@ export const GET = async (request: NextRequest) => {
       // queryCriteria='jurisdiction' 지원
       if (filters.queryCriteria === 'jurisdiction') {
         try {
-          console.log('[API] Using jurisdiction-based query with Prisma');
+          logger.info('AEDDataAPI:GET', 'Using jurisdiction-based query with Prisma');
 
           // Step 1: 관할보건소 조회 (region/city code 기준)
           const whereOrgs: OrganizationsWhereInput = {
@@ -577,7 +590,7 @@ export const GET = async (request: NextRequest) => {
           if (healthCenters.length === 0) {
             rawData = [];
             queryError = null;
-            console.log('[API] No health centers found for jurisdiction query');
+            logger.info('AEDDataAPI:GET', 'No health centers found for jurisdiction query');
           } else {
             // Step 2: 공백 정규화된 이름 목록 생성
             const normalizedNames = healthCenters.map(hc => hc.name.replace(/ /g, ''));
@@ -680,16 +693,17 @@ export const GET = async (request: NextRequest) => {
               LIMIT ${queryLimit}
             `;
 
-            console.log('[API] Jurisdiction SQL:', sql);
-            console.log('[API] Jurisdiction params:', params);
+            logger.info('AEDDataAPI:GET', 'Jurisdiction SQL query', { sql, params });
 
             rawData = await prisma.$queryRawUnsafe(sql, ...params);
             queryError = null;
 
-            console.log(`[API] Jurisdiction query returned ${rawData?.length || 0} devices`);
+            logger.info('AEDDataAPI:GET', 'Jurisdiction query completed', {
+              deviceCount: rawData?.length || 0
+            });
           }
         } catch (error) {
-          console.error('[API] Jurisdiction query error:', error);
+          logger.error('AEDDataAPI:GET', 'Jurisdiction query error', error instanceof Error ? error : { error });
           queryError = error;
           rawData = [];
         }
@@ -719,7 +733,9 @@ export const GET = async (request: NextRequest) => {
 
           // 외부표출 필터
           if (filters.external_display) {
-            console.log('[API] Applying external_display filter:', filters.external_display);
+            logger.info('AEDDataAPI:GET', 'Applying external_display filter', {
+              externalDisplay: filters.external_display
+            });
             if (filters.external_display === 'blocked') {
               whereConditions.external_display = 'N';
               whereConditions.AND = [
@@ -792,7 +808,7 @@ export const GET = async (request: NextRequest) => {
           });
           queryError = null;
         } catch (error) {
-          console.error('[Address query] Error:', error);
+          logger.error('AEDDataAPI:GET', 'Address query error', error instanceof Error ? error : { error });
           rawData = [];
           queryError = error;
         }
@@ -801,10 +817,10 @@ export const GET = async (request: NextRequest) => {
 
     const queryDurationMs = Date.now() - queryStartedAt;
 
-    console.log('Direct query result:', {
+    logger.info('AEDDataAPI:GET', 'Direct query result', {
       method: 'table_query',
       resultCount: rawData?.length || 0,
-      error: queryError,
+      error: queryError instanceof Error ? queryError.message : queryError,
       hasData: !!rawData,
       durationMs: queryDurationMs
     });
@@ -824,7 +840,7 @@ export const GET = async (request: NextRequest) => {
     });
 
     if (queryError) {
-      console.error('AED data query error:', queryError);
+      logger.error('AEDDataAPI:GET', 'AED data query error', queryError instanceof Error ? queryError : { queryError });
       return NextResponse.json({
         error: `Query failed: ${queryError instanceof Error ? queryError.message : 'Unknown error'}`
       }, { status: 500 });
@@ -835,7 +851,7 @@ export const GET = async (request: NextRequest) => {
 
     // 디버그: 첫 번째 raw 데이터 확인
     if (rawData && rawData.length > 0) {
-      console.log('[API] Sample raw data (first item):', {
+      logger.info('AEDDataAPI:GET', 'Sample raw data (first item)', {
         last_inspection_date: rawData[0].last_inspection_date,
         lastInspectionDate: rawData[0].lastInspectionDate,
         installation_institution: rawData[0].installation_institution
@@ -873,7 +889,7 @@ export const GET = async (request: NextRequest) => {
 
     // 디버그: 첫 번째 매핑된 데이터 확인
     if (mappedData && mappedData.length > 0) {
-      console.log('[API] Sample mapped data (first item):', {
+      logger.info('AEDDataAPI:GET', 'Sample mapped data (first item)', {
         last_inspection_date: mappedData[0].last_inspection_date,
         installation_institution: mappedData[0].installation_institution
       });
@@ -1075,7 +1091,9 @@ export const GET = async (request: NextRequest) => {
       });
 
       scheduledEquipment = assignments.map(a => a.equipment_serial);
-      console.log('[includeSchedule] Found scheduled equipment:', scheduledEquipment.length);
+      logger.info('AEDDataAPI:GET', 'includeSchedule: Found scheduled equipment', {
+        count: scheduledEquipment.length
+      });
     }
 
     // 접근 로깅 (민감 정보 제외)
@@ -1153,9 +1171,11 @@ export const GET = async (request: NextRequest) => {
       }
     });
   } catch (error) {
-    console.error('[AED API] Unexpected error:', error);
-    console.error('[AED API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('[AED API] Request URL:', request.url);
+    logger.error('AEDDataAPI:GET', 'Unexpected error in AED API', {
+      error: error instanceof Error ? error : { error },
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      url: request.url
+    });
 
     return NextResponse.json({
       error: 'Internal server error',
