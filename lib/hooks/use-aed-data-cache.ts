@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useState } from 'react';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
-const DEBUG = process.env.NEXT_PUBLIC_DEBUG === 'true';
+const DEBUG = env.NEXT_PUBLIC_DEBUG ?? false;
 
 interface TimestampResponse {
   latest_updated_at: string;
@@ -56,9 +58,10 @@ export function useAEDDataFreshness() {
       if (cachedTimestamp !== serverTimestamp.latest_updated_at) {
         // 서버 데이터가 갱신됨 → 캐시 무효화
         if (DEBUG) {
-          console.log('[Cache] AED data refreshed on server, invalidating cache');
-          console.log('[Cache] Old:', cachedTimestamp);
-          console.log('[Cache] New:', serverTimestamp.latest_updated_at);
+          logger.info('Cache:AEDData', 'AED data refreshed on server, invalidating cache', {
+            old: cachedTimestamp,
+            new: serverTimestamp.latest_updated_at
+          });
         }
 
         // aed-data 관련 모든 쿼리 무효화
@@ -70,11 +73,11 @@ export function useAEDDataFreshness() {
         // 사용자에게 알림 (선택사항)
         if (cachedTimestamp) {
           // 최초 로드가 아닌 경우만 알림
-          console.info('[Cache] AED 데이터가 업데이트되었습니다. 새로고침 중...');
+          logger.info('Cache:AEDData', 'AED data updated, refreshing cache');
         }
       }
     } catch (error) {
-      console.error('[Cache] localStorage error:', error);
+      logger.error('Cache:AEDData', 'localStorage access error', error instanceof Error ? error : { error });
       // localStorage 접근 불가 시에도 캐시 무효화는 진행
       queryClient.invalidateQueries({ queryKey: ['aed-data'] });
     }
@@ -122,7 +125,7 @@ export function useCurrentSnapshotId(): string {
     const timer = setTimeout(() => {
       setSnapshotId(getCurrentSnapshotId());
       if (DEBUG) {
-        console.log('[useCurrentSnapshotId] Date changed, updating snapshot ID');
+        logger.info('Cache:Snapshot', 'Date changed, updating snapshot ID', { newId: getCurrentSnapshotId() });
       }
     }, msUntilMidnight);
 

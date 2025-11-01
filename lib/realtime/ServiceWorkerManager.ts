@@ -3,6 +3,9 @@
  * Service Worker 등록, 업데이트, 통신 관리
  */
 
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
 export interface SyncResult {
   id: string
   success: boolean
@@ -49,7 +52,7 @@ export class ServiceWorkerManager {
     }
 
     if (!('serviceWorker' in navigator)) {
-      console.warn('Service Worker를 지원하지 않는 브라우저입니다.')
+      logger.warn('ServiceWorker:Support', 'Service Worker not supported in this browser');
       return false
     }
 
@@ -59,7 +62,7 @@ export class ServiceWorkerManager {
                            window.location.hostname === '127.0.0.1'
 
     if (!isSecureContext) {
-      console.warn('Service Worker는 HTTPS 환경에서만 동작합니다.')
+      logger.warn('ServiceWorker:Support', 'Service Worker requires HTTPS environment');
       return false
     }
 
@@ -76,13 +79,13 @@ export class ServiceWorkerManager {
     }
 
     try {
-      console.log('Service Worker 등록 중...')
+      logger.info('ServiceWorker:Register', 'Registering Service Worker');
 
       this.registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
       })
 
-      console.log('Service Worker 등록 성공:', this.registration.scope)
+      logger.info('ServiceWorker:Register', 'Service Worker registered successfully', { scope: this.registration.scope });
 
       // 이벤트 리스너 설정
       this.setupEventListeners()
@@ -99,7 +102,7 @@ export class ServiceWorkerManager {
         const permission = await navigator.permissions.query({
           name: 'background-sync' as PermissionName
         })
-        console.log('백그라운드 동기화 권한:', permission.state)
+        logger.info('ServiceWorker:Permission', 'Background sync permission', { state: permission.state });
       }
 
       // 주기적 백그라운드 동기화 등록
@@ -107,7 +110,7 @@ export class ServiceWorkerManager {
 
       return this.registration
     } catch (error) {
-      console.error('Service Worker 등록 실패:', error)
+      logger.error('ServiceWorker:Register', 'Failed to register Service Worker', error instanceof Error ? error : { error });
       return null
     }
   }
@@ -149,7 +152,7 @@ export class ServiceWorkerManager {
     navigator.serviceWorker.controller.postMessage({
       type: 'SET_CONFIG',
       config: {
-        API_BASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+        API_BASE_URL: env.NEXT_PUBLIC_SUPABASE_URL || ''
       }
     })
   }
@@ -165,7 +168,7 @@ export class ServiceWorkerManager {
 
     // Service Worker 메시지 수신
     navigator.serviceWorker.addEventListener('message', (event) => {
-      console.log('Service Worker로부터 메시지:', event.data)
+      logger.info('ServiceWorker:Message', 'Message received from Service Worker', { type: event.data.type });
 
       const { type, ...data } = event.data
 
@@ -212,7 +215,11 @@ export class ServiceWorkerManager {
     const successful = results.filter(r => r.success).length
     const failed = results.filter(r => !r.success).length
 
-    console.log(`동기화 완료: ${successful}개 성공, ${failed}개 실패`)
+    logger.info('ServiceWorker:Sync', 'Sync completed', {
+      successful,
+      failed,
+      total: results.length
+    });
 
     this.notifyListeners('sync-complete', {
       successful,
@@ -225,7 +232,7 @@ export class ServiceWorkerManager {
    * 주기적 동기화 완료 처리
    */
   private handlePeriodicSyncComplete(data: any): void {
-    console.log('주기적 동기화 완료:', new Date(data.timestamp))
+    logger.info('ServiceWorker:PeriodicSync', 'Periodic sync completed', { timestamp: new Date(data.timestamp) });
     this.notifyListeners('periodic-sync-complete', data)
   }
 
@@ -249,7 +256,7 @@ export class ServiceWorkerManager {
       await this.registration.update()
       return this.updateAvailable
     } catch (error) {
-      console.error('업데이트 확인 실패:', error)
+      logger.error('ServiceWorker:Update', 'Failed to check for updates', error instanceof Error ? error : { error });
       return false
     }
   }
@@ -290,9 +297,9 @@ export class ServiceWorkerManager {
             minInterval: 60 * 60 * 1000 // 1시간
           }
         )
-        console.log('주기적 백그라운드 동기화 등록 완료')
+        logger.info('ServiceWorker:PeriodicSync', 'Periodic background sync registered successfully');
       } catch (error) {
-        console.warn('주기적 백그라운드 동기화 등록 실패:', error)
+        logger.warn('ServiceWorker:PeriodicSync', 'Failed to register periodic sync', error instanceof Error ? error : { error });
       }
     }
   }
@@ -307,7 +314,7 @@ export class ServiceWorkerManager {
     }
 
     if (!this.registration || !navigator.serviceWorker.controller) {
-      console.warn('Service Worker가 준비되지 않았습니다.')
+      logger.warn('ServiceWorker:Sync', 'Service Worker not ready for sync');
       return
     }
 
@@ -394,13 +401,13 @@ export class ServiceWorkerManager {
   async requestNotificationPermission(): Promise<NotificationPermission> {
     // SSR 환경 체크
     if (typeof window === 'undefined' || !('Notification' in window)) {
-      console.warn('브라우저가 알림을 지원하지 않습니다.')
+      logger.warn('ServiceWorker:Notification', 'Notifications not supported in this browser');
       return 'denied'
     }
 
     // 이미 권한이 있는 경우
     if (Notification.permission === 'granted') {
-      console.log('알림 권한이 이미 허용되었습니다.')
+      logger.info('ServiceWorker:Notification', 'Notification permission already granted');
       if (this.registration) {
         await this.subscribeToPush()
       }
@@ -409,7 +416,7 @@ export class ServiceWorkerManager {
 
     // 권한이 거부된 경우
     if (Notification.permission === 'denied') {
-      console.warn('알림 권한이 거부되었습니다. 브라우저 설정에서 직접 변경해야 합니다.')
+      logger.warn('ServiceWorker:Notification', 'Notification permission denied. Must be changed in browser settings');
       this.notifyListeners('permission-denied', {})
       return 'denied'
     }
@@ -417,7 +424,7 @@ export class ServiceWorkerManager {
     // 권한 요청
     try {
       const permission = await Notification.requestPermission()
-      console.log('알림 권한 요청 결과:', permission)
+      logger.info('ServiceWorker:Notification', 'Notification permission request result', { permission });
 
       if (permission === 'granted' && this.registration) {
         // Push 구독
@@ -429,7 +436,7 @@ export class ServiceWorkerManager {
 
       return permission
     } catch (error) {
-      console.error('알림 권한 요청 실패:', error)
+      logger.error('ServiceWorker:Notification', 'Failed to request notification permission', error instanceof Error ? error : { error });
       return 'denied'
     }
   }
@@ -443,20 +450,20 @@ export class ServiceWorkerManager {
     }
 
     try {
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
+      const vapidKey = env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
       const subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidKey ? (this.urlBase64ToUint8Array(vapidKey) as any) : undefined
       })
 
-      console.log('Push 구독 성공:', subscription.endpoint)
+      logger.info('ServiceWorker:Push', 'Push subscription successful', { endpoint: subscription.endpoint });
 
       // 서버에 구독 정보 전송
       await this.sendSubscriptionToServer(subscription)
 
       return subscription
     } catch (error) {
-      console.error('Push 구독 실패:', error)
+      logger.error('ServiceWorker:Push', 'Failed to subscribe to push', error instanceof Error ? error : { error });
       return null
     }
   }
@@ -474,7 +481,7 @@ export class ServiceWorkerManager {
         body: JSON.stringify(subscription)
       })
     } catch (error) {
-      console.error('구독 정보 전송 실패:', error)
+      logger.error('ServiceWorker:Push', 'Failed to send subscription to server', error instanceof Error ? error : { error });
     }
   }
 
@@ -535,7 +542,7 @@ export class ServiceWorkerManager {
     const success = await this.registration.unregister()
     if (success) {
       this.registration = null
-      console.log('Service Worker 등록 해제 완료')
+      logger.info('ServiceWorker:Unregister', 'Service Worker unregistered successfully');
     }
 
     return success
