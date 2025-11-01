@@ -1,0 +1,58 @@
+name: Clean Rebuild Server
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  clean-rebuild:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Clean rebuild on NCP Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "Starting clean rebuild process..."
+          cd /var/www/aedpics
+
+          echo "Stopping PM2..."
+          pm2 stop aedpics || true
+
+          echo "Cleaning build directories..."
+          rm -rf .next
+          rm -rf public/sw.js*
+          rm -rf public/workbox-*.js*
+          rm -rf public/swe-worker-*.js*
+
+          echo "Fetching latest code..."
+          git fetch origin
+          git reset --hard origin/main
+
+          echo "Cleaning node_modules..."
+          rm -rf node_modules package-lock.json
+
+          echo "Installing dependencies..."
+          npm install
+
+          echo "Generating Prisma client..."
+          npx prisma generate
+
+          echo "Building application..."
+          export BUILD_TIMESTAMP=$(date +%s)
+          npm run build
+
+          echo "Creating cache bust file..."
+          echo "$BUILD_TIMESTAMP" > .next/BUILD_ID
+          echo "$BUILD_TIMESTAMP" > public/build-timestamp.txt
+
+          echo "Starting PM2..."
+          pm2 start ecosystem.config.js --update-env
+          pm2 save --force
+
+          echo "Clean rebuild complete!"
+          pm2 status
