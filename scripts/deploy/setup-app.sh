@@ -27,26 +27,35 @@ fi
 
 # 환경변수 파일 생성
 echo "환경변수 파일 생성..."
-cat > .env.production << 'ENVEOF'
-# Database
-DATABASE_URL="postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
+echo "ERROR: This script contains placeholder values only."
+echo "Please create .env.production manually with actual credentials:"
+echo ""
+echo "Required environment variables:"
+echo "  - DATABASE_URL (from NCP PostgreSQL)"
+echo "  - NEXTAUTH_SECRET (generate with: openssl rand -base64 32)"
+echo "  - JWT_SECRET (generate with: openssl rand -base64 32)"
+echo "  - ENCRYPTION_KEY (generate with: openssl rand -base64 32)"
+echo "  - NCP_ACCESS_KEY (from NCP Console)"
+echo "  - NCP_ACCESS_SECRET (from NCP Console)"
+echo "  - NEXT_PUBLIC_KAKAO_MAP_APP_KEY (from Kakao Developers)"
+echo ""
+echo "Refer to .env.example for complete configuration."
+exit 1
 
-# NextAuth
-NEXTAUTH_URL="http://223.130.150.133:3000"
-NEXTAUTH_SECRET="OZ3p3VGk5qKdPQc1GsFqqDC9E/BfVn0iwNWuSyG+KEE="
-
-# JWT & Encryption
-JWT_SECRET="I2ZaT40bBTxAWpnDeI8NEXQPgXp/zkGqWVgpgyggSig="
-ENCRYPTION_KEY="qwh0HqmM66IEOVbZ6S5DQ6BBdsjwv/6W3yYGZF3kfTw="
-
-# Application
-MASTER_EMAIL="admin@nmc.or.kr"
-NEXT_PUBLIC_SITE_URL="http://223.130.150.133:3000"
-
-# External APIs
-NEXT_PUBLIC_KAKAO_MAP_APP_KEY="6e3339a5cbd61f1f3b08e3a06071795b"
-RESEND_API_KEY="re_Mpcv9mDn_2Pooy8YjcwZTDpnQsbotJ2Ur"
-ENVEOF
+# Placeholder for manual .env.production creation:
+# cat > .env.production << 'ENVEOF'
+# DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB?schema=SCHEMA"
+# NEXTAUTH_URL="https://your-domain.com"
+# NEXTAUTH_SECRET="generate-with-openssl-rand"
+# JWT_SECRET="generate-with-openssl-rand"
+# ENCRYPTION_KEY="generate-with-openssl-rand"
+# MASTER_EMAIL="admin@nmc.or.kr"
+# NEXT_PUBLIC_SITE_URL="https://your-domain.com"
+# NEXT_PUBLIC_KAKAO_MAP_APP_KEY="your-kakao-key"
+# NCP_ACCESS_KEY="your-ncp-access-key"
+# NCP_ACCESS_SECRET="your-ncp-secret-key"
+# NCP_SENDER_EMAIL="noreply@nmc.or.kr"
+# ENVEOF
 
 chmod 600 .env.production
 

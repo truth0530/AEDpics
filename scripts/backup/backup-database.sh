@@ -23,7 +23,7 @@ DB_HOST="${DB_HOST:-pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com}"
 DB_PORT="${DB_PORT:-5432}"
 DB_NAME="${DB_NAME:-aedpics_production}"
 DB_USER="${DB_USER:-aedpics_admin}"
-DB_PASSWORD="${DB_PASSWORD:-AEDpics2025*NCP}"
+DB_PASSWORD="${DB_PASSWORD:?ERROR: DB_PASSWORD environment variable is required}"
 SCHEMA="aedpics"
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/aedpics}"

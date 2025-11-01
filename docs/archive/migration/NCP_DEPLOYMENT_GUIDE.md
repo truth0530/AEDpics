@@ -88,7 +88,7 @@ nano .env.production
 
 ```env
 # Database (NCP PostgreSQL)
-DATABASE_URL="postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
+DATABASE_URL="postgresql://aedpics_admin:[REDACTED_DB_PASSWORD]@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
 
 # NextAuth (NCP 서버 URL)
 NEXTAUTH_URL="https://aed.nmc.or.kr"  # 실제 도메인
@@ -338,7 +338,7 @@ chmod +x deploy.sh
 
 ```bash
 # PostgreSQL 연결 테스트
-psql "postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production"
+psql "postgresql://aedpics_admin:[REDACTED_DB_PASSWORD]@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production"
 
 # Prisma 연결 확인
 npx prisma db pull

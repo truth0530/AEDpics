@@ -22,15 +22,15 @@ NCP_SSH_PORT=22
 
 **데이터베이스 (1개)**
 ```
-DATABASE_URL=postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics
+DATABASE_URL=postgresql://aedpics_admin:[REDACTED_DB_PASSWORD]@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics
 ```
 
 **인증 및 보안 (4개)**
 ```
 NEXTAUTH_URL=http://223.130.150.133:3000
-NEXTAUTH_SECRET=OZ3p3VGk5qKdPQc1GsFqqDC9E/BfVn0iwNWuSyG+KEE=
-JWT_SECRET=I2ZaT40bBTxAWpnDeI8NEXQPgXp/zkGqWVgpgyggSig=
-ENCRYPTION_KEY=qwh0HqmM66IEOVbZ6S5DQ6BBdsjwv/6W3yYGZF3kfTw=
+NEXTAUTH_SECRET=[REDACTED_NEXTAUTH_SECRET]
+JWT_SECRET=[REDACTED_JWT_SECRET]
+ENCRYPTION_KEY=[REDACTED_ENCRYPTION_KEY]
 ```
 
 **애플리케이션 설정 (2개)**
@@ -42,7 +42,7 @@ NEXT_PUBLIC_SITE_URL=http://223.130.150.133:3000
 **외부 API (2개)**
 ```
 NEXT_PUBLIC_KAKAO_MAP_APP_KEY=6e3339a5cbd61f1f3b08e3a06071795b (기존 키 재사용)
-RESEND_API_KEY=re_Mpcv9mDn_2Pooy8YjcwZTDpnQsbotJ2Ur (임시 사용, 향후 Cloud Outbound Mailer로 전환)
+RESEND_API_KEY=[REDACTED_RESEND_API_KEY] (임시 사용, 향후 Cloud Outbound Mailer로 전환)
 ```
 
 **알림 (1개)**
@@ -245,7 +245,7 @@ Port: 5432
 Database: aedpics_production
 Schema: aedpics
 User: aedpics_admin
-Password: AEDpics2025*NCP
+Password: [REDACTED_DB_PASSWORD]
 ```
 
 ### 프로젝트 구조

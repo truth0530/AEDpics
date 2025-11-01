@@ -148,17 +148,17 @@ AEDpics/
 
 ### 연결 테스트
 ```bash
-DATABASE_URL="postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics" npx tsx test-prisma.ts
+DATABASE_URL="postgresql://aedpics_admin:[REDACTED_DB_PASSWORD]@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics" npx tsx test-prisma.ts
 ```
 
 ### 마이그레이션 실행
 ```bash
-DATABASE_URL="postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics" npx tsx scripts/migrate-from-supabase.ts
+DATABASE_URL="postgresql://aedpics_admin:[REDACTED_DB_PASSWORD]@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics" npx tsx scripts/migrate-from-supabase.ts
 ```
 
 ### 데이터 확인
 ```bash
-PGPASSWORD='AEDpics2025*NCP' psql -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com -U aedpics_admin -d aedpics_production -p 5432 -c "SELECT COUNT(*) FROM aedpics.organizations;"
+PGPASSWORD='[REDACTED_DB_PASSWORD]' psql -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com -U aedpics_admin -d aedpics_production -p 5432 -c "SELECT COUNT(*) FROM aedpics.organizations;"
 ```
 
 ---

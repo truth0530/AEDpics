@@ -27,7 +27,7 @@
 
 #### ✅ 사용자 설정
 - **사용자명**: aedpics_admin
-- **비밀번호**: AEDpics2025*NCP
+- **비밀번호**: [REDACTED_DB_PASSWORD]
 - **Replication Role**: Y
 - **접근 제어**: 0.0.0.0/0 (전체 허용)
 
@@ -124,7 +124,7 @@ CREATE SCHEMA aedpics AUTHORIZATION aedpics_admin;
 
 **해결책**:
 - NCP UI 권장사항 준수: 특수기호 제한 (!, @, # 제외)
-- 최종 비밀번호: `AEDpics2025*NCP` (별표 사용)
+- 최종 비밀번호: `[REDACTED_DB_PASSWORD]` (별표 사용)
 
 **결과**: ✅ 인증 성공
 
@@ -144,7 +144,7 @@ aedpics_production (database)
 
 ### 연결 정보
 ```env
-DATABASE_URL="postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
+DATABASE_URL="postgresql://aedpics_admin:[REDACTED_DB_PASSWORD]@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
 ```
 
 ### Prisma Client 사용

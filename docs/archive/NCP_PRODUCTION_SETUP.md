@@ -117,7 +117,7 @@ cd aedpics
 # .env.production 파일 생성
 cat > .env.production << 'EOF'
 # Database
-DATABASE_URL="postgresql://aedpics_admin:AEDpics2025*NCP@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
+DATABASE_URL="postgresql://aedpics_admin:[REDACTED_DB_PASSWORD]@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics"
 
 # NextAuth
 NEXTAUTH_URL="https://aedpics.nmc.or.kr"
@@ -452,7 +452,7 @@ DB_HOST="pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com"
 DB_PORT="5432"
 DB_NAME="aedpics_production"
 DB_USER="aedpics_admin"
-DB_PASSWORD="AEDpics2025*NCP"
+DB_PASSWORD="[REDACTED_DB_PASSWORD]"
 BACKUP_DIR="/var/backups/aedpics"
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/aedpics_backup_$DATE.sql.gz"
@@ -576,7 +576,7 @@ sudo netstat -tuln | grep 3000
 ### 문제: 데이터베이스 연결 실패
 ```bash
 # PostgreSQL 연결 테스트
-PGPASSWORD='AEDpics2025*NCP' psql \
+PGPASSWORD='[REDACTED_DB_PASSWORD]' psql \
   -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com \
   -U aedpics_admin \
   -d aedpics_production \
