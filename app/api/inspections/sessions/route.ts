@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api/error-handler';
 import { canPerformInspection, AccessContext } from '@/lib/auth/access-control';
 import { LRUCache } from 'lru-cache';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 // Week 2: 중복 갱신 방지용 메모리 캐시
@@ -139,9 +140,12 @@ async function refreshSnapshotInBackground(
       }
     });
 
-    console.log(`Snapshot refreshed successfully for session ${sessionId}`);
+    logger.info('InspectionSession:refreshSnapshot', 'Snapshot refreshed successfully', { sessionId });
   } catch (err) {
-    console.error(`Background refresh failed for session ${sessionId}:`, err);
+    logger.error('InspectionSession:refreshSnapshot', 'Background refresh failed', {
+      sessionId,
+      error: err instanceof Error ? err : { err }
+    });
     throw err;
   }
 }
@@ -178,7 +182,10 @@ export const POST = async (request: NextRequest) => {
 
   // 개선된 로직: active 세션이 있으면 자동으로 일시정지 후 새 세션 시작
   if (activeSessions) {
-    console.log(`[Session Start] Auto-pausing existing active session ${activeSessions.id} for new inspection`);
+    logger.info('InspectionSession:POST', 'Auto-pausing existing active session', {
+      existingSessionId: activeSessions.id,
+      userId
+    });
     // 기존 세션을 자동으로 일시정지
     await prisma.inspection_sessions.update({
       where: { id: activeSessions.id },
@@ -206,7 +213,10 @@ export const POST = async (request: NextRequest) => {
 
   // 할당되지 않은 장비는 점검 불가
   if (!assignment) {
-    console.log(`[Session Start] User ${userId} attempted to inspect unassigned equipment: ${payload.equipment_serial}`);
+    logger.warn('InspectionSession:POST', 'User attempted to inspect unassigned equipment', {
+      userId,
+      equipmentSerial: payload.equipment_serial
+    });
     return NextResponse.json(
       {
         error: '이 장비는 귀하에게 할당되지 않았습니다. 관리자에게 문의하세요.',
@@ -216,7 +226,11 @@ export const POST = async (request: NextRequest) => {
     );
   }
 
-  console.log(`[Session Start] Assignment found for user ${userId}, equipment ${payload.equipment_serial}, assignment status: ${assignment.status}`);
+  logger.info('InspectionSession:POST', 'Assignment found', {
+    userId,
+    equipmentSerial: payload.equipment_serial,
+    assignmentStatus: assignment.status
+  });
 
   // Assignment 상태를 'in_progress'로 업데이트
   if (assignment.status === 'pending') {
@@ -228,9 +242,13 @@ export const POST = async (request: NextRequest) => {
           started_at: new Date()
         }
       });
-      console.log(`[Session Start] Assignment ${assignment.id} status updated to 'in_progress'`);
+      logger.info('InspectionSession:POST', 'Assignment status updated to in_progress', {
+        assignmentId: assignment.id
+      });
     } catch (updateError) {
-      console.error('[Session Start] Failed to update assignment status:', updateError);
+      logger.error('InspectionSession:POST', 'Failed to update assignment status',
+        updateError instanceof Error ? updateError : { updateError }
+      );
       // 에러가 발생해도 세션 생성은 계속 진행 (중요하지 않은 업데이트)
     }
   }
@@ -244,10 +262,14 @@ export const POST = async (request: NextRequest) => {
     });
 
     if (device) {
-      console.log('Device data from aed_data:', device);
+      logger.info('InspectionSession:POST', 'Device data loaded from aed_data', {
+        equipmentSerial: payload.equipment_serial
+      });
       deviceSnapshot = device as any;
     } else {
-      console.log('No device found for equipment_serial:', payload.equipment_serial);
+      logger.warn('InspectionSession:POST', 'No device found for equipment_serial', {
+        equipmentSerial: payload.equipment_serial
+      });
     }
   }
 
@@ -300,8 +322,10 @@ export const GET = async (request: NextRequest) => {
       where: { id: sessionId },
       data: { updated_at: new Date() }
     })
-      .then(() => console.log(`Last accessed updated for ${sessionId}`))
-      .catch(err => console.error('Failed to update last_accessed:', err));
+      .then(() => logger.info('InspectionSession:GET', 'Last accessed updated', { sessionId }))
+      .catch(err => logger.error('InspectionSession:GET', 'Failed to update last_accessed',
+        err instanceof Error ? err : { err }
+      ));
 
     // Priority 2: 소프트 타임아웃 경고 (자동 처리 없음)
     const now = new Date();
@@ -317,7 +341,10 @@ export const GET = async (request: NextRequest) => {
         suggestAction: 'resume_or_cancel',
         severity: 'high'
       };
-      console.warn(`[Session Warning] Stale session detected: ${sessionId}, ${hoursSinceAccess.toFixed(1)} hours since last access`);
+      logger.warn('InspectionSession:GET', 'Stale session detected', {
+        sessionId,
+        hoursSinceAccess: hoursSinceAccess.toFixed(1)
+      });
     } else if (hoursSinceAccess > 4 && data.status === 'active') {
       warning = {
         type: 'inactive_session',
@@ -325,7 +352,10 @@ export const GET = async (request: NextRequest) => {
         hoursSinceAccess: Math.floor(hoursSinceAccess),
         severity: 'medium'
       };
-      console.info(`[Session Info] Inactive session: ${sessionId}, ${hoursSinceAccess.toFixed(1)} hours since last access`);
+      logger.info('InspectionSession:GET', 'Inactive session', {
+        sessionId,
+        hoursSinceAccess: hoursSinceAccess.toFixed(1)
+      });
     }
 
     // 3️⃣ 갱신 필요 여부 체크 (빠름, ~1ms)
@@ -343,7 +373,9 @@ export const GET = async (request: NextRequest) => {
       // Promise를 await 하지 않고 fire-and-forget
       refreshSnapshotInBackground(sessionId, data.equipment_serial)
         .catch(err => {
-          console.error('Background refresh failed:', err);
+          logger.error('InspectionSession:GET', 'Background refresh failed',
+            err instanceof Error ? err : { err }
+          );
         })
         .finally(() => {
           // 완료 후 캐시에서 제거
@@ -503,9 +535,9 @@ export const PATCH = async (request: NextRequest) => {
   if (payload.stepData) {
     const validation = validateStepData(payload.stepData);
     if (!validation.valid) {
-      console.warn('[Validation Error] Step data validation failed:', {
+      logger.warn('InspectionSession:PATCH', 'Step data validation failed', {
         sessionId: payload.sessionId,
-        current_step: payload.currentStep,
+        currentStep: payload.currentStep,
         errors: validation.errors,
       });
       return NextResponse.json(
@@ -554,7 +586,7 @@ export const PATCH = async (request: NextRequest) => {
     const finalData = mergeStepData(mergedStepData, payload.finalizeData);
 
     // 점검 완료 데이터 검증
-    console.log('[Session Complete] finalData structure:', {
+    logger.info('InspectionSession:POST-complete', 'finalData structure', {
       keys: Object.keys(finalData),
       basicInfoKeys: finalData.basicInfo ? Object.keys(finalData.basicInfo) : 'N/A',
       deviceInfoKeys: finalData.device_info ? Object.keys(finalData.device_info) : 'N/A',
@@ -623,7 +655,9 @@ export const PATCH = async (request: NextRequest) => {
 
       return NextResponse.json({ session: completedSession });
     } catch (rpcError: any) {
-      console.error('[Session Complete] Error:', rpcError);
+      logger.error('InspectionSession:POST-complete', 'Session complete error',
+        rpcError instanceof Error ? rpcError : { rpcError }
+      );
       return NextResponse.json(
         {
           error: '점검 완료 처리 중 오류가 발생했습니다.',
