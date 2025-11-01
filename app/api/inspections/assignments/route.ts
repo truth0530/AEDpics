@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 // 대량 일정추가 핸들러
@@ -128,7 +129,9 @@ async function handleBulkAssignment(
         }
       });
     } catch (error: any) {
-      console.error('[Bulk Assignment Creation Error]', error);
+      logger.error('InspectionAssignments:POST', 'Bulk assignment creation error',
+        error instanceof Error ? error : { error }
+      );
       return NextResponse.json({
         error: '일정추가가 실패했습니다.',
         details: error.message
@@ -136,7 +139,9 @@ async function handleBulkAssignment(
     }
 
   } catch (error) {
-    console.error('[Bulk Assignment Handler Error]', error);
+    logger.error('InspectionAssignments:POST', 'Bulk assignment handler error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -315,7 +320,9 @@ export async function POST(request: NextRequest) {
         message: '일정추가가 완료되었습니다.'
       });
     } catch (insertError: any) {
-      console.error('[Assignment Creation Error]', insertError);
+      logger.error('InspectionAssignments:POST', 'Assignment creation error',
+        insertError instanceof Error ? insertError : { insertError }
+      );
 
       // Check for unique constraint violation (Prisma error code P2002)
       if (insertError.code === 'P2002') {
@@ -349,7 +356,9 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[API Error]', error);
+    logger.error('InspectionAssignments:POST', 'API error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -434,7 +443,9 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[API Error]', error);
+    logger.error('InspectionAssignments:GET', 'API error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -586,7 +597,9 @@ export async function PATCH(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[API Error]', error);
+    logger.error('InspectionAssignments:PATCH', 'API error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -665,7 +678,9 @@ export async function DELETE(request: NextRequest) {
         message: '일정이 취소되었습니다.'
       });
     } catch (deleteError) {
-      console.error('[Assignment Delete Error]', deleteError);
+      logger.error('InspectionAssignments:DELETE', 'Assignment delete error',
+        deleteError instanceof Error ? deleteError : { deleteError }
+      );
       return NextResponse.json(
         { error: 'Failed to cancel assignment' },
         { status: 500 }
@@ -673,7 +688,9 @@ export async function DELETE(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[API Error]', error);
+    logger.error('InspectionAssignments:DELETE', 'API error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

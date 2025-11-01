@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -83,7 +84,9 @@ export async function POST(request: NextRequest) {
             message: '점검불가 상태로 등록되었습니다.'
           });
         } catch (insertError: any) {
-          console.error('[mark-unavailable] Error creating assignment:', insertError);
+          logger.error('MarkUnavailable:POST', 'Error creating assignment',
+            insertError instanceof Error ? insertError : { insertError }
+          );
           return NextResponse.json(
             { error: '점검불가 상태 등록 중 오류가 발생했습니다.', detail: insertError.message },
             { status: 500 }
@@ -108,21 +111,27 @@ export async function POST(request: NextRequest) {
           message: '점검불가 상태로 변경되었습니다.'
         });
       } catch (updateError: any) {
-        console.error('[mark-unavailable] Error updating assignment:', updateError);
+        logger.error('MarkUnavailable:POST', 'Error updating assignment',
+          updateError instanceof Error ? updateError : { updateError }
+        );
         return NextResponse.json(
           { error: '점검불가 상태 변경 중 오류가 발생했습니다.', detail: updateError.message },
           { status: 500 }
         );
       }
     } catch (fetchError: any) {
-      console.error('[mark-unavailable] Error fetching assignment:', fetchError);
+      logger.error('MarkUnavailable:POST', 'Error fetching assignment',
+        fetchError instanceof Error ? fetchError : { fetchError }
+      );
       return NextResponse.json(
         { error: '할당 정보 조회 중 오류가 발생했습니다.' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('[mark-unavailable] Unexpected error:', error);
+    logger.error('MarkUnavailable:POST', 'Unexpected error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -191,21 +200,27 @@ export async function DELETE(request: NextRequest) {
           message: '점검불가 상태가 취소되었습니다.'
         });
       } catch (updateError: any) {
-        console.error('[mark-unavailable DELETE] Error updating assignment:', updateError);
+        logger.error('MarkUnavailable:DELETE', 'Error updating assignment',
+          updateError instanceof Error ? updateError : { updateError }
+        );
         return NextResponse.json(
           { error: '점검불가 상태 취소 중 오류가 발생했습니다.' },
           { status: 500 }
         );
       }
     } catch (fetchError: any) {
-      console.error('[mark-unavailable DELETE] Error fetching assignment:', fetchError);
+      logger.error('MarkUnavailable:DELETE', 'Error fetching assignment',
+        fetchError instanceof Error ? fetchError : { fetchError }
+      );
       return NextResponse.json(
         { error: '할당 정보 조회 중 오류가 발생했습니다.' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('[mark-unavailable DELETE] Unexpected error:', error);
+    logger.error('MarkUnavailable:DELETE', 'Unexpected error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

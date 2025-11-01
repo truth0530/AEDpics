@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
 import { canPerformInspection, canAccessDevice, AccessContext } from '@/lib/auth/access-control';
 import { requireAuthWithProfile, isErrorResponse } from '@/lib/auth/session-helpers';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
@@ -40,14 +41,14 @@ export async function POST(request: NextRequest) {
       organizationId: profile.organization_id || undefined,
     };
 
-    console.log('[Quick Inspection] User context:', {
+    logger.info('QuickInspection:POST', 'User context', {
       role: profile.role,
       accountType: 'public (default)',
       resolvedAccountType: accessContext.accountType,
     });
 
     if (!canPerformInspection(accessContext)) {
-      console.log('[Quick Inspection] Permission denied for context:', accessContext);
+      logger.warn('QuickInspection:POST', 'Permission denied', { accessContext });
       return NextResponse.json({ error: 'Inspection not permitted for this user' }, { status: 403 });
     }
 
@@ -99,11 +100,15 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (insertError) {
-      console.error('Failed to insert quick inspection:', insertError);
+      logger.error('QuickInspection:POST', 'Failed to insert quick inspection',
+        insertError instanceof Error ? insertError : { insertError }
+      );
       return NextResponse.json({ error: 'Failed to create inspection record' }, { status: 500 });
     }
   } catch (error) {
-    console.error('Quick inspection API error:', error);
+    logger.error('QuickInspection:POST', 'Quick inspection API error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
