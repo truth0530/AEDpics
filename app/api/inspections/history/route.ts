@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api/error-handler';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -83,7 +84,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
     });
 
   } catch (error) {
-    console.error('[Inspection History] Query error:', error);
+    logger.error('InspectionHistory:GET', 'Query error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json({ error: 'Failed to fetch inspection history' }, { status: 500 });
   }
 });

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 // GET /api/inspections/field/assigned - 현장점검용 할당된 AED 목록
@@ -153,7 +154,9 @@ export async function GET(request: NextRequest) {
       });
 
     } catch (assignmentError) {
-      console.error('[Assigned AED Query Error]', assignmentError);
+      logger.error('InspectionFieldAssigned:GET', 'Assigned AED query error',
+        assignmentError instanceof Error ? assignmentError : { assignmentError }
+      );
       return NextResponse.json(
         { error: 'Failed to fetch assignments' },
         { status: 500 }
@@ -161,7 +164,9 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[API Error]', error);
+    logger.error('InspectionFieldAssigned:GET', 'API error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

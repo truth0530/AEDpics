@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api/error-handler';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -64,7 +65,9 @@ export const POST = apiHandler(async (request: NextRequest, { params }: { params
       }
     });
   } catch (updateError) {
-    console.error('[Cancel Session] Update error:', updateError);
+    logger.error('InspectionSessionCancel:POST', 'Update error',
+      updateError instanceof Error ? updateError : { updateError }
+    );
     return NextResponse.json({ error: 'Failed to cancel session' }, { status: 500 });
   }
 

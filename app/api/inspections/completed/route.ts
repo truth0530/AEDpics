@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
@@ -48,7 +49,9 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[GET /api/inspections/completed] Error:', error);
+    logger.error('InspectionCompleted:GET', 'Completed inspections error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
