@@ -36,26 +36,28 @@ export default function ProfileMenuPage() {
   const canApproveUsers = isAdmin;
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">설정</h1>
+    <div className="container mx-auto py-4 px-4 max-w-4xl">
+      <h1 className="text-2xl font-bold mb-4">설정</h1>
 
-      {/* 사용자 정보 섹션 */}
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
-            <User className="w-8 h-8 text-white" />
+      {/* 사용자 정보 섹션 - 간소화 */}
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-semibold truncate">{user?.fullName || user?.email}</h2>
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.organization?.name || '소속 정보 없음'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold">{user?.fullName || user?.email}</h2>
-            <p className="text-gray-600 dark:text-gray-400">{user?.email}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-500">
-              {user?.organization?.name || '소속 없음'}
-            </p>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* 내 정보 수정 */}
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/profile')}>
           <CardHeader className="flex flex-row items-center space-x-3">
