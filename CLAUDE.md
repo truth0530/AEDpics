@@ -370,6 +370,36 @@ git push origin main  # GitHub Actions 자동 배포
 - 로컬 검증 없이 푸시 절대 금지
 - PM2 reload로 사용자 경험 보호
 
+### 10. 이미지 최적화 원칙
+
+**목표**: Object Storage 비용 최소화
+
+**핵심 원칙**:
+1. **압축률 극대화 최우선** (품질보다 용량 절감)
+2. 식별 가능한 범위 내 최대 압축
+3. WebP 포맷 + quality 55-60 권장
+
+**최적화 전략**:
+```typescript
+// Sharp를 사용한 WebP 초압축
+await sharp(buffer)
+  .rotate()  // EXIF 적용 후 제거
+  .resize(1280, 1280, { fit: 'inside' })  // 해상도 제한
+  .webp({
+    quality: 55,          // 식별 가능 + 최대 압축
+    effort: 6,            // 최대 압축 노력
+    smartSubsample: true  // Chroma subsampling
+  })
+  .toBuffer();
+```
+
+**예상 효과**:
+- 점검 1건 (사진 3장): 9MB → 210KB (97.7% 감소)
+- 연간 (81,464대 × 연 1회): 733GB → 17.1GB (97.7% 감소)
+- **연간 비용: 약 6,000원** (월 500원)
+
+**상세**: [docs/IMAGE_OPTIMIZATION_STRATEGY.md](docs/IMAGE_OPTIMIZATION_STRATEGY.md)
+
 ## 필수: NCP 이메일 발송 문제 해결
 
 ### 이메일 발송 실패 시 최우선 체크
@@ -863,7 +893,7 @@ migrate: 마이그레이션 관련
 ---
 
 **마지막 업데이트**: 2025-11-01
-**문서 버전**: 2.4.0
+**문서 버전**: 2.5.0
 
 ---
 
