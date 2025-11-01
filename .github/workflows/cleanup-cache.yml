@@ -1,0 +1,50 @@
+name: Cleanup Cache
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Clean Cache and Free Disk Space
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== Disk Usage BEFORE Cleanup ==="
+          df -h
+
+          echo ""
+          echo "=== Cleaning npm cache ==="
+          npm cache clean --force
+          echo "npm cache cleaned"
+
+          echo ""
+          echo "=== Cleaning Prisma cache ==="
+          rm -rf ~/.cache/prisma
+          echo "Prisma cache cleaned"
+
+          echo ""
+          echo "=== Cleaning node-gyp cache ==="
+          rm -rf ~/.cache/node-gyp
+          echo "node-gyp cache cleaned"
+
+          echo ""
+          echo "=== Deleting CSV data files (already imported to DB) ==="
+          cd /var/www/aedpics
+          rm -rf data/*.csv
+          echo "CSV files deleted"
+
+          echo ""
+          echo "=== Disk Usage AFTER Cleanup ==="
+          df -h
+
+          echo ""
+          echo "=== Space Freed ==="
+          echo "Expected: ~2.7GB freed"
