@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 export interface SystemStats {
   totalDevices: number;
@@ -73,7 +74,7 @@ export async function getSystemStats(): Promise<SystemStats> {
         };
       }
     } catch (inspectionError) {
-      console.log('Inspection stats not available:', inspectionError);
+      logger.info('Stats:getSystemStats', 'Inspection stats not available', inspectionError instanceof Error ? inspectionError : { inspectionError });
     }
 
     return {
@@ -84,7 +85,7 @@ export async function getSystemStats(): Promise<SystemStats> {
       inspectionStats
     };
   } catch (error) {
-    console.error('Stats query error:', error);
+    logger.error('Stats:getSystemStats', 'Stats query error', error instanceof Error ? error : { error });
     // 에러 시 기본값 반환
     return {
       totalDevices: 0,

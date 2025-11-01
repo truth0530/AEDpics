@@ -1,5 +1,7 @@
 // IndexedDB utilities for offline storage
 
+import { logger } from '@/lib/logger';
+
 export interface PendingInspection {
   id: string;
   deviceId: string;
@@ -171,7 +173,7 @@ class OfflineDB {
           syncedCount++;
         }
       } catch (error) {
-        console.error('Failed to sync inspection:', inspection.id, error);
+        logger.error('OfflineDB:syncPendingInspections', 'Failed to sync inspection', { inspectionId: inspection.id, error: error instanceof Error ? error : { error } });
       }
     }
 

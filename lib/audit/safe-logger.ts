@@ -4,6 +4,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 interface AuditLogEntry {
   action: string;
@@ -42,12 +43,12 @@ class SafeAuditLogger {
       this.lastCheck = now;
 
       if (error && error.code === 'PGRST116') {
-        console.info('[Audit] audit_logs table not found - logging disabled');
+        logger.info('Audit:SafeLogger', 'audit_logs table not found - logging disabled');
       }
 
       return this.tableExists;
     } catch (err) {
-      console.error('[Audit] Error checking table existence:', err);
+      logger.error('Audit:SafeLogger', 'Error checking table existence', err instanceof Error ? err : { err });
       this.tableExists = false;
       this.lastCheck = now;
       return false;
@@ -65,7 +66,7 @@ class SafeAuditLogger {
       // 테이블이 없으면 콘솔 로그만
       const exists = await this.checkTableExists(supabase);
       if (!exists) {
-        console.debug('[Audit Log - Fallback]', entry);
+        logger.info('Audit:SafeLogger', 'Audit log fallback (table missing)', { entry });
         return;
       }
 
@@ -78,14 +79,14 @@ class SafeAuditLogger {
         // 404는 조용히 처리
         if (error.code === 'PGRST116') {
           this.tableExists = false;
-          console.debug('[Audit Log - Table Missing]', entry);
+          logger.info('Audit:SafeLogger', 'Audit log table missing during insert', { entry });
         } else {
-          console.error('[Audit] Insert error:', error, entry);
+          logger.error('Audit:SafeLogger', 'Insert error', { error, entry });
         }
       }
     } catch (err) {
       // 모든 에러를 조용히 처리
-      console.debug('[Audit Log - Error]', entry, err);
+      logger.info('Audit:SafeLogger', 'Audit log error', { entry, err });
     }
   }
 

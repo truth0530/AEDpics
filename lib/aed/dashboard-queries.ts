@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import type { UserProfile } from '@/packages/types';
 import { normalizeRegionName } from '@/lib/constants/regions';
+import { logger } from '@/lib/logger';
 
 interface DashboardStats {
   total: number;
@@ -223,7 +224,7 @@ export const getCachedDashboardData = cache(async (userProfile: UserProfile): Pr
       };
     }
   } catch (error) {
-    console.error('Dashboard data query error:', error);
+    logger.error('DashboardQueries:getCachedDashboardData', 'Dashboard data query error', error instanceof Error ? error : { error });
 
     // 에러 시 빈 데이터 반환
     return {
@@ -271,7 +272,7 @@ export const getCachedHourlyInspections = cache(async (userProfile: UserProfile)
 
     return hourlyData;
   } catch (error) {
-    console.error('Hourly inspections query error:', error);
+    logger.error('DashboardQueries:getCachedHourlyInspections', 'Hourly inspections query error', error instanceof Error ? error : { error });
     return Array(24).fill(null).map((_, hour) => ({
       hour: `${hour}시`,
       count: 0
@@ -327,7 +328,7 @@ export const getCachedDailyInspections = cache(async (userProfile: UserProfile):
 
     return dailyData;
   } catch (error) {
-    console.error('Daily inspections query error:', error);
+    logger.error('DashboardQueries:getCachedDailyInspections', 'Daily inspections query error', error instanceof Error ? error : { error });
 
     // 에러 시 빈 데이터 반환
     const dailyData = [];

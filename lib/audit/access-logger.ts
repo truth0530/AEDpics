@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 // TODO: Supabase 서버 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/server';
 
@@ -59,7 +61,7 @@ export async function logDataAccess(entry: AccessLogEntry) {
     });
   } catch (error) {
     // 로깅 실패는 원본 작업에 영향 주지 않음
-    console.error('Failed to log data access:', error);
+    logger.error('AccessLogger:logDataAccess', 'Failed to log data access', error instanceof Error ? error : { error });
   }
 }
 
