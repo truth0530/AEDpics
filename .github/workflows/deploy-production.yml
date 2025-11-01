@@ -121,10 +121,10 @@ jobs:
           echo "Zero-Downtime deployment with PM2 reload..."
           if pm2 describe aedpics > /dev/null 2>&1; then
             echo "App is running. Performing zero-downtime reload..."
-            pm2 reload ecosystem.config.js --update-env
+            pm2 reload ecosystem.config.cjs --update-env
           else
             echo "App is not running. Starting for the first time..."
-            pm2 start ecosystem.config.js --update-env
+            pm2 start ecosystem.config.cjs --update-env
           fi
           pm2 save --force
 
