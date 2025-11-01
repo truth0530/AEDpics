@@ -905,14 +905,13 @@ export function InspectionSummaryStep() {
 
         {/* 양호 항목 (화면) */}
         {basicInfoSummary.matched.length + deviceInfoSummary.matched.length + storageChecklistSummary.matched.length > 0 && (
-          <div className="screen-only rounded-lg border-l-4 border-l-green-500 border border-green-600/30 bg-green-900/10 p-3">
-            <h3 className="text-sm font-semibold text-green-400 mb-2 flex items-center gap-2">
-              <span>✓</span>
-              <span>양호 항목 ({totalStats.matchedCount}개)</span>
+          <div className="screen-only rounded-lg border border-green-600/30 bg-green-900/10 p-3">
+            <h3 className="text-sm font-semibold text-green-400 mb-2">
+              양호 항목 ({totalStats.matchedCount}개)
             </h3>
             <div className="space-y-1">
               {[...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched].map((item, idx) => (
-                <div key={idx} className="text-sm text-gray-300 leading-relaxed">
+                <div key={idx} className="text-sm text-gray-300 dark:text-gray-300 leading-relaxed">
                   • {typeof item === 'string' ? item : item.label}
                 </div>
               ))}
@@ -922,10 +921,9 @@ export function InspectionSummaryStep() {
 
         {/* 수정 항목 (화면) */}
         {basicInfoSummary.modified.length + deviceInfoSummary.modified.length > 0 && (
-          <div className="screen-only rounded-lg border-l-4 border-l-yellow-500 border border-yellow-600/30 bg-yellow-900/10 p-3">
-            <h3 className="text-sm font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-              <span>⚠</span>
-              <span>수정 항목 ({totalStats.modifiedCount}개)</span>
+          <div className="screen-only rounded-lg border border-yellow-600/30 bg-yellow-900/10 p-3">
+            <h3 className="text-sm font-semibold text-yellow-400 mb-3">
+              수정 항목 ({totalStats.modifiedCount}개)
             </h3>
             <div className="space-y-3">
               {[...basicInfoSummary.modified, ...deviceInfoSummary.modified].map((item, idx) => {
@@ -994,10 +992,9 @@ export function InspectionSummaryStep() {
 
         {/* 불량 항목 (화면) */}
         {storageChecklistSummary.issues.length > 0 && (
-          <div className="screen-only rounded-lg border-l-4 border-l-red-500 border border-red-600/30 bg-red-900/10 p-3">
-            <h3 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
-              <span>🔴</span>
-              <span>보관함 불량 항목 ({totalStats.issuesCount}개) - 즉시 조치 필요</span>
+          <div className="screen-only rounded-lg border border-red-600/30 bg-red-900/10 p-3">
+            <h3 className="text-sm font-semibold text-red-400 mb-2">
+              보관함 불량 항목 ({totalStats.issuesCount}개) - 즉시 조치 필요
             </h3>
             <div className="space-y-1">
               {storageChecklistSummary.issues.map((item, idx) => (
@@ -1011,9 +1008,8 @@ export function InspectionSummaryStep() {
 
         {/* 첨부 자료 (화면) */}
         <div className="screen-only rounded-lg border border-gray-600/30 bg-gray-800/20 p-3">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
-            <span>📸</span>
-            <span>첨부 자료</span>
+          <h3 className="text-sm font-semibold text-gray-300 mb-2">
+            첨부 자료
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {[
@@ -1026,9 +1022,9 @@ export function InspectionSummaryStep() {
               <div key={idx} className={`rounded-lg p-2 text-center text-xs font-medium transition-colors ${
                 photo.count > 0
                   ? 'bg-green-900/20 border border-green-600/30 text-green-400'
-                  : 'bg-gray-700/20 border border-gray-600/30 text-gray-500'
+                  : 'bg-gray-700/20 border border-gray-600/30 text-gray-500 dark:text-gray-400'
               }`}>
-                <div className="text-lg mb-0.5">{photo.count > 0 ? '✓' : '◯'}</div>
+                <div className="text-sm mb-0.5 font-bold">{photo.count > 0 ? '완료' : '미완료'}</div>
                 {photo.label}
               </div>
             ))}
@@ -1036,25 +1032,24 @@ export function InspectionSummaryStep() {
         </div>
 
         {/* 권장 조치 사항 (화면) */}
-        <div className={`screen-only rounded-lg border-l-4 p-3 ${
+        <div className={`screen-only rounded-lg border p-3 ${
           recommendedAction.severity === 'high'
-            ? 'border-l-red-500 border border-red-600/30 bg-red-900/10'
+            ? 'border-red-600/30 bg-red-900/10'
             : recommendedAction.severity === 'medium'
-            ? 'border-l-yellow-500 border border-yellow-600/30 bg-yellow-900/10'
-            : 'border-l-green-500 border border-green-600/30 bg-green-900/10'
+            ? 'border-yellow-600/30 bg-yellow-900/10'
+            : 'border-green-600/30 bg-green-900/10'
         }`}>
-          <h3 className={`text-sm font-semibold mb-2 flex items-center gap-2 ${
+          <h3 className={`text-sm font-semibold mb-2 ${
             recommendedAction.severity === 'high' ? 'text-red-400' :
             recommendedAction.severity === 'medium' ? 'text-yellow-400' :
             'text-green-400'
           }`}>
-            <span>🎯</span>
-            <span>권장 조치 사항</span>
+            권장 조치 사항
           </h3>
           <p className={`text-sm leading-relaxed ${
-            recommendedAction.severity === 'high' ? 'text-red-300' :
-            recommendedAction.severity === 'medium' ? 'text-yellow-300' :
-            'text-green-300'
+            recommendedAction.severity === 'high' ? 'text-red-300 dark:text-red-300' :
+            recommendedAction.severity === 'medium' ? 'text-yellow-300 dark:text-yellow-300' :
+            'text-green-300 dark:text-green-300'
           }`}>
             {recommendedAction.reason}
           </p>
@@ -1062,16 +1057,15 @@ export function InspectionSummaryStep() {
 
         {/* 종합 의견 (화면) */}
         <div className="screen-only rounded-lg border border-gray-600/30 bg-gray-800/20 p-3 space-y-2">
-          <label htmlFor="notes" className="block text-sm font-semibold text-gray-300 flex items-center gap-2">
-            <span>💬</span>
-            <span>점검 종합 의견</span>
+          <label htmlFor="notes" className="block text-sm font-semibold text-gray-300">
+            점검 종합 의견
           </label>
           <textarea
             id="notes"
             value={documentation.notes || ''}
             onChange={(e) => handleChange('notes', e.target.value)}
             rows={3}
-            className="block w-full rounded-lg px-3 py-2 bg-gray-800/50 border border-gray-600/40 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            className="block w-full rounded-lg px-3 py-2 bg-gray-800/50 border border-gray-600/40 text-sm text-white dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             placeholder="점검 과정에서 발견한 특이사항이나 종합 의견을 작성하세요"
           />
         </div>
@@ -1086,8 +1080,8 @@ export function InspectionSummaryStep() {
                 onChange={(e) => handleChange('inspector_confirmed', e.target.checked)}
                 className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-green-600 focus:ring-green-500"
               />
-              <span className="text-sm font-medium text-gray-300">
-                ✓ 위 내용이 정확함을 확인합니다
+              <span className="text-sm font-medium text-gray-300 dark:text-gray-300">
+                위 내용이 정확함을 확인합니다
               </span>
             </label>
           </div>
@@ -1111,8 +1105,8 @@ export function InspectionSummaryStep() {
 
         {/* 경고 메시지 (화면) */}
         <div className="screen-only rounded-lg bg-yellow-900/20 border border-yellow-600/30 p-2.5">
-          <p className="text-xs text-yellow-300 leading-relaxed">
-            ⚠️ 점검 완료 후에도 재점검을 통해 내용을 수정할 수 있습니다. 모든 내용을 다시 확인해주세요.
+          <p className="text-xs text-yellow-300 dark:text-yellow-300 leading-relaxed">
+            주의: 점검 완료 후에도 재점검을 통해 내용을 수정할 수 있습니다. 모든 내용을 다시 확인해주세요.
           </p>
         </div>
       </div>
