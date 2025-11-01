@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -50,7 +51,10 @@ export async function POST(request: NextRequest) {
       select: { id: true }
     });
 
-    console.log(`Successfully created approval notification for user ${user.id}: ${approved ? 'approved' : 'rejected'}`);
+    logger.info('NotificationApprovalResult:POST', 'Approval notification created', {
+      userId: user.id,
+      approved
+    });
 
     return Response.json({
       success: true,
@@ -58,7 +62,9 @@ export async function POST(request: NextRequest) {
       message: `${approved ? 'Approval' : 'Rejection'} notification sent to user ${user.id}`
     });
   } catch (error) {
-    console.error('Approval notification error:', error);
+    logger.error('NotificationApprovalResult:POST', 'Approval notification error',
+      error instanceof Error ? error : { error }
+    );
     return Response.json({
       error: 'Failed to send approval notification',
       details: error instanceof Error ? error.message : 'Unknown error'

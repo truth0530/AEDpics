@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuthWithProfile, isErrorResponse } from '@/lib/auth/session-helpers';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -51,7 +52,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[GET /api/notifications/settings] Error:', error);
+    logger.error('NotificationSettings:GET', 'Get settings error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -157,7 +160,9 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[PATCH /api/notifications/settings] Error:', error);
+    logger.error('NotificationSettings:PATCH', 'Update settings error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

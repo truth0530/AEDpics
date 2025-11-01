@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST() {
@@ -23,14 +24,19 @@ export async function POST() {
 
     const updatedCount = result.count;
 
-    console.log(`Marked ${updatedCount} notifications as read for user ${session.user.id}`);
+    logger.info('NotificationMarkAllRead:POST', 'Marked notifications as read', {
+      userId: session.user.id,
+      count: updatedCount
+    });
 
     return Response.json({
       success: true,
       updatedCount
     });
   } catch (error) {
-    console.error('Mark all notifications as read error:', error);
+    logger.error('NotificationMarkAllRead:POST', 'Mark all notifications error',
+      error instanceof Error ? error : { error }
+    );
     return Response.json({
       error: 'Failed to mark all notifications as read',
       details: error instanceof Error ? error.message : 'Unknown error'

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuthWithProfile, isErrorResponse } from '@/lib/auth/session-helpers';
+import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -81,7 +82,9 @@ export async function GET(request: NextRequest) {
       unreadCount,
     });
   } catch (error) {
-    console.error('[GET /api/notifications/history] Error:', error);
+    logger.error('NotificationHistory:GET', 'Get notification history error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -167,7 +170,9 @@ export async function PATCH(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('[PATCH /api/notifications/history] Error:', error);
+    logger.error('NotificationHistory:PATCH', 'Update notification error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -246,7 +251,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('[DELETE /api/notifications/history] Error:', error);
+    logger.error('NotificationHistory:DELETE', 'Delete notification error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
