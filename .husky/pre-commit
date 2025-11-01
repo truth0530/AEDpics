@@ -16,7 +16,7 @@ fi
 
 # 빌드 테스트 (빠른 검증만)
 echo "3/3 Testing build..."
-npm run build > /dev/null 2>&1
+NODE_ENV=production npm run build > /dev/null 2>&1
 BUILD_EXIT=$?
 
 if [ $BUILD_EXIT -ne 0 ]; then

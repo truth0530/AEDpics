@@ -14,9 +14,9 @@ const withPWA = withPWAInit({
     swDest: "sw.js",
   },
   // Fallback 설정 추가
-  fallbacks: {
-    document: "/_offline",
-  },
+  // fallbacks: {
+  //   document: "/_offline",
+  // },
   // Service Worker 빌드 최적화
   cacheStartUrl: false,
   dynamicStartUrl: false,

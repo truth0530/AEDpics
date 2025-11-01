@@ -15,7 +15,7 @@ import { PrivacyContent } from '@/components/content/privacy';
 import { validatePasswordStrength, getPasswordStrengthColor, getPasswordStrengthBarColor } from '@/lib/auth/password-validator';
 import { OrganizationAutocomplete } from '@/components/ui/organization-autocomplete';
 import { extractRetryInfo } from '@/lib/utils/rate-limit-helper';
-import { formatPhoneNumber, validatePhoneNumber, getPhoneErrorMessage } from '@/lib/utils/phone';
+import { formatPhoneNumber, validatePhoneNumber, getPhoneErrorMessage, isMobilePhone } from '@/lib/utils/phone';
 
 export default function ImprovedSignUpPage() {
   const router = useRouter();
@@ -1025,7 +1025,7 @@ export default function ImprovedSignUpPage() {
                 {/* 연락처 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    연락가능한 번호(선택)
+                    담당자 유선 연락처(휴대전화 기재금지)
                   </label>
                   <input
                     type="tel"
@@ -1034,11 +1034,20 @@ export default function ImprovedSignUpPage() {
                       const formatted = formatPhoneNumber(e.target.value);
                       setFormData({ ...formData, phone: formatted });
                     }}
-                    className="w-full px-4 py-3 bg-gray-800/50 backdrop-blur-xl border border-gray-700 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors"
-                    placeholder="010-1234-5678 또는 02-1234-5678"
+                    className={`w-full px-4 py-3 bg-gray-800/50 backdrop-blur-xl border ${
+                      formData.phone && isMobilePhone(formData.phone)
+                        ? 'border-red-500'
+                        : 'border-gray-700'
+                    } rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors`}
+                    placeholder="02-1234-5678 또는 031-1234-5678"
                     maxLength={13}
                   />
-                  {formData.phone && !validatePhoneNumber(formData.phone) && (
+                  {formData.phone && isMobilePhone(formData.phone) && (
+                    <p className="text-xs text-red-400 mt-1">
+                      ✗ 휴대전화 번호는 입력할 수 없습니다. 소속기관의 유선 연락처를 입력해주세요.
+                    </p>
+                  )}
+                  {formData.phone && !isMobilePhone(formData.phone) && !validatePhoneNumber(formData.phone) && (
                     <p className="text-xs text-red-400 mt-1">
                       {getPhoneErrorMessage(formData.phone)}
                     </p>

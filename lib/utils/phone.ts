@@ -151,3 +151,18 @@ export function getPhonePlaceholder(numbers: string): string {
 
   return '010-1234-5678';
 }
+
+/**
+ * 휴대전화 번호인지 확인
+ * @param phone 전화번호 (하이픈 포함 가능)
+ * @returns 휴대전화 번호인 경우 true
+ */
+export function isMobilePhone(phone: string): boolean {
+  if (!phone) return false;
+
+  // 숫자만 추출
+  const numbers = phone.replace(/\D/g, '');
+
+  // 휴대전화 번호 (010, 011, 016, 017, 018, 019)
+  return /^01[0-9]/.test(numbers);
+}
