@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendSmartEmail } from '@/lib/email/ncp-email';
 import { checkEmailRateLimit } from '@/lib/email/email-rate-limiter';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     // NCP 이메일 환경변수 검증
-    if (!process.env.NCP_ACCESS_KEY || !process.env.NCP_ACCESS_SECRET || !process.env.NCP_SENDER_EMAIL) {
-      console.error('NCP Email 환경변수가 설정되지 않았습니다.');
+    if (!env.NCP_ACCESS_KEY || !env.NCP_ACCESS_SECRET || !env.NCP_SENDER_EMAIL) {
+      logger.error('API:resetPassword', 'NCP Email environment variables not configured');
       return NextResponse.json(
         { error: '이메일 서비스가 설정되지 않았습니다. 관리자에게 문의해주세요.' },
         { status: 503 }
@@ -15,9 +17,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 환경변수 검증
-    const appUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const appUrl = env.NEXT_PUBLIC_SITE_URL;
     if (!appUrl) {
-      console.error('NEXT_PUBLIC_SITE_URL 환경변수가 설정되지 않았습니다.');
+      logger.error('API:resetPassword', 'NEXT_PUBLIC_SITE_URL not configured');
       return NextResponse.json(
         { error: '서버 설정 오류가 발생했습니다. 관리자에게 문의해주세요.' },
         { status: 500 }
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (insertError) {
-      console.error('토큰 저장 실패:', insertError);
+      logger.error('API:resetPassword', 'Token save failed', insertError instanceof Error ? insertError : { insertError });
       return NextResponse.json(
         { error: '비밀번호 재설정 요청 처리 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -157,12 +159,12 @@ export async function POST(request: NextRequest) {
 
     // NCP Cloud Outbound Mailer로 이메일 발송
     // sendSmartEmail: 수신자 도메인에 따라 최적의 발신자 자동 선택
-    console.log(`[비밀번호 재설정] 이메일 발송 시작: ${email}, 토큰: ${resetToken}`);
+    logger.info('API:resetPassword', 'Starting email send', { email, token: resetToken.slice(0, 6) + '...' });
     try {
       const emailResult = await sendSmartEmail(
         {
-          accessKey: process.env.NCP_ACCESS_KEY!,
-          accessSecret: process.env.NCP_ACCESS_SECRET!,
+          accessKey: env.NCP_ACCESS_KEY!,
+          accessSecret: env.NCP_ACCESS_SECRET!,
           senderAddress: '', // sendSmartEmail이 자동 선택
           senderName: 'AED 픽스'
         },
@@ -176,19 +178,19 @@ export async function POST(request: NextRequest) {
           exponentialBase: 2
         }
       );
-      console.log(`[비밀번호 재설정] NCP 이메일 발송 성공:`, emailResult);
+      logger.info('API:resetPassword', 'Email sent successfully', { email, result: emailResult });
     } catch (emailError) {
-      console.error('[비밀번호 재설정] NCP Email 발송 실패:', emailError);
+      logger.error('API:resetPassword', 'Email send failed', emailError instanceof Error ? emailError : { emailError });
       return NextResponse.json(
         { error: '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.' },
         { status: 500 }
       );
     }
 
-    console.log(`[비밀번호 재설정] 처리 완료: ${email}`);
+    logger.info('API:resetPassword', 'Password reset completed', { email });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('비밀번호 재설정 오류:', error);
+    logger.error('API:resetPassword', 'Password reset error', error instanceof Error ? error : { error });
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

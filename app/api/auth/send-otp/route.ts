@@ -4,11 +4,14 @@ import { rateLimits } from '@/lib/rate-limit';
 import { checkOtpRateLimit } from '@/lib/auth/otp-rate-limiter';
 import { sendSmartEmail } from '@/lib/email/ncp-email';
 import { checkEmailRateLimit } from '@/lib/email/email-rate-limiter';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   // 런타임 환경변수 검증 (빌드 시에는 체크하지 않음)
-  if (!process.env.NCP_ACCESS_KEY || !process.env.NCP_ACCESS_SECRET || !process.env.NCP_SENDER_EMAIL) {
+  if (!env.NCP_ACCESS_KEY || !env.NCP_ACCESS_SECRET || !env.NCP_SENDER_EMAIL) {
+    logger.error('API:sendOTP', 'Email service not configured');
     return NextResponse.json(
       { error: 'Email service is not configured' },
       { status: 503 }
@@ -151,8 +154,8 @@ export async function POST(request: NextRequest) {
     try {
       await sendSmartEmail(
         {
-          accessKey: process.env.NCP_ACCESS_KEY!,
-          accessSecret: process.env.NCP_ACCESS_SECRET!,
+          accessKey: env.NCP_ACCESS_KEY!,
+          accessSecret: env.NCP_ACCESS_SECRET!,
           senderAddress: '', // sendSmartEmail이 자동 선택
           senderName: 'AED 픽스'
         },
@@ -237,7 +240,9 @@ export async function POST(request: NextRequest) {
         }
       );
     } catch (emailError) {
-      console.error('Email send failed after retries:', emailError);
+      logger.error('API:sendOTP', 'Email send failed after retries',
+        emailError instanceof Error ? emailError : { emailError }
+      );
 
       // 이메일 발송 실패 시 저장된 OTP 삭제 (사용자 혼란 방지)
       await prisma.email_verification_codes.delete({
@@ -250,9 +255,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    logger.info('API:sendOTP', 'OTP sent successfully', { email });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('OTP 발송 오류:', error);
+    logger.error('API:sendOTP', 'OTP send error', error instanceof Error ? error : { error });
     return NextResponse.json(
       { error: '서버 오류' },
       { status: 500 }

@@ -3,6 +3,8 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMasterAdminEmails } from '@/lib/auth/config';
 import { sendSimpleEmail } from '@/lib/email/ncp-email';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -33,9 +35,9 @@ export async function POST(request: NextRequest) {
       try {
         await sendSimpleEmail(
           {
-            accessKey: process.env.NCP_ACCESS_KEY!,
-            accessSecret: process.env.NCP_ACCESS_SECRET!,
-            senderAddress: process.env.NCP_SENDER_EMAIL!,
+            accessKey: env.NCP_ACCESS_KEY!,
+            accessSecret: env.NCP_ACCESS_SECRET!,
+            senderAddress: env.NCP_SENDER_EMAIL!,
             senderName: 'AED 픽스'
           },
           adminEmail,
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
               </div>
 
               <div style="margin-top: 30px;">
-                <a href="${process.env.NEXT_PUBLIC_SITE_URL}/admin/users"
+                <a href="${env.NEXT_PUBLIC_SITE_URL}/admin/users"
                    style="background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                   사용자 관리 페이지로 이동
                 </a>
@@ -79,15 +81,16 @@ export async function POST(request: NextRequest) {
           { maxRetries: 3, initialDelay: 1000, exponentialBase: 2 }
         );
       } catch (error) {
-        console.error('Error sending admin notification email:', error);
+        logger.error('API:notifyNewSignup', 'Failed to send notification email', error instanceof Error ? error : { error });
       }
     });
 
     await Promise.all(emailPromises);
 
+    logger.info('API:notifyNewSignup', 'Notifications sent', { email, fullName });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error sending admin notifications:', error);
+    logger.error('API:notifyNewSignup', 'Error sending admin notifications', error instanceof Error ? error : { error });
     return NextResponse.json(
       { error: '알림 발송 중 오류가 발생했습니다.' },
       { status: 500 }
