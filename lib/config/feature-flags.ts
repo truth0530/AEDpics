@@ -1,34 +1,21 @@
-const TRUTHY_VALUES = new Set(['1', 'true', 'yes', 'on']);
-const FALSY_VALUES = new Set(['0', 'false', 'no', 'off']);
+import { env } from '@/lib/env';
 
-function parseFlag(value: string | undefined, defaultValue: boolean): boolean {
-  if (!value) {
-    return defaultValue;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (TRUTHY_VALUES.has(normalized)) {
-    return true;
-  }
-  if (FALSY_VALUES.has(normalized)) {
-    return false;
-  }
-  return defaultValue;
-}
-
+// Note: env.ts already handles boolean transformation for feature flags
+// using Zod's transform, so we can use the values directly
 export const FEATURE_FLAGS = {
   // Stage 1 - Complete (default: true in production)
-  quickInspect: parseFlag(process.env.NEXT_PUBLIC_FEATURE_QUICK_INSPECT, true),
-  schedule: parseFlag(process.env.NEXT_PUBLIC_FEATURE_SCHEDULE, true),
+  quickInspect: env.NEXT_PUBLIC_FEATURE_QUICK_INSPECT ?? true,
+  schedule: env.NEXT_PUBLIC_FEATURE_SCHEDULE ?? true,
 
   // Stage 2 - In Progress (default: false)
-  teamDashboard: parseFlag(process.env.NEXT_PUBLIC_FEATURE_TEAM_DASHBOARD, false),
-  realtimeSync: parseFlag(process.env.NEXT_PUBLIC_FEATURE_REALTIME_SYNC, false),
-  notifications: parseFlag(process.env.NEXT_PUBLIC_FEATURE_NOTIFICATIONS, false),
+  teamDashboard: env.NEXT_PUBLIC_FEATURE_TEAM_DASHBOARD ?? false,
+  realtimeSync: env.NEXT_PUBLIC_FEATURE_REALTIME_SYNC ?? false,
+  notifications: env.NEXT_PUBLIC_FEATURE_NOTIFICATIONS ?? false,
 
   // Stage 3 - Planned (default: false)
-  bulkActions: parseFlag(process.env.NEXT_PUBLIC_FEATURE_BULK_ACTIONS, false),
-  reports: parseFlag(process.env.NEXT_PUBLIC_FEATURE_REPORTS, false),
-  analytics: parseFlag(process.env.NEXT_PUBLIC_FEATURE_ANALYTICS, false),
+  bulkActions: env.NEXT_PUBLIC_FEATURE_BULK_ACTIONS ?? false,
+  reports: env.NEXT_PUBLIC_FEATURE_REPORTS ?? false,
+  analytics: env.NEXT_PUBLIC_FEATURE_ANALYTICS ?? false,
 } as const;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

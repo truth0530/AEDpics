@@ -131,6 +131,12 @@ const envSchema = z.object({
     .string()
     .optional(),
 
+  // Vercel KV (optional, will be replaced with NCP Redis)
+  KV_REST_API_URL: z
+    .string()
+    .url()
+    .optional(),
+
   // ========================================
   // Development
   // ========================================
@@ -174,6 +180,31 @@ const envSchema = z.object({
     .transform(val => val === 'true'),
 
   NEXT_PUBLIC_FEATURE_NOTIFICATIONS: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true'),
+
+  NEXT_PUBLIC_FEATURE_BULK_ACTIONS: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true'),
+
+  NEXT_PUBLIC_FEATURE_REPORTS: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true'),
+
+  NEXT_PUBLIC_FEATURE_ANALYTICS: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true'),
+
+  NEXT_PUBLIC_TUTORIAL_MODE: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(val => val === 'true'),
+
+  NEXT_PUBLIC_USE_MOCK_DATA: z
     .enum(['true', 'false'])
     .optional()
     .transform(val => val === 'true'),

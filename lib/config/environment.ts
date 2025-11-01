@@ -1,16 +1,18 @@
 // 환경별 설정 및 데이터 소스 관리
 
+import { env } from '@/lib/env';
+
 export const ENV = {
-  isDevelopment: process.env.NODE_ENV === 'development',
-  isProduction: process.env.NODE_ENV === 'production',
-  isTest: process.env.NODE_ENV === 'test',
-  isTutorial: process.env.NEXT_PUBLIC_TUTORIAL_MODE === 'true',
+  isDevelopment: env.NODE_ENV === 'development',
+  isProduction: env.NODE_ENV === 'production',
+  isTest: env.NODE_ENV === 'test',
+  isTutorial: env.NEXT_PUBLIC_TUTORIAL_MODE ?? false,
 };
 
 // 데이터 소스 설정
 export const DATA_SOURCE = {
   // 개발 환경에서는 선택 가능
-  useMockData: ENV.isDevelopment && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true',
+  useMockData: ENV.isDevelopment && (env.NEXT_PUBLIC_USE_MOCK_DATA ?? false),
 
   // 튜토리얼 페이지는 항상 모크 데이터
   tutorial: {

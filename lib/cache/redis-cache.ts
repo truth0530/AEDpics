@@ -7,6 +7,9 @@
  * - Fallback 로직 포함
  */
 
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
 // TODO: Vercel KV 제거 후 NCP Redis로 교체 필요
 // import { kv } from '@vercel/kv';
 const kv = {
@@ -26,22 +29,22 @@ export interface CacheConfig {
 export async function getCachedData<T>(key: string): Promise<T | null> {
   try {
     // Vercel KV가 설정되지 않은 경우 (로컬 개발 환경)
-    if (!process.env.KV_REST_API_URL) {
-      console.log('[Redis Cache] KV not configured, skipping cache');
+    if (!env.KV_REST_API_URL) {
+      logger.info('Cache:get', 'KV not configured, skipping cache', { key });
       return null;
     }
 
     const data = await kv.get<T>(key);
 
     if (data) {
-      console.log(`[Redis Cache] Cache HIT for key: ${key}`);
+      logger.info('Cache:get', 'Cache HIT', { key });
       return data;
     } else {
-      console.log(`[Redis Cache] Cache MISS for key: ${key}`);
+      logger.info('Cache:get', 'Cache MISS', { key });
       return null;
     }
   } catch (error) {
-    console.error('[Redis Cache] Error reading from cache:', error);
+    logger.error('Cache:get', 'Error reading from cache', error instanceof Error ? error : { error, key });
     return null; // Fallback to database
   }
 }
@@ -56,15 +59,15 @@ export async function setCachedData<T>(
 ): Promise<void> {
   try {
     // Vercel KV가 설정되지 않은 경우 (로컬 개발 환경)
-    if (!process.env.KV_REST_API_URL) {
-      console.log('[Redis Cache] KV not configured, skipping cache set');
+    if (!env.KV_REST_API_URL) {
+      logger.info('Cache:set', 'KV not configured, skipping cache set', { key });
       return;
     }
 
     await kv.set(key, data, { ex: ttl });
-    console.log(`[Redis Cache] Cached data for key: ${key} (TTL: ${ttl}s)`);
+    logger.info('Cache:set', 'Cached data', { key, ttl });
   } catch (error) {
-    console.error('[Redis Cache] Error writing to cache:', error);
+    logger.error('Cache:set', 'Error writing to cache', error instanceof Error ? error : { error, key });
     // Fail silently - don't break the application if caching fails
   }
 }
@@ -74,14 +77,14 @@ export async function setCachedData<T>(
  */
 export async function deleteCachedData(key: string): Promise<void> {
   try {
-    if (!process.env.KV_REST_API_URL) {
+    if (!env.KV_REST_API_URL) {
       return;
     }
 
     await kv.del(key);
-    console.log(`[Redis Cache] Deleted cache for key: ${key}`);
+    logger.info('Cache:delete', 'Deleted cache', { key });
   } catch (error) {
-    console.error('[Redis Cache] Error deleting from cache:', error);
+    logger.error('Cache:delete', 'Error deleting from cache', error instanceof Error ? error : { error, key });
   }
 }
 
@@ -90,15 +93,15 @@ export async function deleteCachedData(key: string): Promise<void> {
  */
 export async function deletePatternCachedData(pattern: string): Promise<void> {
   try {
-    if (!process.env.KV_REST_API_URL) {
+    if (!env.KV_REST_API_URL) {
       return;
     }
 
     // Vercel KV는 SCAN 명령을 지원하지 않으므로, 직접 키를 관리해야 함
     // 대신 특정 키만 삭제하는 방식 사용
-    console.warn('[Redis Cache] Pattern deletion not supported in Vercel KV');
+    logger.warn('Cache:deletePattern', 'Pattern deletion not supported in Vercel KV', { pattern });
   } catch (error) {
-    console.error('[Redis Cache] Error deleting pattern from cache:', error);
+    logger.error('Cache:deletePattern', 'Error deleting pattern from cache', error instanceof Error ? error : { error, pattern });
   }
 }
 
