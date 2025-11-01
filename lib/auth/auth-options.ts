@@ -4,6 +4,8 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import bcrypt from "bcryptjs"
 import { randomUUID } from "crypto"
 import { prisma } from '@/lib/prisma'
+import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -16,6 +18,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          logger.warn('Auth:authorize', 'Missing credentials');
           throw new Error("이메일과 비밀번호를 입력해주세요")
         }
 
@@ -25,6 +28,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user || !user.password_hash) {
+          logger.warn('Auth:authorize', 'Invalid credentials', { email: credentials.email });
           throw new Error("이메일 또는 비밀번호가 일치하지 않습니다")
         }
 
@@ -34,14 +38,17 @@ export const authOptions: NextAuthOptions = {
         )
 
         if (!isValid) {
+          logger.warn('Auth:authorize', 'Invalid password', { userId: user.id });
           throw new Error("이메일 또는 비밀번호가 일치하지 않습니다")
         }
 
         if (!user.is_active) {
+          logger.warn('Auth:authorize', 'Inactive account', { userId: user.id });
           throw new Error("계정이 비활성화되었습니다")
         }
 
         if (user.account_locked) {
+          logger.warn('Auth:authorize', 'Locked account', { userId: user.id, reason: user.lock_reason });
           throw new Error(`계정이 잠겼습니다: ${user.lock_reason || '관리자에게 문의하세요'}`)
         }
 
@@ -61,6 +68,8 @@ export const authOptions: NextAuthOptions = {
           where: { id: user.id },
           data: { last_login_at: new Date() }
         })
+
+        logger.info('Auth:authorize', 'Login successful', { userId: user.id, email: user.email });
 
         return {
           id: user.id,
@@ -102,5 +111,5 @@ export const authOptions: NextAuthOptions = {
     signOut: '/auth/signout',
     error: '/auth/error',
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
 }

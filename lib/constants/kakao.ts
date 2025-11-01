@@ -1,9 +1,12 @@
 // Kakao Map API 설정 및 로더 유틸리티
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+
 const FALLBACK_KEY = '6e3339a5cbd61f1f3b08e3a06071795b';
 
 export const KAKAO_MAP_CONFIG = {
   // JavaScript 키 (브라우저용)
-  JS_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || FALLBACK_KEY,
+  JS_KEY: env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || FALLBACK_KEY,
 
   // 스크립트 URL 생성
   getScriptUrl: ({
@@ -13,7 +16,7 @@ export const KAKAO_MAP_CONFIG = {
     libraries?: string[];
     autoload?: boolean;
   } = {}) => {
-    const key = process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || FALLBACK_KEY;
+    const key = env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || FALLBACK_KEY;
     const libs = libraries.length > 0 ? `&libraries=${libraries.join(',')}` : '';
     const autoloadParam = autoload ? '' : '&autoload=false';
     return `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}${libs}${autoloadParam}`;
@@ -39,10 +42,10 @@ export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
 
   // kakao.maps가 존재하면 load() 호출 (autoload=false 모드)
   if (window.kakao?.maps) {
-    console.log('[Kakao Maps] SDK object found, calling load()');
+    logger.debug('KakaoMaps', 'SDK object found, calling load()');
     kakaoLoadPromise = new Promise<void>((resolve) => {
       window.kakao.maps.load(() => {
-        console.log('[Kakao Maps] Load complete');
+        logger.debug('KakaoMaps', 'Load complete');
         resolve();
       });
     });
@@ -53,14 +56,15 @@ export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
     const script = document.getElementById('kakao-map-sdk') as HTMLScriptElement | null;
     const startedAt = Date.now();
 
-    console.log('[Kakao Maps] Starting to wait for SDK...');
-    console.log('[Kakao Maps] Script element found:', !!script);
-    console.log('[Kakao Maps] Script src:', script?.src);
+    logger.debug('KakaoMaps', 'Starting to wait for SDK', {
+      scriptFound: !!script,
+      scriptSrc: script?.src
+    });
 
     const pollId = window.setInterval(() => {
       if (window.kakao?.maps) {
         const elapsed = Date.now() - startedAt;
-        console.log(`[Kakao Maps] SDK loaded successfully in ${elapsed}ms`);
+        logger.info('KakaoMaps', 'SDK loaded successfully', { elapsedMs: elapsed });
         window.clearInterval(pollId);
         script?.removeEventListener('error', handleError);
         window.kakao.maps.load(() => {
@@ -69,9 +73,11 @@ export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
         });
       } else if (Date.now() - startedAt > timeoutMs) {
         const elapsed = Date.now() - startedAt;
-        console.error(`[Kakao Maps] Timeout after ${elapsed}ms`);
-        console.error('[Kakao Maps] window.kakao:', window.kakao);
-        console.error('[Kakao Maps] Script loaded:', script?.getAttribute('data-loaded'));
+        logger.error('KakaoMaps', 'SDK load timeout', {
+          elapsedMs: elapsed,
+          kakaoExists: !!window.kakao,
+          scriptLoaded: script?.getAttribute('data-loaded')
+        });
         window.clearInterval(pollId);
         script?.removeEventListener('error', handleError);
         kakaoLoadPromise = null;
@@ -80,8 +86,9 @@ export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
     }, 50);
 
     const handleError = (e: Event) => {
-      console.error('[Kakao Maps] Script load error:', e);
-      console.error('[Kakao Maps] Failed script src:', (e.target as HTMLScriptElement)?.src);
+      logger.error('KakaoMaps', 'Script load error', {
+        src: (e.target as HTMLScriptElement)?.src
+      });
       window.clearInterval(pollId);
       kakaoLoadPromise = null;
       reject(new Error('카카오맵 SDK 스크립트를 불러오지 못했습니다.'));
@@ -90,7 +97,7 @@ export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
     if (script) {
       script.addEventListener('error', handleError, { once: true });
     } else {
-      console.warn('[Kakao Maps] Script element not found in DOM');
+      logger.warn('KakaoMaps', 'Script element not found in DOM');
     }
   });
 
@@ -99,7 +106,9 @@ export function waitForKakaoMaps(timeoutMs = 15000): Promise<void> {
 
 // 디버깅용 로그
 if (typeof window !== 'undefined') {
-  console.log('[Kakao Maps] API Key:', KAKAO_MAP_CONFIG.JS_KEY?.slice(0, 10) + '...');
-  console.log('[Kakao Maps] Current domain:', window.location.origin);
-  console.log('[Kakao Maps] Script URL:', KAKAO_MAP_CONFIG.getScriptUrl());
+  logger.debug('KakaoMaps:init', 'Initialization', {
+    apiKey: KAKAO_MAP_CONFIG.JS_KEY?.slice(0, 10) + '...',
+    domain: window.location.origin,
+    scriptUrl: KAKAO_MAP_CONFIG.getScriptUrl()
+  });
 }

@@ -3,6 +3,8 @@
  * Supabase Edge Functions를 사용한 이메일 발송
  */
 
+import { logger } from '@/lib/logger';
+
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
 
@@ -103,15 +105,15 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     });
     
     if (error) {
-      console.error('이메일 발송 실패:', error);
+      logger.error('EmailService:sendEmail', 'Email send failed', { error, recipient: options.to });
       return false;
     }
-    
-    console.log('이메일 발송 성공:', options.to);
+
+    logger.info('EmailService:sendEmail', 'Email sent successfully', { recipient: options.to });
     return true;
-    
+
   } catch (error) {
-    console.error('이메일 발송 중 오류:', error);
+    logger.error('EmailService:sendEmail', 'Email send error', error instanceof Error ? error : { error });
     return false;
   }
 }
@@ -135,15 +137,14 @@ export async function sendOTPEmail(email: string, code: string): Promise<boolean
  */
 export async function sendVerificationEmail(email: string, code: string): Promise<boolean> {
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   if (isDevelopment) {
     // 개발 환경: 콘솔 출력
-    console.log(`📧 [개발모드] 이메일 발송 시뮬레이션`);
-    console.log(`받는 사람: ${email}`);
-    console.log(`인증번호: ${code}`);
-    console.log(`유효시간: 10분`);
-    console.log('---');
-    console.log('실제 운영 환경에서는 이메일이 발송됩니다.');
+    logger.info('EmailService:verification', 'Development mode - email simulation', {
+      recipient: email,
+      code,
+      expiresIn: '10분'
+    });
     return true;
   } else {
     // 운영 환경: 실제 이메일 발송

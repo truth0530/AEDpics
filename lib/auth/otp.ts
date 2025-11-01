@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
 
@@ -49,34 +51,32 @@ export async function sendOTP(email: string): Promise<OTPResponse> {
       });
 
     if (dbError) {
-      console.error('OTP 저장 실패:', dbError);
+      logger.error('OTP:sendOTP', 'Failed to save OTP', { error: dbError, email });
       return { success: false, message: '인증번호 생성 중 오류가 발생했습니다.' };
     }
 
     // 4. 이메일 발송
     if (process.env.NODE_ENV === 'development') {
       // 개발 환경: 콘솔 출력
-      console.log('=====================================');
-      console.log('📧 이메일 인증번호 (개발 모드)');
-      console.log('=====================================');
-      console.log(`받는 사람: ${email}`);
-      console.log(`인증번호: ${code}`);
-      console.log(`유효시간: 10분`);
-      console.log('=====================================');
+      logger.info('OTP:sendOTP', 'Development mode - OTP generated', {
+        email,
+        code,
+        expiresIn: '10분'
+      });
     } else {
       // TODO: 운영 환경에서는 실제 이메일 발송
       // import { sendVerificationEmail } from './email-service';
       // await sendVerificationEmail(email, code);
-      console.log(`[운영모드] 이메일 발송 예정: ${email}`);
+      logger.info('OTP:sendOTP', 'Production mode - email sending pending', { email });
     }
 
-    return { 
-      success: true, 
-      message: '인증번호가 발송되었습니다. 메일함을 확인해주세요.' 
+    return {
+      success: true,
+      message: '인증번호가 발송되었습니다. 메일함을 확인해주세요.'
     };
 
   } catch (error) {
-    console.error('OTP 발송 실패:', error);
+    logger.error('OTP:sendOTP', 'Failed to send OTP', error instanceof Error ? error : { error });
     return { success: false, message: '인증번호 발송 중 오류가 발생했습니다.' };
   }
 }
@@ -143,13 +143,13 @@ export async function verifyOTP(email: string, inputCode: string): Promise<OTPRe
       .update({ used: true })
       .eq('id', otpData.id);
 
-    return { 
-      success: true, 
-      message: '이메일 인증이 완료되었습니다.' 
+    return {
+      success: true,
+      message: '이메일 인증이 완료되었습니다.'
     };
 
   } catch (error) {
-    console.error('OTP 검증 실패:', error);
+    logger.error('OTP:verifyOTP', 'Failed to verify OTP', error instanceof Error ? error : { error });
     return { success: false, message: '인증번호 검증 중 오류가 발생했습니다.' };
   }
 }
