@@ -1,15 +1,17 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 // NCP Object Storage 설정
-const NCP_REGION = process.env.NCP_OBJECT_STORAGE_REGION || 'kr-standard';
-const NCP_ENDPOINT = process.env.NCP_OBJECT_STORAGE_ENDPOINT || 'https://kr.object.ncloudstorage.com';
-const NCP_ACCESS_KEY = process.env.NCP_OBJECT_STORAGE_ACCESS_KEY;
-const NCP_SECRET_KEY = process.env.NCP_OBJECT_STORAGE_SECRET_KEY;
-const NCP_BUCKET_NAME = process.env.NCP_OBJECT_STORAGE_BUCKET || 'aedpics-inspections';
+const NCP_REGION = env.NCP_OBJECT_STORAGE_REGION || 'kr-standard';
+const NCP_ENDPOINT = env.NCP_OBJECT_STORAGE_ENDPOINT || 'https://kr.object.ncloudstorage.com';
+const NCP_ACCESS_KEY = env.NCP_OBJECT_STORAGE_ACCESS_KEY;
+const NCP_SECRET_KEY = env.NCP_OBJECT_STORAGE_SECRET_KEY;
+const NCP_BUCKET_NAME = env.NCP_OBJECT_STORAGE_BUCKET || 'aedpics-inspections';
 
 if (!NCP_ACCESS_KEY || !NCP_SECRET_KEY) {
-  console.warn('[NCP Storage] Object Storage credentials not configured');
+  logger.warn('NCPStorage', 'Object Storage credentials not configured');
 }
 
 // S3 클라이언트 생성 (NCP Object Storage는 S3 호환 API 사용)
@@ -75,7 +77,7 @@ export async function uploadPhotoToNCP(
   photoType: string
 ): Promise<{ url: string; path: string } | null> {
   if (!NCP_ACCESS_KEY || !NCP_SECRET_KEY) {
-    console.error('[uploadPhotoToNCP] NCP Object Storage credentials not configured');
+    logger.error('NCPStorage:uploadPhoto', 'Object Storage credentials not configured');
     return null;
   }
 
@@ -101,14 +103,17 @@ export async function uploadPhotoToNCP(
     // 공개 URL 생성
     const publicUrl = `${NCP_ENDPOINT}/${NCP_BUCKET_NAME}/${fileName}`;
 
-    console.log('[uploadPhotoToNCP] Upload success:', { fileName, url: publicUrl });
+    logger.info('NCPStorage:uploadPhoto', 'Upload successful', {
+      fileName,
+      url: publicUrl
+    });
 
     return {
       url: publicUrl,
       path: fileName,
     };
   } catch (error) {
-    console.error('[uploadPhotoToNCP] Error:', error);
+    logger.error('NCPStorage:uploadPhoto', 'Upload failed', error instanceof Error ? error : { error });
     return null;
   }
 }
@@ -142,7 +147,7 @@ export async function uploadPhotosToNCP(
  */
 export async function deletePhotoFromNCP(filePath: string): Promise<boolean> {
   if (!NCP_ACCESS_KEY || !NCP_SECRET_KEY) {
-    console.error('[deletePhotoFromNCP] NCP Object Storage credentials not configured');
+    logger.error('NCPStorage:deletePhoto', 'Object Storage credentials not configured');
     return false;
   }
 
@@ -153,10 +158,10 @@ export async function deletePhotoFromNCP(filePath: string): Promise<boolean> {
     });
 
     await s3Client.send(command);
-    console.log('[deletePhotoFromNCP] Delete success:', filePath);
+    logger.info('NCPStorage:deletePhoto', 'Delete successful', { filePath });
     return true;
   } catch (error) {
-    console.error('[deletePhotoFromNCP] Error:', error);
+    logger.error('NCPStorage:deletePhoto', 'Delete failed', error instanceof Error ? error : { error });
     return false;
   }
 }
@@ -166,7 +171,7 @@ export async function deletePhotoFromNCP(filePath: string): Promise<boolean> {
  */
 export async function getPresignedUrl(filePath: string, expiresIn: number = 3600): Promise<string | null> {
   if (!NCP_ACCESS_KEY || !NCP_SECRET_KEY) {
-    console.error('[getPresignedUrl] NCP Object Storage credentials not configured');
+    logger.error('NCPStorage:getPresignedUrl', 'Object Storage credentials not configured');
     return null;
   }
 
@@ -179,7 +184,7 @@ export async function getPresignedUrl(filePath: string, expiresIn: number = 3600
     const url = await getSignedUrl(s3Client, command, { expiresIn });
     return url;
   } catch (error) {
-    console.error('[getPresignedUrl] Error:', error);
+    logger.error('NCPStorage:getPresignedUrl', 'Failed to generate presigned URL', error instanceof Error ? error : { error });
     return null;
   }
 }

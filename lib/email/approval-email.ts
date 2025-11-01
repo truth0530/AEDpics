@@ -6,11 +6,13 @@
 
 import { sendSimpleEmail } from './ncp-email';
 import { user_role } from '@prisma/client';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 const NCP_CONFIG = {
-  accessKey: process.env.NCP_ACCESS_KEY!,
-  accessSecret: process.env.NCP_ACCESS_SECRET!,
-  senderAddress: process.env.NCP_SENDER_EMAIL!,
+  accessKey: env.NCP_ACCESS_KEY,
+  accessSecret: env.NCP_ACCESS_SECRET,
+  senderAddress: env.NCP_SENDER_EMAIL,
   senderName: 'AED관리시스템'
 };
 
@@ -160,9 +162,12 @@ export async function sendApprovalEmail(
       htmlBody
     );
 
-    console.log(`[Approval Email] Successfully sent to ${userEmail} (${roleKorean})`);
+    logger.info('ApprovalEmail', 'Email sent successfully', {
+      recipient: userEmail,
+      role: roleKorean
+    });
   } catch (error) {
-    console.error(`[Approval Email] Failed to send to ${userEmail}:`, error);
+    logger.error('ApprovalEmail', `Failed to send approval email to ${userEmail}`, error instanceof Error ? error : { error });
     throw error;
   }
 }

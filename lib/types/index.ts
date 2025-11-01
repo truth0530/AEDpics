@@ -25,7 +25,7 @@ export interface Organization {
   name: string;
   type: OrganizationType;
   parentId?: string;
-  regionCode?: string;
+  region_code?: string;
   city_code?: string;
   address?: string;
   contact?: string;

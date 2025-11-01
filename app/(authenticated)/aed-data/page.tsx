@@ -38,8 +38,8 @@ export default async function AEDDataPage({ searchParams }: AEDDataPageProps) {
   };
 
   // region 필터가 없고 사용자에게 관할 지역이 있으면 추가
-  if (!enhancedFilters.region && typedProfile.organization?.regionCode) {
-    enhancedFilters.region = typedProfile.organization.regionCode;
+  if (!enhancedFilters.region && typedProfile.organization?.region_code) {
+    enhancedFilters.region = typedProfile.organization.region_code;
     console.log('[AEDDataPage] Added region to initialFilters:', enhancedFilters.region);
   }
 

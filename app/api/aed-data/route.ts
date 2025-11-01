@@ -20,6 +20,7 @@ import type {
   AedDataWhereInput,
   RawQueryParams
 } from '@/lib/types/api-filters';
+import { mapUserProfile } from '@/lib/mappers/user-profile-mapper';
 
 import { prisma } from '@/lib/prisma';
 type DecodedCursor = { id: number; updated_at?: string };
@@ -171,7 +172,7 @@ export const GET = async (request: NextRequest) => {
     }
 
   // 사용자 프로필 및 organization 정보 한 번에 조회 (N+1 최적화)
-  const userProfile = await prisma.user_profiles.findUnique({
+  const prismaUserProfile = await prisma.user_profiles.findUnique({
     where: { id: session.user.id },
     include: {
       organizations: {
@@ -181,23 +182,29 @@ export const GET = async (request: NextRequest) => {
           type: true,
           region_code: true,
           latitude: true,
-          longitude: true
+          longitude: true,
+          city_code: true,
+          parent_id: true,
+          address: true,
+          contact: true,
+          created_at: true,
+          updated_at: true,
         }
       }
     }
   });
 
-  const organization = userProfile?.organizations || null;
-
-  if (!userProfile) {
+  if (!prismaUserProfile) {
     console.error('Profile not found for user:', session.user.id);
     return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
   }
 
+  // Prisma 타입을 UserProfile로 변환 (타입 안전성 확보)
+  const userProfile = mapUserProfile(prismaUserProfile);
+  const organization = prismaUserProfile.organizations || null;
+
     // AED 데이터 접근 권한 확인
-    // TODO: Type mismatch between Prisma (snake_case) and UserProfile (camelCase)
-    // Should be resolved by creating a proper mapper or updating UserProfile interface
-    if (!canAccessAEDData(userProfile as unknown as UserProfile)) {
+    if (!canAccessAEDData(userProfile)) {
       return NextResponse.json({
         error: 'AED data access not permitted for this role'
       }, { status: 403 });
@@ -206,7 +213,7 @@ export const GET = async (request: NextRequest) => {
     // 접근 범위 계산 (에러 처리 포함)
     let accessScope;
     try {
-      accessScope = resolveAccessScope(userProfile as unknown as UserProfile);
+      accessScope = resolveAccessScope(userProfile);
     } catch (error) {
       return NextResponse.json({
         error: `Access scope error: ${(error as Error).message}`
@@ -239,7 +246,7 @@ export const GET = async (request: NextRequest) => {
     // }
 
     const enforcementResult = enforceFilterPolicy({
-      userProfile: userProfile as unknown as UserProfile,
+      userProfile,
       accessScope,
       requestedFilters: filters,
     });

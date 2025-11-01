@@ -40,6 +40,8 @@ export interface Organization {
   contactNumber?: string;
   managerName?: string;
   managerEmail?: string;
+  latitude?: number;
+  longitude?: number;
   createdAt: Date;
   updatedAt: Date;
 }

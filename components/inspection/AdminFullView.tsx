@@ -546,8 +546,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 export function AdminFullView({ user, isMobile, pageType = 'schedule' }: AdminFullViewProps) {
   // 사용자의 관할 지역을 initialFilters에 포함
   const initialFilters: Record<string, string> = {};
-  if (user.organization?.regionCode) {
-    initialFilters.region = user.organization.regionCode;
+  if (user.organization?.region_code) {
+    initialFilters.region = user.organization.region_code;
   }
 
   return (

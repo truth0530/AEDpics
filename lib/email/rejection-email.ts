@@ -5,11 +5,13 @@
  */
 
 import { sendSimpleEmail } from './ncp-email';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 const NCP_CONFIG = {
-  accessKey: process.env.NCP_ACCESS_KEY!,
-  accessSecret: process.env.NCP_ACCESS_SECRET!,
-  senderAddress: process.env.NCP_SENDER_EMAIL!,
+  accessKey: env.NCP_ACCESS_KEY,
+  accessSecret: env.NCP_ACCESS_SECRET,
+  senderAddress: env.NCP_SENDER_EMAIL,
   senderName: 'AED관리시스템'
 };
 
@@ -100,9 +102,11 @@ export async function sendRejectionEmail(
       htmlBody
     );
 
-    console.log(`[Rejection Email] Successfully sent to ${userEmail}`);
+    logger.info('RejectionEmail', 'Email sent successfully', {
+      recipient: userEmail
+    });
   } catch (error) {
-    console.error(`[Rejection Email] Failed to send to ${userEmail}:`, error);
+    logger.error('RejectionEmail', `Failed to send rejection email to ${userEmail}`, error instanceof Error ? error : { error });
     throw error;
   }
 }
