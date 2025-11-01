@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import {
   checkRateLimit,
   createRateLimitResponse,
@@ -39,7 +40,7 @@ export function withRateLimit(
 
     // Rate limit 초과 시 429 응답
     if (!rateLimitResult.success) {
-      console.warn(`[Rate Limit] Request blocked for ${identifier} (${config.key})`);
+      logger.warn('RateLimit:Blocked', 'Request blocked by rate limit', { identifier, configKey: config.key });
       return createRateLimitResponse(rateLimitResult);
     }
 

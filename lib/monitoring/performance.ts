@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface PerformanceSample {
   name: string;
   durationMs: number;
@@ -17,5 +19,5 @@ export function reportSlowOperation(sample: PerformanceSample) {
     ...(sample.metadata ?? {}),
   };
 
-  console.warn(`[Performance] Slow operation detected: ${sample.name}`, payload);
+  logger.warn('Performance:SlowOperation', `Slow operation detected: ${sample.name}`, payload);
 }

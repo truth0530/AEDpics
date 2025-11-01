@@ -6,6 +6,7 @@
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
 import { AEDDevice } from '@/types/aed';
+import { logger } from '@/lib/logger';
 
 // 임시: 타입 정의
 interface FilterOptions {
@@ -96,7 +97,7 @@ class AEDDataService {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching AED devices:', error);
+      logger.error('AEDDataService:getDevices', 'Error fetching AED devices', { error });
       throw new Error('Failed to fetch AED devices');
     }
 
@@ -120,7 +121,7 @@ class AEDDataService {
       .single();
 
     if (error) {
-      console.error('Error fetching AED device:', error);
+      logger.error('AEDDataService:getDeviceBySerial', 'Error fetching AED device', { error, serialNumber });
       throw new Error('Failed to fetch AED device');
     }
 
@@ -152,7 +153,7 @@ class AEDDataService {
       .single();
 
     if (error) {
-      console.error('Error creating inspection:', error);
+      logger.error('AEDDataService:createInspection', 'Error creating inspection', { error });
       throw new Error('Failed to create inspection');
     }
 
@@ -174,7 +175,7 @@ class AEDDataService {
       .limit(limit);
 
     if (error) {
-      console.error('Error fetching inspection history:', error);
+      logger.error('AEDDataService:getInspectionHistory', 'Error fetching inspection history', { error, deviceSerial });
       throw new Error('Failed to fetch inspection history');
     }
 
@@ -206,7 +207,7 @@ class AEDDataService {
       .single();
 
     if (error) {
-      console.error('Error creating schedule entry:', error);
+      logger.error('AEDDataService:createScheduleEntry', 'Error creating schedule entry', { error });
       throw new Error('Failed to create schedule entry');
     }
 
@@ -239,7 +240,7 @@ class AEDDataService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching schedules:', error);
+      logger.error('AEDDataService:getUpcomingSchedules', 'Error fetching schedules', { error, filters });
       throw new Error('Failed to fetch schedules');
     }
 
@@ -255,7 +256,7 @@ class AEDDataService {
       .rpc('get_aed_status_counts', { org_id: organizationId });
 
     if (statusError) {
-      console.error('Error fetching status counts:', statusError);
+      logger.error('AEDDataService:getDeviceStatistics', 'Error fetching status counts', { error: statusError, organizationId });
     }
 
     // Get recent inspections count
@@ -295,8 +296,8 @@ class AEDDataService {
       .select();
 
     if (error) {
-      console.error('Error batch updating devices:', error);
-      throw new Error('Failed to batch update devices');
+      logger.error('AEDDataService:batchUpdateDevices', 'Error batch updating devices', { error, count: serialNumbers.length });
+      throw new Error('Failed to batch updating devices');
     }
 
     return data || [];
@@ -313,7 +314,7 @@ class AEDDataService {
       });
 
     if (error) {
-      console.error('Error searching devices:', error);
+      logger.error('AEDDataService:searchDevices', 'Error searching devices', { error, searchTerm });
       throw new Error('Failed to search devices');
     }
 

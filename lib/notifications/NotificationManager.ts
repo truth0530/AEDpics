@@ -4,6 +4,7 @@
  */
 
 import { ServiceWorkerManager } from '@/lib/realtime/ServiceWorkerManager'
+import { logger } from '@/lib/logger'
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client'
 
@@ -112,7 +113,7 @@ export class NotificationManager {
         }
       }
     } catch (error) {
-      console.error('알림 설정 불러오기 실패:', error)
+      logger.error('NotificationManager:loadSettings', 'Failed to load notification settings', error instanceof Error ? error : { error })
     }
   }
 
@@ -138,7 +139,7 @@ export class NotificationManager {
           })
       }
     } catch (error) {
-      console.error('알림 설정 저장 실패:', error)
+      logger.error('NotificationManager:saveSettings', 'Failed to save notification settings', error instanceof Error ? error : { error })
     }
   }
 
@@ -206,7 +207,7 @@ export class NotificationManager {
   async showNotification(payload: NotificationPayload): Promise<void> {
     // 표시 가능 여부 확인
     if (!this.canShowNotification(payload.type)) {
-      console.log('알림이 차단되었습니다:', payload.type)
+      logger.info('NotificationManager:showNotification', 'Notification blocked by settings', { type: payload.type })
       return
     }
 
@@ -284,7 +285,7 @@ export class NotificationManager {
           created_at: new Date().toISOString()
         })
     } catch (error) {
-      console.error('알림 히스토리 저장 실패:', error)
+      logger.error('NotificationManager:saveToHistory', 'Failed to save notification history', error instanceof Error ? error : { error })
     }
   }
 
@@ -344,7 +345,7 @@ export class NotificationManager {
           })
       }
     } catch (error) {
-      console.error('예약 알림 저장 실패:', error)
+      logger.error('NotificationManager:scheduleNotification', 'Failed to save scheduled notification', error instanceof Error ? error : { error })
     }
 
     return payload.id
@@ -360,7 +361,7 @@ export class NotificationManager {
         .update({ status: 'cancelled' })
         .eq('id', notificationId)
     } catch (error) {
-      console.error('알림 취소 실패:', error)
+      logger.error('NotificationManager:cancelNotification', 'Failed to cancel notification', error instanceof Error ? error : { error })
     }
   }
 
@@ -380,7 +381,7 @@ export class NotificationManager {
 
       return count || 0
     } catch (error) {
-      console.error('읽지 않은 알림 조회 실패:', error)
+      logger.error('NotificationManager:getUnreadCount', 'Failed to get unread notification count', error instanceof Error ? error : { error })
       return 0
     }
   }
@@ -395,7 +396,7 @@ export class NotificationManager {
         .update({ read: true, read_at: new Date().toISOString() })
         .eq('id', notificationId)
     } catch (error) {
-      console.error('알림 읽음 처리 실패:', error)
+      logger.error('NotificationManager:markAsRead', 'Failed to mark notification as read', error instanceof Error ? error : { error })
     }
   }
 
@@ -413,7 +414,7 @@ export class NotificationManager {
         .eq('user_id', user.id)
         .eq('read', false)
     } catch (error) {
-      console.error('모든 알림 읽음 처리 실패:', error)
+      logger.error('NotificationManager:markAllAsRead', 'Failed to mark all notifications as read', error instanceof Error ? error : { error })
     }
   }
 
