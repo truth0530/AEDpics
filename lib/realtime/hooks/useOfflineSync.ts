@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { OfflineSyncManager, SyncProgress } from '../OfflineSyncManager'
 import { QueuedOperation } from '../OfflineQueue'
+import { logger } from '@/lib/logger'
 
 export interface OfflineSyncState {
   isOnline: boolean
@@ -210,7 +211,7 @@ export function useOfflineSync(
     }
 
     if (state.isSyncing) {
-      console.log('Sync already in progress')
+      logger.info('useOfflineSync:syncNow', 'Sync already in progress')
       return state.syncProgress || {
         total: 0,
         completed: 0,

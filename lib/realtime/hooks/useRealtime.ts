@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { logger } from '@/lib/logger'
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { useSupabase } from '@/lib/supabase/client'
 
@@ -69,7 +70,7 @@ export function useRealtime(options: UseRealtimeOptions = {}): UseRealtimeReturn
       setIsConnected(true)
       setConnectionState('connected')
     } catch (error) {
-      console.error('Failed to connect to realtime:', error)
+      logger.error('useRealtime:connect', 'Failed to connect to realtime', error instanceof Error ? error : { error })
       setIsConnected(false)
       setConnectionState('disconnected')
     }
