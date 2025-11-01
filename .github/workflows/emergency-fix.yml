@@ -16,9 +16,29 @@ jobs:
         username: ${{ secrets.NCP_USERNAME }}
         key: ${{ secrets.NCP_SSH_KEY }}
         port: ${{ secrets.NCP_SSH_PORT }}
+        envs: DATABASE_URL,NEXTAUTH_URL,NEXTAUTH_SECRET,JWT_SECRET,NEXT_PUBLIC_KAKAO_MAP_APP_KEY,NEXT_PUBLIC_SITE_URL,RESEND_API_KEY,MASTER_EMAIL,ENCRYPTION_KEY,NCP_ACCESS_KEY,NCP_ACCESS_SECRET,NCP_SENDER_EMAIL,NCP_OBJECT_STORAGE_REGION,NCP_OBJECT_STORAGE_ENDPOINT,NCP_OBJECT_STORAGE_ACCESS_KEY,NCP_OBJECT_STORAGE_SECRET_KEY,NCP_OBJECT_STORAGE_BUCKET
         script: |
           echo "=== Emergency Server Recovery Started ==="
           cd /var/www/aedpics
+
+          echo "Step 0: Create .env.production file"
+          echo "DATABASE_URL=\"$DATABASE_URL\"" > .env.production
+          echo "NEXTAUTH_URL=\"$NEXTAUTH_URL\"" >> .env.production
+          echo "NEXTAUTH_SECRET=\"$NEXTAUTH_SECRET\"" >> .env.production
+          echo "JWT_SECRET=\"$JWT_SECRET\"" >> .env.production
+          echo "NEXT_PUBLIC_KAKAO_MAP_APP_KEY=\"$NEXT_PUBLIC_KAKAO_MAP_APP_KEY\"" >> .env.production
+          echo "NEXT_PUBLIC_SITE_URL=\"$NEXT_PUBLIC_SITE_URL\"" >> .env.production
+          echo "RESEND_API_KEY=\"$RESEND_API_KEY\"" >> .env.production
+          echo "MASTER_EMAIL=\"$MASTER_EMAIL\"" >> .env.production
+          echo "ENCRYPTION_KEY=\"$ENCRYPTION_KEY\"" >> .env.production
+          echo "NCP_ACCESS_KEY=\"$NCP_ACCESS_KEY\"" >> .env.production
+          echo "NCP_ACCESS_SECRET=\"$NCP_ACCESS_SECRET\"" >> .env.production
+          echo "NCP_SENDER_EMAIL=\"$NCP_SENDER_EMAIL\"" >> .env.production
+          echo "NCP_OBJECT_STORAGE_REGION=\"$NCP_OBJECT_STORAGE_REGION\"" >> .env.production
+          echo "NCP_OBJECT_STORAGE_ENDPOINT=\"$NCP_OBJECT_STORAGE_ENDPOINT\"" >> .env.production
+          echo "NCP_OBJECT_STORAGE_ACCESS_KEY=\"$NCP_OBJECT_STORAGE_ACCESS_KEY\"" >> .env.production
+          echo "NCP_OBJECT_STORAGE_SECRET_KEY=\"$NCP_OBJECT_STORAGE_SECRET_KEY\"" >> .env.production
+          echo "NCP_OBJECT_STORAGE_BUCKET=\"$NCP_OBJECT_STORAGE_BUCKET\"" >> .env.production
 
           echo "Step 1: Kill all PM2 processes"
           pm2 kill || true
@@ -70,3 +90,21 @@ jobs:
           echo "Final Status:"
           pm2 status
           pm2 logs --lines 20 --nostream
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        NEXT_PUBLIC_KAKAO_MAP_APP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APP_KEY }}
+        NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        MASTER_EMAIL: ${{ secrets.MASTER_EMAIL }}
+        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+        NCP_ACCESS_KEY: ${{ secrets.NCP_ACCESS_KEY }}
+        NCP_ACCESS_SECRET: ${{ secrets.NCP_ACCESS_SECRET }}
+        NCP_SENDER_EMAIL: ${{ secrets.NCP_SENDER_EMAIL }}
+        NCP_OBJECT_STORAGE_REGION: ${{ secrets.NCP_OBJECT_STORAGE_REGION }}
+        NCP_OBJECT_STORAGE_ENDPOINT: ${{ secrets.NCP_OBJECT_STORAGE_ENDPOINT }}
+        NCP_OBJECT_STORAGE_ACCESS_KEY: ${{ secrets.NCP_OBJECT_STORAGE_ACCESS_KEY }}
+        NCP_OBJECT_STORAGE_SECRET_KEY: ${{ secrets.NCP_OBJECT_STORAGE_SECRET_KEY }}
+        NCP_OBJECT_STORAGE_BUCKET: ${{ secrets.NCP_OBJECT_STORAGE_BUCKET }}
