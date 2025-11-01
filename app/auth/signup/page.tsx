@@ -16,6 +16,7 @@ import { validatePasswordStrength, getPasswordStrengthColor, getPasswordStrength
 import { OrganizationAutocomplete } from '@/components/ui/organization-autocomplete';
 import { extractRetryInfo } from '@/lib/utils/rate-limit-helper';
 import { formatPhoneNumber, validatePhoneNumber, getPhoneErrorMessage, isMobilePhone } from '@/lib/utils/phone';
+import { getRegionFromPhone } from '@/lib/utils/area-code';
 
 export default function ImprovedSignUpPage() {
   const router = useRouter();
@@ -905,10 +906,9 @@ export default function ImprovedSignUpPage() {
                     return (
                       <div className="mt-3 pt-3 border-t border-yellow-500/20">
                         <p className="text-yellow-400 text-xs font-medium mb-2">
-                          ⚠️ 비정부 도메인 (@{domain})
+                          ⚠️ korea메일이 아니면?(@{domain})
                         </p>
                         <ul className="text-gray-400 text-xs space-y-1">
-                          <li>• 승인 가능 역할: 임시 점검원만 가능</li>
                           <li>• 보건소에서 할당한 AED만 점검 가능</li>
                           <li>• 전체 데이터 열람 및 보고서 생성 불가</li>
                           <li className="text-yellow-400">• 더 많은 권한이 필요하면 @korea.kr 계정으로 재가입</li>
@@ -1032,7 +1032,19 @@ export default function ImprovedSignUpPage() {
                     value={formData.phone}
                     onChange={(e) => {
                       const formatted = formatPhoneNumber(e.target.value);
-                      setFormData({ ...formData, phone: formatted });
+
+                      // 지역번호 기반 자동 지역 선택
+                      const detectedRegion = getRegionFromPhone(formatted);
+                      if (detectedRegion && regions.includes(detectedRegion) && !formData.region) {
+                        // 지역이 아직 선택되지 않았고, 유효한 지역이 감지된 경우에만 자동 선택
+                        setFormData({
+                          ...formData,
+                          phone: formatted,
+                          region: detectedRegion
+                        });
+                      } else {
+                        setFormData({ ...formData, phone: formatted });
+                      }
                     }}
                     className={`w-full px-4 py-3 bg-gray-800/50 backdrop-blur-xl border ${
                       formData.phone && isMobilePhone(formData.phone)
@@ -1044,12 +1056,17 @@ export default function ImprovedSignUpPage() {
                   />
                   {formData.phone && isMobilePhone(formData.phone) && (
                     <p className="text-xs text-red-400 mt-1">
-                      ✗ 휴대전화 번호는 입력할 수 없습니다. 소속기관의 유선 연락처를 입력해주세요.
+                      ✗ 개인정보 문제로 휴대전화는 입력이 제한됩니다. 소속기관의 유선 번호만 입력해주세요.
                     </p>
                   )}
                   {formData.phone && !isMobilePhone(formData.phone) && !validatePhoneNumber(formData.phone) && (
                     <p className="text-xs text-red-400 mt-1">
                       {getPhoneErrorMessage(formData.phone)}
+                    </p>
+                  )}
+                  {formData.phone && formData.region && getRegionFromPhone(formData.phone) === formData.region && (
+                    <p className="text-xs text-green-400 mt-1">
+                      ✓ 지역번호에 따라 '{formData.region}'이(가) 자동으로 선택되었습니다
                     </p>
                   )}
                 </div>
