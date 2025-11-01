@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+import { logger } from '@/lib/logger';
 // TODO: Supabase 클라이언트 임시 비활성화 - NextAuth로 전환 필요
 // import { useSupabase } // TODO: Supabase 클라이언트 임시 비활성화
 // from '@/lib/supabase/client';
@@ -102,7 +103,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         // 서버 에러인 경우 재시도
         if (response.status >= 500 && retryCount < maxRetries) {
-          console.warn(`Server error loading notifications, retrying... (${retryCount + 1}/${maxRetries})`);
+          logger.warn('NotificationProvider:loadNotifications', 'Server error loading notifications, retrying', { retryCount: retryCount + 1, maxRetries });
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
           return loadNotifications(retryCount + 1);
         }
@@ -118,7 +119,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setUnreadCount(data.unreadCount || 0);
       }
     } catch (err) {
-      console.error('Failed to load notifications:', err);
+      logger.error('NotificationProvider:loadNotifications', 'Failed to load notifications', err instanceof Error ? err : { err });
       if (mountedRef.current) {
         const errorMessage = err instanceof Error ? err.message : '알림을 불러오는데 실패했습니다.';
 
@@ -141,7 +142,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   // TODO: subscribeToNotifications - Supabase Realtime 의존성 제거 후 재활성화
   const subscribeToNotifications = useCallback((userId: string) => {
     // TODO: Implement with SSE or polling
-    console.warn('subscribeToNotifications is temporarily disabled');
+    logger.warn('NotificationProvider:subscribeToNotifications', 'subscribeToNotifications is temporarily disabled');
     return null;
   }, [loadNotifications]);
 
@@ -262,7 +263,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
         // 서버 에러인 경우 재시도
         if (response.status >= 500 && retryCount < maxRetries) {
-          console.warn(`Server error, retrying... (${retryCount + 1}/${maxRetries})`);
+          logger.warn('NotificationProvider:markAsRead', 'Server error, retrying', { retryCount: retryCount + 1, maxRetries });
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000)); // 지수 백오프
           return markAsRead(id, retryCount + 1);
         }
@@ -284,7 +285,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+      logger.error('NotificationProvider:markAsRead', 'Failed to mark notification as read', err instanceof Error ? err : { err });
       if (mountedRef.current) {
         const errorMessage = err instanceof Error ? err.message : '알림 읽음 처리에 실패했습니다.';
 
@@ -323,7 +324,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
         // 서버 에러인 경우 재시도
         if (response.status >= 500 && retryCount < maxRetries) {
-          console.warn(`Server error, retrying markAllAsRead... (${retryCount + 1}/${maxRetries})`);
+          logger.warn('NotificationProvider:markAllAsRead', 'Server error, retrying markAllAsRead', { retryCount: retryCount + 1, maxRetries });
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
           return markAllAsRead(retryCount + 1);
         }
@@ -344,7 +345,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (err) {
-      console.error('Failed to mark all notifications as read:', err);
+      logger.error('NotificationProvider:markAllAsRead', 'Failed to mark all notifications as read', err instanceof Error ? err : { err });
       if (mountedRef.current) {
         const errorMessage = err instanceof Error ? err.message : '모든 알림 읽음 처리에 실패했습니다.';
 
@@ -380,7 +381,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
         // 서버 에러인 경우 재시도
         if (response.status >= 500 && retryCount < maxRetries) {
-          console.warn(`Server error, retrying deleteNotification... (${retryCount + 1}/${maxRetries})`);
+          logger.warn('NotificationProvider:deleteNotification', 'Server error, retrying deleteNotification', { retryCount: retryCount + 1, maxRetries });
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
           return deleteNotification(id, retryCount + 1);
         }
@@ -402,7 +403,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (err) {
-      console.error('Failed to delete notification:', err);
+      logger.error('NotificationProvider:deleteNotification', 'Failed to delete notification', err instanceof Error ? err : { err });
       if (mountedRef.current) {
         const errorMessage = err instanceof Error ? err.message : '알림 삭제에 실패했습니다.';
 

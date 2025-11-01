@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { logger } from '@/lib/logger';
 
 function isShallowEqual(
   prev: Record<string, unknown> | undefined,
@@ -139,9 +140,9 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
 
       const { session } = await parseResponse<{ session: InspectionSession }>(response);
 
-      console.log('Session received from API:', session);
+      logger.info('InspectionSession:start', 'Session received from API', { sessionId: session.id, equipmentSerial: session.equipment_serial });
       // 🆕 Week 3: current_snapshot 우선 사용
-      console.log('Device snapshot:', session.current_snapshot || session.device_info);
+      logger.info('InspectionSession:start', 'Device snapshot loaded', { hasCurrentSnapshot: !!session.current_snapshot, hasDeviceInfo: !!session.device_info });
 
       set({
         session,
@@ -270,7 +271,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
     };
 
     try {
-      console.log('[Inspection] Saving progress:', {
+      logger.info('InspectionSession:persistProgress', 'Saving progress', {
         sessionId: session.id,
         currentStep,
         stepDataKeys: Object.keys(stepData),
@@ -282,17 +283,17 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       // 응답 상태 확인
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[Inspection] API error response:', {
+        logger.error('InspectionSession:persistProgress', 'API error response', {
           status: response.status,
           statusText: response.statusText,
-          body: errorText,
+          body: errorText.substring(0, 200),
         });
         throw new Error(`API 오류 (${response.status}): ${errorText.substring(0, 200)}`);
       }
 
       const { session: updatedSession } = await parseResponse<{ session: InspectionSession }>(response);
 
-      console.log('[Inspection] Progress saved successfully');
+      logger.info('InspectionSession:persistProgress', 'Progress saved successfully', { sessionId: updatedSession.id });
 
       set({
         session: updatedSession,
@@ -303,7 +304,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '점검 정보를 저장하지 못했습니다.';
-      console.error('[Inspection] Save failed:', errorMessage);
+      logger.error('InspectionSession:persistProgress', 'Save failed', error instanceof Error ? error : { error: errorMessage });
 
       set({
         isLoading: false,
@@ -460,7 +461,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
         session: InspectionSession;
       }>(response);
 
-      console.log('[Inspection] 세션 취소:', { sessionId: session.id, reason });
+      logger.info('InspectionSession:cancelSafely', 'Session cancelled', { sessionId: session.id, reason: reason || '사용자 취소' });
 
       // 세션 상태 초기화
       set({
@@ -559,7 +560,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
         message: string;
       }>(response);
 
-      console.log('[Inspection] 완료된 세션 재개:', { sessionId: session.id, message });
+      logger.info('InspectionSession:reopen', 'Completed session reopened', { sessionId: session.id, message });
 
       // 세션 상태 업데이트
       set({

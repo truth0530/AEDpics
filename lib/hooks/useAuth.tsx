@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 // TODO: Supabase 클라이언트 임시 비활성화 - NextAuth로 전환 필요
 // import { createClient } // TODO: Supabase 클라이언트 임시 비활성화
 // from '@/lib/supabase/client';
@@ -27,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // TODO: Temporary stub - implement with NextAuth
   useEffect(() => {
-    console.warn('AuthProvider is temporarily disabled - needs NextAuth migration');
+    logger.warn('AuthProvider:Temporary', 'AuthProvider is temporarily disabled - needs NextAuth migration');
     setLoading(false);
   }, []);
 
