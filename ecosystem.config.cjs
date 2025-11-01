@@ -1,13 +1,15 @@
 module.exports = {
   apps: [{
     name: 'aedpics',
-    script: 'npm',
+    script: 'node_modules/next/dist/bin/next',
     args: 'start',
     cwd: '/var/www/aedpics',
     instances: 1,
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
+    min_uptime: '10s',
+    max_restarts: 10,
     env: {
       NODE_ENV: 'production',
       PORT: 3000,
