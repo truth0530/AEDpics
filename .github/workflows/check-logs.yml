@@ -1,0 +1,34 @@
+name: Check Server Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-logs:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Check PM2 logs
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          cd /var/www/aedpics
+          echo "=== PM2 Status ==="
+          pm2 status
+          echo ""
+          echo "=== PM2 Error Logs (last 100 lines) ==="
+          pm2 logs --err --lines 100 --nostream
+          echo ""
+          echo "=== PM2 Out Logs (last 50 lines) ==="
+          pm2 logs --out --lines 50 --nostream
+          echo ""
+          echo "=== Check .env.production ==="
+          ls -la .env.production
+          echo ""
+          echo "=== Check database connectivity ==="
+          node -e "const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.\$connect().then(() => { console.log('Database connected successfully'); prisma.\$disconnect(); }).catch(err => { console.error('Database connection failed:', err.message); process.exit(1); });"
