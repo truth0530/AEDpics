@@ -5,28 +5,31 @@
 ### 핵심 문서
 - [README.md](README.md) - 프로젝트 개요 및 시작 가이드
 - [CLAUDE.md](CLAUDE.md) - AI 개발 가이드라인 (현재 문서)
+- [docs/README.md](docs/README.md) - 문서 허브
 - [docs/시작하기.md](docs/시작하기.md) - 상세 시작 가이드
 
 ### 마이그레이션 문서
-- [docs/migration/NCP_마이그레이션_완전가이드.md](docs/migration/NCP_마이그레이션_완전가이드.md) - NCP 마이그레이션 전체 과정
 - [docs/migration/MIGRATION_STATUS.md](docs/migration/MIGRATION_STATUS.md) - 현재 마이그레이션 상태
-- [docs/migration/NCP_MIGRATION_PHASE1_COMPLETE.md](docs/migration/NCP_MIGRATION_PHASE1_COMPLETE.md) - Phase 1 완료 보고서
+- [docs/migration/NCP_마이그레이션_완전가이드.md](docs/migration/NCP_마이그레이션_완전가이드.md) - NCP 마이그레이션 전체 과정
 
 ### 배포 및 운영
 - [docs/deployment/NCP_SERVER_SETUP.md](docs/deployment/NCP_SERVER_SETUP.md) - NCP 서버 설정 및 배포 가이드
-- [docs/deployment/GITHUB_SECRETS_SETUP.md](docs/deployment/GITHUB_SECRETS_SETUP.md) - GitHub Secrets 설정 가이드
-- [docs/GITHUB_ACTIONS_OPTIMIZATION.md](docs/GITHUB_ACTIONS_OPTIMIZATION.md) - GitHub Actions 최적화 가이드
-- [docs/SLACK_WEBHOOK_SETUP.md](docs/SLACK_WEBHOOK_SETUP.md) - Slack Webhook 연동 가이드
+- [docs/deployment/DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md) - 배포 절차
+- [docs/deployment/CICD_SETUP.md](docs/deployment/CICD_SETUP.md) - CI/CD 및 GitHub Actions
+- [docs/deployment/GITHUB_SECRETS_SETUP.md](docs/deployment/GITHUB_SECRETS_SETUP.md) - GitHub Secrets 설정
+- [docs/SLACK_WEBHOOK_SETUP.md](docs/SLACK_WEBHOOK_SETUP.md) - Slack Webhook 연동
 
-### 데이터 Import
-- [docs/AED_DATA_IMPORT_GUIDE.md](docs/AED_DATA_IMPORT_GUIDE.md) - AED 데이터 import 가이드
+### 실무 가이드
+- [docs/guides/PERFORMANCE_OPTIMIZATION.md](docs/guides/PERFORMANCE_OPTIMIZATION.md) - 성능 최적화 종합 가이드
+- [docs/guides/IMAGE_OPTIMIZATION_STRATEGY.md](docs/guides/IMAGE_OPTIMIZATION_STRATEGY.md) - 이미지 최적화 전략
+- [docs/guides/AED_DATA_IMPORT_GUIDE.md](docs/guides/AED_DATA_IMPORT_GUIDE.md) - AED 데이터 import
 - [docs/CSV_STRUCTURE_ANALYSIS.md](docs/CSV_STRUCTURE_ANALYSIS.md) - e-gen CSV 파일 구조 분석
 
 ### 레퍼런스
-- [docs/reference/ARCHITECTURE_OVERVIEW.md](docs/reference/ARCHITECTURE_OVERVIEW.md) - 시스템 아키텍처
-- [docs/reference/SUPABASE_SCHEMA_COMPLETE.md](docs/reference/SUPABASE_SCHEMA_COMPLETE.md) - 레거시 Supabase 스키마 분석 (참조용)
+- [docs/reference/architecture-overview.md](docs/reference/architecture-overview.md) - 시스템 아키텍처
 - [docs/reference/REGION_CODE_GUIDELINES.md](docs/reference/REGION_CODE_GUIDELINES.md) - 지역 코드 가이드라인
-- [docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md](docs/reference/PROJECT_RESTRUCTURE_SUMMARY.md) - 프로젝트 구조 재정리 보고서
+- [docs/reference/SECURITY_GUIDELINES.md](docs/reference/SECURITY_GUIDELINES.md) - 보안 가이드라인
+- [docs/reference/aed-data-schema.md](docs/reference/aed-data-schema.md) - AED 데이터 스키마
 
 ### 문제 해결 (Troubleshooting)
 - [docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md](docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md) - NCP 이메일 발송 문제 해결 전체 문서
