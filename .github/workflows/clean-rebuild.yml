@@ -51,7 +51,7 @@ jobs:
           echo "$BUILD_TIMESTAMP" > public/build-timestamp.txt
 
           echo "Starting PM2..."
-          pm2 start ecosystem.config.js --update-env
+          pm2 start ecosystem.config.cjs --update-env
           pm2 save --force
 
           echo "Clean rebuild complete!"

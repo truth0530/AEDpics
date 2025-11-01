@@ -1,0 +1,78 @@
+name: Emergency Server Fix
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  emergency-fix:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Emergency fix on NCP Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== Emergency Server Recovery Started ==="
+          cd /home/aedpics/AEDpics
+
+          echo "Step 1: Kill all PM2 processes"
+          pm2 kill || true
+
+          echo "Step 2: Kill any remaining Node.js processes"
+          pkill -9 node || true
+          sleep 3
+
+          echo "Step 3: Remove lock files and temporary files"
+          rm -f /home/aedpics/.pm2/pm2.pid || true
+          rm -f /home/aedpics/.pm2/rpc.sock || true
+          rm -f /home/aedpics/.pm2/pub.sock || true
+
+          echo "Step 4: Clean build artifacts"
+          rm -rf .next || true
+          rm -rf public/sw.js* || true
+          rm -rf public/workbox-*.js* || true
+          rm -rf public/swe-worker-*.js* || true
+
+          echo "Step 5: Remove node_modules completely"
+          rm -rf node_modules || true
+          rm -f package-lock.json || true
+          sleep 2
+
+          echo "Step 6: Fetch latest code"
+          git fetch origin
+          git reset --hard origin/main
+
+          echo "Step 7: Fix ecosystem.config.js ES module issue"
+          if [ -f ecosystem.config.js ]; then
+            mv ecosystem.config.js ecosystem.config.cjs
+            echo "Renamed ecosystem.config.js to ecosystem.config.cjs"
+          fi
+
+          echo "Step 8: Install dependencies (clean install)"
+          npm ci --prefer-offline --no-audit
+
+          echo "Step 9: Generate Prisma client"
+          npx prisma generate
+
+          echo "Step 10: Build application"
+          export BUILD_TIMESTAMP=$(date +%s)
+          npm run build
+
+          echo "Step 11: Create cache bust file"
+          echo "$BUILD_TIMESTAMP" > .next/BUILD_ID
+          echo "$BUILD_TIMESTAMP" > public/build-timestamp.txt
+
+          echo "Step 12: Start PM2 with .cjs config"
+          pm2 start ecosystem.config.cjs --update-env
+          pm2 save --force
+
+          echo "=== Recovery Complete ==="
+          echo ""
+          echo "Final Status:"
+          pm2 status
+          pm2 logs --lines 20 --nostream
