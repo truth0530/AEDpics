@@ -37,6 +37,7 @@
     "benchmark:run": "ts-node ../scripts/run-benchmarks.ts",
     "test:email": "npx tsx scripts/test/test-ncp-email.ts",
     "test:storage": "npx tsx scripts/test/test-ncp-storage.ts",
+    "bucket:create": "npx tsx scripts/test/test-bucket-create.ts",
     "prepare": "husky"
   },
   "dependencies": {
