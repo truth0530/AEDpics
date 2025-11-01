@@ -82,7 +82,7 @@ function MobileBottomNavComponent({ canAccessAedData, canAccessInspection, user,
           );
         })}
 
-        {/* 프로필 버튼 */}
+        {/* 설정 버튼 */}
         <Link
           href="/profile/menu"
           className={`flex flex-col items-center py-1 px-2 rounded-lg transition-colors min-w-0 flex-1 relative ${
@@ -107,7 +107,7 @@ function MobileBottomNavComponent({ canAccessAedData, canAccessInspection, user,
             pathname === '/profile/menu' || pathname.startsWith('/profile') || pathname.startsWith('/admin')
               ? 'text-blue-400' : 'text-gray-400'
           }`}>
-            프로필
+            설정
           </span>
         </Link>
       </div>
