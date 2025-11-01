@@ -118,13 +118,14 @@ jobs:
           echo "$BUILD_TIMESTAMP" > .next/BUILD_ID
           echo "$BUILD_TIMESTAMP" > public/build-timestamp.txt
 
-          echo "Stopping PM2 completely..."
-          pm2 stop aedpics || true
-          pm2 delete aedpics || true
-          pm2 flush || true
-
-          echo "Starting PM2 with fresh instance..."
-          pm2 start ecosystem.config.cjs --update-env
+          echo "Zero-Downtime deployment with PM2 reload..."
+          if pm2 describe aedpics > /dev/null 2>&1; then
+            echo "App is running. Performing zero-downtime reload..."
+            pm2 reload ecosystem.config.js --update-env
+          else
+            echo "App is not running. Starting for the first time..."
+            pm2 start ecosystem.config.js --update-env
+          fi
           pm2 save --force
 
           echo "Clearing Nginx cache if exists..."
