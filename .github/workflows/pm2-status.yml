@@ -1,0 +1,28 @@
+name: Check PM2 Status
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-status:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Check PM2 Status
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          cd /var/www/aedpics
+          echo "=== PM2 Status ==="
+          pm2 status
+          echo ""
+          echo "=== PM2 Info ==="
+          pm2 info aedpics
+          echo ""
+          echo "=== Last 30 Error Lines ==="
+          pm2 logs --err --lines 30 --nostream
