@@ -1,0 +1,55 @@
+name: Full Rebuild and Restart
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full rebuild on NCP Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.NCP_HOST }}
+          username: ${{ secrets.NCP_USERNAME }}
+          key: ${{ secrets.NCP_SSH_KEY }}
+          port: ${{ secrets.NCP_SSH_PORT }}
+          timeout: 15m
+          command_timeout: 15m
+          script: |
+            cd /var/www/aedpics
+
+            echo "Step 1: Stop PM2 processes"
+            pm2 stop ecosystem.config.cjs || true
+            pm2 delete ecosystem.config.cjs || true
+
+            echo "Step 2: Clean build artifacts"
+            rm -rf .next
+            rm -rf node_modules
+            rm -f package-lock.json
+
+            echo "Step 3: Fresh npm install"
+            npm install
+
+            echo "Step 4: Generate Prisma Client"
+            npx prisma generate
+
+            echo "Step 5: Build Next.js"
+            NODE_ENV=production npm run build
+
+            echo "Step 6: Verify .next directory"
+            ls -lah .next/
+            echo "Checking for critical files..."
+            ls -lah .next/server/ | head -20
+
+            echo "Step 7: Start PM2"
+            pm2 start ecosystem.config.cjs --update-env
+
+            echo "Step 8: Wait for startup"
+            sleep 10
+
+            echo "Step 9: Check PM2 status"
+            pm2 status
+
+            echo "Step 10: Display logs"
+            pm2 logs --lines 50 --nostream
