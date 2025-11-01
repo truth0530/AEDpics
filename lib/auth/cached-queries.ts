@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/prisma';
 import type { UserProfile } from '@/packages/types';
+import { logger } from '@/lib/logger';
 
 /**
  * 사용자 프로필 조회 (React Cache API 사용)
@@ -20,7 +21,7 @@ export const getCachedUserProfile = cache(async (userId: string): Promise<UserPr
     });
 
     if (!profile) {
-      console.error('[getCachedUserProfile] Profile not found for user:', userId);
+      logger.error('CachedQueries:getUserProfile', 'Profile not found for user', { userId });
       return null;
     }
 
@@ -44,7 +45,7 @@ export const getCachedUserProfile = cache(async (userId: string): Promise<UserPr
 
     return typedProfile;
   } catch (error) {
-    console.error('[getCachedUserProfile] Error fetching profile:', error);
+    logger.error('CachedQueries:getUserProfile', 'Error fetching profile', error instanceof Error ? error : { error, userId });
     return null;
   }
 });
@@ -64,7 +65,7 @@ export const getCachedPendingApprovalCount = cache(async (): Promise<number> => 
 
     return count;
   } catch (error) {
-    console.error('[getCachedPendingApprovalCount] Error counting pending approvals:', error);
+    logger.error('CachedQueries:getPendingApprovalCount', 'Error counting pending approvals', error instanceof Error ? error : { error });
     return 0;
   }
 });
@@ -79,7 +80,7 @@ export const getCachedAuthUser = cache(async () => {
     const session = await getServerSession(authOptions);
     return session?.user || null;
   } catch (error) {
-    console.error('[getCachedAuthUser] Error getting auth user:', error);
+    logger.error('CachedQueries:getAuthUser', 'Error getting auth user', error instanceof Error ? error : { error });
     return null;
   }
 });

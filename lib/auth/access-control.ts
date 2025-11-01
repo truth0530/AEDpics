@@ -5,6 +5,7 @@ import { UserRole, UserProfile } from '@/packages/types';
 // import { createClient } // TODO: Supabase 클라이언트 임시 비활성화
 // from '@/lib/supabase/client';
 import { getRegionCode } from '@/lib/constants/regions';
+import { logger } from '@/lib/logger';
 
 /**
  * 도메인 기반 역할 허용 여부 검증
@@ -142,7 +143,7 @@ export async function getUserAccessContext(userId: string): Promise<AccessContex
       organizationId: profile.organization_id || undefined
     };
   } catch (error) {
-    console.error('[getUserAccessContext] Error:', error);
+    logger.error('AccessControl:getUserAccessContext', 'Error getting user access context', error instanceof Error ? error : { error });
     return null;
   }
 }
@@ -407,10 +408,12 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
     // Case 1: 정부 도메인 사용자 - 해당 도메인에 맞는 역할만 가능
     if (isGovernmentDomain && allowedRolesForDomain) {
       if (!allowedRolesForDomain.includes(userProfile.role)) {
-        console.error(
-          `[ACCESS_DENIED] Domain @${emailDomain} can only have roles: ${allowedRolesForDomain.join(', ')}. ` +
-          `User ${userProfile.email} has invalid role: ${userProfile.role}`
-        );
+        logger.error('AccessControl:enforceStrictRoleByDomain', 'Access denied - invalid role for domain', {
+          domain: emailDomain,
+          allowedRoles: allowedRolesForDomain.join(', '),
+          email: userProfile.email,
+          role: userProfile.role
+        });
         throw new Error(
           `[ACCESS_DENIED] Domain @${emailDomain} can only have roles: ${allowedRolesForDomain.join(', ')}. ` +
           `User ${userProfile.email} has invalid role: ${userProfile.role}. ` +
@@ -435,10 +438,12 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
             ? 'nmc.or.kr'
             : 'korea.kr';
 
-        console.error(
-          `[ACCESS_DENIED] Role ${userProfile.role} requires government email domain @${requiredDomain}. ` +
-          `User ${userProfile.email} with non-government domain @${emailDomain} can only have role: temporary_inspector`
-        );
+        logger.error('AccessControl:enforceStrictRoleByDomain', 'Access denied - admin role requires government domain', {
+          role: userProfile.role,
+          requiredDomain,
+          email: userProfile.email,
+          actualDomain: emailDomain
+        });
         throw new Error(
           `[ACCESS_DENIED] Role ${userProfile.role} requires government email domain @${requiredDomain}. ` +
           `User ${userProfile.email} with non-government domain @${emailDomain} can only have role: temporary_inspector. ` +
@@ -505,10 +510,10 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
       } else {
         // city_code가 없으면 시도 레벨로만 제한 (시군구 제한 없음)
         // 향후 데이터 마이그레이션으로 모든 보건소에 city_code 추가 권장
-        console.warn(
-          `[ACCESS_CONTROL] Local admin ${userProfile.id} (${userProfile.email}) ` +
-          `has organization without city_code. Granting region-level access only.`
-        );
+        logger.warn('AccessControl:resolveAccessScope', 'Local admin organization missing city_code, granting region-level access', {
+          userId: userProfile.id,
+          email: userProfile.email
+        });
         allowedCityCodes = null; // 시도 내 모든 시군구 접근 가능
       }
     } else if (userProfile.role === 'regional_admin') {
@@ -538,9 +543,12 @@ export function canAccessAEDData(user: UserRole | UserProfile): boolean {
   }
 
   if (typeof user !== 'string') {
-    console.log('[DEBUG] canAccessAEDData for:', user.email, 'role:', role);
-    console.log('[DEBUG] user.organization:', user.organization);
-    console.log('[DEBUG] user.organizations:', (user as any).organizations);
+    logger.info('AccessControl:canAccessAEDData', 'Checking AED data access', {
+      email: user.email,
+      role,
+      organization: user.organization,
+      organizations: (user as any).organizations
+    });
 
     const allowedDomains = new Set(['korea.kr', 'nmc.or.kr']);
     const domainRestrictedRoles: UserRole[] = ['ministry_admin', 'regional_admin', 'local_admin'];
@@ -548,16 +556,16 @@ export function canAccessAEDData(user: UserRole | UserProfile): boolean {
 
     if (domainRestrictedRoles.includes(role)) {
       if (!userDomain || !allowedDomains.has(userDomain)) {
-        console.warn(`AED data access denied for domain ${userDomain ?? 'unknown'}`);
+        logger.warn('AccessControl:canAccessAEDData', 'AED data access denied for domain', { domain: userDomain ?? 'unknown' });
         return false;
       }
     }
 
     try {
       resolveAccessScope(user);
-      console.log('[DEBUG] resolveAccessScope success for:', user.email);
+      logger.info('AccessControl:canAccessAEDData', 'Access scope resolved successfully', { email: user.email });
     } catch (error) {
-      console.warn('Skipping AED data access due to scope error:', error);
+      logger.warn('AccessControl:canAccessAEDData', 'Skipping AED data access due to scope error', error instanceof Error ? error : { error });
       return false;
     }
   }
@@ -590,7 +598,7 @@ export function canAccessInspectionMenu(user: UserRole | UserProfile): boolean {
     try {
       resolveAccessScope(user);
     } catch (error) {
-      console.warn('Skipping inspection menu access due to scope error:', error);
+      logger.warn('AccessControl:canAccessInspectionMenu', 'Skipping inspection menu access due to scope error', error instanceof Error ? error : { error });
       return false;
     }
   }

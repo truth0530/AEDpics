@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { logger } from '@/lib/logger'
 // TODO: Supabase 클라이언트 임시 비활성화 - NextAuth useSession으로 변경 필요
 // import { useSupabase } // TODO: Supabase 클라이언트 임시 비활성화
 // from '@/lib/supabase/client'
@@ -35,7 +36,7 @@ export function useUser() {
         const { data: { user } } = await supabase.auth.getUser()
         setUser(user)
       } catch (error) {
-        console.error('Error fetching user:', error)
+        logger.error('AuthHooks:useUser', 'Error fetching user', error instanceof Error ? error : { error })
       } finally {
         setLoading(false)
       }

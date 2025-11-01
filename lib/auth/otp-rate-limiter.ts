@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 const MAX_REQUESTS = 3; // 15분당 최대 요청 수
 const WINDOW_MINUTES = 15; // 윈도우 시간 (분)
@@ -97,7 +98,7 @@ export async function checkOtpRateLimit(email: string): Promise<RateLimitResult>
     };
 
   } catch (error) {
-    console.error('Rate limit exception:', error);
+    logger.error('OTPRateLimit:check', 'Rate limit exception, allowing request for safety', error instanceof Error ? error : { error, email });
     // 예외 발생 시 안전하게 허용 (서비스 차단 방지)
     return {
       allowed: true,
@@ -156,7 +157,7 @@ export async function getOtpRateLimitStatus(email: string): Promise<RateLimitRes
     };
 
   } catch (error) {
-    console.error('Get rate limit status error:', error);
+    logger.error('OTPRateLimit:getStatus', 'Get rate limit status error', error instanceof Error ? error : { error, email });
     return {
       allowed: true,
       remaining: MAX_REQUESTS,
