@@ -4,6 +4,7 @@
  */
 
 import { QueuedOperation } from './OfflineQueue'
+import { logger } from '@/lib/logger'
 
 export type Priority = 'critical' | 'high' | 'normal' | 'low'
 
@@ -158,7 +159,11 @@ export class PrioritySyncQueue {
         const age = now - op.timestamp
 
         if (age > this.config.escalationThreshold) {
-          console.log(`작업 ${op.id} 우선순위 상승: ${currentPriority} → ${nextPriority}`)
+          logger.info('PrioritySyncQueue:escalatePriorities', 'Priority escalated', {
+            operationId: op.id,
+            from: currentPriority,
+            to: nextPriority
+          })
           op.priority = nextPriority
           toEscalate.push(op)
         } else {

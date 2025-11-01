@@ -5,6 +5,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { QueuedOperation } from './OfflineQueue'
+import { logger } from '@/lib/logger'
 
 export interface BatchOperation {
   operations: QueuedOperation[]
@@ -107,7 +108,11 @@ export class BatchSyncManager {
     const startTime = Date.now()
     const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-    console.log(`배치 실행: ${batch.tableName} - ${batch.type} (${batch.operations.length}개)`)
+    logger.info('BatchSyncManager:executeBatch', 'Batch execution started', {
+      tableName: batch.tableName,
+      type: batch.type,
+      operationCount: batch.operations.length
+    })
 
     const results = {
       batchId,
@@ -133,7 +138,7 @@ export class BatchSyncManager {
           await this.executeMixedBatch(batch, results)
       }
     } catch (error) {
-      console.error('배치 실행 중 오류:', error)
+      logger.error('BatchSyncManager:executeBatch', 'Batch execution error', error instanceof Error ? error : { error })
       results.failed = batch.operations.length
       results.errors.push({
         operationId: batchId,
@@ -142,7 +147,11 @@ export class BatchSyncManager {
     }
 
     results.duration = Date.now() - startTime
-    console.log(`배치 완료: ${results.successful}개 성공, ${results.failed}개 실패 (${results.duration}ms)`)
+    logger.info('BatchSyncManager:executeBatch', 'Batch execution completed', {
+      successful: results.successful,
+      failed: results.failed,
+      duration: results.duration
+    })
 
     return results
   }
@@ -363,7 +372,10 @@ export class BatchSyncManager {
     const startTime = Date.now()
     const batches = this.groupOperationsIntoBatches(operations)
 
-    console.log(`총 ${batches.length}개 배치로 ${operations.length}개 작업 동기화 시작`)
+    logger.info('BatchSyncManager:syncBatches', 'Batch sync started', {
+      batchCount: batches.length,
+      operationCount: operations.length
+    })
 
     let successfulBatches = 0
     let failedBatches = 0

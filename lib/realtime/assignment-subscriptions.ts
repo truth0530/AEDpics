@@ -3,6 +3,8 @@
  * Supabase Realtime을 사용한 실시간 업데이트
  */
 
+import { logger } from '@/lib/logger'
+
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
 
@@ -68,7 +70,7 @@ export class AssignmentSubscription {
    */
   async subscribe(): Promise<void> {
     if (this.channel) {
-      console.warn('[Realtime] Already subscribed');
+      logger.warn('AssignmentSubscription:subscribe', 'Already subscribed', { userId: this.userId });
       return;
     }
 
@@ -133,13 +135,13 @@ export class AssignmentSubscription {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`[Realtime] Subscribed to assignments for user ${this.userId}`);
+          logger.info('AssignmentSubscription:subscribe', 'Subscribed to assignments', { userId: this.userId });
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[Realtime] Channel error');
+          logger.error('AssignmentSubscription:subscribe', 'Channel error', { userId: this.userId });
         } else if (status === 'TIMED_OUT') {
-          console.error('[Realtime] Connection timed out');
+          logger.error('AssignmentSubscription:subscribe', 'Connection timed out', { userId: this.userId });
         } else if (status === 'CLOSED') {
-          console.log('[Realtime] Connection closed');
+          logger.info('AssignmentSubscription:subscribe', 'Connection closed', { userId: this.userId });
         }
       });
   }
@@ -151,7 +153,7 @@ export class AssignmentSubscription {
     if (this.channel) {
       await this.supabase.removeChannel(this.channel);
       this.channel = null;
-      console.log(`[Realtime] Unsubscribed from assignments for user ${this.userId}`);
+      logger.info('AssignmentSubscription:unsubscribe', 'Unsubscribed from assignments', { userId: this.userId });
     }
   }
 
@@ -204,7 +206,7 @@ export class AllAssignmentsSubscription {
    */
   async subscribe(): Promise<void> {
     if (this.channel) {
-      console.warn('[Realtime] Already subscribed');
+      logger.warn('AllAssignmentsSubscription:subscribe', 'Already subscribed');
       return;
     }
 
@@ -233,9 +235,9 @@ export class AllAssignmentsSubscription {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[Realtime] Subscribed to all assignments');
+          logger.info('AllAssignmentsSubscription:subscribe', 'Subscribed to all assignments');
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[Realtime] Channel error');
+          logger.error('AllAssignmentsSubscription:subscribe', 'Channel error');
         }
       });
   }
@@ -247,7 +249,7 @@ export class AllAssignmentsSubscription {
     if (this.channel) {
       await this.supabase.removeChannel(this.channel);
       this.channel = null;
-      console.log('[Realtime] Unsubscribed from all assignments');
+      logger.info('AllAssignmentsSubscription:unsubscribe', 'Unsubscribed from all assignments');
     }
   }
 }
