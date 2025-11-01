@@ -373,7 +373,94 @@ git push origin main  # GitHub Actions 자동 배포
 - 로컬 검증 없이 푸시 절대 금지
 - PM2 reload로 사용자 경험 보호
 
-### 10. 이미지 최적화 원칙
+### 10. Next.js 빌드 산출물 무결성 (2025-11-01 사건)
+
+**문제**: 502 Bad Gateway, PM2 프로세스 20회 재시작 후 errored 상태
+```
+Error: Cannot find module './web/sandbox'
+Error: Cannot find module 'next/dist/server/lib/router-utils/instrumentation-globals.external.js'
+```
+
+**의심**: 최근 logger 마이그레이션 작업(batch 17-25)이 원인?
+
+**실제 원인**: Next.js 빌드 산출물 누락 (logger와 무관)
+- `.next/server/` 디렉토리 내 필수 모듈 파일 누락
+- 빌드 프로세스 중단 또는 부분 실패
+- 배포 시 파일 전송 불완전
+
+**진단 과정**:
+```bash
+# 1. PM2 상태 확인
+pm2 status  # → status: errored, restarts: 20
+
+# 2. 에러 로그 확인
+pm2 logs --err --lines 100
+# → Cannot find module 에러 발견
+
+# 3. Logger 코드 검증
+cat lib/logger.ts  # → 문제 없음
+grep -r "import.*logger" app/api/  # → 정상적인 import
+
+# 4. 결론: Next.js 내부 모듈 로딩 실패 = 빌드 문제
+```
+
+**해결책**: Full Rebuild
+```bash
+# .github/workflows/full-rebuild.yml
+cd /var/www/aedpics
+rm -rf .next node_modules package-lock.json
+npm install
+npx prisma generate
+NODE_ENV=production npm run build
+pm2 start ecosystem.config.cjs
+```
+
+**재발 방지**:
+
+1. **배포 전 빌드 검증**:
+```bash
+# 로컬에서 반드시 실행
+npm run build
+
+# .next 디렉토리 확인
+ls -la .next/server/
+du -sh .next/  # 정상: 100-300MB
+```
+
+2. **배포 후 즉시 검증**:
+```bash
+# PM2 상태 확인
+pm2 status  # status: online 확인
+
+# 로그 확인
+pm2 logs --lines 20  # "Ready in XXXms" 확인
+
+# HTTP 응답 확인
+curl -I https://aed.pics  # 200 OK 확인
+```
+
+3. **문제 발생 시 빠른 대응**:
+```bash
+# 502 에러 발견 시
+pm2 logs --err --lines 50  # 즉시 에러 로그 확인
+
+# MODULE_NOT_FOUND 에러 시
+gh workflow run full-rebuild.yml  # Full rebuild 즉시 실행
+```
+
+**교훈**:
+- **최근 변경사항 의심은 자연스러움** - 하지만 에러 로그 분석이 우선
+- **Next.js 모듈 에러 = 빌드 문제** - 애플리케이션 코드 문제 아님
+- **PM2 반복 재시작 = 심각한 문제** - 즉시 로그 확인 필수
+- **Full rebuild는 만능 해결책** - 빌드 캐시 오염, 부분 업데이트 문제 해결
+- **배포 체크리스트 준수** - 재발 방지의 핵심
+
+**관련 문서**:
+- [502 에러 분석 보고서](docs/troubleshooting/SERVER_502_ANALYSIS_2025-11-01.md)
+- [배포 체크리스트](docs/deployment/DEPLOYMENT_CHECKLIST.md)
+- [Logger 마이그레이션 상태](docs/planning/LOGGER_MIGRATION_REMAINING.md)
+
+### 11. 이미지 최적화 원칙
 
 **목표**: Object Storage 비용 최소화
 
@@ -896,7 +983,8 @@ migrate: 마이그레이션 관련
 ---
 
 **마지막 업데이트**: 2025-11-01
-**문서 버전**: 2.5.0
+**문서 버전**: 2.6.0
+**주요 변경**: 502 에러 사건 분석 및 재발 방지 가이드 추가
 
 ---
 
