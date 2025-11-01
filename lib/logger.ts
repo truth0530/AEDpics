@@ -16,6 +16,34 @@ interface LoggerOptions {
   minLevel?: LogLevel;
 }
 
+/**
+ * 민감정보 필드 목록 (자동 마스킹)
+ * 1인 개발자를 위한 보안 강화
+ */
+const SENSITIVE_FIELDS = new Set([
+  'password',
+  'passwordConfirm',
+  'oldPassword',
+  'newPassword',
+  'token',
+  'accessToken',
+  'refreshToken',
+  'apiKey',
+  'secret',
+  'secretKey',
+  'privateKey',
+  'credential',
+  'authorization',
+  'cookie',
+  'sessionId',
+  'ssn',           // 주민등록번호
+  'cardNumber',    // 카드번호
+  'cvv',           // 카드 CVV
+  'pin',           // PIN 번호
+  'otp',           // OTP 코드
+  'code',          // 인증 코드
+]);
+
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
@@ -43,6 +71,40 @@ class Logger {
     return new Date().toISOString();
   }
 
+  /**
+   * 민감정보 마스킹
+   * 1인 개발자를 위한 자동 보안
+   */
+  private maskSensitiveData(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.maskSensitiveData(item));
+    }
+
+    const masked: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      // 키 이름이 민감정보 필드인지 확인 (대소문자 무시)
+      const lowerKey = key.toLowerCase();
+      const isSensitive = Array.from(SENSITIVE_FIELDS).some(
+        field => lowerKey.includes(field.toLowerCase())
+      );
+
+      if (isSensitive) {
+        // 민감정보는 ***로 마스킹
+        masked[key] = typeof value === 'string' && value.length > 0 ? '***' : value;
+      } else if (typeof value === 'object' && value !== null) {
+        // 중첩 객체는 재귀적으로 처리
+        masked[key] = this.maskSensitiveData(value);
+      } else {
+        masked[key] = value;
+      }
+    }
+    return masked;
+  }
+
   private formatMessage(level: LogLevel, context: string, message: string): string {
     const timestamp = this.options.enableTimestamps ? `${this.formatTimestamp()} ` : '';
     const levelTag = level.toUpperCase().padEnd(5);
@@ -58,7 +120,9 @@ class Logger {
 
     if (typeof meta === 'object' && meta !== null) {
       try {
-        return `\n  ${JSON.stringify(meta, null, 2)}`;
+        // 🔒 민감정보 자동 마스킹 (1인 개발자를 위한 안전장치)
+        const masked = this.maskSensitiveData(meta);
+        return `\n  ${JSON.stringify(masked, null, 2)}`;
       } catch {
         return `\n  ${String(meta)}`;
       }
