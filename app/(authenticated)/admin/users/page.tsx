@@ -3,7 +3,44 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { user_role as UserRole } from '@prisma/client';
-import { Search, User, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Search, User, Clock, CheckCircle, XCircle, AlertCircle, Shield, Building2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  APPROVABLE_ROLES,
+  getRoleLabel,
+  getRoleDescription,
+  getRoleBadgeClass,
+  getAccessLevelLabel,
+  getRegionDisplay,
+} from '@/lib/utils/user-roles';
 
 interface UserProfile {
   id: string;
@@ -37,7 +74,7 @@ interface UsersResponse {
 
 /**
  * 사용자 관리 페이지
- * Prisma API 기반으로 완전히 재구축됨 (2025-10-26)
+ * 최신 shadcn/ui 디자인 및 통합 권한 체계 적용 (2025-10-31)
  */
 export default function AdminUsersPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('pending');
@@ -94,7 +131,6 @@ export default function AdminUsersPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       setShowApproveModal(false);
       setSelectedUser(null);
-      alert('사용자가 승인되었습니다.');
     },
     onError: (error: Error) => {
       alert(`승인 실패: ${error.message}`);
@@ -122,7 +158,6 @@ export default function AdminUsersPage() {
       setShowRejectModal(false);
       setSelectedUser(null);
       setRejectReason('');
-      alert('사용자가 거부되었습니다.');
     },
     onError: (error: Error) => {
       alert(`거부 실패: ${error.message}`);
@@ -154,297 +189,408 @@ export default function AdminUsersPage() {
     rejectMutation.mutate({ userId: selectedUser.id, reason: rejectReason });
   };
 
-  const getRoleLabel = (role: UserRole): string => {
-    const labels: Record<UserRole, string> = {
-      master: 'Master 관리자',
-      emergency_center_admin: '중앙응급의료센터',
-      regional_emergency_center_admin: '지역응급의료지원센터',
-      ministry_admin: '보건복지부',
-      regional_admin: '지역 관리자',
-      local_admin: '로컬 관리자',
-      temporary_inspector: '임시 점검원',
-      pending_approval: '승인 대기',
-      email_verified: '이메일 인증 완료',
-      rejected: '거부됨'
-    };
-    return labels[role] || role;
-  };
-
   return (
     <div className="min-h-screen bg-gray-950 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* 헤더 */}
-        <div className="mb-6">
+        <div>
           <h1 className="text-3xl font-bold text-white mb-2">사용자 관리</h1>
-          <p className="text-gray-400">신규 가입 승인 및 사용자 관리</p>
+          <p className="text-gray-400">신규 가입 승인 및 사용자 권한 관리</p>
+        </div>
+
+        {/* 통계 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader className="pb-3">
+              <CardDescription className="text-gray-400">승인 대기</CardDescription>
+              <CardTitle className="text-2xl text-yellow-400">
+                {filter === 'pending' ? data?.pagination.total || 0 : '-'}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader className="pb-3">
+              <CardDescription className="text-gray-400">승인 완료</CardDescription>
+              <CardTitle className="text-2xl text-green-400">
+                {filter === 'approved' ? data?.pagination.total || 0 : '-'}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader className="pb-3">
+              <CardDescription className="text-gray-400">전체 사용자</CardDescription>
+              <CardTitle className="text-2xl text-blue-400">
+                {filter === 'all' ? data?.pagination.total || 0 : '-'}
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
 
         {/* 필터 및 검색 */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter('pending')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'pending'
-                  ? 'bg-yellow-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              승인 대기
-            </button>
-            <button
-              onClick={() => setFilter('approved')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'approved'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              승인 완료
-            </button>
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              전체
-            </button>
-          </div>
+        <Card className="bg-gray-900 border-gray-800">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setFilter('pending')}
+                  variant={filter === 'pending' ? 'default' : 'outline'}
+                  className={
+                    filter === 'pending'
+                      ? 'bg-yellow-600 hover:bg-yellow-700'
+                      : 'border-gray-700 text-gray-300 hover:bg-gray-800'
+                  }
+                >
+                  승인 대기
+                </Button>
+                <Button
+                  onClick={() => setFilter('approved')}
+                  variant={filter === 'approved' ? 'default' : 'outline'}
+                  className={
+                    filter === 'approved'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'border-gray-700 text-gray-300 hover:bg-gray-800'
+                  }
+                >
+                  승인 완료
+                </Button>
+                <Button
+                  onClick={() => setFilter('all')}
+                  variant={filter === 'all' ? 'default' : 'outline'}
+                  className={
+                    filter === 'all'
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'border-gray-700 text-gray-300 hover:bg-gray-800'
+                  }
+                >
+                  전체
+                </Button>
+              </div>
 
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="이름 또는 이메일로 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            />
-          </div>
-        </div>
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="이름 또는 이메일로 검색..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* 로딩 상태 */}
         {isLoading && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-            <p className="text-gray-400 mt-4">사용자 목록을 불러오는 중...</p>
-          </div>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="py-12">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                <p className="text-gray-400 mt-4">사용자 목록을 불러오는 중...</p>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* 오류 상태 */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-red-400">
-              <AlertCircle className="w-5 h-5" />
-              <p>오류가 발생했습니다: {(error as Error).message}</p>
-            </div>
-          </div>
+          <Card className="bg-red-500/10 border-red-500/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-red-400">
+                <AlertCircle className="w-5 h-5" />
+                <p>오류가 발생했습니다: {(error as Error).message}</p>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        {/* 사용자 목록 */}
+        {/* 사용자 목록 테이블 */}
         {!isLoading && !error && (
-          <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-800 border-b border-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">사용자</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">조직</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">역할</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">가입일</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">작업</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
+          <Card className="bg-gray-900 border-gray-800">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-800 hover:bg-gray-800/50">
+                  <TableHead className="text-gray-400">사용자</TableHead>
+                  <TableHead className="text-gray-400">조직 및 지역</TableHead>
+                  <TableHead className="text-gray-400">역할 및 권한</TableHead>
+                  <TableHead className="text-gray-400">가입일</TableHead>
+                  <TableHead className="text-gray-400 text-right">작업</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {data?.users.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <User className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                      <p className="text-gray-400">사용자가 없습니다.</p>
-                    </td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-64 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <User className="w-12 h-12 text-gray-600 mb-3" />
+                        <p className="text-gray-400">사용자가 없습니다.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   data?.users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-800/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-white">
+                    <TableRow
+                      key={user.email}
+                      className="border-gray-800 hover:bg-gray-800/50"
+                    >
+                      {/* 사용자 정보 */}
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium text-white">
                             {user.full_name || '이름 없음'}
                           </div>
                           <div className="text-sm text-gray-400">{user.email}</div>
                           {user.phone && (
-                            <div className="text-xs text-gray-500 mt-1">{user.phone}</div>
+                            <div className="text-xs text-gray-500">{user.phone}</div>
                           )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-300">
-                          {user.organizations?.name || '조직 없음'}
+                      </TableCell>
+
+                      {/* 조직 및 지역 */}
+                      <TableCell>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-300">
+                              {user.organizations?.name || '조직 없음'}
+                            </span>
+                          </div>
+                          {user.region_code && (
+                            <div className="text-xs text-gray-400 pl-6">
+                              {getRegionDisplay(user.region_code)}
+                            </div>
+                          )}
                         </div>
-                        {user.region_code && (
-                          <div className="text-xs text-gray-500">{user.region_code}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.role === 'pending_approval'
-                              ? 'bg-yellow-900 text-yellow-300'
-                              : 'bg-green-900 text-green-300'
-                          }`}
-                        >
-                          {getRoleLabel(user.role)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+
+                      {/* 역할 및 권한 */}
+                      <TableCell>
+                        <div className="space-y-2">
+                          <Badge
+                            className={getRoleBadgeClass(user.role)}
+                            variant="outline"
+                          >
+                            <Shield className="w-3 h-3 mr-1" />
+                            {getRoleLabel(user.role)}
+                          </Badge>
+                          <div className="text-xs text-gray-500">
+                            {getAccessLevelLabel(user.role)} 권한
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* 가입일 */}
+                      <TableCell>
                         <div className="flex items-center gap-1.5 text-sm text-gray-400">
                           <Clock className="w-4 h-4" />
-                          {new Date(user.created_at).toLocaleDateString('ko-KR')}
+                          {new Date(user.created_at).toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+
+                      {/* 작업 버튼 */}
+                      <TableCell className="text-right">
                         {user.role === 'pending_approval' ? (
-                          <div className="flex gap-2">
-                            <button
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
                               onClick={() => handleApprove(user)}
-                              className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors flex items-center gap-1"
+                              className="bg-green-600 hover:bg-green-700"
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              <CheckCircle className="w-4 h-4 mr-1" />
                               승인
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
                               onClick={() => handleReject(user)}
-                              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md transition-colors flex items-center gap-1"
                             >
-                              <XCircle className="w-4 h-4" />
+                              <XCircle className="w-4 h-4 mr-1" />
                               거부
-                            </button>
+                            </Button>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-500">승인 완료</span>
+                          <Badge variant="outline" className="bg-gray-800/50 border-gray-700">
+                            승인 완료
+                          </Badge>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
         )}
 
         {/* 페이지네이션 */}
         {data && data.pagination.totalPages > 1 && (
-          <div className="mt-6 flex justify-center gap-2">
+          <div className="flex justify-center gap-2">
             {Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map((page) => (
-              <button
+              <Button
                 key={page}
-                className={`px-4 py-2 rounded-lg ${
+                variant={page === data.pagination.page ? 'default' : 'outline'}
+                className={
                   page === data.pagination.page
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'border-gray-700 text-gray-300 hover:bg-gray-800'
+                }
               >
                 {page}
-              </button>
+              </Button>
             ))}
           </div>
         )}
       </div>
 
       {/* 승인 모달 */}
-      {showApproveModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-lg border border-gray-800 p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold text-white mb-4">사용자 승인</h2>
-            <div className="mb-4">
-              <p className="text-gray-300 mb-2">
-                <span className="font-medium">{selectedUser.full_name}</span>님을 승인하시겠습니까?
-              </p>
-              <p className="text-sm text-gray-400">{selectedUser.email}</p>
-            </div>
+      <Dialog open={showApproveModal} onOpenChange={setShowApproveModal}>
+        <DialogContent className="bg-gray-900 border-gray-800 text-white">
+          <DialogHeader>
+            <DialogTitle>사용자 승인</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              권한을 선택하여 사용자를 승인합니다
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                역할 선택
-              </label>
-              <select
-                value={approvalRole}
-                onChange={(e) => setApprovalRole(e.target.value as UserRole)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="local_admin">로컬 관리자</option>
-                <option value="inspector">점검원</option>
-                <option value="temporary_inspector">임시 점검원</option>
-                <option value="regional_admin">지역 관리자</option>
-              </select>
-            </div>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-white">
+                      {selectedUser.full_name}
+                    </div>
+                    <div className="text-sm text-gray-400">{selectedUser.email}</div>
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowApproveModal(false)}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-md transition-colors"
-                disabled={approveMutation.isPending}
-              >
-                취소
-              </button>
-              <button
-                onClick={confirmApprove}
-                disabled={approveMutation.isPending}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:opacity-50"
-              >
-                {approveMutation.isPending ? '처리 중...' : '승인'}
-              </button>
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-gray-300">
+                  역할 선택
+                </Label>
+                <Select
+                  value={approvalRole}
+                  onValueChange={(value) => setApprovalRole(value as UserRole)}
+                >
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    {APPROVABLE_ROLES.map((role) => (
+                      <SelectItem
+                        key={role}
+                        value={role}
+                        className="text-white hover:bg-gray-700"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{getRoleLabel(role)}</span>
+                          <span className="text-xs text-gray-400">
+                            {getRoleDescription(role)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  선택한 역할에 따라 사용자의 접근 권한이 결정됩니다
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveModal(false)}
+              disabled={approveMutation.isPending}
+              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={confirmApprove}
+              disabled={approveMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {approveMutation.isPending ? '처리 중...' : '승인'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 거부 모달 */}
-      {showRejectModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-lg border border-gray-800 p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold text-white mb-4">사용자 거부</h2>
-            <div className="mb-4">
-              <p className="text-gray-300 mb-2">
-                <span className="font-medium">{selectedUser.full_name}</span>님의 가입을 거부하시겠습니까?
-              </p>
-              <p className="text-sm text-gray-400">{selectedUser.email}</p>
-            </div>
+      <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+        <DialogContent className="bg-gray-900 border-gray-800 text-white">
+          <DialogHeader>
+            <DialogTitle>사용자 거부</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              가입 신청을 거부하고 사유를 입력합니다
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                거부 사유 (필수)
-              </label>
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="거부 사유를 입력해주세요..."
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-red-500 resize-none"
-                rows={4}
-              />
-            </div>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-red-600/20 flex items-center justify-center">
+                    <User className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-white">
+                      {selectedUser.full_name}
+                    </div>
+                    <div className="text-sm text-gray-400">{selectedUser.email}</div>
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowRejectModal(false)}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-md transition-colors"
-                disabled={rejectMutation.isPending}
-              >
-                취소
-              </button>
-              <button
-                onClick={confirmReject}
-                disabled={rejectMutation.isPending || !rejectReason.trim()}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50"
-              >
-                {rejectMutation.isPending ? '처리 중...' : '거부'}
-              </button>
+              <div className="space-y-2">
+                <Label htmlFor="reason" className="text-gray-300">
+                  거부 사유 (필수)
+                </Label>
+                <Textarea
+                  id="reason"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="거부 사유를 입력해주세요..."
+                  className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 resize-none"
+                  rows={4}
+                />
+                <p className="text-xs text-gray-500">
+                  거부 사유는 사용자에게 이메일로 전달됩니다
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectModal(false)}
+              disabled={rejectMutation.isPending}
+              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={confirmReject}
+              disabled={rejectMutation.isPending || !rejectReason.trim()}
+              variant="destructive"
+            >
+              {rejectMutation.isPending ? '처리 중...' : '거부'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
