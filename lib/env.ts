@@ -266,15 +266,15 @@ function validateEnv(): Env {
       console.error('[ENV] Refer to .env.example for required variables');
       console.error('');
 
-      // 빌드 타임이 아닌 경우에만 프로세스 종료
-      if (!isBuildTime) {
+      // 빌드 타임이 아니고 서버 환경인 경우에만 프로세스 종료
+      if (!isBuildTime && typeof window === 'undefined') {
         process.exit(1);
       }
     }
 
     // 예상치 못한 오류
     console.error('[ENV] Unexpected error during environment validation:', error);
-    if (!isBuildTime) {
+    if (!isBuildTime && typeof window === 'undefined') {
       process.exit(1);
     }
 
