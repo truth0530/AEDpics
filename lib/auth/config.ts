@@ -1,6 +1,7 @@
 // 인증 설정 및 권한 관리
 
 import { UserRole } from '@/packages/types';
+import { env } from '@/lib/env';
 
 // 공공기관 이메일 도메인
 export const PUBLIC_EMAIL_DOMAINS = ['korea.kr', 'nmc.or.kr'];
@@ -22,7 +23,7 @@ export const ALLOWED_EMAIL_DOMAINS = [
 // Note: MASTER_EMAIL 환경변수는 콤마로 구분하여 여러 개 지정 가능
 // 예: MASTER_EMAIL="admin@nmc.or.kr,admin2@nmc.or.kr"
 export const getMasterAdminEmails = (): string[] => {
-  const emails = process.env.MASTER_EMAIL || '';
+  const emails = env.MASTER_EMAIL || '';
   return emails.split(',').map(email => email.trim()).filter(Boolean);
 };
 

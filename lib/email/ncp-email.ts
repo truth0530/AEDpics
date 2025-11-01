@@ -6,6 +6,7 @@
  */
 
 import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 
 export interface NCPEmailRecipient {
   address: string;
@@ -137,7 +138,7 @@ export async function sendNCPEmail(
       const result = await sendEmailRequest(config, emailData);
 
       if (attempt > 0) {
-        console.log(`NCP Email sent successfully on attempt ${attempt + 1}`);
+        logger.info('NCPEmail:Retry', 'NCP Email sent successfully after retry', { attempt: attempt + 1 });
       }
       return result;
 
@@ -146,12 +147,18 @@ export async function sendNCPEmail(
       const isLastAttempt = attempt === opts.maxRetries - 1;
 
       if (isLastAttempt) {
-        console.error(`NCP Email send failed after ${opts.maxRetries} attempts:`, error);
+        logger.error('NCPEmail:Retry', 'NCP Email send failed after all retries', error instanceof Error ? error : {
+          error,
+          maxRetries: opts.maxRetries
+        });
         break;
       }
 
       const delayMs = calculateDelay(attempt, opts);
-      console.warn(`NCP Email send attempt ${attempt + 1} failed. Retrying in ${delayMs}ms...`);
+      logger.warn('NCPEmail:Retry', 'NCP Email send attempt failed, retrying', {
+        attempt: attempt + 1,
+        retryDelay: `${delayMs}ms`
+      });
       await delay(delayMs);
     }
   }

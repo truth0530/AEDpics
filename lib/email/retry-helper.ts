@@ -7,6 +7,8 @@
  * - 각 재시도 사이 대기 시간 증가
  */
 
+import { logger } from '@/lib/logger';
+
 export interface RetryOptions {
   maxRetries?: number;
   initialDelay?: number; // ms
@@ -52,7 +54,7 @@ export async function sendEmailWithRetry<T>(
 
       // 성공 시 즉시 반환
       if (attempt > 0) {
-        console.log(`✅ Email sent successfully on attempt ${attempt + 1}`);
+        logger.info('EmailRetry', 'Email sent successfully after retry', { attempt: attempt + 1 });
       }
       return result;
 
@@ -61,13 +63,19 @@ export async function sendEmailWithRetry<T>(
       const isLastAttempt = attempt === opts.maxRetries - 1;
 
       if (isLastAttempt) {
-        console.error(`❌ Email send failed after ${opts.maxRetries} attempts:`, error);
+        logger.error('EmailRetry', 'Email send failed after all retries', error instanceof Error ? error : {
+          error,
+          maxRetries: opts.maxRetries
+        });
         break;
       }
 
       // 재시도 전 대기
       const delayMs = calculateDelay(attempt, opts);
-      console.warn(`⚠️  Email send attempt ${attempt + 1} failed. Retrying in ${delayMs}ms...`);
+      logger.warn('EmailRetry', 'Email send attempt failed, retrying', {
+        attempt: attempt + 1,
+        retryDelay: `${delayMs}ms`
+      });
       await delay(delayMs);
     }
   }

@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import { env } from '@/lib/env';
 
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
@@ -136,7 +137,7 @@ export async function sendOTPEmail(email: string, code: string): Promise<boolean
  * 환경에 따른 이메일 발송 처리
  */
 export async function sendVerificationEmail(email: string, code: string): Promise<boolean> {
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = env.NODE_ENV === 'development';
 
   if (isDevelopment) {
     // 개발 환경: 콘솔 출력

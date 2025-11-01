@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { env } from '@/lib/env';
 
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } from '@/lib/supabase/client';
@@ -56,7 +57,7 @@ export async function sendOTP(email: string): Promise<OTPResponse> {
     }
 
     // 4. 이메일 발송
-    if (process.env.NODE_ENV === 'development') {
+    if (env.NODE_ENV === 'development') {
       // 개발 환경: 콘솔 출력
       logger.info('OTP:sendOTP', 'Development mode - OTP generated', {
         email,
