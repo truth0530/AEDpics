@@ -3,6 +3,8 @@
  * IndexedDB를 사용하여 오프라인 작업을 저장하고 관리
  */
 
+import { logger } from '@/lib/logger'
+
 export interface QueuedOperation {
   id: string
   timestamp: number
@@ -57,7 +59,7 @@ export class OfflineQueue {
     // IndexedDB 가용성 체크
     const isSupported = await this.checkIndexedDBSupport()
     if (!isSupported) {
-      console.warn('IndexedDB를 사용할 수 없습니다. 메모리 기반 폴백 모드로 동작합니다.')
+      logger.warn('OfflineQueue:initialize', 'IndexedDB를 사용할 수 없습니다. 메모리 기반 폴백 모드로 동작합니다.')
       return this.initializeFallback()
     }
 
@@ -70,7 +72,7 @@ export class OfflineQueue {
 
       request.onsuccess = () => {
         this.db = request.result
-        console.log('OfflineQueue: IndexedDB initialized')
+        logger.info('OfflineQueue:initialize', 'IndexedDB initialized')
 
         if (this.config.autoSync) {
           this.startAutoSync()
@@ -144,7 +146,7 @@ export class OfflineQueue {
     this.fallbackMode = true
     this.memoryQueue.clear()
 
-    console.warn('오프라인 큐가 메모리 모드로 동작합니다. 페이지 새로고침 시 데이터가 손실될 수 있습니다.')
+    logger.warn('OfflineQueue:initializeFallback', '오프라인 큐가 메모리 모드로 동작합니다. 페이지 새로고침 시 데이터가 손실될 수 있습니다.')
 
     // 사용자에게 알림
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
@@ -176,7 +178,7 @@ export class OfflineQueue {
    * 온라인 상태 전환 처리
    */
   private handleOnline(): void {
-    console.log('OfflineQueue: Online detected')
+    logger.info('OfflineQueue:handleOnline', 'Online detected')
     this.isOnline = true
     this.notifyListeners('online', { isOnline: true })
 
@@ -191,7 +193,7 @@ export class OfflineQueue {
    * 오프라인 상태 전환 처리
    */
   private handleOffline(): void {
-    console.log('OfflineQueue: Offline detected')
+    logger.info('OfflineQueue:handleOffline', 'Offline detected')
     this.isOnline = false
     this.notifyListeners('offline', { isOnline: false })
   }
@@ -255,7 +257,7 @@ export class OfflineQueue {
       const request = store.add(operation)
 
       request.onsuccess = async () => {
-        console.log(`OfflineQueue: Operation ${operation.id} queued`)
+        logger.info('OfflineQueue:enqueue', 'Operation queued', { operationId: operation.id })
         await this.updatePendingCountCache()
         this.notifyListeners('enqueued', operation)
         resolve(operation.id)
@@ -411,7 +413,7 @@ export class OfflineQueue {
     syncHandler: (operation: QueuedOperation) => Promise<any>
   ): Promise<{ succeeded: number; failed: number }> {
     if (!this.isOnline) {
-      console.log('OfflineQueue: Cannot sync while offline')
+      logger.info('OfflineQueue:syncPendingOperations', 'Cannot sync while offline')
       return { succeeded: 0, failed: 0 }
     }
 
@@ -419,7 +421,7 @@ export class OfflineQueue {
     let succeeded = 0
     let failed = 0
 
-    console.log(`OfflineQueue: Syncing ${operations.length} operations`)
+    logger.info('OfflineQueue:syncPendingOperations', 'Syncing operations', { count: operations.length })
 
     for (const operation of operations) {
       try {
@@ -468,7 +470,7 @@ export class OfflineQueue {
       }
     }
 
-    console.log(`OfflineQueue: Sync completed - ${succeeded} succeeded, ${failed} failed`)
+    logger.info('OfflineQueue:syncPendingOperations', 'Sync completed', { succeeded, failed })
     this.notifyListeners('sync-completed', { succeeded, failed })
 
     return { succeeded, failed }

@@ -6,6 +6,7 @@ import type {
   User
 } from '@supabase/supabase-js'
 import { RealtimeEvent } from '@/packages/types/team'
+import { logger } from '@/lib/logger'
 
 interface ChannelListener {
   id: string
@@ -58,7 +59,7 @@ export class RealtimeManager {
 
   async initialize(): Promise<void> {
     if (this.channel) {
-      console.warn('RealtimeManager already initialized')
+      logger.warn('RealtimeManager:initialize', 'RealtimeManager already initialized')
       return
     }
 
@@ -147,7 +148,7 @@ export class RealtimeManager {
         })
 
       const { error } = (await this.channel.subscribe((status) => {
-        console.log('Realtime subscription status:', status)
+        logger.info('RealtimeManager:initialize', 'Realtime subscription status', { status })
         if (status === 'SUBSCRIBED') {
           this.connectionState = 'connected'
           this.reconnectAttempts = 0
@@ -160,11 +161,11 @@ export class RealtimeManager {
       })) as any
 
       if (error) {
-        console.error('Failed to subscribe to channel:', error)
+        logger.error('RealtimeManager:initialize', 'Failed to subscribe to channel', error instanceof Error ? error : { error })
         throw error
       }
     } catch (error) {
-      console.error('Failed to initialize RealtimeManager:', error)
+      logger.error('RealtimeManager:initialize', 'Failed to initialize RealtimeManager', error instanceof Error ? error : { error })
       this.connectionState = 'disconnected'
       throw error
     }
@@ -172,7 +173,7 @@ export class RealtimeManager {
 
   private async handleReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached')
+      logger.error('RealtimeManager:handleReconnect', 'Max reconnection attempts reached', { attempts: this.reconnectAttempts })
       this.notifyListeners('connection', {
         status: 'failed',
         message: 'Unable to establish realtime connection'
@@ -181,14 +182,14 @@ export class RealtimeManager {
     }
 
     this.reconnectAttempts++
-    console.log(`Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts}`)
+    logger.info('RealtimeManager:handleReconnect', 'Attempting reconnection', { attempt: this.reconnectAttempts, max: this.maxReconnectAttempts })
 
     setTimeout(async () => {
       try {
         await this.disconnect()
         await this.initialize()
       } catch (error) {
-        console.error('Reconnection failed:', error)
+        logger.error('RealtimeManager:handleReconnect', 'Reconnection failed', error instanceof Error ? error : { error })
         this.handleReconnect()
       }
     }, this.reconnectDelay * this.reconnectAttempts)
@@ -283,7 +284,7 @@ export class RealtimeManager {
       user_id: this.user?.id || 'unknown'
     }
 
-    console.log('Schedule change detected:', event)
+    logger.info('RealtimeManager:handleScheduleChange', 'Schedule change detected', { eventType: event.type })
     this.notifyListeners('schedule', event)
   }
 
@@ -298,7 +299,7 @@ export class RealtimeManager {
       user_id: this.user?.id || 'unknown'
     }
 
-    console.log('Inspection created:', event)
+    logger.info('RealtimeManager:handleInspectionInsert', 'Inspection created')
     this.notifyListeners('inspection:created', event)
     this.notifyListeners('inspection', event)
   }
@@ -315,7 +316,7 @@ export class RealtimeManager {
       user_id: this.user?.id || 'unknown'
     }
 
-    console.log('Inspection updated:', event)
+    logger.info('RealtimeManager:handleInspectionUpdate', 'Inspection updated')
     this.notifyListeners('inspection:updated', event)
     this.notifyListeners('inspection', event)
   }
@@ -331,7 +332,7 @@ export class RealtimeManager {
       user_id: this.user?.id || 'unknown'
     }
 
-    console.log('Inspection deleted:', event)
+    logger.info('RealtimeManager:handleInspectionDelete', 'Inspection deleted')
     this.notifyListeners('inspection:deleted', event)
     this.notifyListeners('inspection', event)
   }
@@ -347,7 +348,7 @@ export class RealtimeManager {
       user_id: this.user?.id || 'unknown'
     }
 
-    console.log('Team task change:', event)
+    logger.info('RealtimeManager:handleTeamTaskChange', 'Team task change', { eventType: event.type })
     this.notifyListeners('team-task', event)
   }
 
@@ -362,23 +363,23 @@ export class RealtimeManager {
       user_id: this.user?.id || 'unknown'
     }
 
-    console.log('Activity change:', event)
+    logger.info('RealtimeManager:handleActivityChange', 'Activity change', { eventType: event.type })
     this.notifyListeners('activity', event)
   }
 
   // Broadcast handlers
   private handleCursorBroadcast(payload: any) {
-    console.log('Cursor broadcast received:', payload)
+    logger.info('RealtimeManager:handleCursorBroadcast', 'Cursor broadcast received')
     this.notifyListeners('cursor', payload.payload)
   }
 
   private handleTypingBroadcast(payload: any) {
-    console.log('Typing broadcast received:', payload)
+    logger.info('RealtimeManager:handleTypingBroadcast', 'Typing broadcast received')
     this.notifyListeners('typing', payload.payload)
   }
 
   private handleNotificationBroadcast(payload: any) {
-    console.log('Notification broadcast received:', payload)
+    logger.info('RealtimeManager:handleNotificationBroadcast', 'Notification broadcast received')
     this.notifyListeners('notification', payload.payload)
   }
 
@@ -431,7 +432,7 @@ export class RealtimeManager {
         try {
           listener.callback(payload)
         } catch (error) {
-          console.error(`Error in listener for ${event}:`, error)
+          logger.error('RealtimeManager:notifyListeners', `Error in listener for ${event}`, error instanceof Error ? error : { error })
         }
       })
     }
@@ -439,7 +440,7 @@ export class RealtimeManager {
 
   async broadcast(event: string, payload: unknown): Promise<void> {
     if (!this.channel) {
-      console.warn('Cannot broadcast: channel not initialized')
+      logger.warn('RealtimeManager:broadcast', 'Cannot broadcast: channel not initialized')
       return
     }
 
@@ -450,7 +451,7 @@ export class RealtimeManager {
         payload
       })
     } catch (error) {
-      console.error('Failed to broadcast event:', error)
+      logger.error('RealtimeManager:broadcast', 'Failed to broadcast event', error instanceof Error ? error : { error })
       throw error
     }
   }
@@ -518,7 +519,7 @@ export class RealtimeManager {
         await this.channel.unsubscribe()
         this.channel = null
       } catch (error) {
-        console.error('Error during disconnect:', error)
+        logger.error('RealtimeManager:disconnect', 'Error during disconnect', error instanceof Error ? error : { error })
       }
     }
 

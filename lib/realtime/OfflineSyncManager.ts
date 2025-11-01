@@ -7,6 +7,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { OfflineQueue, QueuedOperation } from './OfflineQueue'
 import { OptimisticUpdater } from './OptimisticUpdater'
 import { ConflictDetector } from './ConflictDetector'
+import { logger } from '@/lib/logger'
 
 export interface SyncResult {
   operationId: string
@@ -97,7 +98,7 @@ export class OfflineSyncManager {
   async initialize(): Promise<void> {
     await this.queue.initialize()
     this.setupQueueListeners()
-    console.log('OfflineSyncManager initialized')
+    logger.info('OfflineSyncManager:initialize', 'OfflineSyncManager initialized')
   }
 
   /**
@@ -173,7 +174,7 @@ export class OfflineSyncManager {
           return `immediate_${Date.now()}`
         }
       } catch (error) {
-        console.warn('Failed to execute operation immediately, queuing...', error)
+        logger.warn('OfflineSyncManager:queueOperation', 'Failed to execute operation immediately, queuing', error instanceof Error ? error : { error })
       }
     }
 
@@ -287,7 +288,7 @@ export class OfflineSyncManager {
    */
   async syncAll(): Promise<SyncProgress> {
     if (this.syncInProgress) {
-      console.log('Sync already in progress')
+      logger.info('OfflineSyncManager:syncAll', 'Sync already in progress')
       return {
         total: 0,
         completed: 0,
@@ -297,7 +298,7 @@ export class OfflineSyncManager {
     }
 
     if (!this.queue.getIsOnline()) {
-      console.log('Cannot sync while offline')
+      logger.info('OfflineSyncManager:syncAll', 'Cannot sync while offline')
       return {
         total: 0,
         completed: 0,
@@ -320,7 +321,7 @@ export class OfflineSyncManager {
       }
     }
 
-    console.log(`Starting sync of ${total} operations`)
+    logger.info('OfflineSyncManager:syncAll', 'Starting sync', { total })
     this.notifyListeners('sync-started', { total })
 
     const result = await this.queue.syncPendingOperations(
