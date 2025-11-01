@@ -13,6 +13,7 @@ module.exports = {
     watch: false, // 파일 변경 감지 비활성화 (프로덕션)
     max_restarts: 10, // 최대 재시작 횟수
     min_uptime: '10s', // 최소 가동 시간 (10초 미만이면 불안정으로 판단)
+    env_file: '.env.production', // 환경변수 파일 로드
     env: {
       NODE_ENV: 'production',
       PORT: 3000
