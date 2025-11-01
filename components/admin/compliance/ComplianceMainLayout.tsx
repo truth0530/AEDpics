@@ -9,13 +9,18 @@ import { Calendar, CheckCircle2, Target, ChevronRight, AlertCircle } from 'lucid
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import EnhancedComplianceUI from './EnhancedComplianceUI';
 import ComplianceCompletedList from './ComplianceCompletedList';
+import { UserProfile } from '@/packages/types';
 
-export default function ComplianceMainLayout() {
+interface ComplianceMainLayoutProps {
+  initialProfile?: UserProfile;
+}
+
+export default function ComplianceMainLayout({ initialProfile }: ComplianceMainLayoutProps) {
   const [selectedYear, setSelectedYear] = useState<'2024' | '2025'>('2024');
   const [activeTab, setActiveTab] = useState<'targets' | 'completed'>('targets');
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* 헤더: 연도 선택 및 타이틀 */}
       <div className="bg-white dark:bg-gray-900 border-b dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -57,7 +62,7 @@ export default function ComplianceMainLayout() {
       )}
 
       {/* 메인 컨텐츠 */}
-      <div className="flex-1 px-6 py-4">
+      <div className="flex-1 px-6 py-4 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed')} className="h-full flex flex-col">
           <TabsList className="grid w-fit grid-cols-2 mb-6">
             <TabsTrigger value="targets" className="px-8">
@@ -73,7 +78,7 @@ export default function ComplianceMainLayout() {
           <div className="flex-1 overflow-auto">
             <TabsContent value="targets" className="mt-0 h-full">
               {selectedYear === '2024' ? (
-                <EnhancedComplianceUI year={selectedYear} />
+                <EnhancedComplianceUI year={selectedYear} initialProfile={initialProfile} />
               ) : (
                 <Card className="border-dashed dark:border-gray-700">
                   <CardContent className="flex flex-col items-center justify-center py-20">

@@ -36,6 +36,8 @@ import {
 import { cn } from '@/lib/utils';
 import { calculateMatchingScore } from '@/lib/utils/similarity-matching';
 import { toast } from 'sonner';
+import { UserProfile } from '@/packages/types';
+import { getRegionLabel } from '@/lib/constants/regions';
 
 interface AEDDevice {
   management_number: string;
@@ -68,9 +70,10 @@ interface TargetInstitution {
 
 interface EnhancedComplianceUIProps {
   year?: string;
+  initialProfile?: UserProfile;
 }
 
-export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplianceUIProps) {
+export default function EnhancedComplianceUI({ year = '2024', initialProfile }: EnhancedComplianceUIProps) {
   const { data: session } = useSession();
   const [selectedTarget, setSelectedTarget] = useState<TargetInstitution | null>(null);
   const [targets, setTargets] = useState<TargetInstitution[]>([]);
@@ -128,20 +131,22 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [selectedTarget, processingId, batchMode]);
 
-  // 관할지역 정보
+  // 관할지역 정보 - initialProfile의 region_code 사용
   const userJurisdiction = useMemo(() => {
-    const email = session?.user?.email || '';
-    const orgName = (session as any)?.organizationName || '';
-    const domain = email.split('@')[1];
-
-    if (domain === 'korea.kr' && orgName?.includes('보건소')) {
-      const match = orgName.match(/^(.+?)(시|도)\s+(.+?)(시|군|구)\s+보건소/);
-      if (match) {
-        return { sido: match[1] + match[2], gugun: match[3] + match[4] };
-      }
+    if (!initialProfile?.region_code) {
+      return null;
     }
-    return null;
-  }, [session]);
+
+    // region_code(예: "DAE")를 sido 이름(예: "대구")으로 변환
+    const sidoLabel = getRegionLabel(initialProfile.region_code);
+
+    // 중앙(KR)은 지역 필터 없이 전체 조회
+    if (initialProfile.region_code === 'KR') {
+      return null;
+    }
+
+    return { sido: sidoLabel, gugun: null };
+  }, [initialProfile]);
 
   // 데이터 로드
   useEffect(() => {
@@ -319,8 +324,8 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
         word.toLowerCase().includes(w.toLowerCase())
       );
       return isMatch
-        ? `<span class="text-green-600 font-semibold">${word}</span>`
-        : `<span class="text-gray-700">${word}</span>`;
+        ? `<span class="text-green-600 dark:text-green-400 font-semibold">${word}</span>`
+        : `<span class="text-gray-700 dark:text-gray-300">${word}</span>`;
     }).join(' ');
 
     const highlighted2 = words2.map(word => {
@@ -329,8 +334,8 @@ export default function EnhancedComplianceUI({ year = '2024' }: EnhancedComplian
         word.toLowerCase().includes(w.toLowerCase())
       );
       return isMatch
-        ? `<span class="text-green-600 font-semibold">${word}</span>`
-        : `<span class="text-gray-700">${word}</span>`;
+        ? `<span class="text-green-600 dark:text-green-400 font-semibold">${word}</span>`
+        : `<span class="text-gray-700 dark:text-gray-300">${word}</span>`;
     }).join(' ');
 
     return { highlighted1, highlighted2 };
