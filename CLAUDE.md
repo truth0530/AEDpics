@@ -95,6 +95,135 @@
 - 이전 단계 완료 확인 후 다음 단계 진행
 - 건너뛰기나 병렬 작업 금지 (명시적 요청 제외)
 
+## 개발 패턴 및 핵심 교훈
+
+### 1. 단일 진실 소스 (Single Source of Truth) 원칙
+
+**문제**: 역할 명칭, 지역 코드 변환 등이 여러 파일에 하드코딩되어 불일치 발생
+```typescript
+// 잘못된 예 - 각 파일마다 하드코딩
+const getRoleLabel = (role: string) => {
+  if (role === 'local_admin') return '로컬 관리자';  // ❌ 파일마다 다른 명칭
+  // ...
+}
+```
+
+**해결**: 중앙 집중식 유틸리티 파일 생성
+```typescript
+// lib/utils/user-roles.ts - 단일 진실 소스
+export const ROLE_INFO: Record<UserRole, RoleInfo> = {
+  local_admin: {
+    label: '보건소 담당자',  // ✅ 한 곳에서만 정의
+    description: '시군구 보건소 AED 관리 권한',
+    // ...
+  }
+};
+```
+
+**교훈**:
+- 역할, 권한, 코드 변환 등은 반드시 `lib/utils/` 에 유틸리티로 생성
+- 하드코딩된 매핑이 2곳 이상 필요하면 즉시 유틸리티 파일로 추출
+- CLAUDE.md 권한 체계와 코드 간 일관성 유지 필수
+
+**적용 위치**:
+- `lib/utils/user-roles.ts` - 역할 관리 (2025-10-31 생성)
+- `lib/utils/area-code.ts` - 지역번호 매핑 (2025-10-31 생성)
+
+### 2. shadcn/ui 컴포넌트 사용 시 확인 절차
+
+**문제**: 존재하지 않는 컴포넌트 import로 빌드 실패
+```typescript
+import { Table } from '@/components/ui/table';  // ❌ 파일이 없음
+```
+
+**해결 절차**:
+1. 컴포넌트 사용 전 파일 존재 여부 확인
+```bash
+ls components/ui/table.tsx
+# 또는
+find components/ui -name "*.tsx" | grep table
+```
+
+2. 없으면 shadcn/ui 표준 패턴으로 생성
+```typescript
+// components/ui/table.tsx
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const Table = React.forwardRef<...>(({ className, ...props }, ref) => (
+  // shadcn 표준 패턴 따르기
+));
+```
+
+**교훈**:
+- 기존 프로젝트에 없는 shadcn 컴포넌트는 직접 생성 필요
+- 공식 shadcn/ui 코드 복사하여 일관성 유지
+- Card, Button, Dialog 등 기본 컴포넌트 확인 후 재사용
+
+### 3. 기술 코드 노출 금지
+
+**문제**: UI에 프로그래머틱한 코드 노출로 사용자 혼란
+```typescript
+<div>{user.id}</div>  // ❌ V4a8RzwvCqEzY... 노출
+<div>{user.region_code}</div>  // ❌ DAE, INC 노출
+```
+
+**해결**: 변환 함수를 통한 표시
+```typescript
+<div>{getRegionDisplay(user.region_code)}</div>  // ✅ 대구광역시
+<div>{user.email}</div>  // ✅ 이메일로 식별
+```
+
+**교훈**:
+- 사용자 ID, 시스템 코드는 UI에 표시 금지
+- 모든 코드는 한글 명칭으로 변환하여 표시
+- 디버깅 필요 시 개발자 도구 활용, UI는 깔끔하게 유지
+
+### 4. PM2 Zero-Downtime Deployment
+
+**문제**: 메모리 사용량 2배 증가 우려
+```yaml
+pm2 stop && pm2 start  # ❌ 서비스 다운타임 발생
+```
+
+**해결**: PM2 reload 사용
+```yaml
+pm2 reload ecosystem.config.js  # ✅ Rolling restart
+```
+
+**실제 동작**:
+- Instance 1 재시작 → Instance 2가 요청 처리
+- Instance 1 준비 완료 → Instance 2 재시작
+- 일시적 메모리 증가(600MB-1GB) → 완료 후 정상 복귀
+- **다운타임 0초**
+
+**교훈**:
+- PM2 cluster 모드 필수 (최소 2 instances)
+- `pm2 restart` 대신 `pm2 reload` 사용
+- `wait_ready: true` 설정으로 준비 대기
+
+### 5. 환경변수 표준화
+
+**문제**: 같은 용도의 환경변수가 여러 이름으로 존재
+```bash
+NEXT_PUBLIC_KAKAO_MAP_KEY="..."  # ❌ 파일 A
+NEXT_PUBLIC_KAKAO_MAP_APP_KEY="..."  # ❌ 파일 B
+MASTER_ADMIN_EMAILS="..."  # ❌ 배열 형태
+MASTER_EMAIL="..."  # ✅ 단일 값
+```
+
+**해결**:
+1. `.env.example` 에 공식 변수명 문서화
+2. 코드베이스 전체 검색 및 통일
+```bash
+grep -r "KAKAO_MAP" --include="*.ts" --include="*.tsx"
+```
+
+**교훈**:
+- 환경변수 추가 시 `.env.example` 먼저 확인
+- 신규 변수는 명확한 네이밍 (목적_서비스_타입)
+- deprecated 변수는 주석으로 표시 후 제거
+
 ## 필수: NCP 이메일 발송 문제 해결
 
 ### 이메일 발송 실패 시 최우선 체크
@@ -587,8 +716,8 @@ migrate: 마이그레이션 관련
 
 ---
 
-**마지막 업데이트**: 2025-10-28
-**문서 버전**: 2.2.0
+**마지막 업데이트**: 2025-10-31
+**문서 버전**: 2.3.0
 
 ---
 
