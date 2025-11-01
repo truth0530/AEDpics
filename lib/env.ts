@@ -126,6 +126,11 @@ const envSchema = z.object({
     .optional()
     .transform(val => val === 'true'),
 
+  // Resend Email Service (optional, legacy)
+  RESEND_API_KEY: z
+    .string()
+    .optional(),
+
   // ========================================
   // Development
   // ========================================

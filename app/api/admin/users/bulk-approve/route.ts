@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { canApproveUsers } from '@/lib/auth/config';
 import { generateApprovalSuggestion } from '@/lib/utils/approval-helpers';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest) {
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+              'Authorization': `Bearer ${env.RESEND_API_KEY}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -163,7 +165,7 @@ export async function POST(request: NextRequest) {
                 </div>
 
                 <div style="margin-top: 30px; text-align: center;">
-                  <a href="${process.env.NEXT_PUBLIC_SITE_URL}/auth/signin"
+                  <a href="${env.NEXT_PUBLIC_SITE_URL}/auth/signin"
                      style="background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
                     로그인하기
                   </a>
@@ -179,13 +181,13 @@ export async function POST(request: NextRequest) {
             })
           });
         } catch (emailError) {
-          console.error('Bulk approval email send error:', emailError);
+          logger.error('API:bulkApprove', 'Failed to send bulk approval email', emailError instanceof Error ? emailError : { emailError });
           // 이메일 발송 실패해도 승인은 완료
         }
 
         // 승인 결과 알림 발송 (비동기)
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/approval-result`, {
+          await fetch(`${env.NEXT_PUBLIC_SITE_URL}/api/notifications/approval-result`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -196,11 +198,11 @@ export async function POST(request: NextRequest) {
             })
           });
         } catch (notifyError) {
-          console.error('Failed to send bulk approval notification:', notifyError);
+          logger.error('API:bulkApprove', 'Failed to send bulk approval notification', notifyError instanceof Error ? notifyError : { notifyError });
         }
 
       } catch (userError) {
-        console.error(`Error approving user ${targetUser.id}:`, userError);
+        logger.error('API:bulkApprove', 'Error approving user', { userId: targetUser.id, error: userError instanceof Error ? userError.message : userError });
         errors.push({
           userId: targetUser.id,
           email: targetUser.email,
@@ -230,7 +232,7 @@ export async function POST(request: NextRequest) {
           }
         });
       } catch (auditError) {
-        console.error('Audit log exception (non-critical):', auditError);
+        logger.error('API:bulkApprove', 'Audit log exception (non-critical)', auditError instanceof Error ? auditError : { auditError });
       }
     }
 
@@ -248,7 +250,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in bulk user approval:', error);
+    logger.error('API:bulkApprove', 'Error in bulk user approval', error instanceof Error ? error : { error });
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -360,7 +362,7 @@ export async function DELETE(request: NextRequest) {
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+              'Authorization': `Bearer ${env.RESEND_API_KEY}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -403,13 +405,13 @@ export async function DELETE(request: NextRequest) {
             })
           });
         } catch (emailError) {
-          console.error('Bulk rejection email send error:', emailError);
+          logger.error('API:bulkReject', 'Failed to send bulk rejection email', emailError instanceof Error ? emailError : { emailError });
           // 이메일 발송 실패해도 거부는 완료
         }
 
         // 거부 결과 알림 발송 (비동기)
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/approval-result`, {
+          await fetch(`${env.NEXT_PUBLIC_SITE_URL}/api/notifications/approval-result`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -421,11 +423,11 @@ export async function DELETE(request: NextRequest) {
             })
           });
         } catch (notifyError) {
-          console.error('Failed to send bulk rejection notification:', notifyError);
+          logger.error('API:bulkReject', 'Failed to send bulk rejection notification', notifyError instanceof Error ? notifyError : { notifyError });
         }
 
       } catch (userError) {
-        console.error(`Error rejecting user ${targetUser.id}:`, userError);
+        logger.error('API:bulkReject', 'Error rejecting user', { userId: targetUser.id, error: userError instanceof Error ? userError.message : userError });
         errors.push({
           userId: targetUser.id,
           email: targetUser.email,
@@ -454,7 +456,7 @@ export async function DELETE(request: NextRequest) {
           }
         });
       } catch (auditError) {
-        console.error('Audit log exception (non-critical):', auditError);
+        logger.error('API:bulkApprove', 'Audit log exception (non-critical)', auditError instanceof Error ? auditError : { auditError });
       }
     }
 
@@ -472,7 +474,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in bulk user rejection:', error);
+    logger.error('API:bulkReject', 'Error in bulk user rejection', error instanceof Error ? error : { error });
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

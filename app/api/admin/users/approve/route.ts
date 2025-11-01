@@ -5,15 +5,17 @@ import { randomUUID } from 'crypto';
 import { canApproveUsers, getMasterAdminEmails } from '@/lib/auth/config';
 import { UserRole } from '@/packages/types';
 import { isValidRegionForRole } from '@/lib/constants/regions';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Approval API] ========== 승인 프로세스 시작 ==========');
+    logger.info('API:approve', 'Approval process started');
 
     // 현재 사용자 확인
     const session = await getServerSession(authOptions);
-    console.log('[Approval API] Step 1: 인증 확인 -', session ? '성공' : '실패', session?.user?.id);
+    logger.info('API:approve', 'Authentication check', { authenticated: !!session, userId: session?.user?.id });
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -48,9 +50,9 @@ export async function POST(request: NextRequest) {
     let requestBody;
     try {
       requestBody = await request.json();
-      console.log('[Approval API] Step 2a: 요청 파싱 성공');
+      logger.info('API:approve', 'Request parsing successful');
     } catch (parseError) {
-      console.error('❌ [Approval API] JSON 파싱 실패:', parseError);
+      logger.error('API:approve', 'JSON parsing failed', parseError instanceof Error ? parseError : { parseError });
       return NextResponse.json(
         { error: '잘못된 요청 형식입니다.' },
         { status: 400 }
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId, role, organizationId, organizationName, regionCode, fullName, email, phone } = requestBody;
-    console.log('[Approval API] Step 2b: 요청 데이터 -', { userId, role, organizationId, organizationName, regionCode, fullName, email, phone: phone ? '***' : undefined });
+    logger.info('API:approve', 'Request data received', { userId, role, organizationId, organizationName, regionCode, fullName, email, phone: phone ? '***' : undefined });
 
     // 필수 필드 검증 - 역할에 따라 선택적 검증
     if (!userId || !role || !regionCode) {
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     if (!domainValidation.allowed) {
       // 🔒 감사 로그: 도메인 검증 실패 (보안 패치 2025-10-18 Phase 3)
-      console.error('[SECURITY_AUDIT] Domain validation failed:', {
+      logger.error('SECURITY_AUDIT', 'Domain validation failed', {
         timestamp: new Date().toISOString(),
         admin_id: session.user.id,
         admin_email: currentUserProfile.email,
@@ -201,9 +203,9 @@ export async function POST(request: NextRequest) {
       try {
         const { encryptPhone } = await import('@/lib/utils/encryption');
         encryptedPhone = encryptPhone(phone);
-        console.log('[Approval API] 전화번호 암호화 성공');
+        logger.info('API:approve', 'Phone number encryption successful');
       } catch (encryptError) {
-        console.error('[Approval API] 전화번호 암호화 실패:', encryptError);
+        logger.error('API:approve', 'Phone number encryption failed', encryptError instanceof Error ? encryptError : { encryptError });
         return NextResponse.json(
           {
             error: '전화번호 암호화 중 오류가 발생했습니다.',
@@ -218,7 +220,7 @@ export async function POST(request: NextRequest) {
     // organizationId 처리 - 빈 문자열을 null로 변환
     const finalOrganizationId = organizationId && organizationId.trim() !== '' ? organizationId : null;
 
-    console.log('[Approval API] 조직 정보:', {
+    logger.info('API:approve', 'Organization info', {
       organizationId: organizationId,
       finalOrganizationId: finalOrganizationId,
       organizationName: organizationName,
@@ -248,7 +250,7 @@ export async function POST(request: NextRequest) {
       updateData.phone = encryptedPhone;
     }
 
-    console.log('[Approval API] Step 3: 프로필 업데이트 시도 -', updateData);
+    logger.info('API:approve', 'Attempting profile update', updateData);
 
     try {
       await prisma.user_profiles.update({
@@ -265,11 +267,10 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      console.log('[Approval API] Step 4: 프로필 업데이트 결과 - 성공');
+      logger.info('API:approve', 'Profile update successful');
 
     } catch (updateError: any) {
-      console.error('❌ [Approval API] 프로필 업데이트 실패:', updateError);
-      console.error('❌ [Approval API] 업데이트 데이터:', JSON.stringify(updateData, null, 2));
+      logger.error('API:approve', 'Profile update failed', { error: updateError, updateData });
 
       // 사용자에게 더 명확한 에러 메시지 제공
       let userMessage = '승인 처리 중 오류가 발생했습니다.';
@@ -293,7 +294,7 @@ export async function POST(request: NextRequest) {
 
     // 이메일 변경은 위 prisma.user_profiles.update에서 이미 처리됨
     if (email && email !== targetUser.email) {
-      console.log('[Approval API] Step 5: 이메일이 변경되었습니다 -', { from: targetUser.email, to: email });
+      logger.info('API:approve', 'Email changed', { from: targetUser.email, to: email });
     }
 
     // 승인 이메일 발송
@@ -311,7 +312,7 @@ export async function POST(request: NextRequest) {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -338,7 +339,7 @@ export async function POST(request: NextRequest) {
             </div>
 
             <div style="margin-top: 30px; text-align: center;">
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL}/auth/signin"
+              <a href="${env.NEXT_PUBLIC_SITE_URL}/auth/signin"
                  style="background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
                 로그인하기
               </a>
@@ -354,7 +355,7 @@ export async function POST(request: NextRequest) {
         })
       });
     } catch (emailError) {
-      console.error('Approval email send error:', emailError);
+      logger.error('API:approve', 'Approval email send error', emailError instanceof Error ? emailError : { emailError });
       // 이메일 발송 실패해도 승인은 완료
     }
 
@@ -378,7 +379,7 @@ export async function POST(request: NextRequest) {
         }
       });
     } catch (auditLogError) {
-      console.error('⚠️ Audit log exception (non-critical):', auditLogError);
+      logger.error('API:approve', 'Audit log exception (non-critical)', auditLogError instanceof Error ? auditLogError : { auditLogError });
       // 예외 발생해도 승인은 성공으로 처리
     }
 
@@ -402,11 +403,11 @@ export async function POST(request: NextRequest) {
         }
       });
     } catch (notificationError) {
-      console.error('⚠️ Notification exception (non-critical):', notificationError);
+      logger.error('API:approve', 'Notification exception (non-critical)', notificationError instanceof Error ? notificationError : { notificationError });
     }
 
     // 🔒 감사 로그: 승인 성공 (보안 패치 2025-10-18 Phase 3)
-    console.log('[SECURITY_AUDIT] User approval successful:', {
+    logger.info('SECURITY_AUDIT', 'User approval successful', {
       timestamp: new Date().toISOString(),
       admin_id: session.user.id,
       admin_email: currentUserProfile.email,
@@ -432,8 +433,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ [Approval API] Critical error:', error);
-    console.error('❌ [Approval API] Error details:', {
+    logger.error('API:approve', 'Critical error in approval process', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
@@ -521,7 +521,7 @@ export async function DELETE(request: NextRequest) {
         }
       });
     } catch (updateError: any) {
-      console.error('Rejection update error:', updateError);
+      logger.error('API:reject', 'Rejection update error', updateError instanceof Error ? updateError : { updateError });
       return NextResponse.json(
         { error: '거부 처리 중 오류가 발생했습니다.', details: updateError.message },
         { status: 500 }
@@ -533,7 +533,7 @@ export async function DELETE(request: NextRequest) {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -576,7 +576,7 @@ export async function DELETE(request: NextRequest) {
         })
       });
     } catch (emailError) {
-      console.error('Rejection email send error:', emailError);
+      logger.error('API:reject', 'Rejection email send error', emailError instanceof Error ? emailError : { emailError });
       // 이메일 발송 실패해도 거부는 완료
     }
 
@@ -613,7 +613,7 @@ export async function DELETE(request: NextRequest) {
         }
       });
     } catch (notificationError) {
-      console.error('⚠️ Notification exception (non-critical):', notificationError);
+      logger.error('API:approve', 'Notification exception (non-critical)', notificationError instanceof Error ? notificationError : { notificationError });
     }
 
     return NextResponse.json({
@@ -622,7 +622,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in user rejection:', error);
+    logger.error('API:reject', 'Error in user rejection', error instanceof Error ? error : { error });
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

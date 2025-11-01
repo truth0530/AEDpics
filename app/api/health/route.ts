@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -38,14 +40,14 @@ export async function GET() {
         users: userCount,
         aedDevices: aedCount
       },
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.npm_package_version || '1.0.0'
+      environment: env.NODE_ENV || 'development',
+      version: '1.0.0'
     });
 
   } catch (error) {
     const responseTime = Date.now() - startTime;
 
-    console.error('[Health Check] Error:', error);
+    logger.error('API:health', 'Health check failed', error instanceof Error ? error : { error });
 
     return NextResponse.json({
       status: 'unhealthy',
@@ -56,7 +58,7 @@ export async function GET() {
         status: 'disconnected',
         error: (error as Error).message
       },
-      environment: process.env.NODE_ENV || 'development'
+      environment: env.NODE_ENV || 'development'
     }, { status: 503 });
   }
 }
