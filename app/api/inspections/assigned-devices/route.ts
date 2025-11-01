@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 export async function GET() {
@@ -67,7 +68,9 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('[API] Error fetching devices:', error);
+    logger.error('InspectionAssignedDevices:GET', 'Error fetching devices',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Failed to fetch devices' },
       { status: 500 }
