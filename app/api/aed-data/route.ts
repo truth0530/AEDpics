@@ -195,7 +195,9 @@ export const GET = async (request: NextRequest) => {
   }
 
     // AED 데이터 접근 권한 확인
-    if (!canAccessAEDData(userProfile as any)) {
+    // TODO: Type mismatch between Prisma (snake_case) and UserProfile (camelCase)
+    // Should be resolved by creating a proper mapper or updating UserProfile interface
+    if (!canAccessAEDData(userProfile as unknown as UserProfile)) {
       return NextResponse.json({
         error: 'AED data access not permitted for this role'
       }, { status: 403 });
@@ -204,7 +206,7 @@ export const GET = async (request: NextRequest) => {
     // 접근 범위 계산 (에러 처리 포함)
     let accessScope;
     try {
-      accessScope = resolveAccessScope(userProfile as any);
+      accessScope = resolveAccessScope(userProfile as unknown as UserProfile);
     } catch (error) {
       return NextResponse.json({
         error: `Access scope error: ${(error as Error).message}`
@@ -237,7 +239,7 @@ export const GET = async (request: NextRequest) => {
     // }
 
     const enforcementResult = enforceFilterPolicy({
-      userProfile: userProfile as any,
+      userProfile: userProfile as unknown as UserProfile,
       accessScope,
       requestedFilters: filters,
     });
@@ -842,12 +844,16 @@ export const GET = async (request: NextRequest) => {
       : null;
 
     const mappedData = (rawData || []).map(device => {
-      const mapped = mapAedData(device) as any;
+      const mapped = mapAedData(device);
 
       // 거리 계산 (보건소/응급의료센터 기준)
+      const mappedWithDistance: ReturnType<typeof mapAedData> & { distance_km?: number } = {
+        ...mapped
+      };
+
       if (healthCenterCoords && device.latitude && device.longitude &&
           device.latitude !== 0 && device.longitude !== 0) {
-        mapped.distance_km = calculateDistance(
+        mappedWithDistance.distance_km = calculateDistance(
           healthCenterCoords.lat,
           healthCenterCoords.lng,
           device.latitude,
@@ -855,7 +861,7 @@ export const GET = async (request: NextRequest) => {
         );
       }
 
-      return mapped;
+      return mappedWithDistance;
     });
 
     // 디버그: 첫 번째 매핑된 데이터 확인

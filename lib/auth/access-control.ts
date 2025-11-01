@@ -499,10 +499,18 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
     // local_admin(보건소): 시군구도 고정
     if (userProfile.role === 'local_admin') {
       const cityCode = userProfile.organization?.city_code;
-      if (!cityCode) {
-        throw new Error(`Local admin ${userProfile.id} requires organization with city_code but none assigned`);
+      if (cityCode) {
+        // city_code가 있으면 해당 시군구로 제한
+        allowedCityCodes = [cityCode];
+      } else {
+        // city_code가 없으면 시도 레벨로만 제한 (시군구 제한 없음)
+        // 향후 데이터 마이그레이션으로 모든 보건소에 city_code 추가 권장
+        console.warn(
+          `[ACCESS_CONTROL] Local admin ${userProfile.id} (${userProfile.email}) ` +
+          `has organization without city_code. Granting region-level access only.`
+        );
+        allowedCityCodes = null; // 시도 내 모든 시군구 접근 가능
       }
-      allowedCityCodes = [cityCode];
     } else if (userProfile.role === 'regional_admin') {
       // regional_admin(시청/도청): 시군구 선택 가능 (NULL = 제한 없음)
       allowedCityCodes = null;
