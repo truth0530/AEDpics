@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { apiHandler } from '@/lib/api/error-handler';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -146,7 +147,9 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
       inspection: updatedInspection,
     });
   } catch (updateError) {
-    console.error('[Update Inspection] Error:', updateError);
+    logger.error('InspectionUpdate:PATCH', 'Update inspection error',
+      updateError instanceof Error ? updateError : { updateError }
+    );
     return NextResponse.json({ error: 'Failed to update inspection record' }, { status: 500 });
   }
 });

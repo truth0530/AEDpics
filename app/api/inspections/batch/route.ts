@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
+import { logger } from '@/lib/logger';
 /**
  * Batch API for Inspection Assignments
  * 여러 작업을 하나의 트랜잭션으로 처리
@@ -185,7 +186,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(batchResult, { status: statusCode });
 
   } catch (error) {
-    console.error('[Batch API Error]', error);
+    logger.error('InspectionBatch:POST', 'Batch API error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

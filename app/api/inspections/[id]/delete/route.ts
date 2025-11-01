@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
+import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -62,7 +63,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       where: { id: inspectionId }
     });
   } catch (deleteError) {
-    console.error('[Delete Inspection] Delete error:', deleteError);
+    logger.error('InspectionDelete:POST', 'Delete error',
+      deleteError instanceof Error ? deleteError : { deleteError }
+    );
     return NextResponse.json({ error: 'Failed to delete inspection record' }, { status: 500 });
   }
 
@@ -85,7 +88,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   } catch (err) {
     // 로그 실패해도 삭제는 성공
-    console.warn('[Delete Inspection] Audit log failed:', err);
+    logger.warn('InspectionDelete:POST', 'Audit log failed',
+      err instanceof Error ? err : { err }
+    );
   }
 
   return NextResponse.json({
@@ -93,7 +98,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     message: '점검 이력이 삭제되었습니다.',
   });
   } catch (error) {
-    console.error('[Delete Inspection] Error:', error);
+    logger.error('InspectionDelete:POST', 'Delete inspection error',
+      error instanceof Error ? error : { error }
+    );
     return NextResponse.json(
       { error: 'Failed to delete inspection' },
       { status: 500 }
