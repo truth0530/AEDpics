@@ -478,9 +478,17 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
   } else {
     // 지역 제한 역할 (@korea.kr의 시청/도청, 보건소)
     if (!normalizedRegionCode) {
-      // temporary_inspector 등 조직 정보가 없는 역할은 접근 차단
+      // temporary_inspector는 할당된 장비만 접근하므로 region_code 불필요
+      // 빈 배열로 설정하여 일반 AED 데이터 접근은 차단되지만 에러는 발생하지 않음
       if (userProfile.role === 'temporary_inspector') {
-        throw new Error(`Temporary inspector ${userProfile.id} cannot access AED data without assigned region`);
+        allowedRegionCodes = [];
+        allowedCityCodes = [];
+        return {
+          permissions,
+          allowedRegionCodes,
+          allowedCityCodes,
+          userId: userProfile.id,
+        };
       }
       throw new Error(`User ${userProfile.id} requires region_code but none assigned`);
     }
@@ -526,7 +534,7 @@ export function canAccessAEDData(user: UserRole | UserProfile): boolean {
     console.log('[DEBUG] user.organization:', user.organization);
     console.log('[DEBUG] user.organizations:', (user as any).organizations);
 
-    const allowedDomains = new Set(['korea.kr', 'nmc.or.kr', 'naver.com']); // naver.com for testing
+    const allowedDomains = new Set(['korea.kr', 'nmc.or.kr']);
     const domainRestrictedRoles: UserRole[] = ['ministry_admin', 'regional_admin', 'local_admin'];
     const userDomain = user.email?.split('@')[1]?.toLowerCase();
 

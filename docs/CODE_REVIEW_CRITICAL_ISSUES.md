@@ -1,14 +1,19 @@
 # 코드 리뷰: 잠재적 문제점 및 개선 사항
 
 **작성일**: 2025-11-01
+**최종 업데이트**: 2025-11-01
 **검토 범위**: 전체 프로젝트 로직 및 보안
 **우선순위**: Critical > High > Medium > Low
 
+**수정 상태**:
+- Critical Issue #1: 수정 완료 (2025-11-01)
+- Critical Issue #2: 수정 완료 (2025-11-01)
+
 ---
 
-## Critical Issues (즉시 수정 필요)
+## Critical Issues (즉시 수정 필요) - 모두 수정 완료
 
-### 1. 보안 취약점: 프로덕션 코드에 테스트 도메인 허용
+### 1. 보안 취약점: 프로덕션 코드에 테스트 도메인 허용 - 수정 완료
 
 **위치**: [lib/auth/access-control.ts:529](lib/auth/access-control.ts#L529)
 
@@ -24,25 +29,32 @@ const allowedDomains = new Set(['korea.kr', 'nmc.or.kr', 'naver.com']); // naver
 - 비인가 사용자의 민감 데이터 접근 위험
 - 국정원 인증 요구사항 위반
 
-**해결 방법**:
+**적용된 해결 방법** (2025-11-01):
 ```typescript
-// ✅ 수정안
+// 수정 후
 const allowedDomains = new Set(['korea.kr', 'nmc.or.kr']);
-// 테스트는 별도 환경변수나 테스트 환경에서만 활성화
 ```
 
-**우선순위**: Critical - 즉시 수정 필요
+**커밋**: `naver.com` 테스트 도메인 제거 완료
+
+**우선순위**: Critical - 수정 완료
 
 ---
 
-### 2. 권한 체계 불일치: temporary_inspector AED 데이터 접근
+### 2. 권한 체계 불일치: temporary_inspector AED 데이터 접근 - 수정 완료
 
 **위치**:
+- [lib/auth/access-control.ts:481-493](lib/auth/access-control.ts#L481-L493) `resolveAccessScope()`
 - [lib/auth/access-control.ts:512-550](lib/auth/access-control.ts#L512-L550) `canAccessAEDData()`
 - [lib/auth/access-control.ts:552-583](lib/auth/access-control.ts#L552-L583) `canAccessInspectionMenu()`
 
 **문제**:
 ```typescript
+// resolveAccessScope() - 기존 코드
+if (userProfile.role === 'temporary_inspector') {
+  throw new Error(`Temporary inspector cannot access AED data without assigned region`);
+}
+
 // canAccessAEDData() - Line 515-517
 if (role === 'temporary_inspector') {
   return false; // AED 데이터 접근 불가
@@ -55,15 +67,37 @@ const allowedRoles: UserRole[] = [
 ```
 
 **영향**:
-- `temporary_inspector` 사용자는 점검 메뉴에 접근할 수 있지만 AED 데이터를 조회할 수 없음
-- 점검 기능 자체가 작동하지 않을 가능성
+- `temporary_inspector`가 region_code 없이 가입하면 `resolveAccessScope()`에서 에러 발생
+- 점검 메뉴 접근 시 `resolveAccessScope()` 호출로 인해 에러 발생
+- 점검 기능 자체가 작동하지 않음
 - 사용자 혼란 및 기능 장애
 
-**해결 방법**:
-1. `temporary_inspector`가 할당된 장비만 조회할 수 있도록 변경
-2. 또는 점검 메뉴 접근도 차단
+**적용된 해결 방법** (2025-11-01):
+```typescript
+// resolveAccessScope() - 수정 후
+if (userProfile.role === 'temporary_inspector') {
+  // temporary_inspector는 할당된 장비만 접근하므로 region_code 불필요
+  // 빈 배열로 설정하여 일반 AED 데이터 접근은 차단되지만 에러는 발생하지 않음
+  allowedRegionCodes = [];
+  allowedCityCodes = [];
+  return {
+    permissions,
+    allowedRegionCodes,
+    allowedCityCodes,
+    userId: userProfile.id,
+  };
+}
+```
 
-**우선순위**: Critical - 기능 장애 가능성
+**수정 후 동작**:
+1. `canAccessAEDData()`: temporary_inspector는 여전히 false 반환 (전체 AED 데이터 접근 불가) ✓
+2. `canAccessInspectionMenu()`: temporary_inspector는 true 반환 (점검 메뉴 접근 가능) ✓
+3. `resolveAccessScope()`: temporary_inspector가 region_code 없어도 에러 던지지 않음 ✓
+4. 할당된 장비 조회: `/api/inspections/assigned-devices` API 사용 ✓
+
+**커밋**: temporary_inspector 권한 로직 일관성 확보
+
+**우선순위**: Critical - 수정 완료
 
 ---
 
