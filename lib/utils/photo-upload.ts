@@ -1,5 +1,7 @@
 'use client';
 
+import { logger } from '@/lib/logger';
+
 /**
  * 사진을 NCP Object Storage에 업로드하고 공개 URL 반환
  * Base64를 직접 stepData에 저장하지 않음 → 413 오류 방지
@@ -26,14 +28,14 @@ export async function uploadPhotoToStorage(
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('[uploadPhotoToStorage] Upload failed:', error);
+      logger.error('PhotoUpload:uploadSingle', 'Upload failed', { error, sessionId, photoType });
       return null;
     }
 
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error('[uploadPhotoToStorage] Error:', error);
+    logger.error('PhotoUpload:uploadSingle', 'Upload error', error instanceof Error ? error : { error });
     return null;
   }
 }
@@ -59,14 +61,14 @@ export async function uploadPhotosToStorage(
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('[uploadPhotosToStorage] Upload failed:', error);
+      logger.error('PhotoUpload:uploadBatch', 'Batch upload failed', { error, sessionId, photoCount: photos.length });
       return [];
     }
 
     const result = await response.json();
     return result.data || [];
   } catch (error) {
-    console.error('[uploadPhotosToStorage] Error:', error);
+    logger.error('PhotoUpload:uploadBatch', 'Batch upload error', error instanceof Error ? error : { error });
     return [];
   }
 }
@@ -88,13 +90,13 @@ export async function deletePhotoFromStorage(filePath: string): Promise<boolean>
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('[deletePhotoFromStorage] Delete failed:', error);
+      logger.error('PhotoUpload:delete', 'Delete failed', { error, filePath });
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[deletePhotoFromStorage] Error:', error);
+    logger.error('PhotoUpload:delete', 'Delete error', error instanceof Error ? error : { error });
     return false;
   }
 }

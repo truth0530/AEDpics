@@ -2,6 +2,7 @@
  * 점검 보고서 이미지 캡처 및 공유 유틸리티
  */
 import html2canvas from 'html2canvas';
+import { logger } from '@/lib/logger';
 
 export interface InspectorInfo {
   name: string;
@@ -18,7 +19,7 @@ export async function captureReportAsImage(
   try {
     const element = document.getElementById(elementId);
     if (!element) {
-      console.error(`Element with id "${elementId}" not found`);
+      logger.error('ReportSharing:capture', 'Element not found', { elementId });
       return null;
     }
 
@@ -42,7 +43,7 @@ export async function captureReportAsImage(
       }, 'image/png');
     });
   } catch (error) {
-    console.error('Error capturing report as image:', error);
+    logger.error('ReportSharing:capture', 'Error capturing report as image', error instanceof Error ? error : { error });
     return null;
   }
 }
@@ -54,7 +55,7 @@ export async function shareReport(blob: Blob, fileName: string): Promise<boolean
   try {
     // Web Share API 지원 여부 확인
     if (!navigator.share) {
-      console.log('Web Share API not supported');
+      logger.info('ReportSharing:share', 'Web Share API not supported');
       return false;
     }
 
@@ -70,13 +71,13 @@ export async function shareReport(blob: Blob, fileName: string): Promise<boolean
 
     // 공유 실행
     await navigator.share(shareData);
-    console.log('Report shared successfully');
+    logger.info('ReportSharing:share', 'Report shared successfully');
     return true;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.log('Share cancelled by user');
+      logger.info('ReportSharing:share', 'Share cancelled by user');
     } else {
-      console.error('Error sharing report:', error);
+      logger.error('ReportSharing:share', 'Error sharing report', error instanceof Error ? error : { error });
     }
     return false;
   }
@@ -95,7 +96,7 @@ export async function captureAndShareReport(
     const blob = await captureReportAsImage(elementId, inspectorInfo);
 
     if (!blob) {
-      console.error('Failed to capture report as image');
+      logger.error('ReportSharing:captureAndShare', 'Failed to capture report as image', { elementId });
       return false;
     }
 
@@ -103,7 +104,7 @@ export async function captureAndShareReport(
     const shared = await shareReport(blob, fileName);
     return shared;
   } catch (error) {
-    console.error('Error in captureAndShareReport:', error);
+    logger.error('ReportSharing:captureAndShare', 'Error in captureAndShareReport', error instanceof Error ? error : { error });
     return false;
   }
 }

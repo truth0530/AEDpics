@@ -7,6 +7,7 @@ import {
   ExternalDisplayFilter,
 } from '@/lib/constants/aed-filters';
 import { QueryCriteria } from '@/lib/constants/query-criteria';
+import { logger } from '@/lib/logger';
 
 export interface ParsedFilters {
   battery_expiry_date?: ExpiryFilter;
@@ -193,12 +194,12 @@ export function buildQueryString(filters: ParsedFilters): string {
     params.set('search', filters.search);
   }
 
-  console.log('[buildQueryString] filters.external_display:', filters.external_display);
+  logger.info('QueryParser:buildQueryString', 'External display filter', { externalDisplay: filters.external_display });
   if (filters.external_display) {
-    console.log('[buildQueryString] Adding external_display to params:', filters.external_display);
+    logger.info('QueryParser:buildQueryString', 'Adding external_display to params', { value: filters.external_display });
     params.set('external_display', filters.external_display);
   } else {
-    console.log('[buildQueryString] Skipping external_display (falsy)');
+    logger.info('QueryParser:buildQueryString', 'Skipping external_display (falsy)');
   }
 
   if (filters.queryCriteria) {
