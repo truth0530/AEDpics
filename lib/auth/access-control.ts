@@ -632,3 +632,42 @@ export function canAccessInspectionMenu(user: UserRole | UserProfile): boolean {
 
   return true;
 }
+
+export function canAccessInspectionEffect(user: UserRole | UserProfile): boolean {
+  const role = typeof user === 'string' ? user : user.role;
+
+  // 승인되지 않은 역할 제외
+  if (['pending_approval', 'email_verified', 'rejected'].includes(role)) {
+    return false;
+  }
+
+  // temporary_inspector 제외 - 점검만 수행
+  if (role === 'temporary_inspector') {
+    return false;
+  }
+
+  // 점검효과에 접근 가능한 역할
+  const allowedRoles: UserRole[] = [
+    'master',
+    'emergency_center_admin',
+    'regional_emergency_center_admin',
+    'ministry_admin',
+    'regional_admin',
+    'local_admin', // 보건소 담당자까지 접근 가능
+  ];
+
+  if (!allowedRoles.includes(role)) {
+    return false;
+  }
+
+  if (typeof user !== 'string') {
+    try {
+      resolveAccessScope(user);
+    } catch (error) {
+      logger.warn('AccessControl:canAccessInspectionEffect', 'Skipping inspection effect access due to scope error', error instanceof Error ? error : { error });
+      return false;
+    }
+  }
+
+  return true;
+}

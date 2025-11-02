@@ -8,12 +8,13 @@ import type { UserProfile } from '@/packages/types';
 interface MobileBottomNavProps {
   canAccessAedData: boolean;
   canAccessInspection: boolean;
+  canAccessInspectionEffect?: boolean;
   user: UserProfile;
   pendingApprovalCount: number;
 }
 
 // 성능 최적화: 메모이제이션으로 불필요한 리렌더링 방지
-function MobileBottomNavComponent({ canAccessAedData, canAccessInspection, user, pendingApprovalCount }: MobileBottomNavProps) {
+function MobileBottomNavComponent({ canAccessAedData, canAccessInspection, canAccessInspectionEffect = false, user, pendingApprovalCount }: MobileBottomNavProps) {
   const pathname = usePathname();
 
   const navigationItems = [

@@ -8,7 +8,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav"
 import { RealtimeApprovalNotifier } from "@/components/layout/RealtimeApprovalNotifier"
 import { ToastProvider } from "@/components/ui/Toast"
 import { NotificationProvider } from "@/lib/hooks/useNotifications"
-import { canAccessAEDData, canAccessInspectionMenu } from "@/lib/auth/access-control"
+import { canAccessAEDData, canAccessInspectionMenu, canAccessInspectionEffect } from "@/lib/auth/access-control"
 import { getCachedAuthUser, getCachedUserProfile, getCachedPendingApprovalCount } from "@/lib/auth/cached-queries"
 import { DataRefreshBanner } from "@/components/ui/DataRefreshBanner"
 import { ErrorBoundary } from "@/components/error/ErrorBoundary"
@@ -51,6 +51,7 @@ export default async function AuthenticatedLayout({
 
   const canAccessAedData = canAccessAEDData(typedProfile)
   const canAccessInspection = canAccessInspectionMenu(typedProfile)
+  const canAccessEffect = canAccessInspectionEffect(typedProfile)
   const hasApproveUsersPermission = canApproveUsers(typedProfile.role)
 
   return (
@@ -72,6 +73,7 @@ export default async function AuthenticatedLayout({
             <AppSidebar
               canAccessAedData={canAccessAedData}
               canAccessInspection={canAccessInspection}
+              canAccessInspectionEffect={canAccessEffect}
               canApproveUsers={hasApproveUsersPermission}
               user={typedProfile}
               pendingApprovalCount={pendingApprovalCount}
@@ -88,6 +90,7 @@ export default async function AuthenticatedLayout({
             <MobileBottomNav
               canAccessAedData={canAccessAedData}
               canAccessInspection={canAccessInspection}
+              canAccessInspectionEffect={canAccessEffect}
               user={typedProfile}
               pendingApprovalCount={pendingApprovalCount}
             />

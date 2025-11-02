@@ -3,7 +3,7 @@
 import { memo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, FileSearch, BarChart3, Database, ClipboardList, ChevronRight, ChevronLeft, GitMerge, Users } from "lucide-react"
+import { Home, FileSearch, BarChart3, Database, ClipboardList, ChevronRight, ChevronLeft, GitMerge, Users, TrendingUp } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -22,13 +22,14 @@ import { cn } from "@/lib/utils"
 interface AppSidebarProps {
   canAccessAedData: boolean
   canAccessInspection: boolean
+  canAccessInspectionEffect?: boolean
   canApproveUsers?: boolean
   user: UserProfile
   pendingApprovalCount?: number
 }
 
 // 성능 최적화: 메모이제이션으로 불필요한 리렌더링 방지
-function AppSidebarComponent({ canAccessAedData, canAccessInspection, canApproveUsers = false, user, pendingApprovalCount = 0 }: AppSidebarProps) {
+function AppSidebarComponent({ canAccessAedData, canAccessInspection, canAccessInspectionEffect = false, canApproveUsers = false, user, pendingApprovalCount = 0 }: AppSidebarProps) {
   const pathname = usePathname()
   const { collapsed, setCollapsed } = useSidebar()
   const isExpanded = !collapsed
@@ -53,6 +54,12 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canApprove
       show: true,
     },
     {
+      title: "점검효과",
+      icon: TrendingUp as any,
+      href: "/inspection-effect",
+      show: canAccessInspectionEffect,
+    },
+    {
       title: "의무기관매칭",
       icon: GitMerge as any,
       href: "/admin/compliance",
@@ -71,6 +78,7 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canApprove
     if (pathname === "/admin/compliance") return "의무기관매칭"
     if (pathname === "/admin/compliance/completed") return "설치확인"
     if (pathname === "/admin/users") return "사용자 승인 관리"
+    if (pathname === "/inspection-effect") return "점검효과"
     return menuItems.find(item => pathname === item.href)?.title || "대시보드"
   }
 
