@@ -81,6 +81,7 @@ model aed_data {
   inspection_schedules          inspection_schedules[]
   inspection_sessions           inspection_sessions[]     @relation("SessionToAedData")
   inspections                   inspections[]             @relation("InspectionToAedData")
+  inspection_field_comparisons  inspection_field_comparisons[]
 
   @@index([latitude, longitude], map: "idx_aed_data_coordinates")
   @@index([data_status], map: "idx_aed_data_data_status")
@@ -279,9 +280,49 @@ model inspections {
   completed_at         DateTime?      @db.Timestamptz(6)
   aed_data             aed_data?      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
   user_profiles        user_profiles? @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
+  inspection_field_comparisons inspection_field_comparisons[]
 
   @@index([equipment_serial], map: "idx_inspections_equipment_serial")
   @@index([inspector_id], map: "idx_inspections_inspector_id")
+}
+
+model inspection_field_comparisons {
+  id                    String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inspection_id         String      @db.Uuid
+  equipment_serial      String      @db.VarChar(255)
+  field_name            String      @db.VarChar(100)
+  field_category        String      @db.VarChar(50)
+
+  // 점검 시점 데이터
+  inspection_value      String?
+  aed_data_value        String?
+  inspection_time       DateTime    @db.Timestamptz(6)
+
+  // 분류
+  status_at_inspection  String      @db.VarChar(20)
+  issue_severity        String?     @db.VarChar(20)
+
+  // 개선 추적
+  current_aed_value     String?
+  last_checked_at       DateTime    @default(now()) @db.Timestamptz(6)
+  improvement_status    String?     @db.VarChar(20)
+  improved_at           DateTime?   @db.Timestamptz(6)
+  days_since_inspection Int?
+
+  // 관계
+  inspection            inspections @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
+  aed_device            aed_data    @relation(fields: [equipment_serial], references: [equipment_serial], onDelete: Cascade)
+
+  created_at            DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@index([inspection_id], map: "idx_field_comparisons_inspection")
+  @@index([equipment_serial], map: "idx_field_comparisons_equipment")
+  @@index([status_at_inspection], map: "idx_field_comparisons_status")
+  @@index([improvement_status], map: "idx_field_comparisons_improvement")
+  @@index([field_category], map: "idx_field_comparisons_category")
+  @@index([inspection_time], map: "idx_field_comparisons_time")
+  @@index([equipment_serial, field_category, improvement_status], map: "idx_field_comparisons_query")
 }
 
 model login_history {
@@ -666,6 +707,7 @@ model user_profiles {
   approval_notifications_sent     approval_notifications[] @relation("approval_notifications_sender")
   approval_notifications_received approval_notifications[] @relation("approval_notifications_recipient")
   notification_settings           notification_settings?
+  push_subscriptions              push_subscriptions[]
 }
 
 model verification_tokens {
@@ -944,4 +986,22 @@ model notification_settings {
   user                  user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "idx_notification_settings_user")
+}
+
+model push_subscriptions {
+  id           String        @id @default(uuid()) @db.Uuid
+  user_id      String        @db.Uuid
+  endpoint     String        @db.VarChar(500)
+  p256dh_key   String        @db.VarChar(200)
+  auth_key     String        @db.VarChar(200)
+  user_agent   String?       @db.VarChar(500)
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+  last_used_at DateTime?     @db.Timestamptz(6)
+
+  user         user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, endpoint])
+  @@index([user_id], map: "idx_push_subscriptions_user")
+  @@index([endpoint], map: "idx_push_subscriptions_endpoint")
 }

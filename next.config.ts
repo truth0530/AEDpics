@@ -9,15 +9,11 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
-    // Service Worker 컴파일 시 ES5로 변환
     mode: "production",
     swDest: "sw.js",
+    // 푸시 알림 이벤트 핸들러 추가
+    importScripts: ['/sw-push-listener.js'],
   },
-  // Fallback 설정 추가
-  // fallbacks: {
-  //   document: "/_offline",
-  // },
-  // Service Worker 빌드 최적화
   cacheStartUrl: false,
   dynamicStartUrl: false,
 });

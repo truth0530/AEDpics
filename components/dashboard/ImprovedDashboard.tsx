@@ -10,6 +10,7 @@ import { StatCard, WorkflowStep } from './StatCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { getRegionSortOrder } from '@/lib/constants/regions';
 import { UserRole } from '@/packages/types';
+import ImprovementTrackingWidget from './ImprovementTrackingWidget';
 
 interface RegionStats {
   region: string;
@@ -368,6 +369,9 @@ export default function ImprovedDashboard({
           </CardContent>
         </Card>
       </div>
+
+      {/* 데이터 개선 추적 위젯 */}
+      <ImprovementTrackingWidget />
 
       {/* 지역별 현황 테이블 */}
       <Card>

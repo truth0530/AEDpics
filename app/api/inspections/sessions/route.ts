@@ -5,6 +5,7 @@ import { apiHandler } from '@/lib/api/error-handler';
 import { canPerformInspection, AccessContext } from '@/lib/auth/access-control';
 import { LRUCache } from 'lru-cache';
 import { logger } from '@/lib/logger';
+import { analyzeInspectionFields } from '@/lib/inspections/field-comparison';
 
 import { prisma } from '@/lib/prisma';
 // Week 2: 중복 갱신 방지용 메모리 캐시
@@ -594,6 +595,8 @@ export const PATCH = async (request: NextRequest) => {
 
     // RPC 대신 Prisma 트랜잭션으로 완료 처리
     try {
+      let createdInspectionId: string | null = null;
+
       const completedSession = await prisma.$transaction(async (tx) => {
         // 1. 세션 완료 업데이트
         const updated = await tx.inspection_sessions.update({
@@ -612,7 +615,7 @@ export const PATCH = async (request: NextRequest) => {
         const supplies = finalData.supplies as any || {};
         const storage = finalData.storage as any || {};
 
-        await tx.inspections.create({
+        const createdInspection = await tx.inspections.create({
           data: {
             equipment_serial: session.equipment_serial,
             inspector_id: userId,
@@ -638,6 +641,8 @@ export const PATCH = async (request: NextRequest) => {
           }
         });
 
+        createdInspectionId = createdInspection.id;
+
         return updated;
       });
 
@@ -653,6 +658,25 @@ export const PATCH = async (request: NextRequest) => {
             status: 'completed',
             completed_at: new Date()
           }
+        });
+      }
+
+      // 필드 비교 분석 (비동기로 실행하여 응답 속도에 영향 없도록)
+      if (createdInspectionId && session.equipment_serial) {
+        const basicInfo = finalData.basicInfo as any || {};
+        const deviceInfo = finalData.deviceInfo as any || {};
+        const supplies = finalData.supplies as any || {};
+
+        analyzeInspectionFields(
+          createdInspectionId,
+          session.equipment_serial,
+          {
+            basicInfo,
+            deviceInfo,
+            supplies
+          }
+        ).catch(error => {
+          logger.error('InspectionSession:POST-complete', '필드 비교 분석 실패', error instanceof Error ? error : { error });
         });
       }
 
