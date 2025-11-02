@@ -284,8 +284,10 @@ export function BasicInfoStep() {
   const handleEditAll = () => {
     if (isEditMode) {
       // 수정 모드에서 "확인" 버튼 클릭
-      // 원본과 동일하면 저장하지 않음
+      // ✅ 원본과 동일해도 확인했다면 상태 업데이트
       if (isBasicInfoMatching) {
+        updateStepData('basicInfo', { ...basicInfo, all_matched: true });
+        setIsEditMode(false);
         return;
       }
 
@@ -346,8 +348,10 @@ export function BasicInfoStep() {
 
   // 설치 주소/위치 수정 완료
   const handleLocationSaveEdit = () => {
-    // 원본과 같으면 아무 것도 하지 않음
+    // ✅ 원본과 같아도 확인했다면 상태 업데이트
     if (isLocationMatching) {
+      updateStepData('basicInfo', { ...basicInfo, location_matched: true });
+      setIsLocationEditMode(false);
       return;
     }
 
