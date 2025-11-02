@@ -238,6 +238,11 @@ export type Env = z.infer<typeof envSchema>;
 
 // 환경변수 검증 및 파싱
 function validateEnv(): Env {
+  // 클라이언트 환경에서는 검증 건너뛰기 (서버 전용 환경변수에 접근 불가)
+  if (typeof window !== 'undefined') {
+    return {} as Env;
+  }
+
   try {
     // 환경변수 파싱
     const parsed = envSchema.parse(process.env);
@@ -266,20 +271,13 @@ function validateEnv(): Env {
       console.error('[ENV] Refer to .env.example for required variables');
       console.error('');
 
-      // 빌드 타임이 아니고 서버 환경인 경우에만 프로세스 종료
-      if (!isBuildTime && typeof window === 'undefined') {
-        process.exit(1);
-      }
+      // 서버 환경에서만 프로세스 종료
+      process.exit(1);
     }
 
     // 예상치 못한 오류
     console.error('[ENV] Unexpected error during environment validation:', error);
-    if (!isBuildTime && typeof window === 'undefined') {
-      process.exit(1);
-    }
-
-    // 빌드 타임에는 빈 객체 반환 (타입 안전성을 위해)
-    return {} as Env;
+    process.exit(1);
   }
 }
 
