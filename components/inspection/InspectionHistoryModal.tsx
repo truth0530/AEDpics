@@ -17,6 +17,7 @@ interface InspectionHistoryModalProps {
   onUpdate?: (inspectionId: string, updates: Partial<InspectionHistory>) => Promise<void>;
   onDelete?: (inspectionId: string) => void;
   canEdit: boolean;
+  canDelete: boolean;
 }
 
 const STEP_TABS = [
@@ -32,6 +33,7 @@ export function InspectionHistoryModal({
   inspection,
   onDelete,
   canEdit,
+  canDelete,
 }: InspectionHistoryModalProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -130,7 +132,7 @@ export function InspectionHistoryModal({
 
           {/* 액션 버튼 */}
           <DialogFooter className="flex justify-between">
-            {canEdit && (
+            {canDelete && (
               <Button
                 variant="outline"
                 onClick={handleDelete}

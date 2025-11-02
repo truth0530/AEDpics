@@ -18,9 +18,11 @@ import {
   type InspectionSession,
   type InspectionHistory
 } from '@/lib/inspections/session-utils';
+import { getInspectionActionButtons } from '@/lib/inspections/permissions';
 import { InspectionInProgressModal } from './InspectionInProgressModal';
 import { InspectionHistoryModal } from './InspectionHistoryModal';
 import { DeleteInspectionModal } from './DeleteInspectionModal';
+import * as XLSX from 'xlsx';
 
 interface AdminFullViewProps {
   user: UserProfile;
@@ -58,6 +60,9 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [inspectionToDelete, setInspectionToDelete] = useState<InspectionHistory | null>(null);
 
+  // 점검 이력 목록 (엑셀 다운로드용)
+  const [inspectionHistoryList, setInspectionHistoryList] = useState<InspectionHistory[]>([]);
+
   // 🔴 Phase B: 현재 모달이 표시 중인 장비의 inspection_status
   const [currentSessionInspectionStatus, setCurrentSessionInspectionStatus] = useState<
     'pending' | 'in_progress' | 'completed' | 'cancelled' | 'unavailable' | undefined
@@ -80,6 +85,18 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     const interval = setInterval(loadInspectionData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // 점검진행목록 탭으로 전환 시 점검 이력 조회
+  useEffect(() => {
+    async function loadInspectionHistory() {
+      if (viewMode === 'completed') {
+        const history = await getInspectionHistory(undefined, 720); // 최근 30일
+        setInspectionHistoryList(history);
+      }
+    }
+
+    loadInspectionHistory();
+  }, [viewMode]);
 
   // AdminFullView 레벨에서 mapRegionChanged 이벤트 리스닝
   useEffect(() => {
@@ -258,12 +275,97 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         // 완료 목록 재로드
         const completed = await getCompletedInspections(24);
         setCompletedInspections(completed);
+        // 점검 이력 목록도 재로드
+        const history = await getInspectionHistory(undefined, 720);
+        setInspectionHistoryList(history);
       } else {
         showError(result.error || '점검 이력 삭제 실패');
       }
     } catch (error) {
       console.error('[handleConfirmDelete] Error:', error);
       showError('점검 이력 삭제 실패');
+    }
+  };
+
+  // 엑셀 다운로드
+  const handleExcelDownload = () => {
+    try {
+      if (inspectionHistoryList.length === 0) {
+        showError('다운로드할 점검 기록이 없습니다');
+        return;
+      }
+
+      // 엑셀 데이터 변환
+      const excelData = inspectionHistoryList.map((inspection, index) => ({
+        '번호': index + 1,
+        '장비연번': inspection.equipment_serial,
+        '점검일시': new Date(inspection.inspection_date).toLocaleString('ko-KR'),
+        '점검자': inspection.inspector_name,
+        '점검자 이메일': inspection.inspector_email || '-',
+        '점검 유형': inspection.inspection_type === 'monthly' ? '월간점검' :
+                     inspection.inspection_type === 'quarterly' ? '분기점검' :
+                     inspection.inspection_type === 'annual' ? '연간점검' : '기타',
+        '외관 상태': inspection.visual_status || '-',
+        '배터리 상태': inspection.battery_status === 'good' ? '정상' :
+                       inspection.battery_status === 'replaced' ? '교체됨' :
+                       inspection.battery_status === 'expired' ? '만료' :
+                       inspection.battery_status === 'not_checked' ? '미확인' : '-',
+        '패드 상태': inspection.pad_status === 'good' ? '정상' :
+                     inspection.pad_status === 'replaced' ? '교체됨' :
+                     inspection.pad_status === 'expired' ? '만료' :
+                     inspection.pad_status === 'not_checked' ? '미확인' : '-',
+        '작동 상태': inspection.operation_status || '-',
+        '종합 상태': inspection.overall_status === 'pass' ? '합격' :
+                     inspection.overall_status === 'fail' ? '불합격' :
+                     inspection.overall_status === 'normal' ? '정상' :
+                     inspection.overall_status === 'needs_improvement' ? '개선필요' :
+                     inspection.overall_status === 'malfunction' ? '고장' : '-',
+        '비고': inspection.notes || '-',
+        '발견 문제': inspection.issues_found?.join(', ') || '-',
+        '사진 수': inspection.photos?.length || 0,
+        '점검 위도': inspection.inspection_latitude || '-',
+        '점검 경도': inspection.inspection_longitude || '-',
+      }));
+
+      // 워크시트 생성
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      // 열 너비 자동 조정
+      const columnWidths = [
+        { wch: 6 },   // 번호
+        { wch: 20 },  // 장비연번
+        { wch: 20 },  // 점검일시
+        { wch: 12 },  // 점검자
+        { wch: 25 },  // 점검자 이메일
+        { wch: 12 },  // 점검 유형
+        { wch: 12 },  // 외관 상태
+        { wch: 12 },  // 배터리 상태
+        { wch: 12 },  // 패드 상태
+        { wch: 12 },  // 작동 상태
+        { wch: 12 },  // 종합 상태
+        { wch: 30 },  // 비고
+        { wch: 30 },  // 발견 문제
+        { wch: 8 },   // 사진 수
+        { wch: 12 },  // 점검 위도
+        { wch: 12 },  // 점검 경도
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // 워크북 생성
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '점검기록');
+
+      // 파일명 생성
+      const today = new Date();
+      const filename = `AED_점검기록_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}.xlsx`;
+
+      // 파일 다운로드
+      XLSX.writeFile(workbook, filename);
+
+      showSuccess('엑셀 파일이 다운로드되었습니다');
+    } catch (error) {
+      console.error('[handleExcelDownload] Error:', error);
+      showError('엑셀 다운로드 실패');
     }
   };
 
@@ -341,8 +443,21 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
             </div>
           </button>
         </div>
-        <div className="text-xs text-gray-500 px-4">
-          {dataCount}개
+        <div className="flex items-center gap-3 px-4">
+          {viewMode === 'completed' && (
+            <button
+              onClick={handleExcelDownload}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              엑셀다운로드
+            </button>
+          )}
+          <div className="text-xs text-gray-500">
+            {dataCount}개
+          </div>
         </div>
       </div>
 
@@ -503,15 +618,22 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
       {/* 점검 이력 상세 모달 */}
       {selectedInspection && (() => {
-        const canEditInspection = selectedInspection.inspector_id === user.id || user.role === 'master';
-        console.log('[InspectionHistoryModal] canEdit 계산:', {
-          selectedInspectionInspectorId: selectedInspection.inspector_id,
-          userId: user.id,
+        // 권한 체크 - getInspectionActionButtons 사용
+        const actionButtons = getInspectionActionButtons(
+          user.role,
+          user.id,
+          selectedInspection.inspector_id,
+          user.region_code,
+          undefined // TODO: 점검 기록의 region_code 추가 필요
+        );
+
+        console.log('[InspectionHistoryModal] 권한 계산:', {
           userRole: user.role,
-          isSameInspector: selectedInspection.inspector_id === user.id,
-          isMaster: user.role === 'master',
-          finalCanEdit: canEditInspection,
+          userId: user.id,
+          inspectorId: selectedInspection.inspector_id,
+          actionButtons,
         });
+
         return (
           <InspectionHistoryModal
             isOpen={showHistoryModal}
@@ -522,7 +644,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
             inspection={selectedInspection}
             onUpdate={handleUpdateInspection}
             onDelete={handleDeleteInspection}
-            canEdit={canEditInspection}
+            canEdit={actionButtons.showEdit}
+            canDelete={actionButtons.showDelete}
           />
         );
       })()}
