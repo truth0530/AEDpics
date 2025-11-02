@@ -16,6 +16,8 @@ import { prisma } from '@/lib/prisma';
  * Request Body:
  * {
  *   "role": "local_admin" | "inspector" | "temporary_inspector" 등
+ *   "regionCode": "지역 코드 (필수)"
+ *   "organizationId": "소속 기관 ID (필수)"
  *   "notes": "승인 사유 (선택)"
  * }
  */
@@ -57,11 +59,25 @@ export async function POST(
 
     // 4. Request Body 파싱
     const body = await request.json();
-    const { role, notes } = body;
+    const { role, regionCode, organizationId, notes } = body;
 
     if (!role) {
       return NextResponse.json(
         { error: 'Role is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!regionCode) {
+      return NextResponse.json(
+        { error: 'Region code is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Organization ID is required' },
         { status: 400 }
       );
     }
@@ -110,11 +126,13 @@ export async function POST(
       }
     }
 
-    // 7. 사용자 승인 (role 변경)
+    // 7. 사용자 승인 (role, region_code, organization_id 변경)
     const updatedUser = await prisma.user_profiles.update({
       where: { id },
       data: {
         role: role as user_role,
+        region_code: regionCode,
+        organization_id: organizationId,
         approved_by: adminProfile.id,
         approved_at: new Date(),
         is_active: true,
@@ -137,6 +155,10 @@ export async function POST(
           target_user_id: id,
           target_user_email: targetUser.email,
           approved_role: role,
+          region_code: regionCode,
+          organization_id: organizationId,
+          previous_region_code: targetUser.region_code,
+          previous_organization_id: targetUser.organization_id,
           notes: notes || null
         },
         ip_address: request.headers.get('x-forwarded-for') ||

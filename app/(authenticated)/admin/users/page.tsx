@@ -42,6 +42,7 @@ import {
   getRegionDisplay,
 } from '@/lib/utils/user-roles';
 import { suggestDefaultRole, getAllowedRolesForDomain } from '@/lib/auth/access-control';
+import { REGION_FULL_NAMES } from '@/lib/constants/regions';
 
 interface UserProfile {
   id: string;
@@ -82,6 +83,10 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [approvalRole, setApprovalRole] = useState<UserRole>('local_admin');
+  const [approvalRegionCode, setApprovalRegionCode] = useState<string>('');
+  const [approvalOrgId, setApprovalOrgId] = useState<string>('');
+  const [orgSearchQuery, setOrgSearchQuery] = useState('');
+  const [orgSearchResults, setOrgSearchResults] = useState<any[]>([]);
   const [rejectReason, setRejectReason] = useState('');
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -127,11 +132,21 @@ export default function AdminUsersPage() {
 
   // 사용자 승인
   const approveMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
+    mutationFn: async ({
+      userId,
+      role,
+      regionCode,
+      organizationId
+    }: {
+      userId: string;
+      role: UserRole;
+      regionCode: string;
+      organizationId: string;
+    }) => {
       const res = await fetch(`/api/admin/users/${userId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role })
+        body: JSON.stringify({ role, regionCode, organizationId })
       });
 
       if (!res.ok) {
@@ -183,6 +198,11 @@ export default function AdminUsersPage() {
     // 이메일 도메인 기반으로 기본 역할 설정
     const defaultRole = suggestDefaultRole(user.email);
     setApprovalRole(defaultRole);
+    // 사용자의 기존 지역과 소속 기관 설정
+    setApprovalRegionCode(user.region_code || '');
+    setApprovalOrgId(user.organization_id || '');
+    setOrgSearchQuery(user.organizations?.name || '');
+    setOrgSearchResults([]);
     setShowApproveModal(true);
   };
 
@@ -192,9 +212,55 @@ export default function AdminUsersPage() {
     setShowRejectModal(true);
   };
 
+  // 조직 검색
+  const searchOrganizations = async (query: string) => {
+    if (!query || query.length < 2) {
+      setOrgSearchResults([]);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({
+        search: query,
+        limit: '10'
+      });
+      if (approvalRegionCode) {
+        params.append('region', approvalRegionCode);
+      }
+
+      const res = await fetch(`/api/admin/organizations?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrgSearchResults(data.organizations || []);
+      }
+    } catch (error) {
+      console.error('조직 검색 오류:', error);
+    }
+  };
+
+  // 조직 선택
+  const handleSelectOrganization = (org: any) => {
+    setApprovalOrgId(org.id);
+    setOrgSearchQuery(org.name);
+    setOrgSearchResults([]);
+  };
+
   const confirmApprove = () => {
     if (!selectedUser) return;
-    approveMutation.mutate({ userId: selectedUser.id, role: approvalRole });
+    if (!approvalRegionCode) {
+      alert('지역을 선택해주세요.');
+      return;
+    }
+    if (!approvalOrgId) {
+      alert('소속 기관을 선택해주세요.');
+      return;
+    }
+    approveMutation.mutate({
+      userId: selectedUser.id,
+      role: approvalRole,
+      regionCode: approvalRegionCode,
+      organizationId: approvalOrgId
+    });
   };
 
   const confirmReject = () => {
@@ -496,12 +562,12 @@ export default function AdminUsersPage() {
                 {/* 이메일 도메인 기반 권장 역할 안내 */}
                 {!isMasterAccount && (
                   <div className="text-sm text-yellow-400 bg-yellow-900/20 p-3 rounded border border-yellow-700/50">
-                    <div className="font-medium mb-1">도메인 기반 권장 역할</div>
+                    <div className="font-medium mb-1">도메인 기반 역할</div>
                     <div>
                       이메일 도메인 (@{selectedUser.email.split('@')[1]}): <strong>{getRoleLabel(suggestDefaultRole(selectedUser.email))}</strong>
                     </div>
                     <div className="text-xs text-yellow-300 mt-1">
-                      다른 역할로 변경하려면 마스터 계정이 필요합니다.
+                      다른 역할로 변경하려면 053-427-0530 번호로 문의주세요.
                     </div>
                   </div>
                 )}
@@ -544,6 +610,76 @@ export default function AdminUsersPage() {
                 </Select>
                 <p className="text-xs text-gray-500">
                   선택한 역할에 따라 사용자의 접근 권한이 결정됩니다
+                </p>
+              </div>
+
+              {/* 지역 선택 */}
+              <div className="space-y-2">
+                <Label htmlFor="region" className="text-gray-300">
+                  지역 선택
+                </Label>
+                <Select
+                  value={approvalRegionCode}
+                  onValueChange={setApprovalRegionCode}
+                >
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue placeholder="지역을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    {REGION_FULL_NAMES.map((region) => (
+                      <SelectItem
+                        key={region.code}
+                        value={region.code}
+                        className="text-white hover:bg-gray-700"
+                      >
+                        {region.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  실수로 잘못 선택한 지역은 수정할 수 있습니다
+                </p>
+              </div>
+
+              {/* 소속 기관 선택 */}
+              <div className="space-y-2">
+                <Label htmlFor="organization" className="text-gray-300">
+                  소속 기관
+                </Label>
+                <div className="relative">
+                  <Input
+                    value={orgSearchQuery}
+                    onChange={(e) => {
+                      setOrgSearchQuery(e.target.value);
+                      searchOrganizations(e.target.value);
+                    }}
+                    placeholder="기관명을 입력하세요 (예: 서울응급의료지원센터)"
+                    className="bg-gray-800 border-gray-700 text-white"
+                  />
+                  {orgSearchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {orgSearchResults.map((org) => (
+                        <button
+                          key={org.id}
+                          type="button"
+                          onClick={() => handleSelectOrganization(org)}
+                          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 flex items-center gap-2"
+                        >
+                          <Building2 className="w-4 h-4 text-gray-400" />
+                          <div>
+                            <div className="font-medium">{org.name}</div>
+                            <div className="text-xs text-gray-400">
+                              {getRegionDisplay(org.region_code)}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  실수로 잘못 선택한 기관은 수정할 수 있습니다
                 </p>
               </div>
             </div>
