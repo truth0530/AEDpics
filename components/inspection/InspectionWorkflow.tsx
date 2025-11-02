@@ -57,7 +57,6 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
   const [error, setError] = useState<string | null>(null);
   const [showGuidelineModal, setShowGuidelineModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showCloseModal, setShowCloseModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [showRequiredFieldsModal, setShowRequiredFieldsModal] = useState(false);
@@ -66,12 +65,12 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
   // ✅ lastSavedStepData 초기화: 세션 로드 시 기존 step_data로 초기화
   useEffect(() => {
-    // 세션이 처음 로드될 때만 초기화
+    // 세션이 처음 로드될 때만 초기화 (새 세션 시작 시)
     if (session?.id && session?.step_data) {
       console.log('[lastSavedStepData] Initializing from session.step_data:', session.step_data);
       setLastSavedStepData(session.step_data as Record<string, unknown>);
     }
-  }, [session?.id]); // session.id가 변경될 때만 (새 세션 시작)
+  }, [session?.id]); // session.id 변경 시만 (무한 루프 방지)
 
   // 🆕 완료된 세션 감지: 재점검 여부 확인
   useEffect(() => {
@@ -106,6 +105,9 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aed-inspections'] });
       queryClient.invalidateQueries({ queryKey: ['inspection-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['inspection-assignments'] });
+
+      showSuccess('점검이 완료되었습니다');
 
       if (deviceSerial) {
         router.push(`/inspection/complete?serial=${deviceSerial}`);
@@ -115,7 +117,8 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     },
     onError: (error) => {
       console.error('Failed to complete inspection:', error);
-      setError('점검 완료 중 오류가 발생했습니다.');
+      const errorMessage = error instanceof Error ? error.message : '점검 완료 중 오류가 발생했습니다.';
+      setError(errorMessage);
     },
   });
 
@@ -267,9 +270,28 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           missing.push('기본 정보 - 일치 여부를 확인해주세요');
         }
 
+        // ✅ 'edited' 상태일 때 빈 값 체크
+        if (basicInfo?.all_matched === 'edited') {
+          const emptyBasicFields = [];
+          if (!basicInfo.manager?.trim()) emptyBasicFields.push('담당자명');
+          if (!basicInfo.contact_info?.trim()) emptyBasicFields.push('연락처');
+          if (!basicInfo.category_1?.trim()) emptyBasicFields.push('설치장소(대)');
+          if (!basicInfo.category_2?.trim()) emptyBasicFields.push('설치장소(중)');
+          if (!basicInfo.category_3?.trim()) emptyBasicFields.push('설치장소(소)');
+
+          if (emptyBasicFields.length > 0) {
+            missing.push(`기본 정보 중 비어있는 항목: ${emptyBasicFields.join(', ')}`);
+          }
+        }
+
         // 필수: location_matched 체크 여부 확인 (true 또는 'edited' 모두 완료로 간주)
         if (basicInfo?.location_matched !== true && basicInfo?.location_matched !== 'edited') {
           missing.push('위치 정보 - 일치 여부를 확인해주세요');
+        }
+
+        // ✅ 위치 수정 시 주소 체크
+        if (basicInfo?.location_matched === 'edited' && !basicInfo.address?.trim()) {
+          missing.push('주소가 비어있음');
         }
         break;
 
@@ -314,6 +336,9 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         }
         if (padMatched === 'edited' && !deviceInfo.pad_expiry_date?.trim()) {
           missing.push('패드 유효기간 값이 비어있음');
+        }
+        if (mfgDateMatched === 'edited' && !deviceInfo.manufacturing_date?.trim()) {
+          missing.push('제조일자 값이 비어있음');
         }
         break;
 
@@ -415,13 +440,10 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     setError(null);
     try {
       await saveProgressMutation.mutateAsync();
-      // ✅ 저장 성공 시 현재 stepData를 깊은 복사로 저장
-      setLastSavedStepData(cloneDeep(stepData));
       showSaveSuccess();
       setCurrentStep(currentStep + 1);
     } catch (error) {
       console.error('Save failed:', error);
-      // 🆕 상세 오류 메시지 등록
       const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
       setError(message);
       showSaveError(error instanceof Error ? error : new Error(message));
@@ -435,12 +457,9 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     setError(null);
     try {
       await saveProgressMutation.mutateAsync();
-      // ✅ 저장 성공 시 현재 stepData를 깊은 복사로 저장
-      setLastSavedStepData(cloneDeep(stepData));
       showSaveSuccess();
     } catch (error) {
       console.error('Save failed:', error);
-      // 🆕 상세 오류 메시지 등록
       const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
       setError(message);
       showSaveError(error instanceof Error ? error : new Error(message));
@@ -475,15 +494,6 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     setError(null);
     try {
       await completeSessionMutation.mutateAsync();
-      queryClient.invalidateQueries({ queryKey: ['inspection-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['inspection-assignments'] });
-      showSuccess('점검이 완료되었습니다');
-      // 📌 완료 후 안전한 클린업: currentStep을 리셋하고 약간의 딜레이 후 이동
-      setCurrentStep(0);
-      // 100ms의 딜레이를 두어 상태 업데이트 완료 후 이동
-      setTimeout(() => {
-        router.push('/inspection');
-      }, 100);
     } catch (error) {
       console.error('Failed to complete session:', error);
 
@@ -514,34 +524,6 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     setShowCancelModal(true);
   };
 
-  const handleCloseWithSave = async () => {
-    setShowCloseModal(false);
-    setIsSaving(true);
-    setError(null);
-    try {
-      await saveProgressMutation.mutateAsync();
-      // ✅ 저장 성공 시 현재 stepData를 깊은 복사로 저장
-      setLastSavedStepData(cloneDeep(stepData));
-      showSaveSuccess('저장 후 닫기가 완료되었습니다');
-      resetSession();
-      router.push('/inspection');
-    } catch (error) {
-      console.error('Failed to save before closing:', error);
-      // 🆕 상세 오류 메시지 등록
-      const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
-      setError(message);
-      showSaveError(error instanceof Error ? error : new Error(message));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCloseWithoutSave = () => {
-    setShowCloseModal(false);
-    resetSession();
-    router.push('/inspection');
-  };
-
   // 🆕 중간저장후 닫기 (세션 상태를 '점검중'으로 유지)
   const handleSaveAndClose = async () => {
     setShowCancelModal(false);
@@ -551,10 +533,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     try {
       // 데이터만 저장하고 세션은 유지 (점검중 상태 유지)
       await saveProgressMutation.mutateAsync();
-      // ✅ 저장 성공 시 현재 stepData를 깊은 복사로 저장
-      setLastSavedStepData(cloneDeep(stepData));
       showSaveSuccess('중간저장 후 닫기가 완료되었습니다');
-      // ✅ resetSession() 호출하지 않음 - 세션을 '점검중' 상태로 유지
       router.push('/inspection');
     } catch (error) {
       console.error('Failed to save before closing:', error);
@@ -671,41 +650,6 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         </div>
       )}
 
-      {/* Close Confirmation Modal */}
-      {showCloseModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">입력한 데이터가 있습니다</h3>
-            <p className="text-gray-300 mb-6 text-sm">
-              어떻게 처리하시겠습니까?
-            </p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleCloseWithSave}
-                disabled={isSaving}
-                className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {isSaving ? '저장 중...' : '저장 후 닫기'}
-              </button>
-              <button
-                onClick={handleCloseWithoutSave}
-                disabled={isSaving}
-                className="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                저장하지 않고 닫기
-              </button>
-              <button
-                onClick={() => setShowCloseModal(false)}
-                disabled={isSaving}
-                className="w-full px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Cancel Session Confirmation Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -759,7 +703,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
               ))}
             </ul>
             <p className="text-gray-400 mb-6 text-xs">
-              필수 항목을 입력하지 않고 다음 단계로 넘어가시겠습니까?
+              필수 항목을 입력해야 다음 단계로 진행할 수 있습니다.
             </p>
             <div className="flex flex-col gap-2">
               <button
@@ -773,15 +717,6 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
                 className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 입력하기 (미입력 항목으로 이동)
-              </button>
-              <button
-                onClick={() => {
-                  setShowRequiredFieldsModal(false);
-                  setCurrentStep(currentStep + 1);
-                }}
-                className="w-full px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                무시하고 다음 단계로
               </button>
             </div>
           </div>
