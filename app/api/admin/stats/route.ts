@@ -86,9 +86,8 @@ export async function GET(request: NextRequest) {
           }
         }
       }),
-      // @ts-expect-error - Workaround for Prisma groupBy circular reference TypeScript bug
       prisma.inspections.groupBy({
-        by: ['result'],
+        by: ['overall_status'],
         where: {
           inspection_date: {
             gte: thirtyDaysAgo
@@ -165,7 +164,7 @@ export async function GET(request: NextRequest) {
       inspections: {
         last30Days: totalInspections,
         byResult: inspectionsByResult.reduce((acc, item) => {
-          acc[item.result] = item._count;
+          acc[item.overall_status || 'unknown'] = item._count;
           return acc;
         }, {} as Record<string, number>)
       },
