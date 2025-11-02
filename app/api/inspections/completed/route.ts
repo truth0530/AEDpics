@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
           gte: cutoffDate
         },
         overall_status: {
-          in: ['normal', 'needs_improvement', 'malfunction']
+          in: ['pass', 'normal', 'needs_improvement', 'malfunction', 'fail']
         }
       },
       select: {
