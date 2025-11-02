@@ -3,11 +3,7 @@
 import { useEffect, useState } from 'react';
 import { UserProfile } from '@/packages/types';
 import ImprovedDashboard from './ImprovedDashboard';
-import {
-  getCachedDashboardData,
-  getCachedHourlyInspections,
-  getCachedDailyInspections
-} from '@/lib/aed/dashboard-queries';
+import { logger } from '@/lib/logger';
 
 interface AdminFullDashboardProps {
   user: UserProfile;
@@ -24,17 +20,24 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
   const loadDashboardData = async (sido: string, gugun: string) => {
     try {
       setLoading(true);
-      const [dashboard, hourly, daily] = await Promise.all([
-        getCachedDashboardData(user, sido, gugun),
-        getCachedHourlyInspections(user),
-        getCachedDailyInspections(user),
-      ]);
 
-      setDashboardData(dashboard);
-      setHourlyData(hourly);
-      setDailyData(daily);
+      // API를 통해 대시보드 데이터 가져오기
+      const params = new URLSearchParams();
+      if (sido && sido !== '전체') params.append('sido', sido);
+      if (gugun && gugun !== '전체') params.append('gugun', gugun);
+
+      const response = await fetch(`/api/dashboard?${params.toString()}`);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setDashboardData(result.data.dashboard);
+        setHourlyData(result.data.hourly);
+        setDailyData(result.data.daily);
+      } else {
+        logger.error('AdminFullDashboard', 'Failed to load dashboard data', { error: result.error });
+      }
     } catch (error) {
-      console.error('[AdminFullDashboard] Error loading data:', error);
+      logger.error('AdminFullDashboard', 'Error loading data', { error });
     } finally {
       setLoading(false);
     }

@@ -22,7 +22,6 @@ const PAGE_TITLES: Record<string, string> = {
 function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) {
   const pathname = usePathname()
   const pageTitle = PAGE_TITLES[pathname] || "대시보드"
-  const isDashboard = pathname === "/dashboard"
 
   const handleRegionChange = (sido: string, gugun: string) => {
     // 시도/구군이 변경되면 전역 상태로 저장
@@ -34,15 +33,6 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
       console.log('[AppHeader] 📍 Region changed in header, dispatching event:', { sido, gugun });
       window.dispatchEvent(new CustomEvent('regionSelected', {
         detail: { sido, gugun }
-      }));
-    }
-  };
-
-  const handleTimeRangeChange = (timeRange: string) => {
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('dashboardTimeRange', timeRange);
-      window.dispatchEvent(new CustomEvent('timeRangeChanged', {
-        detail: { timeRange }
       }));
     }
   };
@@ -63,20 +53,6 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
             <h1 className="text-3xl font-bold text-white">AED 픽스</h1>
             <p className="text-base text-gray-400">{pageTitle}</p>
           </div>
-
-          {/* 대시보드 페이지일 때만 시간 범위 드롭다운 표시 */}
-          {isDashboard && (
-            <select
-              defaultValue="today"
-              onChange={(e) => handleTimeRangeChange(e.target.value)}
-              className="bg-gray-800 border border-gray-700 text-gray-100 px-3 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="today">오늘</option>
-              <option value="week">이번 주</option>
-              <option value="month">이번 달</option>
-              <option value="year">올해</option>
-            </select>
-          )}
         </div>
 
         <div className="flex items-center gap-3">
