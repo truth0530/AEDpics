@@ -540,7 +540,7 @@ export const GET = async (request: NextRequest) => {
             ia.assigned_to,
             ia.assigned_by
           FROM aedpics.aed_data a
-          INNER JOIN aedpics.inspection_assignments ia ON a.equipment_serial = ia.equipment_serial
+          LEFT JOIN aedpics.inspection_assignments ia ON a.equipment_serial = ia.equipment_serial
           ${whereClause}
           ORDER BY a.id ASC
           LIMIT ${queryLimit}
