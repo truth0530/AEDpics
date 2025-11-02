@@ -49,8 +49,6 @@ model aed_data {
   gugun                         String?                  @db.VarChar
   longitude                     Decimal?                 @db.Decimal(11, 8)
   latitude                      Decimal?                 @db.Decimal(10, 8)
-  gps_longitude                 Decimal?                 @db.Decimal(11, 8)
-  gps_latitude                  Decimal?                 @db.Decimal(10, 8)
   operation_status              String?                  @db.VarChar
   display_allowed               String?                  @db.VarChar
   external_display              String?                  @db.VarChar
