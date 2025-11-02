@@ -46,6 +46,14 @@ export const GET = apiHandler(async (request: NextRequest) => {
             full_name: true,
             email: true
           }
+        },
+        aed_data: {
+          select: {
+            installation_institution: true,
+            sido: true,
+            gugun: true,
+            installation_address: true
+          }
         }
       },
       orderBy: {
@@ -74,6 +82,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
       inspection_longitude: inspection.inspection_longitude,
       step_data: inspection.inspected_data || {},  // inspected_data를 step_data로 매핑
       original_data: inspection.original_data || {},  // 원본 데이터도 포함
+      aed_data: inspection.aed_data || null,  // 위치 정보 추가
       created_at: inspection.created_at,
       updated_at: inspection.updated_at,
       completed_at: inspection.completed_at,

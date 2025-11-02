@@ -296,36 +296,79 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
       }
 
       // 엑셀 데이터 변환
-      const excelData = inspectionHistoryList.map((inspection, index) => ({
-        '번호': index + 1,
-        '장비연번': inspection.equipment_serial,
-        '점검일시': new Date(inspection.inspection_date).toLocaleString('ko-KR'),
-        '점검자': inspection.inspector_name,
-        '점검자 이메일': inspection.inspector_email || '-',
-        '점검 유형': inspection.inspection_type === 'monthly' ? '월간점검' :
-                     inspection.inspection_type === 'quarterly' ? '분기점검' :
-                     inspection.inspection_type === 'annual' ? '연간점검' : '기타',
-        '외관 상태': inspection.visual_status || '-',
-        '배터리 상태': inspection.battery_status === 'good' ? '정상' :
-                       inspection.battery_status === 'replaced' ? '교체됨' :
-                       inspection.battery_status === 'expired' ? '만료' :
-                       inspection.battery_status === 'not_checked' ? '미확인' : '-',
-        '패드 상태': inspection.pad_status === 'good' ? '정상' :
-                     inspection.pad_status === 'replaced' ? '교체됨' :
-                     inspection.pad_status === 'expired' ? '만료' :
-                     inspection.pad_status === 'not_checked' ? '미확인' : '-',
-        '작동 상태': inspection.operation_status || '-',
-        '종합 상태': inspection.overall_status === 'pass' ? '합격' :
-                     inspection.overall_status === 'fail' ? '불합격' :
-                     inspection.overall_status === 'normal' ? '정상' :
-                     inspection.overall_status === 'needs_improvement' ? '개선필요' :
-                     inspection.overall_status === 'malfunction' ? '고장' : '-',
-        '비고': inspection.notes || '-',
-        '발견 문제': inspection.issues_found?.join(', ') || '-',
-        '사진 수': inspection.photos?.length || 0,
-        '점검 위도': inspection.inspection_latitude || '-',
-        '점검 경도': inspection.inspection_longitude || '-',
-      }));
+      const excelData = inspectionHistoryList.map((inspection, index) => {
+        // step_data에서 장치 정보 추출
+        const deviceInfo = (inspection as any).step_data?.deviceInfo || {};
+        // step_data에서 보관함 정보 추출
+        const storageInfo = (inspection as any).step_data?.storage || {};
+        // aed_data에서 위치 정보 추출
+        const aedData = (inspection as any).aed_data || {};
+
+        return {
+          '번호': index + 1,
+          '장비연번': inspection.equipment_serial,
+          '점검일시': new Date(inspection.inspection_date).toLocaleString('ko-KR'),
+          '점검자': inspection.inspector_name,
+          '점검자 이메일': inspection.inspector_email || '-',
+
+          // 위치 정보
+          '설치기관명': aedData.installation_institution || '-',
+          '시도': aedData.sido || '-',
+          '시군구': aedData.gugun || '-',
+          '상세주소': aedData.installation_address || '-',
+
+          // 장치 정보
+          '제조사': deviceInfo.manufacturer || '-',
+          '모델명': deviceInfo.model_name || '-',
+          '시리얼번호': deviceInfo.serial_number || '-',
+          '배터리 유효기간': deviceInfo.battery_expiry_date || '-',
+          '패드 유효기간': deviceInfo.pad_expiry_date || '-',
+          '제조일자': deviceInfo.manufacturing_date || '-',
+          '장비 상태': deviceInfo.device_status || '-',
+          '표시등 상태': deviceInfo.indicator_status || '-',
+
+          // 상태 필드
+          '외관 상태': inspection.visual_status || '-',
+          '배터리 상태': inspection.battery_status === 'good' ? '정상' :
+                         inspection.battery_status === 'replaced' ? '교체됨' :
+                         inspection.battery_status === 'expired' ? '만료' :
+                         inspection.battery_status === 'not_checked' ? '미확인' : '-',
+          '패드 상태': inspection.pad_status === 'good' ? '정상' :
+                       inspection.pad_status === 'replaced' ? '교체됨' :
+                       inspection.pad_status === 'expired' ? '만료' :
+                       inspection.pad_status === 'not_checked' ? '미확인' : '-',
+          '작동 상태': inspection.operation_status || '-',
+          '종합 상태': inspection.overall_status === 'pass' ? '합격' :
+                       inspection.overall_status === 'fail' ? '불합격' :
+                       inspection.overall_status === 'normal' ? '정상' :
+                       inspection.overall_status === 'needs_improvement' ? '개선필요' :
+                       inspection.overall_status === 'malfunction' ? '고장' : '-',
+
+          // 보관함 정보
+          '보관함 형태': storageInfo.storage_type === 'none' ? '없음' :
+                        storageInfo.storage_type === 'wall_mounted' ? '벽걸이형' :
+                        storageInfo.storage_type === 'standalone' ? '스탠드형' : '-',
+          '도난경보장치': storageInfo.alarm_functional === true ? '있음' :
+                         storageInfo.alarm_functional === false ? '없음' : '-',
+          '안내문구': storageInfo.instructions_status || '-',
+          '비상연락망': storageInfo.emergency_contact === true ? '있음' :
+                       storageInfo.emergency_contact === false ? '없음' : '-',
+          '심폐소생술 안내': storageInfo.cpr_manual === true ? '있음' :
+                            storageInfo.cpr_manual === false ? '없음' : '-',
+          '유효기간 표시': storageInfo.expiry_display === true ? '있음' :
+                          storageInfo.expiry_display === false ? '없음' : '-',
+          '안내표지 위치': Array.isArray(storageInfo.signage_selected)
+                          ? storageInfo.signage_selected.join(', ')
+                          : '-',
+
+          // 기타
+          '비고': inspection.notes || '-',
+          '발견 문제': inspection.issues_found?.join(', ') || '-',
+          '사진 수': inspection.photos?.length || 0,
+          '점검 위도': inspection.inspection_latitude || '-',
+          '점검 경도': inspection.inspection_longitude || '-',
+        };
+      });
 
       // 워크시트 생성
       const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -337,12 +380,35 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         { wch: 20 },  // 점검일시
         { wch: 12 },  // 점검자
         { wch: 25 },  // 점검자 이메일
-        { wch: 12 },  // 점검 유형
+        // 위치 정보
+        { wch: 25 },  // 설치기관명
+        { wch: 12 },  // 시도
+        { wch: 12 },  // 시군구
+        { wch: 30 },  // 상세주소
+        // 장치 정보
+        { wch: 15 },  // 제조사
+        { wch: 20 },  // 모델명
+        { wch: 20 },  // 시리얼번호
+        { wch: 15 },  // 배터리 유효기간
+        { wch: 15 },  // 패드 유효기간
+        { wch: 12 },  // 제조일자
+        { wch: 12 },  // 장비 상태
+        { wch: 12 },  // 표시등 상태
+        // 상태 필드
         { wch: 12 },  // 외관 상태
         { wch: 12 },  // 배터리 상태
         { wch: 12 },  // 패드 상태
         { wch: 12 },  // 작동 상태
         { wch: 12 },  // 종합 상태
+        // 보관함 정보
+        { wch: 12 },  // 보관함 형태
+        { wch: 12 },  // 도난경보장치
+        { wch: 15 },  // 안내문구
+        { wch: 12 },  // 비상연락망
+        { wch: 15 },  // 심폐소생술 안내
+        { wch: 12 },  // 유효기간 표시
+        { wch: 20 },  // 안내표지 위치
+        // 기타
         { wch: 30 },  // 비고
         { wch: 30 },  // 발견 문제
         { wch: 8 },   // 사진 수
