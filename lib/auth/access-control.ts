@@ -91,6 +91,33 @@ export function getAllowedRolesForDomain(email: string): UserRole[] {
   return ['temporary_inspector'];
 }
 
+/**
+ * 이메일 도메인 기반 기본 역할 제안
+ * - @nmc.or.kr → emergency_center_admin (중앙응급센터 관리자)
+ * - @korea.kr → local_admin (보건소 담당자)
+ * - 기타 도메인 → temporary_inspector (임시점검원)
+ */
+export function suggestDefaultRole(email: string): UserRole {
+  const emailDomain = email?.split('@')[1]?.toLowerCase();
+
+  if (!emailDomain) {
+    return 'temporary_inspector';
+  }
+
+  // @nmc.or.kr - 응급센터 관리자 (기본: 중앙응급센터)
+  if (emailDomain === 'nmc.or.kr') {
+    return 'emergency_center_admin';
+  }
+
+  // @korea.kr - 정부기관 관리자 (기본: 보건소 담당자)
+  if (emailDomain === 'korea.kr') {
+    return 'local_admin';
+  }
+
+  // 기타 도메인 - 임시 점검원
+  return 'temporary_inspector';
+}
+
 export interface AccessContext {
   userId: string;
   role: UserRole;

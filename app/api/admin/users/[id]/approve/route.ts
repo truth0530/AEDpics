@@ -6,6 +6,7 @@ import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
 import { sendApprovalEmail } from '@/lib/email/approval-email';
 import { logger } from '@/lib/logger';
+import { validateDomainForRole } from '@/lib/auth/access-control';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -83,6 +84,30 @@ export async function POST(
         { error: 'User is already approved or rejected' },
         { status: 400 }
       );
+    }
+
+    // 6.5. 마스터 계정이 아닌 경우 도메인 검증
+    const isMasterAccount = adminProfile.email === 'truth0530@nmc.or.kr';
+
+    if (!isMasterAccount) {
+      const validation = validateDomainForRole(targetUser.email, role as user_role);
+      if (!validation.allowed) {
+        logger.warn('AdminUsersApprove:POST', 'Domain validation failed', {
+          targetEmail: targetUser.email,
+          requestedRole: role,
+          suggestedRole: validation.suggestedRole,
+          adminEmail: adminProfile.email
+        });
+
+        return NextResponse.json(
+          {
+            error: validation.error,
+            suggestedRole: validation.suggestedRole,
+            message: '해당 이메일 도메인에는 이 역할을 부여할 수 없습니다. 마스터 계정이 필요합니다.'
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // 7. 사용자 승인 (role 변경)

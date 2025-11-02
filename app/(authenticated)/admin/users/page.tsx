@@ -41,6 +41,7 @@ import {
   getAccessLevelLabel,
   getRegionDisplay,
 } from '@/lib/utils/user-roles';
+import { suggestDefaultRole, getAllowedRolesForDomain } from '@/lib/auth/access-control';
 
 interface UserProfile {
   id: string;
@@ -86,6 +87,19 @@ export default function AdminUsersPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
 
   const queryClient = useQueryClient();
+
+  // 현재 로그인한 사용자 정보 조회
+  const { data: currentUserData } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/me');
+      if (!res.ok) throw new Error('Failed to fetch current user');
+      return res.json();
+    },
+  });
+
+  // 마스터 계정 여부 확인 (truth0530@nmc.or.kr)
+  const isMasterAccount = currentUserData?.user?.email === 'truth0530@nmc.or.kr';
 
   // 사용자 목록 조회
   const { data, isLoading, error } = useQuery<UsersResponse>({
@@ -166,7 +180,9 @@ export default function AdminUsersPage() {
 
   const handleApprove = (user: UserProfile) => {
     setSelectedUser(user);
-    setApprovalRole('local_admin');
+    // 이메일 도메인 기반으로 기본 역할 설정
+    const defaultRole = suggestDefaultRole(user.email);
+    setApprovalRole(defaultRole);
     setShowApproveModal(true);
   };
 
@@ -476,6 +492,29 @@ export default function AdminUsersPage() {
                 <Label htmlFor="role" className="text-gray-300">
                   역할 선택
                 </Label>
+
+                {/* 이메일 도메인 기반 권장 역할 안내 */}
+                {!isMasterAccount && (
+                  <div className="text-sm text-yellow-400 bg-yellow-900/20 p-3 rounded border border-yellow-700/50">
+                    <div className="font-medium mb-1">도메인 기반 권장 역할</div>
+                    <div>
+                      이메일 도메인 (@{selectedUser.email.split('@')[1]}): <strong>{getRoleLabel(suggestDefaultRole(selectedUser.email))}</strong>
+                    </div>
+                    <div className="text-xs text-yellow-300 mt-1">
+                      다른 역할로 변경하려면 마스터 계정이 필요합니다.
+                    </div>
+                  </div>
+                )}
+
+                {isMasterAccount && (
+                  <div className="text-sm text-blue-400 bg-blue-900/20 p-3 rounded border border-blue-700/50">
+                    <div className="font-medium mb-1">마스터 계정 권한</div>
+                    <div className="text-xs">
+                      모든 역할 선택 가능 (도메인 제약 무시)
+                    </div>
+                  </div>
+                )}
+
                 <Select
                   value={approvalRole}
                   onValueChange={(value) => setApprovalRole(value as UserRole)}
@@ -484,7 +523,10 @@ export default function AdminUsersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
-                    {APPROVABLE_ROLES.map((role) => (
+                    {(isMasterAccount
+                      ? APPROVABLE_ROLES
+                      : getAllowedRolesForDomain(selectedUser.email)
+                    ).map((role) => (
                       <SelectItem
                         key={role}
                         value={role}
