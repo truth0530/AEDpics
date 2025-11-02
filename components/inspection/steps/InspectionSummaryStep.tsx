@@ -418,24 +418,7 @@ export function InspectionSummaryStep() {
 
   return (
     <div className="space-y-3">
-      {/* 공유 버튼 (모바일용) */}
-      {isReportSharingSupported() && (
-        <div className="flex gap-2 no-print">
-          <button
-            type="button"
-            onClick={handleShareReport}
-            disabled={isSharing}
-            className="flex-1 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m0 0a2 2 0 01-2 2H3a2 2 0 01-2-2m0-6V7a2 2 0 012-2h12a2 2 0 012 2v6" />
-            </svg>
-            {isSharing ? '보고서 저장 중...' : '보고서 공유'}
-          </button>
-        </div>
-      )}
-
-      {/* 보고서 컨테이너 - 화면: 기존 디자인, 인쇄: MS Word 스타일 */}
+      {/* 보고서 컨테이너 - MS Word 스타일 */}
       <div id="inspection-report-container" className="space-y-4 rounded-lg border border-gray-700/30 bg-gray-900/50 p-4">
         <style>{`
           /* 기본: 보고서 섹션 표시 */
@@ -574,15 +557,15 @@ export function InspectionSummaryStep() {
         {/* ===== 보고서: MS Word 스타일 ===== */}
 
         {/* 헤더 */}
-        <div className="report-section" style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #ddd' }}>
-          <div style={{ fontSize: '9px', color: '#666' }}>
+        <div className="report-section" style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #4b5563' }}>
+          <div style={{ fontSize: '9px', color: '#9ca3af' }}>
             보고서 생성 일시: {formatKSTTime(documentation.completed_time || new Date().toISOString())}
           </div>
         </div>
 
         {/* 1. 보고서 제목 */}
-        <div className="report-title report-section" style={{ paddingBottom: '20px', paddingTop: '30px', borderBottom: '3px solid #333', marginBottom: '20px', textAlign: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>2025년 자동심장충격기 현지점검 결과</h1>
+        <div className="report-title report-section" style={{ paddingBottom: '20px', paddingTop: '30px', borderBottom: '3px solid #4b5563', marginBottom: '20px', textAlign: 'center' }}>
+          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#f3f4f6' }}>2025년 자동심장충격기 현지점검 결과</h1>
         </div>
 
         {/* 2. 기본 정보 테이블 (Ⅰ. 점검 대상 정보) */}
@@ -590,17 +573,17 @@ export function InspectionSummaryStep() {
           <div className="section-title">Ⅰ. 점검 대상 정보</div>
           <table className="report-table" style={{ borderCollapse: 'collapse' }}>
             <tbody>
-              <tr style={{ borderTop: '2px solid #333', borderBottom: '1px solid #999' }}>
-                <td className="header" style={{ width: '25%', border: 'none', borderRight: '1px solid #999' }}>설치기관</td>
-                <td style={{ border: 'none', borderRight: '1px solid #999' }}>{deviceInfo.installation_institution || deviceInfo.installation_org || '-'}</td>
-                <td className="header" style={{ width: '25%', border: 'none', borderRight: '1px solid #999' }}>관리번호</td>
-                <td style={{ border: 'none' }}>{deviceInfo.management_number || '-'}</td>
+              <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
+                <td className="header" style={{ width: '25%', border: 'none', borderRight: '1px solid #6b7280', backgroundColor: '#374151', color: '#f3f4f6', fontWeight: '500' }}>설치기관</td>
+                <td style={{ border: 'none', borderRight: '1px solid #6b7280', color: '#d1d5db' }}>{deviceInfo.installation_institution || deviceInfo.installation_org || '-'}</td>
+                <td className="header" style={{ width: '25%', border: 'none', borderRight: '1px solid #6b7280', backgroundColor: '#374151', color: '#f3f4f6', fontWeight: '500' }}>관리번호</td>
+                <td style={{ border: 'none', color: '#d1d5db' }}>{deviceInfo.management_number || '-'}</td>
               </tr>
-              <tr style={{ borderBottom: '2px solid #333' }}>
-                <td className="header" style={{ border: 'none', borderRight: '1px solid #999' }}>장비연번</td>
-                <td style={{ border: 'none', borderRight: '1px solid #999' }}>{deviceInfo.equipment_serial || deviceInfo.serial_number || '-'}</td>
-                <td className="header" style={{ border: 'none', borderRight: '1px solid #999' }}>관리책임자</td>
-                <td style={{ border: 'none' }}>{(deviceInfo.manager || '-')} / {deviceInfo.institution_contact || '-'}</td>
+              <tr style={{ borderBottom: '2px solid #4b5563' }}>
+                <td className="header" style={{ border: 'none', borderRight: '1px solid #6b7280', backgroundColor: '#374151', color: '#f3f4f6', fontWeight: '500' }}>장비연번</td>
+                <td style={{ border: 'none', borderRight: '1px solid #6b7280', color: '#d1d5db' }}>{deviceInfo.equipment_serial || deviceInfo.serial_number || '-'}</td>
+                <td className="header" style={{ border: 'none', borderRight: '1px solid #6b7280', backgroundColor: '#374151', color: '#f3f4f6', fontWeight: '500' }}>관리책임자</td>
+                <td style={{ border: 'none', color: '#d1d5db' }}>{(deviceInfo.manager || '-')} / {deviceInfo.institution_contact || '-'}</td>
               </tr>
             </tbody>
           </table>
@@ -610,15 +593,15 @@ export function InspectionSummaryStep() {
         {basicInfoSummary.matched.length + deviceInfoSummary.matched.length + storageChecklistSummary.matched.length > 0 && (
           <div className="report-section">
             <div className="section-title">Ⅱ. 점검 항목</div>
-            <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>일치항목</div>
+            <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '8px', color: '#e5e7eb' }}>일치항목</div>
 
             {/* 정상 항목 */}
             {[...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched]
               .filter(item => !['청결 상태', '가시성', '접근성', '라벨 상태'].includes(item.label)).length > 0 && (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: '12px' }}>
                 <tbody>
-                  <tr style={{ borderTop: '2px solid #333', borderBottom: '2px solid #333' }}>
-                    <td style={{ padding: '6px', border: 'none', color: '#333', lineHeight: '1.6' }}>
+                  <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '2px solid #4b5563' }}>
+                    <td style={{ padding: '6px', border: 'none', color: '#d1d5db', lineHeight: '1.6' }}>
                       {(() => {
                         const items = [...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched]
                           .filter(item => !['청결 상태', '가시성', '접근성', '라벨 상태'].includes(item.label));
@@ -649,14 +632,14 @@ export function InspectionSummaryStep() {
             {/* 불일치 항목 */}
             {basicInfoSummary.modified.length + deviceInfoSummary.modified.length > 0 && (
               <div>
-                <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '6px', color: '#1f2937' }}>불일치항목</div>
+                <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '6px', color: '#e5e7eb' }}>불일치항목</div>
                 <table className="report-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px' }}>
                   <thead>
-                    <tr style={{ borderTop: '2px solid #333', borderBottom: '1px solid #999' }}>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #999' }}>항목</th>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #999' }}>원본값</th>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #999' }}>수정값</th>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none' }}>조치</th>
+                    <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
+                      <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>항목</th>
+                      <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>원본값</th>
+                      <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>수정값</th>
+                      <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>조치</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -665,11 +648,11 @@ export function InspectionSummaryStep() {
                       const selectedAction = itemActions[itemKey];
                       const isLast = idx === arr.length - 1;
                       return (
-                        <tr key={idx} style={{ borderBottom: isLast ? '2px solid #333' : '1px solid #999' }}>
-                          <td style={{ padding: '3px', border: 'none', borderRight: '1px solid #999' }}>{item.label}</td>
-                          <td style={{ padding: '3px', border: 'none', borderRight: '1px solid #999' }}>{item.original || '-'}</td>
-                          <td style={{ padding: '3px', fontWeight: 'bold', border: 'none', borderRight: '1px solid #999' }}>{item.corrected}</td>
-                          <td style={{ padding: '3px', border: 'none' }}>{selectedAction === 'onsite' ? '현장' : selectedAction === 'office' ? '사무실' : '-'}</td>
+                        <tr key={idx} style={{ borderBottom: isLast ? '2px solid #4b5563' : '1px solid #6b7280' }}>
+                          <td style={{ padding: '3px', border: 'none', borderRight: '1px solid #6b7280', color: '#d1d5db' }}>{item.label}</td>
+                          <td style={{ padding: '3px', border: 'none', borderRight: '1px solid #6b7280', color: '#d1d5db' }}>{item.original || '-'}</td>
+                          <td style={{ padding: '3px', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#e5e7eb' }}>{item.corrected}</td>
+                          <td style={{ padding: '3px', border: 'none', color: '#d1d5db' }}>{selectedAction === 'onsite' ? '현장' : selectedAction === 'office' ? '사무실' : '-'}</td>
                         </tr>
                       );
                     })}
@@ -685,8 +668,8 @@ export function InspectionSummaryStep() {
           <div className="section-title">Ⅲ. 점검 종합 의견</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '10px' }}>
             <tbody>
-              <tr style={{ borderTop: '2px solid #333', borderBottom: '2px solid #333' }}>
-                <td style={{ padding: '8px', border: 'none', color: '#333', lineHeight: '1.5' }}>
+              <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '2px solid #4b5563' }}>
+                <td style={{ padding: '8px', border: 'none', color: '#e5e7eb', lineHeight: '1.5' }}>
                   {useMemo(() => {
                     // 1. 관리책임자가 수정된 경우
                     const managerModified = basicInfoSummary.modified.some(item => item.label === '관리책임자');
@@ -713,10 +696,10 @@ export function InspectionSummaryStep() {
 
           {/* 법조항 및 과태료 표 */}
           <div style={{ marginTop: '10px' }}>
-            <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '8px', color: '#e5e7eb' }}>
               제62조(과태료)
             </div>
-            <div style={{ fontSize: '9px', marginBottom: '8px', color: '#333', lineHeight: '1.5' }}>
+            <div style={{ fontSize: '9px', marginBottom: '8px', color: '#d1d5db', lineHeight: '1.5' }}>
               다음 각 호의 어느 하나에 해당하는 자에게는 과태료를 부과한다.
             </div>
 
@@ -724,390 +707,99 @@ export function InspectionSummaryStep() {
             {(storageChecklistSummary.issues.some(item => item.label === '최근 점검이력') ||
               storageChecklistSummary.matched.every(item => item.label !== '안내표지') ||
               basicInfoSummary.modified.length > 0) && (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', color: '#333', marginTop: '6px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', color: '#d1d5db', marginTop: '6px' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#e8e8e8', borderTop: '2px solid #333', borderBottom: '1px solid #999' }}>
-                    <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #999' }}>위반 행위</th>
-                    <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #999' }}>근거법조문</th>
-                    <th colSpan={3} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none' }}>과태료 금액</th>
+                  <tr style={{ backgroundColor: '#374151', borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
+                    <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>위반 행위</th>
+                    <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>근거법조문</th>
+                    <th colSpan={3} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>과태료 금액</th>
                   </tr>
-                  <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #999' }}>
-                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #999' }}>1차 위반</th>
-                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #999' }}>2차 위반</th>
-                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none' }}>3차 위반</th>
+                  <tr style={{ backgroundColor: '#4b5563', borderBottom: '1px solid #6b7280' }}>
+                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>1차 위반</th>
+                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>2차 위반</th>
+                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>3차 위반</th>
                   </tr>
                 </thead>
                 <tbody>
                   {/* 변경신고 미이행 */}
                   {basicInfoSummary.modified.length > 0 && (
-                    <tr style={{ borderBottom: '1px solid #999' }}>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'left', lineHeight: '1.4' }}>
+                    <tr style={{ borderBottom: '1px solid #6b7280' }}>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
                         법 제47조의2제2항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 설치 신고 또는 변경신고를 하지 않은 경우
                       </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center', fontSize: '7px' }}>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
                         법 제62조<br/>제1항 제3호의 4
                       </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center' }}>50만원</td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center' }}>100만원</td>
-                      <td style={{ border: 'none', padding: '4px', textAlign: 'center' }}>150만원</td>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
+                      <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>150만원</td>
                     </tr>
                   )}
 
                   {/* 점검 결과 통보 미이행 */}
                   {storageChecklistSummary.issues.some(item => item.label === '최근 점검이력') && (
-                    <tr style={{ borderBottom: '1px solid #999' }}>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'left', lineHeight: '1.4' }}>
+                    <tr style={{ borderBottom: '1px solid #6b7280' }}>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
                         법 제47조의2제3항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 점검 결과를 통보하지 않은 경우
                       </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center', fontSize: '7px' }}>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
                         법 제62조<br/>제1항 제3호의 5
                       </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center' }}>50만원</td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center' }}>75만원</td>
-                      <td style={{ border: 'none', padding: '4px', textAlign: 'center' }}>100만원</td>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>75만원</td>
+                      <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
                     </tr>
                   )}
 
                   {/* 안내표지판 미부착 */}
                   {storageChecklistSummary.matched.every(item => item.label !== '안내표지') && (
-                    <tr style={{ borderBottom: '2px solid #333' }}>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'left', lineHeight: '1.4' }}>
+                    <tr style={{ borderBottom: '2px solid #4b5563' }}>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
                         법 제47조의2제4항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비 사용에 관한 안내표지판을 부착하지 않은 경우
                       </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center', fontSize: '7px' }}>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
                         법 제62조<br/>제2항
                       </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center' }}>30만원</td>
-                      <td style={{ border: 'none', borderRight: '1px solid #999', padding: '4px', textAlign: 'center' }}>50만원</td>
-                      <td style={{ border: 'none', padding: '4px', textAlign: 'center' }}>70만원</td>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>30만원</td>
+                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
+                      <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>70만원</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             )}
-            <div style={{ fontSize: '7px', color: '#666', marginTop: '4px', textAlign: 'right' }}>
+            <div style={{ fontSize: '7px', color: '#9ca3af', marginTop: '4px', textAlign: 'right' }}>
               응급의료에 관한 법률 시행령 [별표 2] 과태료의 부과기준
             </div>
           </div>
         </div>
 
         {/* 10. 서명 */}
-        <div className="report-section" style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #000', textAlign: 'right' }}>
-          <p style={{ margin: 0, marginBottom: '5px', fontSize: '11px', color: '#333' }}>{formatDate(documentation.completed_time || new Date().toISOString())}</p>
-          <p style={{ margin: 0, fontSize: '11px', color: '#333' }}>점검자: {user?.user_metadata?.name || user?.email || '-'}</p>
+        <div className="report-section" style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #4b5563', textAlign: 'right' }}>
+          <p style={{ margin: 0, marginBottom: '5px', fontSize: '11px', color: '#d1d5db' }}>{formatDate(documentation.completed_time || new Date().toISOString())}</p>
+          <p style={{ margin: 0, fontSize: '11px', color: '#d1d5db' }}>점검자: {user?.user_metadata?.name || user?.email || '-'}</p>
         </div>
 
         {/* 11. 하단 페이지 정보 */}
-        <div className="report-section" style={{ marginTop: '30px', textAlign: 'center', fontSize: '9px', color: '#999' }}>
+        <div className="report-section" style={{ marginTop: '30px', textAlign: 'center', fontSize: '9px', color: '#9ca3af' }}>
           <p>이 보고서는 oo보건소 자동심장충격기(AED) 정기점검 기록입니다.</p>
         </div>
 
         {/* 푸터 */}
-        <div className="report-section" style={{ marginTop: '40px', paddingTop: '15px', borderTop: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: '9px', color: '#666' }}></div>
-          <div style={{ fontSize: '9px', color: '#666' }}>https://aed.pics</div>
+        <div className="report-section" style={{ marginTop: '40px', paddingTop: '15px', borderTop: '1px solid #4b5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '9px', color: '#9ca3af' }}></div>
+          <div style={{ fontSize: '9px', color: '#9ca3af' }}>https://aed.pics</div>
         </div>
 
-        {/* ===== 화면 모드: 기존 디자인 ��지 ===== */}
-
-        {/* 공유 버튼 */}
-        {isReportSharingSupported() && (
-          <div className="screen-only flex gap-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="flex-1 rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-            >
-              인쇄 / PDF 저장
-            </button>
-          </div>
-        )}
-
-        {/* 보고서 제목 (화면) */}
-        <div className="screen-only text-center space-y-1 pb-4 border-b border-gray-600/50">
-          <h2 className="text-2xl font-bold text-white">
-            AED 점검 보고서
-          </h2>
-          <p className="text-sm text-gray-400">
-            {formatDate(documentation.completed_time || new Date().toISOString())} 점검
-          </p>
-        </div>
-
-        {/* 기관 및 점검자 정보 (화면) */}
-        <div className="screen-only grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-lg border border-gray-600/40 bg-gray-800/30 p-3">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase mb-2">기관 정보</h3>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">기관명</span>
-                <span className="text-white font-medium">{deviceInfo.installation_institution || deviceInfo.installation_org || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">관리번호</span>
-                <span className="text-white font-medium">{deviceInfo.management_number || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">장비연번</span>
-                <span className="text-white font-medium">{deviceInfo.equipment_serial || deviceInfo.serial_number || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">관리책임자</span>
-                <span className="text-white font-medium">{deviceInfo.manager || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">담당자 연락처</span>
-                <span className="text-white font-medium text-xs">{deviceInfo.institution_contact || '-'}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-gray-600/40 bg-gray-800/30 p-3">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase mb-2">점검자 정보</h3>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">점검자</span>
-                <span className="text-white font-medium">{user?.user_metadata?.name || user?.email || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">조직</span>
-                <span className="text-white font-medium text-xs">{user?.user_metadata?.organization || '-'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">점검완료</span>
-                <span className="text-white font-medium text-xs">{formatKSTTime(documentation.completed_time || new Date().toISOString())}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 점검 결과 요약 (화면) */}
-        <div className="screen-only">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3">점검 결과 요약</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="rounded-lg border border-green-600/40 bg-green-900/15 p-3 text-center">
-              <div className="text-2xl font-bold text-green-400">{totalStats.matchedCount}</div>
-              <div className="text-xs text-gray-400 mt-1">양호</div>
-            </div>
-            <div className="rounded-lg border border-yellow-600/40 bg-yellow-900/15 p-3 text-center">
-              <div className="text-2xl font-bold text-yellow-400">{totalStats.modifiedCount}</div>
-              <div className="text-xs text-gray-400 mt-1">수정</div>
-            </div>
-            <div className="rounded-lg border border-red-600/40 bg-red-900/15 p-3 text-center">
-              <div className="text-2xl font-bold text-red-400">{totalStats.issuesCount}</div>
-              <div className="text-xs text-gray-400 mt-1">불량</div>
-            </div>
-            <div className="rounded-lg border border-blue-600/40 bg-blue-900/15 p-3 text-center">
-              <div className="text-2xl font-bold text-blue-400">{totalStats.photosCount}</div>
-              <div className="text-xs text-gray-400 mt-1">사진</div>
-            </div>
-          </div>
-        </div>
-
-        {/* 양호 항목 (화면) */}
-        {basicInfoSummary.matched.length + deviceInfoSummary.matched.length + storageChecklistSummary.matched.length > 0 && (
-          <div className="screen-only rounded-lg border border-green-600/30 bg-green-900/10 p-3">
-            <h3 className="text-sm font-semibold text-green-400 mb-2">
-              양호 항목 ({totalStats.matchedCount}개)
-            </h3>
-            <div className="space-y-1">
-              {[...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched].map((item, idx) => (
-                <div key={idx} className="text-sm text-gray-300 leading-relaxed">
-                  • {typeof item === 'string' ? item : item.label}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 수정 항목 (화면) */}
-        {basicInfoSummary.modified.length + deviceInfoSummary.modified.length > 0 && (
-          <div className="screen-only rounded-lg border border-yellow-600/30 bg-yellow-900/10 p-3">
-            <h3 className="text-sm font-semibold text-yellow-400 mb-3">
-              수정 항목 ({totalStats.modifiedCount}개)
-            </h3>
-            <div className="space-y-3">
-              {[...basicInfoSummary.modified, ...deviceInfoSummary.modified].map((item, idx) => {
-                const itemKey = `modified_${idx}`;
-                const selectedAction = itemActions[itemKey];
-
-                return (
-                  <div key={idx} className="bg-gray-800/30 rounded-lg p-2.5 border border-gray-600/30">
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <div className="text-sm font-medium text-yellow-300">{item.label}</div>
-                      <div className="flex gap-1 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleItemAction(itemKey, 'onsite')}
-                          className={`py-0.5 px-2 rounded text-[10px] font-medium transition-all whitespace-nowrap ${
-                            selectedAction === 'onsite'
-                              ? 'bg-green-600/40 border border-green-500 text-green-200'
-                              : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-green-500'
-                          }`}
-                        >
-                          현장권고
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleItemAction(itemKey, 'office')}
-                          className={`py-0.5 px-2 rounded text-[10px] font-medium transition-all whitespace-nowrap ${
-                            selectedAction === 'office'
-                              ? 'bg-blue-600/40 border border-blue-500 text-blue-200'
-                              : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-blue-500'
-                          }`}
-                        >
-                          추후통보
-                        </button>
-                      </div>
-                    </div>
-
-                    {item.original ? (
-                      <div className="space-y-1">
-                        <div className="text-xs text-gray-400 leading-tight">
-                          <span className="text-red-400 font-medium">원본:</span> {item.original}
-                        </div>
-                        <div className="text-xs text-gray-300 leading-tight flex items-start gap-1">
-                          <span>→</span>
-                          <div>
-                            <span className="text-green-400 font-medium">수정:</span> {item.corrected}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-300 leading-tight">
-                        {item.corrected}
-                      </div>
-                    )}
-
-                    {item.reason && (
-                      <div className="text-xs text-gray-500 mt-1 italic">
-                        사유: {item.reason}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 불량 항목 (화면) */}
-        {storageChecklistSummary.issues.length > 0 && (
-          <div className="screen-only rounded-lg border border-red-600/30 bg-red-900/10 p-3">
-            <h3 className="text-sm font-semibold text-red-400 mb-2">
-              보관함 불량 항목 ({totalStats.issuesCount}개) - 즉시 조치 필요
-            </h3>
-            <div className="space-y-1">
-              {storageChecklistSummary.issues.map((item, idx) => (
-                <div key={idx} className="text-sm text-red-300 leading-relaxed">
-                  • {item as unknown as React.ReactNode}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 첨부 자료 (화면) */}
-        <div className="screen-only rounded-lg border border-gray-600/30 bg-gray-800/20 p-3">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">
-            첨부 자료
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {[
-              { label: '시리얼번호', count: deviceInfoSummary.photos.includes('시리얼번호') ? 1 : 0 },
-              { label: '배터리 제조일자', count: deviceInfoSummary.photos.includes('배터리 제조일자') ? 1 : 0 },
-              { label: '본체 제조일자', count: deviceInfoSummary.photos.includes('본체 제조일자') ? 1 : 0 },
-              { label: '보관함 사진', count: storageChecklistSummary.photos.includes('보관함 사진') ? 1 : 0 },
-              { label: '안내표지 사진', count: storageChecklistSummary.photos.includes('안내표지 사진') ? 1 : 0 },
-            ].map((photo, idx) => (
-              <div key={idx} className={`rounded-lg p-2 text-center text-xs font-medium transition-colors ${
-                photo.count > 0
-                  ? 'bg-green-900/20 border border-green-600/30 text-green-400'
-                  : 'bg-gray-700/20 border border-gray-600/30 text-gray-500 dark:text-gray-400'
-              }`}>
-                <div className="text-sm mb-0.5 font-bold">{photo.count > 0 ? '완료' : '미완료'}</div>
-                {photo.label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 권장 조치 사항 (화면) */}
-        <div className={`screen-only rounded-lg border p-3 ${
-          recommendedAction.severity === 'high'
-            ? 'border-red-600/30 bg-red-900/10'
-            : recommendedAction.severity === 'medium'
-            ? 'border-yellow-600/30 bg-yellow-900/10'
-            : 'border-green-600/30 bg-green-900/10'
-        }`}>
-          <h3 className={`text-sm font-semibold mb-2 ${
-            recommendedAction.severity === 'high' ? 'text-red-400' :
-            recommendedAction.severity === 'medium' ? 'text-yellow-400' :
-            'text-green-400'
-          }`}>
-            권장 조치 사항
-          </h3>
-          <p className={`text-sm leading-relaxed ${
-            recommendedAction.severity === 'high' ? 'text-red-300 dark:text-red-300' :
-            recommendedAction.severity === 'medium' ? 'text-yellow-300 dark:text-yellow-300' :
-            'text-green-300 dark:text-green-300'
-          }`}>
-            {recommendedAction.reason}
-          </p>
-        </div>
-
-        {/* 종합 의견 (화면) */}
-        <div className="screen-only rounded-lg border border-gray-600/30 bg-gray-800/20 p-3 space-y-2">
-          <label htmlFor="notes" className="block text-sm font-semibold text-gray-300">
-            점검 종합 의견
-          </label>
-          <textarea
-            id="notes"
-            value={documentation.notes || ''}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            rows={3}
-            className="block w-full rounded-lg px-3 py-2 bg-gray-800/50 border border-gray-600/40 text-sm text-white dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-            placeholder="점검 과정에서 발견한 특이사항이나 종합 의견을 작성하세요"
-          />
-        </div>
-
-        {/* 점검자 확인 및 완료 시각 (화면) */}
-        <div className="screen-only rounded-lg border border-gray-600/30 bg-gray-800/20 p-3 space-y-3">
-          <div>
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={documentation.inspector_confirmed || false}
-                onChange={(e) => handleChange('inspector_confirmed', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-green-600 focus:ring-green-500"
-              />
-              <span className="text-sm font-medium text-gray-300">
-                위 내용이 정확함을 확인합니다
-              </span>
-            </label>
-          </div>
-
-          <div>
-            <div className="text-sm font-medium text-gray-300 mb-1">
-              점검 완료 시각
-            </div>
-            <div className="rounded-lg px-3 py-2 bg-gray-800/50 border border-gray-600/40 text-sm text-gray-200 font-medium">
-              {formatKSTTime(documentation.completed_time || new Date().toISOString())}
-            </div>
-            <input
-              type="datetime-local"
-              id="completed_time"
-              value={documentation.completed_time || new Date().toISOString().slice(0, 16)}
-              onChange={(e) => handleChange('completed_time', e.target.value)}
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        {/* 경고 메시지 (화면) */}
-        <div className="screen-only rounded-lg bg-yellow-900/20 border border-yellow-600/30 p-2.5">
-          <p className="text-xs text-yellow-300 dark:text-yellow-300 leading-relaxed">
-            주의: 점검 완료 후에도 재점검을 통해 내용을 수정할 수 있습니다. 모든 내용을 다시 확인해주세요.
-          </p>
+        {/* 인쇄 버튼 */}
+        <div className="no-print mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            인쇄 / PDF 저장
+          </button>
         </div>
       </div>
     </div>
