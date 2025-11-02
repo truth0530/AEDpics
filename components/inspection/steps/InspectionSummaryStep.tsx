@@ -883,7 +883,7 @@ export function InspectionSummaryStep() {
         {/* 점검 결과 요약 (화면) */}
         <div className="screen-only">
           <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3">점검 결과 요약</h3>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-lg border border-green-600/40 bg-green-900/15 p-3 text-center">
               <div className="text-2xl font-bold text-green-400">{totalStats.matchedCount}</div>
               <div className="text-xs text-gray-400 mt-1">양호</div>
@@ -911,7 +911,7 @@ export function InspectionSummaryStep() {
             </h3>
             <div className="space-y-1">
               {[...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched].map((item, idx) => (
-                <div key={idx} className="text-sm text-gray-300 dark:text-gray-300 leading-relaxed">
+                <div key={idx} className="text-sm text-gray-300 leading-relaxed">
                   • {typeof item === 'string' ? item : item.label}
                 </div>
               ))}
@@ -1080,7 +1080,7 @@ export function InspectionSummaryStep() {
                 onChange={(e) => handleChange('inspector_confirmed', e.target.checked)}
                 className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-green-600 focus:ring-green-500"
               />
-              <span className="text-sm font-medium text-gray-300 dark:text-gray-300">
+              <span className="text-sm font-medium text-gray-300">
                 위 내용이 정확함을 확인합니다
               </span>
             </label>

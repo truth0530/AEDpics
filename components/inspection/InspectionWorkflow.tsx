@@ -262,35 +262,14 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       case 0: // BasicInfoStep
         const basicInfo = stepData.basicInfo as Record<string, any> | undefined;
 
-        // 필수: all_matched 체크 여부 확인
-        if (!basicInfo?.all_matched) {
+        // 필수: all_matched 체크 여부 확인 (true 또는 'edited' 모두 완료로 간주)
+        if (basicInfo?.all_matched !== true && basicInfo?.all_matched !== 'edited') {
           missing.push('기본 정보 - 일치 여부를 확인해주세요');
-        } else if (basicInfo?.all_matched === 'edited') {
-          // 기본정보 검증 (수정했으면 값 필요)
-          const fields = [
-            { key: 'manager', label: '관리책임자' },
-            { key: 'contact_info', label: '담당자 연락처' },
-            { key: 'category_1', label: '대분류' },
-            { key: 'category_2', label: '중분류' },
-            { key: 'category_3', label: '소분류' }
-          ];
-          const emptyFields = fields.filter(f => !basicInfo[f.key]?.trim()).map(f => f.label);
-          if (emptyFields.length > 0) {
-            missing.push(`기본 정보 중 비어있는 항목: ${emptyFields.join(', ')}`);
-          }
         }
 
-        // 필수: location_matched 체크 여부 확인
-        if (!basicInfo?.location_matched) {
+        // 필수: location_matched 체크 여부 확인 (true 또는 'edited' 모두 완료로 간주)
+        if (basicInfo?.location_matched !== true && basicInfo?.location_matched !== 'edited') {
           missing.push('위치 정보 - 일치 여부를 확인해주세요');
-        } else if (basicInfo?.location_matched === 'edited') {
-          // 위치정보 검증
-          if (!basicInfo.address?.trim()) {
-            missing.push('주소 값이 비어있음');
-          }
-          if (!basicInfo.installation_position?.trim()) {
-            missing.push('설치위치 값이 비어있음');
-          }
         }
         break;
 
@@ -313,19 +292,19 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           missing.push('장비 정보 (제조사, 모델명, 제조번호) - 일치 또는 수정 확인 필요');
         }
 
-        // ✅ 소모품 정보 검증 (개별 _matched 플래그 확인)
+        // ✅ 소모품 정보 검증 (개별 _matched 플래그 확인, true 또는 'edited' 모두 완료로 간주)
         const batteryMatched = deviceInfo?.battery_expiry_date_matched;
         const padMatched = deviceInfo?.pad_expiry_date_matched;
         const mfgDateMatched = deviceInfo?.manufacturing_date_matched;
 
-        // 하나라도 확인되지 않았으면 경고
-        if (!batteryMatched || batteryMatched === false) {
+        // 하나라도 확인되지 않았으면 경고 (true 또는 'edited'가 아니면 미확인)
+        if (batteryMatched !== true && batteryMatched !== 'edited') {
           missing.push('배터리 유효기간 - 일치 또는 수정 확인 필요');
         }
-        if (!padMatched || padMatched === false) {
+        if (padMatched !== true && padMatched !== 'edited') {
           missing.push('패드 유효기간 - 일치 또는 수정 확인 필요');
         }
-        if (!mfgDateMatched || mfgDateMatched === false) {
+        if (mfgDateMatched !== true && mfgDateMatched !== 'edited') {
           missing.push('제조일자 - 일치 또는 수정 확인 필요');
         }
 
