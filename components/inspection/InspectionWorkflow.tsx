@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { cloneDeep, isEqual } from 'lodash';
+import { isEqual } from 'lodash';
 import { useInspectionSessionStore } from '@/lib/state/inspection-session-store';
 import { BasicInfoStep } from './steps/BasicInfoStep';
 import { DeviceInfoStep } from './steps/DeviceInfoStep';
@@ -26,6 +26,18 @@ const STEP_TITLES = [
   '점검 요약',
 ];
 
+/**
+ * 페이지 상단으로 스크롤 (구형 브라우저 호환성 포함)
+ */
+const scrollToTop = () => {
+  try {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    // 폴백: behavior 미지원 브라우저 (IE11 등)
+    window.scrollTo(0, 0);
+  }
+};
+
 interface InspectionWorkflowProps {
   deviceSerial?: string;
   deviceData?: Record<string, unknown>;
@@ -45,10 +57,11 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
   const reopenCompletedSession = useInspectionSessionStore((state) => state.reopenCompletedSession);
   const isLoading = useInspectionSessionStore((state) => state.isLoading);
   const stepData = useInspectionSessionStore((state) => state.stepData);
+  const lastSavedStepData = useInspectionSessionStore((state) => state.lastSavedStepData); // 🆕 store에서 가져옴
   const resetSession = useInspectionSessionStore((state) => state.resetSession);
 
-  // 📌 currentStep 검증: 유효한 범위 내인지 확인
-  const validatedStep = Math.min(currentStep, STEP_COMPONENTS.length - 1);
+  // 📌 currentStep 검증: 유효한 범위 내인지 확인 (음수 및 최대값 방지)
+  const validatedStep = Math.max(0, Math.min(currentStep, STEP_COMPONENTS.length - 1));
 
   const [isSaving, setIsSaving] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -61,23 +74,18 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [showRequiredFieldsModal, setShowRequiredFieldsModal] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
-  const [lastSavedStepData, setLastSavedStepData] = useState<Record<string, unknown>>({});
 
-  // ✅ lastSavedStepData 초기화: 세션 로드 시 기존 step_data로 초기화
-  useEffect(() => {
-    // 세션이 처음 로드될 때만 초기화 (새 세션 시작 시)
-    if (session?.id && session?.step_data) {
-      console.log('[lastSavedStepData] Initializing from session.step_data:', session.step_data);
-      setLastSavedStepData(session.step_data as Record<string, unknown>);
-    }
-  }, [session?.id]); // session.id 변경 시만 (무한 루프 방지)
+  // 🎯 통합 로딩 상태: 모든 버튼 disabled 로직 통일
+  const isBusy = isLoading || isSaving || isCompleting || isCancelling || isReopening;
 
   // 🆕 완료된 세션 감지: 재점검 여부 확인
   useEffect(() => {
     if (session?.status === 'completed') {
       setShowReopenModal(true);
+    } else {
+      setShowReopenModal(false);
     }
-  }, [session?.status]);
+  }, [session?.status, session?.id]); // ✅ session.id 변경 시에도 재실행
 
   // Auto-save mutation using React Query (must be called unconditionally)
   const saveProgressMutation = useMutation({
@@ -86,14 +94,11 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     },
     onSuccess: () => {
       console.log('Progress saved successfully');
-      // ✅ 자동 저장 성공 시에도 lastSavedStepData 업데이트
-      setLastSavedStepData(cloneDeep(stepData));
+      // ✅ lastSavedStepData는 이제 store의 persistProgress에서 자동 업데이트
     },
     onError: (error) => {
       console.error('Failed to save progress:', error);
-      // 🆕 상세 오류 메시지 등록
-      const errorMessage = error instanceof Error ? error.message : '진행사항 저장에 실패했습니다.';
-      setError(errorMessage);
+      // ⚠️ setError는 호출하는 쪽(catch 블록)에서 처리하므로 로깅만 수행
     },
   });
 
@@ -161,6 +166,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      scrollToTop(); // 🆕 단계 전환 시 상단으로 스크롤
     }
   };
 
@@ -401,20 +407,34 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         setShowSaveModal(true); // 변경사항 있으면 저장 모달 표시
       } else {
         setCurrentStep(currentStep + 1); // 변경사항 없으면 바로 다음 단계로
+        scrollToTop(); // 🆕 단계 전환 시 상단으로 스크롤
       }
     }
   };
 
-  // 현재 단계에 변경사항이 있는지 확인
+  /**
+   * 현재 단계의 데이터 변경 여부 확인
+   *
+   * ⚠️ 주의사항:
+   * - stepData에는 순수 점검 데이터만 저장할 것
+   * - UI 상태(isOpen, _validated 등)나 임시 필드 저장 금지
+   * - 저장된 적 없으면: 데이터 존재 여부로 판단
+   * - 저장된 데이터 있으면: lodash isEqual로 깊은 비교
+   *
+   * @param step - 단계 번호 (0-based)
+   * @returns 변경사항 있으면 true
+   */
   const checkStepHasChanges = (step: number): boolean => {
-    const currentStepKey = ['basicInfo', 'deviceInfo', 'storage', 'summary'][step];
+    const currentStepKey = ['basicInfo', 'deviceInfo', 'storage', 'documentation'][step];
     const currentData = stepData[currentStepKey];
     const savedData = lastSavedStepData[currentStepKey];
 
-    // 🔍 디버깅 로그
-    console.log(`[checkStepHasChanges] Step ${step} (${currentStepKey})`);
-    console.log('  Current:', currentData);
-    console.log('  Saved:', savedData);
+    // 🔍 개발 환경에서만 디버깅 로그 출력
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[checkStepHasChanges] Step ${step} (${currentStepKey})`);
+      console.log('  Current:', currentData);
+      console.log('  Saved:', savedData);
+    }
 
     // ✅ 저장된 데이터와 현재 데이터를 비교
     // - 저장된 데이터가 없으면: 데이터 존재 여부로 판단
@@ -423,13 +443,17 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     if (!savedData) {
       // 저장된 적이 없음 → 현재 데이터가 있으면 변경사항으로 간주
       const hasData = currentData && Object.keys(currentData).length > 0;
-      console.log(`  No saved data. Has current data: ${hasData}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`  No saved data. Has current data: ${hasData}`);
+      }
       return hasData;
     }
 
     // 저장된 데이터가 있음 → lodash isEqual로 깊은 비교 (속성 순서 무관)
     const hasChanges = !isEqual(currentData, savedData);
-    console.log(`  Has changes: ${hasChanges}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`  Has changes: ${hasChanges}`);
+    }
     return hasChanges;
   };
 
@@ -441,7 +465,10 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     try {
       await saveProgressMutation.mutateAsync();
       showSaveSuccess();
-      setCurrentStep(currentStep + 1);
+      // ✅ Stale closure 방지: 최신 currentStep 값 가져오기
+      const latestStep = useInspectionSessionStore.getState().currentStep;
+      setCurrentStep(latestStep + 1);
+      scrollToTop(); // 🆕 단계 전환 시 상단으로 스크롤
     } catch (error) {
       console.error('Save failed:', error);
       const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
@@ -604,7 +631,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleReopenSession}
-                disabled={isReopening}
+                disabled={isBusy}
                 className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isReopening ? '재점검 시작 중...' : '재점검 시작'}
@@ -614,7 +641,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
                   setShowReopenModal(false);
                   router.push('/inspection');
                 }}
-                disabled={isReopening}
+                disabled={isBusy}
                 className="w-full px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 돌아가기
@@ -635,15 +662,17 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleNextWithSave}
-                className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                disabled={isBusy}
+                className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
-                저장 후 이동
+                {isSaving ? '저장 중...' : '저장 후 이동'}
               </button>
               <button
                 onClick={() => setShowSaveModal(false)}
-                className="w-full px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+                disabled={isBusy}
+                className="w-full px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
-                취소
+                돌아가기
               </button>
             </div>
           </div>
@@ -665,21 +694,21 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleCancelSession}
-                disabled={isCancelling || isSaving}
+                disabled={isBusy}
                 className="w-full px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isCancelling ? '취소 처리 중...' : '점검취소하기'}
               </button>
               <button
                 onClick={handleSaveAndClose}
-                disabled={isCancelling || isSaving}
+                disabled={isBusy}
                 className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {isSaving ? '저장 중...' : '중간저장후 닫기'}
               </button>
               <button
                 onClick={() => setShowCancelModal(false)}
-                disabled={isCancelling || isSaving}
+                disabled={isBusy}
                 className="w-full px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 점검 계속하기
@@ -840,7 +869,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             <button
               type="button"
               onClick={() => setCurrentStep(index)}
-              disabled={index > validatedStep}
+              disabled={index > validatedStep || isBusy}
               className={`w-full py-1.5 text-xs ${
                 index === validatedStep
                   ? 'font-semibold text-green-400'
@@ -877,7 +906,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           <button
             type="button"
             onClick={handleClose}
-            disabled={isLoading || isSaving}
+            disabled={isBusy}
             className="rounded px-4 py-2 text-sm font-medium transition-colors bg-gray-600 text-white hover:bg-gray-500 disabled:opacity-50"
           >
             닫기
@@ -886,7 +915,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           <button
             type="button"
             onClick={handlePrevious}
-            disabled={isLoading}
+            disabled={isBusy}
             className="rounded px-4 py-2 text-sm font-medium transition-colors bg-gray-600 text-white hover:bg-gray-500 disabled:opacity-50 whitespace-nowrap"
           >
             이전
@@ -897,7 +926,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           <button
             type="button"
             onClick={handleSave}
-            disabled={isLoading || isSaving || isCancelling}
+            disabled={isBusy}
             className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
           >
             {isSaving ? '저장 중...' : '중간저장'}
@@ -907,7 +936,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             <button
               type="button"
               onClick={handleComplete}
-              disabled={isLoading || isCompleting || isCancelling}
+              disabled={isBusy}
               className="rounded bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
             >
               {isCompleting ? '완료 처리 중...' : '완료'}
@@ -916,7 +945,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             <button
               type="button"
               onClick={handleNext}
-              disabled={isLoading || isCancelling}
+              disabled={isBusy}
               className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
             >
               다음

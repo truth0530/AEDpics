@@ -72,6 +72,8 @@ export const GET = apiHandler(async (request: NextRequest) => {
       photos: inspection.photos,
       inspection_latitude: inspection.inspection_latitude,
       inspection_longitude: inspection.inspection_longitude,
+      step_data: inspection.inspected_data || {},  // inspected_data를 step_data로 매핑
+      original_data: inspection.original_data || {},  // 원본 데이터도 포함
       created_at: inspection.created_at,
       updated_at: inspection.updated_at,
       completed_at: inspection.completed_at,

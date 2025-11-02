@@ -748,6 +748,8 @@ export function BasicInfoStep() {
             className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
               basicInfo.gps_verified
                 ? 'bg-green-600/30 border-2 border-green-500 text-green-200'
+                : hasMovedMarker
+                ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
                 : 'bg-green-600 hover:bg-green-700 text-white'
             }`}
             disabled={!isMapLoaded}

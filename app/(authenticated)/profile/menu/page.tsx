@@ -7,13 +7,8 @@ import { signOut } from 'next-auth/react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
   User,
-  Lock,
-  Bell,
   Users,
-  LogOut,
-  Building,
-  ClipboardList,
-  Mail
+  LogOut
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -57,89 +52,31 @@ export default function ProfileMenuPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* 내 정보 수정 */}
+      <div className="grid grid-cols-1 gap-3">
+        {/* 프로필 설정 */}
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/profile')}>
           <CardHeader className="flex flex-row items-center space-x-3">
             <User className="w-5 h-5 text-blue-500" />
-            <CardTitle>내 정보 수정</CardTitle>
+            <CardTitle>프로필 설정</CardTitle>
           </CardHeader>
-          <CardContent className="text-gray-600 dark:text-gray-400">
-            이름, 전화번호 등 개인정보를 수정합니다
+          <CardContent className="text-muted-foreground">
+            내 정보, 비밀번호, 알림 설정, 소속 변경 등을 관리합니다
           </CardContent>
         </Card>
 
-        {/* 비밀번호 변경 */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/auth/update-profile')}>
-          <CardHeader className="flex flex-row items-center space-x-3">
-            <Lock className="w-5 h-5 text-green-500" />
-            <CardTitle>비밀번호 변경</CardTitle>
-          </CardHeader>
-          <CardContent className="text-gray-600 dark:text-gray-400">
-            로그인 비밀번호를 변경합니다
-          </CardContent>
-        </Card>
-
-        {/* 알림 설정 */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/notifications/settings')}>
-          <CardHeader className="flex flex-row items-center space-x-3">
-            <Bell className="w-5 h-5 text-yellow-500" />
-            <CardTitle>알림 설정</CardTitle>
-          </CardHeader>
-          <CardContent className="text-gray-600 dark:text-gray-400">
-            이메일 및 시스템 알림 수신 설정을 관리합니다
-          </CardContent>
-        </Card>
-
-        {/* 소속 변경 신청 */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/profile/change-organization')}>
-          <CardHeader className="flex flex-row items-center space-x-3">
-            <Building className="w-5 h-5 text-purple-500" />
-            <CardTitle>소속 변경 신청</CardTitle>
-          </CardHeader>
-          <CardContent className="text-gray-600 dark:text-gray-400">
-            소속 기관 변경을 신청합니다
-          </CardContent>
-        </Card>
-
-        {/* 회원가입 관리 - 승인 권한이 있는 사용자만 표시 */}
+        {/* 사용자 승인 관리 - 관리자만 표시 */}
         {canApproveUsers && (
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-orange-200 dark:border-orange-800"
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-orange-500/30"
                 onClick={() => router.push('/admin/users')}>
             <CardHeader className="flex flex-row items-center space-x-3">
               <Users className="w-5 h-5 text-orange-500" />
-              <CardTitle>회원가입 관리</CardTitle>
+              <CardTitle>사용자 승인 관리</CardTitle>
             </CardHeader>
-            <CardContent className="text-gray-600 dark:text-gray-400">
-              신규 가입 승인 및 사용자 관리
+            <CardContent className="text-muted-foreground">
+              신규 가입 승인 및 사용자 권한 관리
             </CardContent>
           </Card>
         )}
-
-        {/* 점검 이력 - 점검 권한이 있는 사용자만 표시 */}
-        {(user?.role === 'local_admin' || user?.role === 'temporary_inspector' || isAdmin) && (
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/profile/history')}>
-            <CardHeader className="flex flex-row items-center space-x-3">
-              <ClipboardList className="w-5 h-5 text-indigo-500" />
-              <CardTitle>내 점검 이력</CardTitle>
-            </CardHeader>
-            <CardContent className="text-gray-600 dark:text-gray-400">
-              내가 수행한 점검 이력을 확인합니다
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 문의하기 */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => window.location.href = 'mailto:support@nmc.or.kr'}>
-          <CardHeader className="flex flex-row items-center space-x-3">
-            <Mail className="w-5 h-5 text-cyan-500" />
-            <CardTitle>문의하기</CardTitle>
-          </CardHeader>
-          <CardContent className="text-gray-600 dark:text-gray-400">
-            시스템 관련 문의 및 기술 지원
-          </CardContent>
-        </Card>
       </div>
 
       {/* 로그아웃 버튼 */}

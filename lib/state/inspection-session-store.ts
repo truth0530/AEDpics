@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { cloneDeep } from 'lodash';
 import { logger } from '@/lib/logger';
 
 function isShallowEqual(
@@ -69,6 +70,7 @@ interface InspectionSessionState {
   session: InspectionSession | null;
   currentStep: number;
   stepData: Record<string, unknown>;
+  lastSavedStepData: Record<string, unknown>; // 🆕 저장된 stepData (변경 감지용)
   issues: InspectionIssue[];
   isLoading: boolean;
   error?: string;
@@ -125,6 +127,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
   session: null,
   currentStep: 0,
   stepData: {},
+  lastSavedStepData: {}, // 🆕 저장된 stepData 초기값
   issues: [],
   isLoading: false,
   pendingChanges: [],
@@ -144,10 +147,13 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       // 🆕 Week 3: current_snapshot 우선 사용
       logger.info('InspectionSession:start', 'Device snapshot loaded', { hasCurrentSnapshot: !!session.current_snapshot, hasDeviceInfo: !!session.device_info });
 
+      const initialStepData = (session.step_data as Record<string, unknown> | null) ?? {};
+
       set({
         session,
         currentStep: session.current_step ?? 0,
-        stepData: (session.step_data as Record<string, unknown> | null) ?? {},
+        stepData: initialStepData,
+        lastSavedStepData: cloneDeep(initialStepData), // 🆕 초기 저장 상태로 설정
         isLoading: false,
         pendingChanges: [],
       });
@@ -169,10 +175,13 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
 
       const { session } = await parseResponse<{ session: InspectionSession }>(response);
 
+      const loadedStepData = (session.step_data as Record<string, unknown> | null) ?? {};
+
       set({
         session,
         currentStep: session.current_step ?? 0,
-        stepData: (session.step_data as Record<string, unknown> | null) ?? {},
+        stepData: loadedStepData,
+        lastSavedStepData: cloneDeep(loadedStepData), // 🆕 초기 저장 상태로 설정
         isLoading: false,
       });
     } catch (error) {
@@ -295,10 +304,13 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
 
       logger.info('InspectionSession:persistProgress', 'Progress saved successfully', { sessionId: updatedSession.id });
 
+      const savedStepData = (updatedSession.step_data as Record<string, unknown> | null) ?? stepData;
+
       set({
         session: updatedSession,
         currentStep: updatedSession.current_step ?? currentStep,
-        stepData: (updatedSession.step_data as Record<string, unknown> | null) ?? stepData,
+        stepData: savedStepData,
+        lastSavedStepData: cloneDeep(savedStepData), // 🆕 저장 성공 시 lastSavedStepData 업데이트
         isLoading: false,
         pendingChanges,
       });
@@ -586,6 +598,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       session: null,
       currentStep: 0,
       stepData: {},
+      lastSavedStepData: {}, // 🆕 초기화
       issues: [],
       isLoading: false,
       error: undefined,

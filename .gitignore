@@ -100,3 +100,4 @@ docs_backup_*/
 # act (GitHub Actions local testing)
 .secrets
 .actrc
+.playwright-mcp/
