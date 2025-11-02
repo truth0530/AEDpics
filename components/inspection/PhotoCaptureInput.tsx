@@ -28,6 +28,7 @@ export function PhotoCaptureInput({
   onUploadEnd,
 }: PhotoCaptureInputProps) {
   const [showCamera, setShowCamera] = useState(false);
+  const [showSourceModal, setShowSourceModal] = useState(false);
   const [pendingStream, setPendingStream] = useState<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -408,40 +409,72 @@ export function PhotoCaptureInput({
         </div>
       )}
 
-      {/* 업로드 및 카메라 버튼 */}
+      {/* 사진 등록 버튼 (단일 버튼) */}
       {!value && !showCamera && (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                  video: {
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                  },
-                });
-                setPendingStream(stream);
-                setShowCamera(true);
-              } catch (error) {
-                console.error('[PhotoCapture] Camera access denied:', error);
-                alert('카메라 접근 권한이 필요합니다. 브라우저 설정에서 카메라 권한을 허용해주세요.');
-              }
-            }}
-            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-          >
-            <CameraIcon className="w-5 h-5" />
-            카메라
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-          >
-            <PhotoIcon className="w-5 h-5" />
-            갤러리
-          </button>
+        <button
+          type="button"
+          onClick={() => setShowSourceModal(true)}
+          className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+        >
+          <PhotoIcon className="w-5 h-5" />
+          사진 등록
+        </button>
+      )}
+
+      {/* 사진 출처 선택 모달 */}
+      {showSourceModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-lg max-w-sm w-full p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-white text-center">사진 등록 방법</h3>
+            <p className="text-sm text-gray-300 text-center">사진을 등록할 방법을 선택해주세요</p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowSourceModal(false);
+                  try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                      video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                      },
+                    });
+                    setPendingStream(stream);
+                    setShowCamera(true);
+                  } catch (error) {
+                    console.error('[PhotoCapture] Camera access denied:', error);
+                    alert('카메라 접근 권한이 필요합니다. 브라우저 설정에서 카메라 권한을 허용해주세요.');
+                  }
+                }}
+                className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <CameraIcon className="w-5 h-5" />
+                새로 촬영하기
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSourceModal(false);
+                  fileInputRef.current?.click();
+                }}
+                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <PhotoIcon className="w-5 h-5" />
+                사진첩에서 선택
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSourceModal(false)}
+                className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium"
+              >
+                취소
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

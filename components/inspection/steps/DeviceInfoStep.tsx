@@ -30,6 +30,13 @@ const SUPPLY_FIELDS = [
   { key: 'manufacturing_date', label: '제조일자', dbKey: 'manufacturing_date', type: 'date' },
 ];
 
+// 날짜 포맷 헬퍼 함수: ISO 8601 → yyyy-mm-dd
+function formatDateDisplay(isoDate: string): string {
+  if (!isoDate) return '';
+  // ISO 형식에서 날짜 부분만 추출 (2027-10-15T00:00:00.000Z → 2027-10-15)
+  return isoDate.split('T')[0];
+}
+
 export function DeviceInfoStep() {
   const session = useInspectionSessionStore((state) => state.session);
   const stepData = useInspectionSessionStore((state) => state.stepData);
@@ -365,13 +372,17 @@ export function DeviceInfoStep() {
             const isMatched = matchedState === true;
             const isEdited = matchedState === 'edited';
             const isUnchecked = matchedState === undefined;
-            const isActuallyMatching = currentValue === originalValue && currentValue.trim() !== '';
+
+            // 날짜 포맷 적용
+            const formattedOriginalValue = formatDateDisplay(originalValue);
+            const formattedCurrentValue = formatDateDisplay(currentValue);
+            const isActuallyMatching = formattedCurrentValue === formattedOriginalValue && formattedCurrentValue.trim() !== '';
 
             return (
               <div className="flex flex-col gap-2">
                 {isUnchecked && (
                   <div className="w-full rounded-lg px-3 py-2 bg-gray-800/50 border border-gray-700 text-sm text-gray-300">
-                    {originalValue || '등록 정보 없음'}
+                    {formattedOriginalValue || '등록 정보 없음'}
                   </div>
                 )}
 
@@ -380,7 +391,7 @@ export function DeviceInfoStep() {
                     <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span>{currentValue || '정보 없음'}</span>
+                    <span>{formattedCurrentValue || '정보 없음'}</span>
                   </div>
                 )}
 
@@ -389,7 +400,7 @@ export function DeviceInfoStep() {
                     <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                     </svg>
-                    <span>{currentValue || '정보 없음'} (수정됨)</span>
+                    <span>{formattedCurrentValue || '정보 없음'} (수정됨)</span>
                   </div>
                 )}
 
@@ -397,16 +408,16 @@ export function DeviceInfoStep() {
                   <div className="space-y-2">
                     <input
                       type="date"
-                      value={currentValue}
+                      value={formattedCurrentValue}
                       onChange={(e) => handleChange(field.key, e.target.value)}
                       className="w-full rounded-lg px-3 py-2 bg-gray-800 border-2 border-yellow-500/50 text-sm text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
                     />
-                    {originalValue && (
+                    {formattedOriginalValue && (
                       <div className="text-xs text-gray-500 flex items-center gap-1">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                         </svg>
-                        등록 정보: {originalValue}
+                        등록 정보: {formattedOriginalValue}
                       </div>
                     )}
                   </div>
@@ -581,7 +592,11 @@ export function DeviceInfoStep() {
             const isMatched = matchedState === true;
             const isEdited = matchedState === 'edited';
             const isUnchecked = matchedState === undefined;
-            const isActuallyMatching = currentValue === originalValue && currentValue.trim() !== '';
+
+            // 날짜 포맷 적용
+            const formattedOriginalValue = formatDateDisplay(originalValue);
+            const formattedCurrentValue = formatDateDisplay(currentValue);
+            const isActuallyMatching = formattedCurrentValue === formattedOriginalValue && formattedCurrentValue.trim() !== '';
             const displayLabel = field.key === 'manufacturing_date' ? '제조일자(본체)' : field.label;
 
             return (
@@ -594,7 +609,7 @@ export function DeviceInfoStep() {
                 <div className="flex flex-col gap-2">
                   {isUnchecked && (
                     <div className="w-full rounded-lg px-3 py-2 bg-gray-800/50 border border-gray-700 text-sm text-gray-300">
-                      {originalValue || '등록 정보 없음'}
+                      {formattedOriginalValue || '등록 정보 없음'}
                     </div>
                   )}
 
@@ -603,7 +618,7 @@ export function DeviceInfoStep() {
                       <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
-                      <span>{currentValue || '정보 없음'}</span>
+                      <span>{formattedCurrentValue || '정보 없음'}</span>
                     </div>
                   )}
 
@@ -612,7 +627,7 @@ export function DeviceInfoStep() {
                       <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                       </svg>
-                      <span>{currentValue || '정보 없음'} (수정됨)</span>
+                      <span>{formattedCurrentValue || '정보 없음'} (수정됨)</span>
                     </div>
                   )}
 
@@ -620,16 +635,16 @@ export function DeviceInfoStep() {
                     <div className="space-y-2">
                       <input
                         type="date"
-                        value={currentValue}
+                        value={formattedCurrentValue}
                         onChange={(e) => handleChange(field.key, e.target.value)}
                         className="w-full rounded-lg px-3 py-2 bg-gray-800 border-2 border-yellow-500/50 text-sm text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
                       />
-                      {originalValue && (
+                      {formattedOriginalValue && (
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                           </svg>
-                          등록 정보: {originalValue}
+                          등록 정보: {formattedOriginalValue}
                         </div>
                       )}
                     </div>
