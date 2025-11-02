@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
       id: true,
       role: true,
       region_code: true,
-      can_approve_users: true,
     },
   });
 
-  if (!userProfile || !userProfile.can_approve_users) {
+  // 승인 권한이 있는 역할인지 확인
+  const canApproveRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin'];
+  if (!userProfile || !canApproveRoles.includes(userProfile.role)) {
     return new Response('Forbidden', { status: 403 });
   }
 
