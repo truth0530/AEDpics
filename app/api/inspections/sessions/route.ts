@@ -202,7 +202,7 @@ export const POST = async (request: NextRequest) => {
     where: {
       equipment_serial: payload.equipment_serial,
       assigned_to: userId,
-      status: { in: ['pending', 'in_progress'] }
+      status: { in: ['pending', 'in_progress', 'completed'] } // ✅ 완료된 점검 조회 허용
     },
     select: {
       id: true,

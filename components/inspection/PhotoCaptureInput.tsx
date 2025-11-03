@@ -44,41 +44,39 @@ export function PhotoCaptureInput({
       streamRef.current = pendingStream;
       setPendingStream(null); // Clear pending stream
 
-      // ✅ 즉시 재생 시도 (Safari 호환성)
-      video.play().catch(e => {
-        console.warn('[PhotoCapture] Initial play attempt failed:', e?.message);
-      });
+      // ✅ loadedmetadata 이벤트를 기다림 (더 안정적)
+      const handleLoadedMetadata = () => {
+        console.log('[PhotoCapture] ✅ Video metadata loaded, dimensions:', {
+          width: video.videoWidth,
+          height: video.videoHeight
+        });
 
-      // 폴링: 3초 동안 100ms 간격으로 비디오 크기 확인
-      let checkCount = 0;
-      const maxChecks = 30; // 3초 (30 × 100ms)
+        // 재생 시작
+        video.play().catch(e => {
+          console.error('[PhotoCapture] Play failed:', e?.message);
+        });
+      };
 
-      const checkInterval = setInterval(() => {
-        checkCount++;
+      // 이미 메타데이터가 로드된 경우 (드문 경우)
+      if (video.readyState >= video.HAVE_METADATA) {
+        handleLoadedMetadata();
+      } else {
+        video.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+      }
 
-        const width = video.videoWidth;
-        const height = video.videoHeight;
-
-        console.log(`[PhotoCapture] Poll ${checkCount}/${maxChecks} - dimensions: ${width}x${height}`);
-
-        if (width > 0 && height > 0) {
-          console.log('[PhotoCapture] ✅ Video dimensions loaded successfully');
-          clearInterval(checkInterval);
-          return;
-        }
-
-        if (checkCount >= maxChecks) {
-          console.warn('[PhotoCapture] ⚠️ Timeout waiting for video dimensions');
-          clearInterval(checkInterval);
-          // 강제 play 시도
+      // 폴백: 2초 후에도 메타데이터가 안 로드되면 강제 재생
+      const fallbackTimeout = setTimeout(() => {
+        if (video.videoWidth === 0) {
+          console.warn('[PhotoCapture] ⚠️ Fallback: forcing play after timeout');
           video.play().catch(e => {
-            console.error('[PhotoCapture] Forced play failed:', e?.message);
+            console.error('[PhotoCapture] Fallback play failed:', e?.message);
           });
         }
-      }, 100);
+      }, 2000);
 
       return () => {
-        clearInterval(checkInterval);
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        clearTimeout(fallbackTimeout);
       };
     }
   }, [showCamera, pendingStream]);
