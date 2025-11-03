@@ -432,7 +432,7 @@ export function InspectionSummaryStep() {
               border: none !important;
               background: white !important;
               color: #333 !important;
-              padding: 20px !important;
+              padding: 10px !important;
               margin: 0 !important;
               border-radius: 0 !important;
               box-shadow: none !important;
@@ -442,38 +442,38 @@ export function InspectionSummaryStep() {
 
             .no-print { display: none !important; }
 
-            /* MS Word 문서 스타일 */
+            /* MS Word 문서 스타일 - 1페이지 최적화 */
             .report-title {
               text-align: center;
-              margin-bottom: 8px;
-              padding-bottom: 5px;
-              border-bottom: 2px solid #333;
+              margin-bottom: 4px;
+              padding-bottom: 3px;
+              border-bottom: 1.5px solid #333;
             }
 
             .report-title h1 {
-              font-size: 13px;
+              font-size: 11px;
               font-weight: bold;
               color: #000;
-              margin: 0 0 2px 0;
+              margin: 0 0 1px 0;
             }
 
             .report-title p {
-              font-size: 9px;
+              font-size: 7px;
               color: #333;
-              margin: 2px 0 0 0;
+              margin: 1px 0 0 0;
             }
 
             .section-title {
-              font-size: 10px;
+              font-size: 8px;
               font-weight: bold;
               color: #000;
-              margin-bottom: 3px;
-              padding-bottom: 2px;
-              border-bottom: 1px solid #999;
+              margin-bottom: 2px;
+              padding-bottom: 1px;
+              border-bottom: 0.5px solid #999;
             }
-            
+
             .report-section {
-              margin-bottom: 6px;
+              margin-bottom: 3px;
               page-break-inside: avoid;
             }
 
@@ -484,14 +484,14 @@ export function InspectionSummaryStep() {
             .report-table {
               width: 100%;
               border-collapse: collapse;
-              font-size: 9px;
-              margin-bottom: 4px;
+              font-size: 7px;
+              margin-bottom: 2px;
             }
 
             .report-table td,
             .report-table th {
-              border: 1px solid #999;
-              padding: 3px 4px;
+              border: 0.5px solid #999;
+              padding: 2px 3px;
             }
 
             .report-table th {
@@ -511,25 +511,25 @@ export function InspectionSummaryStep() {
             }
 
             .report-content {
-              font-size: 9px;
-              line-height: 1.3;
+              font-size: 7px;
+              line-height: 1.2;
               color: #333;
-              margin-left: 10px;
+              margin-left: 8px;
             }
 
             .report-content p {
-              margin: 2px 0;
+              margin: 1px 0;
             }
 
             .signature-section {
-              margin-top: 15px;
-              padding-top: 10px;
-              border-top: 2px solid #333;
+              margin-top: 8px;
+              padding-top: 6px;
+              border-top: 1.5px solid #333;
               display: grid;
               grid-template-columns: 1fr 1fr 1fr;
-              gap: 15px;
+              gap: 10px;
               text-align: center;
-              font-size: 9px;
+              font-size: 7px;
             }
 
             .signature-item {
@@ -537,11 +537,11 @@ export function InspectionSummaryStep() {
             }
 
             .signature-line {
-              height: 20px;
-              border-bottom: 1px solid #000;
-              margin-top: 10px;
+              height: 15px;
+              border-bottom: 0.5px solid #000;
+              margin-top: 6px;
             }
-            
+
             /* 화면에서 숨김 */
             .screen-only {
               display: none !important;
@@ -781,12 +781,12 @@ export function InspectionSummaryStep() {
         </div>
 
         {/* 11. 하단 페이지 정보 */}
-        <div className="report-section" style={{ marginTop: '30px', textAlign: 'center', fontSize: '9px', color: '#9ca3af' }}>
+        <div className="no-print report-section" style={{ marginTop: '30px', textAlign: 'center', fontSize: '9px', color: '#9ca3af' }}>
           <p>이 보고서는 oo보건소 자동심장충격기(AED) 정기점검 기록입니다.</p>
         </div>
 
         {/* 푸터 */}
-        <div className="report-section" style={{ marginTop: '40px', paddingTop: '15px', borderTop: '1px solid #4b5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="no-print report-section" style={{ marginTop: '40px', paddingTop: '15px', borderTop: '1px solid #4b5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: '9px', color: '#9ca3af' }}></div>
           <div style={{ fontSize: '9px', color: '#9ca3af' }}>https://aed.pics</div>
         </div>
