@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-export const dynamic = 'force-dynamic';
 
 export default function OrganizationChangesPage() {
   const { data, isLoading } = useQuery({

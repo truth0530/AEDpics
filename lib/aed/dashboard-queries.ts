@@ -50,6 +50,44 @@ export interface DashboardData {
 const MANDATORY_CATEGORY = '구비의무기관';
 
 /**
+ * 날짜 범위 필터 헬퍼 함수
+ */
+function getDateRangeForFilter(dateRange: 'today' | 'this_week' | 'this_month' | 'last_month'): {
+  startDate: Date;
+  endDate: Date;
+} {
+  const now = new Date();
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  switch (dateRange) {
+    case 'today':
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'this_week':
+      const dayOfWeek = now.getDay();
+      startDate.setDate(now.getDate() - dayOfWeek);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'this_month':
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    case 'last_month':
+      startDate.setMonth(now.getMonth() - 1);
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setMonth(now.getMonth());
+      endDate.setDate(0);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+  }
+
+  return { startDate, endDate };
+}
+
+/**
  * 역할별 대시보드 데이터 조회 (Prisma 버전)
  */
 export const getCachedDashboardData = cache(async (
@@ -197,6 +235,138 @@ export const getCachedDashboardData = cache(async (
         `;
       }
 
+      // 실제 점검 건수 조회 (inspections 테이블) - 의무기관/비의무기관 구분
+      let inspectionCounts: Array<{
+        region: string;
+        count: bigint;
+        mandatory_count: bigint;
+        non_mandatory_count: bigint;
+      }> = [];
+
+      try {
+        if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+          // 특정 구군의 점검 건수
+          inspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT i.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN i.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN i.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun}
+            GROUP BY a.gugun
+          `;
+        } else if (normalizedSido && normalizedSido !== '전체') {
+          // 특정 시도의 구군별 점검 건수
+          inspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT i.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN i.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN i.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido}
+            GROUP BY a.gugun
+          `;
+        } else {
+          // 전국 시도별 점검 건수
+          inspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.sido as region,
+              COUNT(DISTINCT i.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN i.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN i.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            GROUP BY a.sido
+          `;
+        }
+      } catch (error) {
+        logger.error('dashboard-queries', 'Failed to fetch inspection counts', { error });
+        // 점검 건수 조회 실패 시 빈 배열 사용 (다른 통계는 정상 표시)
+        inspectionCounts = [];
+      }
+
+      // 일정추가 건수 조회 (inspection_schedule_entries 테이블)
+      let scheduleCounts: Array<{
+        region: string;
+        count: bigint;
+        mandatory_count: bigint;
+        non_mandatory_count: bigint;
+      }> = [];
+
+      try {
+        if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+          // 특정 구군의 일정추가 건수
+          scheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT s.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN s.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN s.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun}
+            GROUP BY a.gugun
+          `;
+        } else if (normalizedSido && normalizedSido !== '전체') {
+          // 특정 시도의 구군별 일정추가 건수
+          scheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT s.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN s.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN s.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido}
+            GROUP BY a.gugun
+          `;
+        } else {
+          // 전국 시도별 일정추가 건수
+          scheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.sido as region,
+              COUNT(DISTINCT s.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN s.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN s.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            GROUP BY a.sido
+          `;
+        }
+      } catch (error) {
+        logger.error('dashboard-queries', 'Failed to fetch schedule counts', { error });
+        // 일정추가 건수 조회 실패 시 빈 배열 사용
+        scheduleCounts = [];
+      }
+
+      // 점검 건수를 Map으로 변환 (빠른 조회)
+      const inspectionCountMap = new Map(
+        inspectionCounts.map(ic => [
+          ic.region,
+          {
+            total: Number(ic.count),
+            mandatory: Number(ic.mandatory_count),
+            nonMandatory: Number(ic.non_mandatory_count)
+          }
+        ])
+      );
+
+      // 일정추가 건수를 Map으로 변환 (빠른 조회)
+      const scheduleCountMap = new Map(
+        scheduleCounts.map(sc => [
+          sc.region,
+          {
+            total: Number(sc.count),
+            mandatory: Number(sc.mandatory_count),
+            nonMandatory: Number(sc.non_mandatory_count)
+          }
+        ])
+      );
+
       const regionStats: RegionStats[] = aggregatedStats.map((stat) => {
         const total = Number(stat.total);
         const mandatory = Number(stat.mandatory);
@@ -206,6 +376,18 @@ export const getCachedDashboardData = cache(async (
         const completedMandatory = Number(stat.completed_mandatory);
         const nonMandatory = total - mandatory;
         const completedNonMandatory = completed - completedMandatory;
+
+        // 실제 점검 건수 조회 (의무기관/비의무기관 구분)
+        const inspectionData = inspectionCountMap.get(stat.region) || { total: 0, mandatory: 0, nonMandatory: 0 };
+        const fieldInspected = inspectionData.total;
+        const fieldInspectedMandatory = inspectionData.mandatory;
+        const fieldInspectedNonMandatory = inspectionData.nonMandatory;
+
+        // 일정추가 건수 조회 (의무기관/비의무기관 구분)
+        const scheduleData = scheduleCountMap.get(stat.region) || { total: 0, mandatory: 0, nonMandatory: 0 };
+        const assigned = scheduleData.total;
+        const assignedMandatory = scheduleData.mandatory;
+        const assignedNonMandatory = scheduleData.nonMandatory;
 
         return {
           region: stat.region || '알 수 없음',
@@ -225,12 +407,12 @@ export const getCachedDashboardData = cache(async (
           uninspected,
           uninspectedMandatory: mandatory - completedMandatory,
           uninspectedNonMandatory: nonMandatory - completedNonMandatory,
-          fieldInspected: 0,
-          fieldInspectedMandatory: 0,
-          fieldInspectedNonMandatory: 0,
-          assigned: 0,
-          assignedMandatory: 0,
-          assignedNonMandatory: 0,
+          fieldInspected,
+          fieldInspectedMandatory,
+          fieldInspectedNonMandatory,
+          assigned,
+          assignedMandatory,
+          assignedNonMandatory,
           unavailable: 0,
           unavailableMandatory: 0,
           unavailableNonMandatory: 0,
@@ -347,19 +529,57 @@ export const getCachedDashboardData = cache(async (
 });
 
 /**
- * 시간별 점검 통계 (Prisma 버전)
+ * 시간별 점검 통계 (Prisma 버전) - 지역 필터링 지원
  */
-export const getCachedHourlyInspections = cache(async (userProfile: UserProfile): Promise<any[]> => {
+export const getCachedHourlyInspections = cache(async (
+  userProfile: UserProfile,
+  dateRange?: 'today' | 'this_week' | 'this_month' | 'last_month',
+  selectedSido?: string,
+  selectedGugun?: string
+): Promise<any[]> => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'today');
+
+    // 지역 필터링을 위한 조건 구성
+    const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
+    const normalizedGugun = selectedGugun ? normalizeRegionName(selectedGugun) : selectedGugun;
+
+    // 1. 해당 지역의 AED equipment_serial 목록 조회
+    let equipmentSerials: string[] = [];
+
+    if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+      // 특정 구군
+      const aeds = await prisma.aed_data.findMany({
+        where: {
+          sido: normalizedSido,
+          gugun: normalizedGugun
+        },
+        select: { equipment_serial: true }
+      });
+      equipmentSerials = aeds.map(aed => aed.equipment_serial);
+    } else if (normalizedSido && normalizedSido !== '전체' && normalizedSido !== '시도') {
+      // 특정 시도
+      const aeds = await prisma.aed_data.findMany({
+        where: { sido: normalizedSido },
+        select: { equipment_serial: true }
+      });
+      equipmentSerials = aeds.map(aed => aed.equipment_serial);
+    }
+
+    // 2. 점검 데이터 조회 (지역 필터링 적용)
+    const whereClause: any = {
+      inspection_date: {
+        gte: startDate,
+        lte: endDate
+      }
+    };
+
+    if (equipmentSerials.length > 0) {
+      whereClause.equipment_serial = { in: equipmentSerials };
+    }
 
     const inspections = await prisma.inspections.findMany({
-      where: {
-        inspection_date: {
-          gte: today
-        }
-      },
+      where: whereClause,
       select: {
         inspection_date: true
       }
@@ -389,23 +609,61 @@ export const getCachedHourlyInspections = cache(async (userProfile: UserProfile)
 });
 
 /**
- * 일별 점검 통계 (Prisma 버전)
+ * 일별 점검 통계 (Prisma 버전) - 지역 필터링 지원
  */
-export const getCachedDailyInspections = cache(async (userProfile: UserProfile): Promise<any[]> => {
+export const getCachedDailyInspections = cache(async (
+  userProfile: UserProfile,
+  dateRange?: 'today' | 'this_week' | 'this_month' | 'last_month',
+  selectedSido?: string,
+  selectedGugun?: string
+): Promise<any[]> => {
   try {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'today');
+
+    // 지역 필터링을 위한 조건 구성
+    const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
+    const normalizedGugun = selectedGugun ? normalizeRegionName(selectedGugun) : selectedGugun;
+
+    // 1. 해당 지역의 AED equipment_serial 목록 조회
+    let equipmentSerials: string[] = [];
+
+    if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+      // 특정 구군
+      const aeds = await prisma.aed_data.findMany({
+        where: {
+          sido: normalizedSido,
+          gugun: normalizedGugun
+        },
+        select: { equipment_serial: true }
+      });
+      equipmentSerials = aeds.map(aed => aed.equipment_serial);
+    } else if (normalizedSido && normalizedSido !== '전체' && normalizedSido !== '시도') {
+      // 특정 시도
+      const aeds = await prisma.aed_data.findMany({
+        where: { sido: normalizedSido },
+        select: { equipment_serial: true }
+      });
+      equipmentSerials = aeds.map(aed => aed.equipment_serial);
+    }
+
+    // 2. 점검 데이터 조회 (지역 필터링 적용)
+    const whereClause: any = {
+      inspection_date: {
+        gte: startDate,
+        lte: endDate
+      }
+    };
+
+    if (equipmentSerials.length > 0) {
+      whereClause.equipment_serial = { in: equipmentSerials };
+    }
 
     const inspections = await prisma.inspections.groupBy({
       by: ['inspection_date'],
       _count: {
         _all: true
       },
-      where: {
-        inspection_date: {
-          gte: thirtyDaysAgo
-        }
-      },
+      where: whereClause,
       orderBy: {
         inspection_date: 'asc'
       }
@@ -420,11 +678,13 @@ export const getCachedDailyInspections = cache(async (userProfile: UserProfile):
       }
     });
 
-    // 최근 30일 데이터 생성
+    // 날짜 범위에 맞는 데이터 생성
     const dailyData = [];
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    for (let i = 0; i <= daysDiff; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
       const dayLabel = `${date.getMonth() + 1}/${date.getDate()}`;
 
@@ -439,10 +699,13 @@ export const getCachedDailyInspections = cache(async (userProfile: UserProfile):
     logger.error('DashboardQueries:getCachedDailyInspections', 'Daily inspections query error', error instanceof Error ? error : { error });
 
     // 에러 시 빈 데이터 반환
+    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'today');
     const dailyData = [];
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    for (let i = 0; i <= daysDiff; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
       const dayLabel = `${date.getMonth() + 1}/${date.getDate()}`;
 
       dailyData.push({

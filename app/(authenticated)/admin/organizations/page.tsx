@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 interface Organization {
   id: string;

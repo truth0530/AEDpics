@@ -15,7 +15,6 @@ import {
   MapPin
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 type Period = '7d' | '30d' | '90d' | '1y';
 

@@ -29,16 +29,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 쿼리 파라미터에서 시도/구군 가져오기
+    // 쿼리 파라미터에서 시도/구군/날짜범위 가져오기
     const { searchParams } = new URL(request.url);
     const selectedSido = searchParams.get('sido') || undefined;
     const selectedGugun = searchParams.get('gugun') || undefined;
+    const dateRange = (searchParams.get('dateRange') || 'today') as 'today' | 'this_week' | 'this_month' | 'last_month';
 
     // 대시보드 데이터 조회
     const [dashboardData, hourlyData, dailyData] = await Promise.all([
       getCachedDashboardData(userProfile, selectedSido, selectedGugun),
-      getCachedHourlyInspections(userProfile),
-      getCachedDailyInspections(userProfile),
+      getCachedHourlyInspections(userProfile, dateRange, selectedSido, selectedGugun),
+      getCachedDailyInspections(userProfile, dateRange, selectedSido, selectedGugun),
     ]);
 
     return NextResponse.json({

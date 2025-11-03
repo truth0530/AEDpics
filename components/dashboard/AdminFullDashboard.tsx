@@ -16,8 +16,9 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [selectedSido, setSelectedSido] = useState<string>('전체');
   const [selectedGugun, setSelectedGugun] = useState<string>('전체');
+  const [dateRange, setDateRange] = useState<'today' | 'this_week' | 'this_month' | 'last_month'>('today');
 
-  const loadDashboardData = async (sido: string, gugun: string) => {
+  const loadDashboardData = async (sido: string, gugun: string, range: 'today' | 'this_week' | 'this_month' | 'last_month' = 'today') => {
     try {
       setLoading(true);
 
@@ -25,6 +26,7 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
       const params = new URLSearchParams();
       if (sido && sido !== '전체' && sido !== '시도') params.append('sido', sido);
       if (gugun && gugun !== '전체' && gugun !== '구군') params.append('gugun', gugun);
+      params.append('dateRange', range);
 
       const response = await fetch(`/api/dashboard?${params.toString()}`);
       const result = await response.json();
@@ -50,7 +52,7 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
 
     setSelectedSido(storedSido);
     setSelectedGugun(storedGugun);
-    loadDashboardData(storedSido, storedGugun);
+    loadDashboardData(storedSido, storedGugun, dateRange);
   }, [user]);
 
   useEffect(() => {
@@ -61,7 +63,11 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
 
       setSelectedSido(sido);
       setSelectedGugun(gugun);
-      loadDashboardData(sido, gugun);
+      // 현재 dateRange 상태를 참조 (클로저)
+      setDateRange(currentRange => {
+        loadDashboardData(sido, gugun, currentRange);
+        return currentRange;
+      });
     };
 
     window.addEventListener('regionSelected', handleRegionSelected as EventListener);
@@ -71,10 +77,27 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
     };
   }, [user]);
 
+  // 날짜 범위 변경 핸들러
+  const handleDateRangeChange = (newRange: 'today' | 'this_week' | 'this_month' | 'last_month') => {
+    setDateRange(newRange);
+    loadDashboardData(selectedSido, selectedGugun, newRange);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
+
+  if (!dashboardData || !hourlyData || !dailyData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-yellow-500">
+          <p className="text-xl font-bold">데이터가 없습니다</p>
+          <p className="mt-2 text-sm">대시보드 데이터를 불러올 수 없습니다.</p>
+        </div>
       </div>
     );
   }
@@ -85,6 +108,10 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
       hourlyData={hourlyData}
       dailyData={dailyData}
       userRole={user.role}
+      dateRange={dateRange}
+      onDateRangeChange={handleDateRangeChange}
+      selectedSido={selectedSido}
+      selectedGugun={selectedGugun}
     />
   );
 }

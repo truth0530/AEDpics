@@ -16,7 +16,6 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-export const dynamic = 'force-dynamic';
 
 export default function RealtimeMonitoringPage() {
   // 실시간 점검 현황 (10초마다 갱신)
