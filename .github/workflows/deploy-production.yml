@@ -67,8 +67,20 @@ jobs:
         port: ${{ secrets.NCP_SSH_PORT }}
         envs: DATABASE_URL,NEXTAUTH_URL,NEXTAUTH_SECRET,JWT_SECRET,NEXT_PUBLIC_KAKAO_MAP_APP_KEY,NEXT_PUBLIC_SITE_URL,RESEND_API_KEY,MASTER_EMAIL,ENCRYPTION_KEY,NCP_ACCESS_KEY,NCP_ACCESS_SECRET,NCP_SENDER_EMAIL,NCP_OBJECT_STORAGE_REGION,NCP_OBJECT_STORAGE_ENDPOINT,NCP_OBJECT_STORAGE_ACCESS_KEY,NCP_OBJECT_STORAGE_SECRET_KEY,NCP_OBJECT_STORAGE_BUCKET
         script: |
+          set -e  # Exit on any error
           cd /var/www/aedpics
 
+          echo "=== Phase 1: Backup current version ==="
+          if [ -d ".next" ]; then
+            echo "Backing up current build..."
+            rm -rf .next.backup
+            cp -r .next .next.backup
+            echo "Backup created: .next.backup"
+          else
+            echo "No existing build to backup (first deployment)"
+          fi
+
+          echo "=== Phase 2: Update code and dependencies ==="
           echo "Creating .env.production file..."
           echo "DATABASE_URL=\"$DATABASE_URL\"" > .env.production
           echo "NEXTAUTH_URL=\"$NEXTAUTH_URL\"" >> .env.production
@@ -101,39 +113,106 @@ jobs:
           echo "Generating Prisma client..."
           npx prisma generate
 
-          echo "Cleaning PWA cache files only..."
-          rm -rf public/sw.js
-          rm -rf public/sw.js.map
-          rm -rf public/workbox-*.js
-          rm -rf public/workbox-*.js.map
-          rm -rf public/swe-worker-*.js
-          rm -rf public/swe-worker-*.js.map
+          echo "=== Phase 3: Build new version ==="
+          echo "Cleaning PWA cache files..."
+          rm -rf public/sw.js public/sw.js.map public/workbox-*.js public/workbox-*.js.map
+          rm -rf public/swe-worker-*.js public/swe-worker-*.js.map
 
           echo "Building application with timestamp..."
           export BUILD_TIMESTAMP=$(date +%s)
-          npm run build
 
-          echo "Creating cache bust file..."
+          if npm run build; then
+            echo "Build successful!"
+          else
+            echo "Build failed! Rolling back..."
+            if [ -d ".next.backup" ]; then
+              rm -rf .next
+              mv .next.backup .next
+              echo "Rollback complete. Deployment aborted."
+            fi
+            exit 1
+          fi
+
+          echo "=== Phase 4: Validate build artifacts ==="
+          if [ ! -d ".next" ]; then
+            echo "ERROR: .next directory not found!"
+            if [ -d ".next.backup" ]; then
+              mv .next.backup .next
+            fi
+            exit 1
+          fi
+
+          if [ ! -d ".next/server" ] || [ ! -d ".next/static" ]; then
+            echo "ERROR: Build incomplete! Missing server or static directory."
+            rm -rf .next
+            if [ -d ".next.backup" ]; then
+              mv .next.backup .next
+            fi
+            exit 1
+          fi
+
+          echo "Build validation passed!"
+          echo "Creating cache bust files..."
           echo "$BUILD_TIMESTAMP" > .next/BUILD_ID
           echo "$BUILD_TIMESTAMP" > public/build-timestamp.txt
 
-          echo "Zero-Downtime deployment with PM2 reload..."
+          echo "=== Phase 5: Zero-Downtime deployment with PM2 ==="
           if pm2 describe aedpics > /dev/null 2>&1; then
             echo "App is running. Performing zero-downtime reload..."
-            pm2 reload ecosystem.config.cjs --update-env
+            if pm2 reload ecosystem.config.cjs --update-env; then
+              echo "PM2 reload successful!"
+
+              echo "Waiting for application to stabilize (15 seconds)..."
+              sleep 15
+
+              if pm2 describe aedpics | grep -q "online"; then
+                echo "Application is online and stable!"
+                rm -rf .next.backup
+                echo "Backup removed."
+              else
+                echo "ERROR: Application failed to start after reload!"
+                echo "Rolling back to previous version..."
+                rm -rf .next
+                mv .next.backup .next
+                pm2 reload ecosystem.config.cjs --update-env
+                exit 1
+              fi
+            else
+              echo "ERROR: PM2 reload failed!"
+              echo "Rolling back to previous version..."
+              rm -rf .next
+              if [ -d ".next.backup" ]; then
+                mv .next.backup .next
+                pm2 reload ecosystem.config.cjs --update-env
+              fi
+              exit 1
+            fi
           else
             echo "App is not running. Starting for the first time..."
             pm2 start ecosystem.config.cjs --update-env
+            echo "Waiting for application to start (15 seconds)..."
+            sleep 15
+
+            if pm2 describe aedpics | grep -q "online"; then
+              echo "Application started successfully!"
+            else
+              echo "ERROR: Application failed to start!"
+              exit 1
+            fi
           fi
+
           pm2 save --force
 
-          echo "Clearing Nginx cache if exists..."
+          echo "=== Phase 6: Cache cleanup ==="
+          echo "Clearing Nginx cache..."
           rm -rf /var/cache/nginx/* || true
 
           echo "Reloading Nginx..."
           systemctl reload nginx || true
 
-          echo "Deployment complete! Build timestamp: $BUILD_TIMESTAMP"
+          echo "=== Deployment complete! ==="
+          echo "Build timestamp: $BUILD_TIMESTAMP"
+          pm2 status aedpics
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
@@ -161,9 +240,40 @@ jobs:
         key: ${{ secrets.NCP_SSH_KEY }}
         port: ${{ secrets.NCP_SSH_PORT }}
         script: |
-          sleep 10
-          curl -f http://localhost:3000 || exit 1
-          pm2 status aedpics | grep online || exit 1
+          echo "=== Final Health Check ==="
+
+          echo "Checking PM2 process status..."
+          if ! pm2 describe aedpics | grep -q "online"; then
+            echo "ERROR: PM2 process is not online!"
+            pm2 logs aedpics --lines 50 --nostream
+            exit 1
+          fi
+          echo "PM2 process is online."
+
+          echo "Checking application HTTP response..."
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if curl -f -s -o /dev/null http://localhost:3000; then
+              echo "Application is responding to HTTP requests!"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "Attempt $RETRY_COUNT failed. Retrying in 3 seconds..."
+                sleep 3
+              else
+                echo "ERROR: Application failed to respond after $MAX_RETRIES attempts!"
+                pm2 logs aedpics --lines 50 --nostream
+                exit 1
+              fi
+            fi
+          done
+
+          echo "=== Health Check Passed ==="
+          pm2 status aedpics
+          curl -I http://localhost:3000
 
     - name: Notify deployment success
       if: success()
