@@ -471,6 +471,14 @@ export function MapView({
       }
 
       setIsMapLoaded(true);
+
+      // 지도 컨테이너 크기 재계산 및 타일 재로드 (부분 로딩 방지)
+      setTimeout(() => {
+        if (mapInstance && mapInstance.relayout) {
+          console.log('[MapView] 🔄 Relayout map to fix partial loading');
+          mapInstance.relayout();
+        }
+      }, 300);
     } catch (error) {
       console.error('Error initializing map:', error);
       setMapError('지도 초기화 중 오류가 발생했습니다.');
