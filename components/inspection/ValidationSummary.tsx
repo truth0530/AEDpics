@@ -86,7 +86,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
     if (padDays <= 30) {
       alerts.push(
         <span key="pad" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-900/50 text-orange-300 border border-orange-600/30">
-          📋 패드 {padDays <= 0 ? '만료' : `${padDays}일`}
+          패드 {padDays <= 0 ? '만료' : `${padDays}일`}
         </span>
       );
     }
@@ -100,7 +100,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
     if (daysSinceCheck > 60) {
       alerts.push(
         <span key="check" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-300 border border-yellow-600/30">
-          📅 {daysSinceCheck}일 미점검
+          {daysSinceCheck}일 미점검
         </span>
       );
     }
@@ -108,7 +108,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
     // 점검 이력이 없는 경우
     alerts.push(
       <span key="check" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-300 border border-yellow-600/30">
-        📅 점검 이력 없음
+        점검 이력 없음
       </span>
     );
   }
@@ -120,7 +120,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
       : '';
     alerts.push(
       <span key="duplicate" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-900/50 text-red-300 border border-red-600/30">
-        ⚠️ 제조번호 중복({locationLabel}{duplicateInfo.count}개)
+        제조번호 중복({locationLabel}{duplicateInfo.count}개)
       </span>
     );
   }
@@ -129,7 +129,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
   if (deviceData.external_display === 'N' && !deviceData.external_non_display_reason) {
     alerts.push(
       <span key="no-reason" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-900/50 text-purple-300 border border-purple-600/30">
-        ❓ 미표출 사유 없음
+        미표출 사유 없음
       </span>
     );
   }

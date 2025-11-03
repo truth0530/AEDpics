@@ -53,14 +53,12 @@ interface DashboardData {
 
 interface HourlyInspectionData {
   hour: string;
-  mandatory: number;
-  nonMandatory: number;
+  count: number;
 }
 
 interface DailyInspectionData {
-  date: string;
-  mandatory: number;
-  nonMandatory: number;
+  day: string;
+  count: number;
 }
 
 interface ImprovedDashboardProps {
@@ -193,13 +191,9 @@ export default function ImprovedDashboard({
 
   // 차트 설정
   const chartConfig = {
-    mandatory: {
-      label: "의무",
+    count: {
+      label: "점검건수",
       color: "#3b82f6",
-    },
-    nonMandatory: {
-      label: "비의무",
-      color: "#10b981",
     },
   } satisfies ChartConfig;
 
@@ -320,8 +314,7 @@ export default function ImprovedDashboard({
                 <YAxis tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Legend />
-                <Bar dataKey="mandatory" name="의무" fill="var(--color-mandatory)" />
-                <Bar dataKey="nonMandatory" name="비의무" fill="var(--color-nonMandatory)" />
+                <Bar dataKey="count" name="점검건수" fill="var(--color-count)" />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -338,7 +331,7 @@ export default function ImprovedDashboard({
               <AreaChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
-                  dataKey="date"
+                  dataKey="day"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
@@ -347,22 +340,12 @@ export default function ImprovedDashboard({
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Legend />
                 <Area
-                  dataKey="mandatory"
-                  name="의무"
+                  dataKey="count"
+                  name="점검건수"
                   type="monotone"
-                  fill="var(--color-mandatory)"
+                  fill="var(--color-count)"
                   fillOpacity={0.4}
-                  stroke="var(--color-mandatory)"
-                  stackId="a"
-                />
-                <Area
-                  dataKey="nonMandatory"
-                  name="비의무"
-                  type="monotone"
-                  fill="var(--color-nonMandatory)"
-                  fillOpacity={0.4}
-                  stroke="var(--color-nonMandatory)"
-                  stackId="a"
+                  stroke="var(--color-count)"
                 />
               </AreaChart>
             </ChartContainer>
