@@ -117,6 +117,22 @@ export function MapView({
   // 반경 원 객체 참조
   const radiusCircleRef = useRef<any>(null);
 
+  // 두 좌표 간 거리 계산 (Haversine formula, 결과: kilometers)
+  const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // 지구 반지름 (km)
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // 거리 (km)
+  }, []);
+
   // 실제 사용할 locations (props 또는 지도 기반 로딩)
   const displayLocations = useMapBasedLoading ? mapLocations : locations;
 
@@ -143,7 +159,7 @@ export function MapView({
 
       return distance <= searchRadius;
     });
-  }, [displayLocations, mapCenter, searchRadius]);
+  }, [displayLocations, mapCenter, searchRadius, calculateDistance]);
 
   // 디버깅: displayLocations 데이터 추적
   useEffect(() => {
@@ -160,22 +176,6 @@ export function MapView({
       }))
     });
   }, [displayLocations, useMapBasedLoading, locations.length, mapLocations.length]);
-
-  // 두 좌표 간 거리 계산 (Haversine formula, 결과: kilometers)
-  const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number): number => {
-    const R = 6371; // 지구 반지름 (km)
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lng2 - lng1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // 거리 (km)
-  }, []);
 
   // 지도 중심 기준으로 AED 데이터 로드
   const fetchAEDByMapCenter = useCallback(async () => {
