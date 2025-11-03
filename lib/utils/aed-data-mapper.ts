@@ -330,8 +330,8 @@ export function mapAedData(item: any) {
     gugun: providedCity ?? null,
     region_code: regionCode ?? null,
     city_code: cityCode ?? null,
-    latitude,
-    longitude,
+    latitude: latitude !== null && latitude !== undefined ? Number(latitude) : null,
+    longitude: longitude !== null && longitude !== undefined ? Number(longitude) : null,
 
     // 분류
     category_1: normalizeString(item.category_1) ?? null,
