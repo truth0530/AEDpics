@@ -853,7 +853,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       )}
 
       {/* Header with Guidelines Button */}
-      <div className="flex items-start justify-between gap-3 mb-2">
+      <div className="no-print flex items-start justify-between gap-3 mb-2">
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
           <h1 className="text-base sm:text-2xl font-semibold text-white whitespace-nowrap">
             {(deviceData?.installation_institution || deviceData?.installation_org || '장비 정보') as React.ReactNode}
@@ -882,7 +882,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       )}
 
       {/* Progress Indicator */}
-      <div className="flex space-x-2">
+      <div className="no-print flex space-x-2">
         {STEP_TITLES.map((title, index) => (
           <div
             key={index}
@@ -920,7 +920,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
       {/* Current Step Content */}
       <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
-        <div className="mb-3 flex items-center gap-2 flex-wrap">
+        <div className="no-print mb-3 flex items-center gap-2 flex-wrap">
           <h3 className="text-lg font-semibold text-white">{STEP_TITLES[validatedStep]}</h3>
           {validatedStep === 0 && (
             <span className="text-[10px] sm:text-xs text-green-400 whitespace-nowrap">| 일치하면 "전체 일치", 수정이 필요하면 "수정" 버튼을 누르세요.</span>
@@ -930,7 +930,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800 p-3">
+      <div className="no-print flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800 p-3">
         {isFirstStep ? (
           <button
             type="button"
