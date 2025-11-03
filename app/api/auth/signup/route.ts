@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user_profiles.create({
       data: {
         id: randomUUID(),
-        email: profileData.email,
+        email: email,
         password_hash: passwordHash,
         full_name: profileData.fullName || profileData.full_name,
         phone: profileData.phone || null,

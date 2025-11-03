@@ -283,9 +283,9 @@ export function MapView({
       setMap(mapInstance);
       isMapInitializedRef.current = true;
 
-      // 지도 컨트롤 추가
+      // 지도 컨트롤 추가 - 우측 하단
       const zoomControl = new window.kakao.maps.ZoomControl();
-      mapInstance.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
+      mapInstance.addControl(zoomControl, window.kakao.maps.ControlPosition.BOTTOMRIGHT);
 
       // Geocoder 초기화
       const geocoder = new window.kakao.maps.services.Geocoder();

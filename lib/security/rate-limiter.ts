@@ -104,8 +104,8 @@ export const RATE_LIMIT_PRESETS = {
   // 인증: 5분에 5회
   AUTH: { maxRequests: 5, windowMs: 5 * 60 * 1000 },
 
-  // 회원가입: 1시간에 3회
-  SIGNUP: { maxRequests: 3, windowMs: 60 * 60 * 1000 },
+  // 회원가입: 10분에 5회
+  SIGNUP: { maxRequests: 5, windowMs: 10 * 60 * 1000 },
 
   // 파일 업로드: 1분에 10회
   UPLOAD: { maxRequests: 10, windowMs: 60 * 1000 },
