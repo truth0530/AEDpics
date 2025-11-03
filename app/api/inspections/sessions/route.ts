@@ -643,6 +643,21 @@ export const PATCH = async (request: NextRequest) => {
 
         createdInspectionId = createdInspection.id;
 
+        // 3. aed_data 테이블의 last_inspection_date 업데이트 (대시보드 집계용)
+        try {
+          await tx.aed_data.update({
+            where: { equipment_serial: session.equipment_serial },
+            data: {
+              last_inspection_date: new Date()
+            }
+          });
+        } catch (updateError) {
+          // aed_data에 해당 장비가 없을 수 있음 (에러 로그만 남기고 계속 진행)
+          logger.warn('InspectionSession:POST-complete', 'Failed to update last_inspection_date',
+            updateError instanceof Error ? updateError : { updateError }
+          );
+        }
+
         return updated;
       });
 
