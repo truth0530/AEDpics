@@ -39,6 +39,12 @@ jobs:
 
           echo "=== Running backfill script ==="
           export DATABASE_URL="${DATABASE_URL}"
+
+          # Ensure Prisma Client is generated
+          echo "Generating Prisma Client..."
+          npx prisma generate
+
+          # Run the backfill script
           npx tsx scripts/backfill-inspection-dates.ts 2>&1
 
           echo "=== Backfill completed ===\"
