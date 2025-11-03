@@ -1,0 +1,54 @@
+name: Backfill Inspection Dates
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Generate Prisma Client
+      run: npx prisma generate
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Run backfill script on production server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        envs: DATABASE_URL
+        script: |
+          set -e
+          cd /var/www/aedpics
+
+          echo "=== Running backfill script ==="
+          export DATABASE_URL="${DATABASE_URL}"
+          npx ts-node scripts/backfill-inspection-dates.ts 2>&1
+
+          echo "=== Backfill completed ===\"
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Notify success
+      if: success()
+      run: echo "Backfill completed successfully"
+
+    - name: Notify failure
+      if: failure()
+      run: echo "Backfill failed - check logs above"
