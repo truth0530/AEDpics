@@ -58,13 +58,17 @@ export const getCachedDashboardData = cache(async (
   selectedGugun?: string
 ): Promise<DashboardData> => {
   try {
+    // 지역명 정규화 (예: "대구광역시" → "대구")
+    const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
+    const normalizedGugun = selectedGugun ? normalizeRegionName(selectedGugun) : selectedGugun;
+
     // 전국 또는 지역별 통계 집계
     const isNationalView = ['master', 'ministry_admin', 'emergency_center_admin', 'regional_emergency_center_admin'].includes(userProfile.role);
 
     if (isNationalView) {
       // 전국 시도별 통계 집계 (단일 쿼리로 최적화)
-      // selectedSido가 있으면 해당 시도만, selectedGugun이 있으면 해당 구군만
-      const groupByField = (selectedSido && selectedSido !== '전체') ? 'gugun' : 'sido';
+      // normalizedSido가 있으면 해당 시도만, normalizedGugun이 있으면 해당 구군만
+      const groupByField = (normalizedSido && normalizedSido !== '전체') ? 'gugun' : 'sido';
 
       let aggregatedStats: Array<{
         region: string;
@@ -76,7 +80,7 @@ export const getCachedDashboardData = cache(async (
         completed_mandatory: bigint;
       }>;
 
-      if (selectedGugun && selectedGugun !== '전체') {
+      if (normalizedGugun && normalizedGugun !== '전체') {
         // 특정 구군만 조회
         aggregatedStats = await prisma.$queryRaw`
           SELECT
@@ -109,11 +113,11 @@ export const getCachedDashboardData = cache(async (
               ELSE 0
             END) as completed_mandatory
           FROM aedpics.aed_data
-          WHERE gugun = ${selectedGugun}
+          WHERE gugun = ${normalizedGugun}
           GROUP BY gugun
           ORDER BY total DESC
         `;
-      } else if (selectedSido && selectedSido !== '전체') {
+      } else if (normalizedSido && normalizedSido !== '전체') {
         // 특정 시도의 구군별 통계
         aggregatedStats = await prisma.$queryRaw`
           SELECT
@@ -146,7 +150,7 @@ export const getCachedDashboardData = cache(async (
               ELSE 0
             END) as completed_mandatory
           FROM aedpics.aed_data
-          WHERE sido = ${selectedSido}
+          WHERE sido = ${normalizedSido}
           GROUP BY gugun
           ORDER BY total DESC
         `;
@@ -234,10 +238,10 @@ export const getCachedDashboardData = cache(async (
       const totalCompleted = regionStats.reduce((sum, r) => sum + r.completed, 0);
 
       let title = '전국 시도별 AED 점검 현황';
-      if (selectedGugun && selectedGugun !== '전체') {
-        title = `${selectedGugun} AED 점검 현황`;
-      } else if (selectedSido && selectedSido !== '전체') {
-        title = `${selectedSido} 시군구별 AED 점검 현황`;
+      if (normalizedGugun && normalizedGugun !== '전체') {
+        title = `${normalizedGugun} AED 점검 현황`;
+      } else if (normalizedSido && normalizedSido !== '전체') {
+        title = `${normalizedSido} 구군 AED 점검 현황`;
       }
 
       return {

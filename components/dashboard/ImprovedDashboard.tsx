@@ -10,7 +10,6 @@ import { StatCard, WorkflowStep } from './StatCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { getRegionSortOrder } from '@/lib/constants/regions';
 import { UserRole } from '@/packages/types';
-import ImprovementTrackingWidget from './ImprovementTrackingWidget';
 
 interface RegionStats {
   region: string;
@@ -205,14 +204,15 @@ export default function ImprovedDashboard({
           <h1 className="text-2xl font-bold text-white">{dashboardData.title}</h1>
           <p className="text-sm text-gray-300 mt-1">실시간 AED 점검 현황을 확인하세요</p>
         </div>
-        <Select defaultValue="7d">
+        <Select defaultValue="today">
           <SelectTrigger className="w-40">
             <SelectValue placeholder="기간 선택" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7d">최근 7일</SelectItem>
-            <SelectItem value="30d">최근 30일</SelectItem>
-            <SelectItem value="90d">최근 90일</SelectItem>
+            <SelectItem value="today">오늘</SelectItem>
+            <SelectItem value="this_week">이번주</SelectItem>
+            <SelectItem value="this_month">이번달</SelectItem>
+            <SelectItem value="last_month">지난달</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -352,9 +352,6 @@ export default function ImprovedDashboard({
           </CardContent>
         </Card>
       </div>
-
-      {/* 데이터 개선 추적 위젯 */}
-      <ImprovementTrackingWidget />
 
       {/* 지역별 현황 테이블 */}
       <Card>
