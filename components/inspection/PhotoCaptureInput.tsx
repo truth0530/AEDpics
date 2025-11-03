@@ -28,7 +28,6 @@ export function PhotoCaptureInput({
   onUploadEnd,
 }: PhotoCaptureInputProps) {
   const [showCamera, setShowCamera] = useState(false);
-  const [showSourceModal, setShowSourceModal] = useState(false);
   const [pendingStream, setPendingStream] = useState<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -407,11 +406,11 @@ export function PhotoCaptureInput({
         </div>
       )}
 
-      {/* 사진 등록 버튼 (단일 버튼) */}
+      {/* 사진 등록 버튼 - 네이티브 파일 선택기 직접 호출 */}
       {!value && !showCamera && (
         <button
           type="button"
-          onClick={() => setShowSourceModal(true)}
+          onClick={() => fileInputRef.current?.click()}
           className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
         >
           <PhotoIcon className="w-5 h-5" />
@@ -419,94 +418,7 @@ export function PhotoCaptureInput({
         </button>
       )}
 
-      {/* 사진 출처 선택 모달 */}
-      {showSourceModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-lg max-w-sm w-full p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-white text-center">사진 등록 방법</h3>
-            <p className="text-sm text-gray-300 text-center">사진을 등록할 방법을 선택해주세요</p>
-
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={async () => {
-                  setShowSourceModal(false);
-                  try {
-                    console.log('[PhotoCapture] Requesting camera access...');
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                      video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                      },
-                    });
-
-                    // ✅ 스트림 상태 검증
-                    const tracks = stream.getVideoTracks();
-                    if (tracks.length === 0) {
-                      throw new Error('No video tracks available');
-                    }
-
-                    const track = tracks[0];
-                    console.log('[PhotoCapture] Camera track obtained:', {
-                      label: track.label,
-                      enabled: track.enabled,
-                      readyState: track.readyState,
-                    });
-
-                    if (track.readyState !== 'live') {
-                      throw new Error(`Camera track not live: ${track.readyState}`);
-                    }
-
-                    setPendingStream(stream);
-                    setShowCamera(true);
-                    console.log('[PhotoCapture] Camera setup successful');
-                  } catch (error: any) {
-                    console.error('[PhotoCapture] Camera access error:', error);
-
-                    let errorMessage = '카메라 접근 중 오류가 발생했습니다.';
-                    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                      errorMessage = '카메라 접근 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.';
-                    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                      errorMessage = '카메라를 찾을 수 없습니다. 기기에 카메라가 연결되어 있는지 확인해주세요.';
-                    } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                      errorMessage = '카메라가 다른 앱에서 사용 중입니다. 다른 앱을 종료하고 다시 시도해주세요.';
-                    }
-
-                    alert(errorMessage);
-                  }
-                }}
-                className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-              >
-                <CameraIcon className="w-5 h-5" />
-                새로 촬영하기
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSourceModal(false);
-                  fileInputRef.current?.click();
-                }}
-                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-              >
-                <PhotoIcon className="w-5 h-5" />
-                사진첩에서 선택
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowSourceModal(false)}
-                className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium"
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 숨겨진 파일 입력 - 사진첩에서 선택 (capture 속성 제거) */}
+      {/* 숨겨진 파일 입력 - OS 네이티브 파일 선택기 호출 */}
       <input
         ref={fileInputRef}
         type="file"

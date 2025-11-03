@@ -26,7 +26,7 @@ export default async function InspectionPage() {
     redirect(accessRights?.fallbackRoute || '/dashboard');
   }
 
-  // Suspense로 감싸서 로딩 중 스켈레톤 표시 (성능 최적화)
+  // getCachedUserProfile에서 이미 Decimal을 Number로 변환했으므로 바로 사용 가능
   return (
     <Suspense fallback={<InspectionPageSkeleton />}>
       <InspectionPageClient initialProfile={typedProfile} />

@@ -54,6 +54,7 @@ export default async function AuthenticatedLayout({
   const canAccessEffect = canAccessInspectionEffect(typedProfile)
   const hasApproveUsersPermission = canApproveUsers(typedProfile.role)
 
+  // getCachedUserProfile에서 이미 Decimal을 Number로 변환했으므로 바로 사용 가능
   return (
     <ToastProvider>
       <NotificationProvider>

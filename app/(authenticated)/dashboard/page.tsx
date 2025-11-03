@@ -26,7 +26,7 @@ export default async function DashboardPage() {
     redirect(accessRights?.fallbackRoute || '/inspection');
   }
 
-  // Suspense로 감싸서 로딩 중 fallback 표시
+  // getCachedUserProfile에서 이미 Decimal을 Number로 변환했으므로 바로 사용 가능
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">

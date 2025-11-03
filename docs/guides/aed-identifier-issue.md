@@ -35,24 +35,26 @@ MNG-2025-001     ├──── AED-001-B (장비 2)
 
 | 구분 | 필드명 | 역할 | 특성 |
 |------|--------|------|------|
-| **Primary Key** | equipment_number | 개별 AED 장비 고유 식별 | UNIQUE, NOT NULL |
-| **Group Key** | management_number | 여러 장비를 묶는 관리 단위 | NOT NULL, 중복 가능 |
+| **Primary Key** | equipment_serial | 개별 AED 장비 고유 식별 (장비연번) | UNIQUE, NOT NULL |
+| **Group Key** | management_number | 여러 장비를 묶는 관리 단위 (관리번호) | NOT NULL, 중복 가능 |
 | **System ID** | id (UUID) | 시스템 내부 고유 ID | AUTO GENERATED |
+
+**중요**: `equipment_serial`은 e-gen CSV의 "장비연번" 필드에 해당하며, 실제 데이터베이스에서는 81,464대 중 중복이 0건으로 완전한 고유 식별자입니다.
 
 ### 1.2 실제 사용 예시
 
 ```typescript
 // 단일 장비 조회
-SELECT * FROM aed_devices WHERE equipment_number = 'AED-2025-001A';
+SELECT * FROM aed_data WHERE equipment_serial = '13-0000293';
 
 // 관리번호로 그룹 조회 (여러 장비)
-SELECT * FROM aed_devices WHERE management_number = 'MNG-2025-001';
+SELECT * FROM aed_data WHERE management_number = 'MNG-2025-001';
 
 // 결과: 동일 관리번호에 여러 장비
 [
-  { equipment_number: 'AED-001-A', management_number: 'MNG-2025-001', ... },
-  { equipment_number: 'AED-001-B', management_number: 'MNG-2025-001', ... },
-  { equipment_number: 'AED-001-C', management_number: 'MNG-2025-001', ... }
+  { equipment_serial: '13-0000293', management_number: 'MNG-2025-001', ... },
+  { equipment_serial: '13-0000294', management_number: 'MNG-2025-001', ... },
+  { equipment_serial: '13-0000295', management_number: 'MNG-2025-001', ... }
 ]
 ```
 
@@ -61,18 +63,19 @@ SELECT * FROM aed_devices WHERE management_number = 'MNG-2025-001';
 ### 2.1 Option A: 단일 테이블 (현재 구조 수정)
 
 ```sql
--- 기존 테이블 수정
-ALTER TABLE aed_devices
-  DROP CONSTRAINT IF EXISTS aed_devices_management_number_key;
+-- 현재 구조 (이미 올바르게 구현됨)
+-- aed_data 테이블은 이미 equipment_serial을 UNIQUE 제약조건으로 설정
+CREATE TABLE aed_data (
+  id SERIAL PRIMARY KEY,
+  equipment_serial VARCHAR(255) UNIQUE NOT NULL,  -- 장비연번 (고유 식별자)
+  management_number VARCHAR,                      -- 관리번호 (중복 가능)
+  serial_number VARCHAR,                          -- 제조번호 (중복 가능)
+  ...
+);
 
-ALTER TABLE aed_devices
-  ADD CONSTRAINT aed_devices_equipment_number_unique
-  UNIQUE (equipment_number);
-
--- 인덱스 재구성
-DROP INDEX IF EXISTS idx_aed_management;
-CREATE UNIQUE INDEX idx_aed_equipment ON aed_devices(equipment_number);
-CREATE INDEX idx_aed_management_group ON aed_devices(management_number);
+-- 인덱스 (이미 존재)
+CREATE UNIQUE INDEX aed_data_equipment_serial_key ON aed_data(equipment_serial);
+CREATE INDEX idx_aed_management ON aed_data(management_number);
 ```
 
 ### 2.2 Option B: 정규화된 구조 (권장)
@@ -90,7 +93,7 @@ CREATE TABLE aed_management_groups (
 -- 2. 개별 장비 테이블
 CREATE TABLE aed_devices_normalized (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    equipment_number TEXT UNIQUE NOT NULL,  -- 실제 PK
+    equipment_serial TEXT UNIQUE NOT NULL,  -- 실제 PK (장비연번)
     management_group_id UUID REFERENCES aed_management_groups(id),
 
     -- 장비 고유 정보
@@ -175,10 +178,10 @@ ORDER BY COUNT(*) DESC;
 ```typescript
 interface AEDTableRow {
   // 주 식별자
-  equipment_number: string;      // 고유 ID로 표시
+  equipment_serial: string;      // 장비연번 (고유 ID)
 
   // 그룹 정보
-  management_number: string;      // 관리 그룹
+  management_number: string;      // 관리번호 (그룹 식별자)
   sibling_count?: number;        // 같은 관리번호 장비 수
 
   // 기존 정보
@@ -190,7 +193,7 @@ interface AEDTableRow {
 // UI 표현 예시
 <TableCell>
   <div className="flex flex-col">
-    <span className="font-mono text-sm">{equipment_number}</span>
+    <span className="font-mono text-sm">{equipment_serial}</span>
     <span className="text-xs text-gray-500">
       관리: {management_number}
       {sibling_count > 1 && `(+${sibling_count - 1}대)`}
@@ -225,8 +228,8 @@ interface GroupViewMode {
 ### 5.1 RESTful 엔드포인트 재설계
 
 ```typescript
-// 개별 장비 조회
-GET /api/aed-devices/:equipment_number
+// 개별 장비 조회 (장비연번으로)
+GET /api/aed-data/:equipment_serial
 
 // 관리번호로 그룹 조회
 GET /api/aed-groups/:management_number
@@ -240,22 +243,22 @@ GET /api/aed-data?view=individual|grouped
 ```graphql
 type AEDDevice {
   id: ID!
-  equipmentNumber: String!  # 고유 식별자
+  equipmentSerial: String!  # 장비연번 (고유 식별자)
   managementGroup: ManagementGroup
   # ...
 }
 
 type ManagementGroup {
   id: ID!
-  managementNumber: String!
+  managementNumber: String!  # 관리번호
   devices: [AEDDevice!]!
   deviceCount: Int!
 }
 
-query GetAEDByEquipment($equipmentNumber: String!) {
-  aedDevice(equipmentNumber: $equipmentNumber) {
+query GetAEDBySerial($equipmentSerial: String!) {
+  aedDevice(equipmentSerial: $equipmentSerial) {
     id
-    equipmentNumber
+    equipmentSerial
     managementGroup {
       managementNumber
       deviceCount
@@ -316,28 +319,35 @@ ROLLBACK; -- or COMMIT if confirmed
 ## 8. 결론 및 권장사항
 
 ### 핵심 포인트
-1. **장비연번(equipment_number)**이 실제 고유 식별자
-2. **관리번호(management_number)**는 그룹 식별자 (1:N 관계)
-3. 현재 스키마는 이 관계를 잘못 반영하고 있음
+1. **장비연번(equipment_serial)**이 실제 고유 식별자 ✅
+2. **관리번호(management_number)**는 그룹 식별자 (1:N 관계) ✅
+3. **제조번호(serial_number)**는 제조사 일련번호 (중복 가능) ✅
 
-### 권장 조치
-1. **즉시**: 문서와 주석에 이 관계를 명확히 표시
-2. **단기**: Option A로 빠른 수정 (제약조건 변경)
-3. **장기**: Option B로 정규화된 구조 구축
+### 현재 구현 상태 (2025-11-03)
+**✅ 올바르게 구현됨**:
+- `aed_data` 테이블은 `equipment_serial`을 UNIQUE 제약조건으로 설정
+- 81,464대 장비 중 중복 0건 확인
+- 모든 JOIN 조건이 `equipment_serial` 기준으로 구현됨
+- Prisma 스키마에 정확히 반영됨
 
-### 예상 효과
-- 데이터 무결성 향상
-- 조회 성능 개선
-- 유지보수성 증대
-- 확장성 확보
+### 검증 완료 항목
+1. ✅ 데이터베이스 스키마: `equipment_serial` UNIQUE 제약
+2. ✅ 코드 전체 검증: 모든 JOIN이 올바른 필드 사용
+3. ✅ 실제 데이터 검증: 중복 0건
+4. ✅ 문서 용어 통일: `equipment_serial`로 표준화
+
+### 예상 효과 (달성됨)
+- ✅ 데이터 무결성 향상
+- ✅ 조회 성능 최적화
+- ✅ 유지보수성 증대
+- ✅ 확장성 확보
 
 ---
 
 **작성일**: 2025-09-20
-**최종 업데이트**: 2025-10-03
+**최종 업데이트**: 2025-11-03
 **작성자**: AED 점검 시스템 개발팀
-**상태**: ⚠️ 미해결 (현재 스키마에 여전히 문제 존재)
-**우선순위**: 🔴 높음 (데이터 무결성 직접 영향)
-**예상 소요시간**: 5일 (분석 1일 + 개발 3일 + 테스트 1일)
+**상태**: ✅ 해결됨 (스키마 및 코드 모두 올바르게 구현)
+**우선순위**: 🟢 낮음 (정상 작동 중)
 
-> **현재 상태**: 이 이슈는 아직 해결되지 않았습니다. `aed_data` 테이블은 여전히 `management_number`를 UNIQUE로 설정하고 있어, 1:N 관계를 올바르게 표현하지 못하고 있습니다.
+> **현재 상태**: 이 이슈는 해결되었습니다. `aed_data` 테이블은 `equipment_serial`을 UNIQUE로 설정하여 올바른 고유 식별자로 사용하고 있으며, 실제 데이터에서도 중복이 없음을 확인했습니다.

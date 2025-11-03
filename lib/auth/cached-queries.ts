@@ -26,13 +26,18 @@ export const getCachedUserProfile = cache(async (userId: string): Promise<UserPr
     }
 
     // Prisma 데이터를 UserProfile 타입으로 변환
+    // Decimal 타입을 Number로 변환 (Client Component 전달 지원)
     const typedProfile: UserProfile = {
       id: profile.id,
       email: profile.email,
       fullName: profile.full_name || profile.email,
       phone: profile.phone || undefined,
       organizationId: profile.organization_id || undefined,
-      organization: (profile.organizations as any) || undefined,
+      organization: profile.organizations ? {
+        ...profile.organizations,
+        latitude: profile.organizations.latitude?.toNumber() ?? null,
+        longitude: profile.organizations.longitude?.toNumber() ?? null,
+      } : undefined,
       region: profile.region || undefined,
       region_code: profile.region_code || undefined,
       role: profile.role,
