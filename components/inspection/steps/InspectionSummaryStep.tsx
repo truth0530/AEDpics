@@ -419,11 +419,55 @@ export function InspectionSummaryStep() {
   return (
     <div className="space-y-3">
       {/* 보고서 컨테이너 - MS Word 스타일 */}
-      <div id="inspection-report-container" className="space-y-4 rounded-lg border border-gray-700/30 bg-gray-900/50 p-4">
+      <div id="inspection-report-container" className="space-y-4 rounded-lg border border-gray-700/30 bg-gray-900/50 p-4 sm:p-6">
         <style>{`
           /* 기본: 보고서 섹션 표시 */
           .report-section {
             display: block !important;
+          }
+
+          /* 화면 표시용 반응형 폰트 시스템 */
+          @media screen {
+            #inspection-report-container {
+              font-size: clamp(10px, 2vw, 14px);
+              line-height: 1.6;
+            }
+
+            #inspection-report-container .report-title h1 {
+              font-size: clamp(16px, 4vw, 24px) !important;
+            }
+
+            #inspection-report-container .section-title {
+              font-size: clamp(12px, 2.5vw, 16px) !important;
+            }
+
+            #inspection-report-container .report-table {
+              font-size: clamp(10px, 2vw, 13px) !important;
+              width: 100%;
+              table-layout: fixed;
+            }
+
+            #inspection-report-container .report-table td,
+            #inspection-report-container .report-table th {
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+            }
+
+            /* 모바일 최적화 */
+            @media (max-width: 640px) {
+              #inspection-report-container {
+                padding: 12px !important;
+              }
+
+              #inspection-report-container .report-table {
+                font-size: 10px !important;
+              }
+
+              #inspection-report-container .report-table td,
+              #inspection-report-container .report-table th {
+                padding: 4px 2px !important;
+              }
+            }
           }
 
           @media print {
