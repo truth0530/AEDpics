@@ -1147,9 +1147,8 @@ export function MapView({
             </button>
           </div>
 
-          {/* Map Control Buttons - Radius Selector + List Filter (가로 배치, 컴팩트) */}
-          <div className="absolute top-16 left-2 flex gap-1 z-10">
-            {/* Radius Selector */}
+          {/* Radius Selector - 좌측 상단 */}
+          <div className="absolute top-16 left-2 z-10">
             <div className="bg-white rounded p-1 shadow-lg">
               <div className="flex gap-0.5 items-center">
                 <span className="text-[9px] text-gray-600 px-0.5">반경:</span>
@@ -1171,9 +1170,11 @@ export function MapView({
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* List Filter Buttons - viewMode에 따라 표시 */}
-            {viewMode === 'admin' ? (
+          {/* List Filter Buttons - 우측 상단, viewMode에 따라 표시 */}
+          {viewMode === 'admin' ? (
+            <div className="absolute top-16 right-2 z-10">
               <div className="bg-white rounded p-1 shadow-lg">
                 <div className="flex gap-0.5">
                   <button
@@ -1217,7 +1218,9 @@ export function MapView({
                   </button>
                 </div>
               </div>
-            ) : viewMode === 'inspection' ? (
+            </div>
+          ) : viewMode === 'inspection' ? (
+            <div className="absolute top-16 right-2 z-10">
               <div className="bg-white rounded p-1 shadow-lg">
                 <div className="flex gap-0.5">
                   <button
@@ -1261,8 +1264,8 @@ export function MapView({
                   </button>
                 </div>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           {/* Selected AED Info Popup */}
           {selectedAED && popupPosition && (
