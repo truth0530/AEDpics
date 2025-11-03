@@ -1200,7 +1200,7 @@ export function MapView({
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    추가할
+                    추가필요
                   </button>
                   <button
                     onClick={() => {
@@ -1213,7 +1213,7 @@ export function MapView({
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    추가됨
+                    추가완료
                   </button>
                 </div>
               </div>
