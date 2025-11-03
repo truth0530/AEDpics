@@ -1147,12 +1147,12 @@ export function MapView({
             </button>
           </div>
 
-          {/* Map Control Buttons - Radius Selector + List Filter (가로 배치) */}
-          <div className="absolute top-4 left-4 flex gap-2 z-10">
+          {/* Map Control Buttons - Radius Selector + List Filter (가로 배치, 컴팩트) */}
+          <div className="absolute top-4 left-4 flex gap-1 z-10">
             {/* Radius Selector */}
-            <div className="bg-white rounded-lg p-1.5 shadow-lg">
-              <div className="flex gap-1 items-center">
-                <span className="text-[10px] text-gray-600 mr-1 px-1">반경:</span>
+            <div className="bg-white rounded p-1 shadow-lg">
+              <div className="flex gap-0.5 items-center">
+                <span className="text-[9px] text-gray-600 px-0.5">반경:</span>
                 {[1, 3, 5].map(radius => (
                   <button
                     key={radius}
@@ -1160,7 +1160,7 @@ export function MapView({
                       console.log(`[MapView] 🎯 Radius filter changed to ${radius}km`);
                       setSearchRadius(radius);
                     }}
-                    className={`px-1.5 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    className={`px-1 py-0.5 text-[9px] font-medium rounded transition-colors ${
                       searchRadius === radius
                         ? 'bg-emerald-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1174,14 +1174,14 @@ export function MapView({
 
             {/* List Filter Buttons - viewMode에 따라 표시 */}
             {viewMode === 'admin' ? (
-              <div className="bg-white rounded-lg p-1.5 shadow-lg">
-                <div className="flex gap-1">
+              <div className="bg-white rounded p-1 shadow-lg">
+                <div className="flex gap-0.5">
                   <button
                     onClick={() => {
                       console.log('[MapView] 📋 List filter: 전체');
                       setListFilter('all');
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-colors ${
                       listFilter === 'all'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1194,38 +1194,38 @@ export function MapView({
                       console.log('[MapView] 📋 List filter: 추가할 목록');
                       setListFilter('toAdd');
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-colors ${
                       listFilter === 'toAdd'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    추가할 목록
+                    추가할
                   </button>
                   <button
                     onClick={() => {
                       console.log('[MapView] 📋 List filter: 추가된 목록');
                       setListFilter('added');
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-colors ${
                       listFilter === 'added'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    추가된 목록
+                    추가됨
                   </button>
                 </div>
               </div>
             ) : viewMode === 'inspection' ? (
-              <div className="bg-white rounded-lg p-1.5 shadow-lg">
-                <div className="flex gap-1">
+              <div className="bg-white rounded p-1 shadow-lg">
+                <div className="flex gap-0.5">
                   <button
                     onClick={() => {
                       console.log('[MapView] 📋 List filter: 전체');
                       setListFilter('all');
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-colors ${
                       listFilter === 'all'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1238,26 +1238,26 @@ export function MapView({
                       console.log('[MapView] 📋 List filter: 점검대상목록');
                       setListFilter('target');
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-colors ${
                       listFilter === 'target'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    점검대상목록
+                    점검대상
                   </button>
                   <button
                     onClick={() => {
                       console.log('[MapView] 📋 List filter: 점검진행목록');
                       setListFilter('inProgress');
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-colors ${
                       listFilter === 'inProgress'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    점검진행목록
+                    진행중
                   </button>
                 </div>
               </div>
