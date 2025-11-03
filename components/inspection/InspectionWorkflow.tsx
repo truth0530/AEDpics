@@ -390,7 +390,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     return missing;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < STEP_COMPONENTS.length - 1) {
       // ✅ 1. 필수 항목 검증
       const missing = checkRequiredFields(currentStep);
@@ -403,11 +403,40 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       // ✅ 2. 현재 단계의 데이터 변경 여부 확인
       const hasChanges = checkStepHasChanges(currentStep);
 
+      // ✅ 3. Step 0에서 '일치' 또는 '수정' 확인 후 → 자동 저장
+      if (currentStep === 0 && hasChanges) {
+        const basicInfo = stepData.basicInfo as Record<string, any> | undefined;
+        const isConfirmed = basicInfo?.all_matched === true || basicInfo?.all_matched === 'edited';
+        const isLocationConfirmed = basicInfo?.location_matched === true || basicInfo?.location_matched === 'edited';
+
+        if (isConfirmed && isLocationConfirmed) {
+          // 사용자가 이미 '일치' 또는 '수정'을 확인함 → 경고 없이 자동 저장
+          setIsSaving(true);
+          setError(null);
+          try {
+            await saveProgressMutation.mutateAsync();
+            showSaveSuccess();
+            const latestStep = useInspectionSessionStore.getState().currentStep;
+            setCurrentStep(latestStep + 1);
+            scrollToTop();
+          } catch (error) {
+            console.error('Save failed:', error);
+            const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
+            setError(message);
+            showError(message);
+          } finally {
+            setIsSaving(false);
+          }
+          return;
+        }
+      }
+
+      // ✅ 4. 다른 Step이거나 확인되지 않은 경우 → 저장 모달 표시
       if (hasChanges) {
-        setShowSaveModal(true); // 변경사항 있으면 저장 모달 표시
+        setShowSaveModal(true);
       } else {
-        setCurrentStep(currentStep + 1); // 변경사항 없으면 바로 다음 단계로
-        scrollToTop(); // 🆕 단계 전환 시 상단으로 스크롤
+        setCurrentStep(currentStep + 1);
+        scrollToTop();
       }
     }
   };
@@ -655,9 +684,9 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       {showSaveModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">저장하지 않은 데이터가 있습니다</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">입력한 내용을 저장하시겠습니까?</h3>
             <p className="text-gray-300 mb-6 text-sm">
-              중간 저장 후 다음 단계로 넘어가겠습니까?
+              저장 후 다음 단계로 이동합니다.
             </p>
             <div className="flex flex-col gap-2">
               <button

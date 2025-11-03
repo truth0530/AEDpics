@@ -318,6 +318,8 @@ export function BasicInfoStep() {
 
   // 수정 취소
   const handleCancelEdit = () => {
+    // ✅ 이미 'edited' 상태이면 보존 (사용자가 이미 수정을 확인함)
+    // 수정 모드에서 나가도 검증 상태는 유지됨
     setIsEditMode(false);
   };
 
