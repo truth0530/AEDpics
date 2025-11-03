@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 9. 세션 상태 검증 (진행 중인 세션만)
-    if (session.status !== 'in_progress') {
+    if (session.status !== 'active') {
       return NextResponse.json(
         {
           error: 'Cannot upload to inactive session',
@@ -115,8 +115,11 @@ export async function POST(request: NextRequest) {
       'front',
       'back',
       'serial',
+      'serial_number',
       'battery',
+      'battery_date',
       'pad',
+      'device_date',
       'storage',
       'location',
       'other',
