@@ -52,6 +52,27 @@ export default function InspectorOnlyDashboard({ user }: InspectorOnlyDashboardP
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500">
+          <p className="text-xl font-bold">데이터 로드 실패</p>
+          <p className="mt-2">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData || !hourlyData || !dailyData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-yellow-500">
+          <p className="text-xl font-bold">데이터가 없습니다</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AEDDashboardNew
       dashboardData={dashboardData}
