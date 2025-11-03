@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
 import { REGIONS, normalizeRegionName } from '@/lib/constants/regions';
 import { useAEDData } from '@/app/aed-data/components/AEDDataProvider';
@@ -80,6 +80,7 @@ export function MapView({
   const [mapLocations, setMapLocations] = useState<AEDMapLocation[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [searchRadius, setSearchRadius] = useState<number>(3); // 기본 3km
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
   // 이전 지역 정보 추적 (무한 루프 방지)
   const lastRegionRef = useRef<{ sido: string; gugun: string } | null>(null);
@@ -118,6 +119,31 @@ export function MapView({
 
   // 실제 사용할 locations (props 또는 지도 기반 로딩)
   const displayLocations = useMapBasedLoading ? mapLocations : locations;
+
+  // 반경 내 장비만 필터링 (지도 탭 전용)
+  const filteredDisplayLocations = useMemo(() => {
+    // 지도가 없거나 지도 중심이 없으면 필터링 불가
+    if (!mapCenter) {
+      return displayLocations;
+    }
+
+    // displayLocations에서 지도 중심으로부터 searchRadius 이내의 장비만 필터링
+    return displayLocations.filter(location => {
+      // GPS 좌표가 없는 장비는 제외
+      if (location.latitude === null || location.longitude === null) {
+        return false;
+      }
+
+      const distance = calculateDistance(
+        mapCenter.lat,
+        mapCenter.lng,
+        location.latitude,
+        location.longitude
+      );
+
+      return distance <= searchRadius;
+    });
+  }, [displayLocations, mapCenter, searchRadius]);
 
   // 디버깅: displayLocations 데이터 추적
   useEffect(() => {
@@ -253,6 +279,9 @@ export function MapView({
           const center = mapInstance.getCenter();
           const lat = center.getLat();
           const lng = center.getLng();
+
+          // 지도 중심 상태 업데이트 (장비 목록 필터링용)
+          setMapCenter({ lat, lng });
 
           // 좌표로 행정구역 정보 가져오기
           geocoder.coord2RegionCode(lng, lat, function(result: any, status: any) {
@@ -944,11 +973,11 @@ export function MapView({
             </div>
 
             <div className="text-xs text-gray-400 mb-3">
-              {dataLoading ? '로딩 중...' : `${displayLocations.length}개`}
+              {dataLoading ? '로딩 중...' : `${filteredDisplayLocations.length}개`}
             </div>
 
             <div className="space-y-1.5">
-              {displayLocations.map((location, index) => {
+              {filteredDisplayLocations.map((location, index) => {
                 const isCriticalDevice = location.external_display === 'N' &&
                   location.external_non_display_reason &&
                   location.external_non_display_reason.trim() !== '' &&
@@ -1307,12 +1336,12 @@ export function MapView({
           <div className="flex items-center justify-between mb-2 px-2">
             <h3 className="text-sm font-semibold text-gray-200">장비 목록</h3>
             <div className="text-xs text-gray-400">
-              {dataLoading ? '로딩 중...' : `${displayLocations.length}개`}
+              {dataLoading ? '로딩 중...' : `${filteredDisplayLocations.length}개`}
             </div>
           </div>
 
           <div className="space-y-1.5">
-            {displayLocations.map((location, index) => {
+            {filteredDisplayLocations.map((location, index) => {
               const isCriticalDevice = location.external_display === 'N' &&
                 location.external_non_display_reason &&
                 location.external_non_display_reason.trim() !== '' &&
