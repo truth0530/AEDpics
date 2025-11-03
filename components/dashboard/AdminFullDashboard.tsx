@@ -23,8 +23,8 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
 
       // API를 통해 대시보드 데이터 가져오기
       const params = new URLSearchParams();
-      if (sido && sido !== '전체') params.append('sido', sido);
-      if (gugun && gugun !== '전체') params.append('gugun', gugun);
+      if (sido && sido !== '전체' && sido !== '시도') params.append('sido', sido);
+      if (gugun && gugun !== '전체' && gugun !== '구군') params.append('gugun', gugun);
 
       const response = await fetch(`/api/dashboard?${params.toString()}`);
       const result = await response.json();
