@@ -46,8 +46,8 @@ export interface DashboardData {
   completionRate: number;
 }
 
-// 구비의무기관 목록
-const MANDATORY_CATEGORIES = ['공동주택', '공항·항만·역사', '학교', '대규모점포'];
+// 구비의무기관 카테고리 (e-gen 시스템에서 이미 분류됨)
+const MANDATORY_CATEGORY = '구비의무기관';
 
 /**
  * 역할별 대시보드 데이터 조회 (Prisma 버전)
@@ -81,13 +81,17 @@ export const getCachedDashboardData = cache(async (
       }>;
 
       if (normalizedGugun && normalizedGugun !== '전체') {
-        // 특정 구군만 조회
+        // 특정 구군만 조회 (sido 조건 필수 추가 - 전국 동명 구군 중복 집계 방지)
+        if (!normalizedSido || normalizedSido === '전체') {
+          throw new Error('구군을 선택할 때는 시도 정보가 필요합니다');
+        }
+
         aggregatedStats = await prisma.$queryRaw`
           SELECT
             gugun as region,
             COUNT(*) as total,
             SUM(CASE
-              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              WHEN category_1 = '구비의무기관'
               THEN 1
               ELSE 0
             END) as mandatory,
@@ -107,13 +111,13 @@ export const getCachedDashboardData = cache(async (
               ELSE 0
             END) as uninspected,
             SUM(CASE
-              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              WHEN category_1 = '구비의무기관'
                 AND last_inspection_date IS NOT NULL
               THEN 1
               ELSE 0
             END) as completed_mandatory
           FROM aedpics.aed_data
-          WHERE gugun = ${normalizedGugun}
+          WHERE sido = ${normalizedSido} AND gugun = ${normalizedGugun}
           GROUP BY gugun
           ORDER BY total DESC
         `;
@@ -124,7 +128,7 @@ export const getCachedDashboardData = cache(async (
             gugun as region,
             COUNT(*) as total,
             SUM(CASE
-              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              WHEN category_1 = '구비의무기관'
               THEN 1
               ELSE 0
             END) as mandatory,
@@ -144,7 +148,7 @@ export const getCachedDashboardData = cache(async (
               ELSE 0
             END) as uninspected,
             SUM(CASE
-              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              WHEN category_1 = '구비의무기관'
                 AND last_inspection_date IS NOT NULL
               THEN 1
               ELSE 0
@@ -161,7 +165,7 @@ export const getCachedDashboardData = cache(async (
             sido as region,
             COUNT(*) as total,
             SUM(CASE
-              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              WHEN category_1 = '구비의무기관'
               THEN 1
               ELSE 0
             END) as mandatory,
@@ -181,7 +185,7 @@ export const getCachedDashboardData = cache(async (
               ELSE 0
             END) as uninspected,
             SUM(CASE
-              WHEN category_1 IN ('공동주택', '공항·항만·역사', '학교', '대규모점포')
+              WHEN category_1 = '구비의무기관'
                 AND last_inspection_date IS NOT NULL
               THEN 1
               ELSE 0
@@ -276,14 +280,14 @@ export const getCachedDashboardData = cache(async (
       const mandatory = await prisma.aed_data.count({
         where: {
           ...regionWhere,
-          category_1: { in: MANDATORY_CATEGORIES }
+          category_1: MANDATORY_CATEGORY
         }
       });
 
       const completedMandatory = await prisma.aed_data.count({
         where: {
           ...regionWhere,
-          category_1: { in: MANDATORY_CATEGORIES },
+          category_1: MANDATORY_CATEGORY,
           last_inspection_date: { not: null }
         }
       });
