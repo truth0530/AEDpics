@@ -403,35 +403,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       // ✅ 2. 현재 단계의 데이터 변경 여부 확인
       const hasChanges = checkStepHasChanges(currentStep);
 
-      // ✅ 3. Step 0에서 '일치' 또는 '수정' 확인 후 → 자동 저장
-      if (currentStep === 0 && hasChanges) {
-        const basicInfo = stepData.basicInfo as Record<string, any> | undefined;
-        const isConfirmed = basicInfo?.all_matched === true || basicInfo?.all_matched === 'edited';
-        const isLocationConfirmed = basicInfo?.location_matched === true || basicInfo?.location_matched === 'edited';
-
-        if (isConfirmed && isLocationConfirmed) {
-          // 사용자가 이미 '일치' 또는 '수정'을 확인함 → 경고 없이 자동 저장
-          setIsSaving(true);
-          setError(null);
-          try {
-            await saveProgressMutation.mutateAsync();
-            showSaveSuccess();
-            const latestStep = useInspectionSessionStore.getState().currentStep;
-            setCurrentStep(latestStep + 1);
-            scrollToTop();
-          } catch (error) {
-            console.error('Save failed:', error);
-            const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
-            setError(message);
-            showError(message);
-          } finally {
-            setIsSaving(false);
-          }
-          return;
-        }
-      }
-
-      // ✅ 4. 다른 Step이거나 확인되지 않은 경우 → 저장 모달 표시
+      // ✅ 3. 변경사항이 있으면 저장 모달 표시 (모든 단계 일관성 있게)
       if (hasChanges) {
         setShowSaveModal(true);
       } else {
