@@ -1,4 +1,4 @@
-name: Cleanup NCP Server
+name: Cleanup Server Disk Space
 
 on:
   workflow_dispatch:  # 수동 실행만 가능
@@ -6,10 +6,9 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
-    - name: Cleanup NCP Server Disk Space
+    - name: Cleanup Server Disk Space
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.NCP_HOST }}
@@ -17,89 +16,48 @@ jobs:
         key: ${{ secrets.NCP_SSH_KEY }}
         port: ${{ secrets.NCP_SSH_PORT }}
         script: |
-          echo "=== Checking disk usage ==="
-          df -h
-          
-          echo ""
-          echo "=== Checking large directories ==="
-          du -sh /var/www/aedpics/* 2>/dev/null | sort -hr | head -20
-          
-          echo ""
-          echo "=== Stopping PM2 ==="
-          pm2 stop aedpics || true
-          
-          echo ""
-          echo "=== Cleaning npm cache ==="
-          npm cache clean --force
-          
-          echo ""
-          echo "=== Cleaning PM2 logs ==="
-          pm2 flush
-          
-          echo ""
-          echo "=== Removing old node_modules ==="
+          echo "=== Current Disk Usage ==="
+          df -h /
+
           cd /var/www/aedpics
-          rm -rf node_modules
-          
-          echo ""
-          echo "=== Removing .next build cache ==="
-          rm -rf .next
-          
-          echo ""
-          echo "=== Removing Prisma cache ==="
-          rm -rf ~/.cache/prisma
-          
-          echo ""
-          echo "=== Checking disk usage after cleanup ==="
-          df -h
-          
-          echo ""
-          echo "=== Reinstalling dependencies ==="
-          npm install
-          
-          echo ""
-          echo "=== Generating Prisma client ==="
-          npx prisma generate
-          
-          echo ""
-          echo "=== Building application ==="
-          npm run build
-          
-          echo ""
-          echo "=== Starting PM2 ==="
-          pm2 start ecosystem.config.cjs --update-env
-          pm2 save --force
-          
-          echo ""
-          echo "=== Final PM2 status ==="
-          pm2 status
-          
-          echo ""
-          echo "=== Cleanup and rebuild complete ==="
-          df -h
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        NEXT_PUBLIC_KAKAO_MAP_APP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APP_KEY }}
-        NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        MASTER_EMAIL: ${{ secrets.MASTER_EMAIL }}
-        ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        NCP_ACCESS_KEY: ${{ secrets.NCP_ACCESS_KEY }}
-        NCP_ACCESS_SECRET: ${{ secrets.NCP_ACCESS_SECRET }}
-        NCP_SENDER_EMAIL: ${{ secrets.NCP_SENDER_EMAIL }}
-    
-    - name: Health Check
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.NCP_HOST }}
-        username: ${{ secrets.NCP_USERNAME }}
-        key: ${{ secrets.NCP_SSH_KEY }}
-        port: ${{ secrets.NCP_SSH_PORT }}
-        script: |
-          sleep 10
-          curl -f http://localhost:3000 || exit 1
-          pm2 status aedpics | grep online || exit 1
-          echo "Health check passed!"
+
+          echo "=== Cleaning build caches ==="
+          # Next.js 빌드 캐시 정리
+          rm -rf .next/cache
+          echo "Cleaned .next/cache"
+
+          # Node modules 캐시 정리
+          if [ -d "node_modules/.cache" ]; then
+            rm -rf node_modules/.cache
+            echo "Cleaned node_modules/.cache"
+          fi
+
+          # NPM 캐시 정리
+          npm cache clean --force
+          echo "Cleaned npm cache"
+
+          # PM2 로그 정리
+          pm2 flush
+          echo "Flushed PM2 logs"
+
+          # 백업 파일 정리 (7일 이상 된 것만)
+          find /var/www/aedpics -name "*.backup" -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
+          echo "Cleaned old backup files"
+
+          # 임시 파일 정리
+          rm -rf /tmp/npm-* /tmp/next-* 2>/dev/null || true
+          echo "Cleaned temp files"
+
+          # Docker 정리 (설치된 경우)
+          if command -v docker &> /dev/null; then
+            docker system prune -af --volumes 2>/dev/null || true
+            echo "Cleaned Docker cache"
+          fi
+
+          echo "=== Disk Usage After Cleanup ==="
+          df -h /
+
+          echo "=== Directory Sizes ==="
+          du -sh /var/www/aedpics/.next /var/www/aedpics/node_modules 2>/dev/null || true
+
+          echo "=== Cleanup Complete ==="
