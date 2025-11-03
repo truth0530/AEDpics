@@ -1148,7 +1148,7 @@ export function MapView({
           </div>
 
           {/* Map Control Buttons - Radius Selector + List Filter (가로 배치, 컴팩트) */}
-          <div className="absolute top-4 left-4 flex gap-1 z-10">
+          <div className="absolute top-16 left-2 flex gap-1 z-10">
             {/* Radius Selector */}
             <div className="bg-white rounded p-1 shadow-lg">
               <div className="flex gap-0.5 items-center">
