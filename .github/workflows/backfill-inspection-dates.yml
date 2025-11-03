@@ -39,7 +39,7 @@ jobs:
 
           echo "=== Running backfill script ==="
           export DATABASE_URL="${DATABASE_URL}"
-          npx ts-node scripts/backfill-inspection-dates.ts 2>&1
+          npx tsx scripts/backfill-inspection-dates.ts 2>&1
 
           echo "=== Backfill completed ===\"
       env:
