@@ -94,15 +94,48 @@ function normalizeString(value: unknown): string | null {
 }
 
 function normalizeNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
+  // null 또는 undefined 체크
+  if (value === null || value === undefined) {
+    return null;
   }
+
+  // 1. 이미 number 타입인 경우
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  // 2. string 타입인 경우
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = Number(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
   }
+
+  // 3. Prisma Decimal 타입 처리 (decimal.js-light)
+  if (typeof value === 'object') {
+    // toNumber() 메서드 체크
+    if ('toNumber' in value && typeof (value as any).toNumber === 'function') {
+      try {
+        const num = (value as any).toNumber();
+        return Number.isFinite(num) ? num : null;
+      } catch (error) {
+        // toNumber() 실패 시 toString() 시도
+      }
+    }
+
+    // toString() 메서드로 string 변환 후 파싱
+    if ('toString' in value && typeof (value as any).toString === 'function') {
+      try {
+        const str = (value as any).toString();
+        const parsed = Number(str);
+        return Number.isFinite(parsed) ? parsed : null;
+      } catch (error) {
+        // toString() 실패
+      }
+    }
+  }
+
   return null;
 }
 
@@ -276,13 +309,9 @@ export function mapAedData(item: any) {
     ?? normalizeString(item.modelName);
   const manufacturer = normalizeString(item.manufacturer);
 
-  // GPS 좌표
-  const latitude = normalizeNumber(item.latitude)
-    ?? normalizeNumber(item.gps_latitude)
-    ?? null;
-  const longitude = normalizeNumber(item.longitude)
-    ?? normalizeNumber(item.gps_longitude)
-    ?? null;
+  // GPS 좌표 (Prisma Decimal 객체 처리)
+  const latitude = normalizeNumber(item.latitude);
+  const longitude = normalizeNumber(item.longitude);
 
   const isPublicVisibleValue =
     typeof item.is_public_visible === 'boolean'
