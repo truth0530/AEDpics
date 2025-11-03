@@ -3,11 +3,6 @@
 import { useEffect, useState } from 'react';
 import { UserProfile } from '@/packages/types';
 import AEDDashboardNew from './AEDDashboardNew';
-import {
-  getCachedDashboardData,
-  getCachedHourlyInspections,
-  getCachedDailyInspections
-} from '@/lib/aed/dashboard-queries';
 
 interface InspectorOnlyDashboardProps {
   user: UserProfile;
@@ -18,29 +13,36 @@ export default function InspectorOnlyDashboard({ user }: InspectorOnlyDashboardP
   const [hourlyData, setHourlyData] = useState<any>(null);
   const [dailyData, setDailyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadDashboardData() {
       try {
         // 임시 점검자: 본인의 점검 통계만 표시
-        const [dashboard, hourly, daily] = await Promise.all([
-          getCachedDashboardData(user),
-          getCachedHourlyInspections(user),
-          getCachedDailyInspections(user),
-        ]);
+        // API를 통해 데이터 가져오기
+        const response = await fetch('/api/dashboard');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch dashboard data: ${response.statusText}`);
+        }
 
-        setDashboardData(dashboard);
-        setHourlyData(hourly);
-        setDailyData(daily);
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to load dashboard data');
+        }
+
+        setDashboardData(result.data.dashboard);
+        setHourlyData(result.data.hourly);
+        setDailyData(result.data.daily);
       } catch (error) {
         console.error('[InspectorOnlyDashboard] Error loading data:', error);
+        setError(error instanceof Error ? error.message : 'Unknown error');
       } finally {
         setLoading(false);
       }
     }
 
     loadDashboardData();
-  }, [user]);
+  }, []);
 
   if (loading) {
     return (
