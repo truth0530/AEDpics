@@ -283,9 +283,9 @@ export function MapView({
       setMap(mapInstance);
       isMapInitializedRef.current = true;
 
-      // 지도 컨트롤 추가
+      // 지도 컨트롤 추가 - 우측 하단
       const zoomControl = new window.kakao.maps.ZoomControl();
-      mapInstance.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
+      mapInstance.addControl(zoomControl, window.kakao.maps.ControlPosition.BOTTOMRIGHT);
 
       // Geocoder 초기화
       const geocoder = new window.kakao.maps.services.Geocoder();
@@ -1148,7 +1148,7 @@ export function MapView({
           </div>
 
           {/* Radius Selector - 좌측 상단 */}
-          <div className="absolute top-4 left-2 z-10">
+          <div className="absolute top-0 left-2 z-10">
             <div className="bg-white rounded p-1 shadow-lg">
               <div className="flex gap-0.5 items-center">
                 <span className="text-[9px] text-gray-600 px-0.5">반경:</span>
@@ -1174,7 +1174,7 @@ export function MapView({
 
           {/* List Filter Buttons - 우측 상단, viewMode에 따라 표시 */}
           {viewMode === 'admin' ? (
-            <div className="absolute top-4 right-2 z-10">
+            <div className="absolute top-0 right-2 z-10">
               <div className="bg-white rounded p-1 shadow-lg">
                 <div className="flex gap-0.5">
                   <button
@@ -1220,7 +1220,7 @@ export function MapView({
               </div>
             </div>
           ) : viewMode === 'inspection' ? (
-            <div className="absolute top-4 right-2 z-10">
+            <div className="absolute top-0 right-2 z-10">
               <div className="bg-white rounded p-1 shadow-lg">
                 <div className="flex gap-0.5">
                   <button
