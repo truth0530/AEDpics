@@ -291,6 +291,13 @@ export function BasicInfoStep() {
         return;
       }
 
+      // ✅ 원본과 다른 경우 수정사유 필수 입력 검증
+      const editReason = basicInfo.edit_reason?.trim() || '';
+      if (!editReason) {
+        alert('수정사유를 입력해주세요.');
+        return;
+      }
+
       // field_changes 업데이트
       BASIC_INFO_FIELDS.forEach((field) => {
         const originalValue = deviceInfo[field.dbKey] || '';
@@ -300,7 +307,7 @@ export function BasicInfoStep() {
           updateFieldChange(field.key, {
             original: originalValue,
             corrected: currentValue,
-            reason: basicInfo.edit_reason || '',
+            reason: editReason,
           });
         }
       });
@@ -357,6 +364,13 @@ export function BasicInfoStep() {
       return;
     }
 
+    // ✅ 원본과 다른 경우 수정사유 필수 입력 검증
+    const editReason = basicInfo.edit_reason?.trim() || '';
+    if (!editReason) {
+      alert('수정사유를 입력해주세요.');
+      return;
+    }
+
     // field_changes 업데이트
     const addressField = FIELDS[2]; // 주소 (인덱스 수정)
     const positionField = FIELDS[3]; // 설치위치 (인덱스 수정)
@@ -370,7 +384,7 @@ export function BasicInfoStep() {
       updateFieldChange(addressField.key, {
         original: originalAddress,
         corrected: currentAddress,
-        reason: '',
+        reason: editReason,
       });
     }
 
@@ -378,7 +392,7 @@ export function BasicInfoStep() {
       updateFieldChange(positionField.key, {
         original: originalPosition,
         corrected: currentPosition,
-        reason: '',
+        reason: editReason,
       });
     }
 

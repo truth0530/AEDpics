@@ -434,6 +434,7 @@ export function PhotoCaptureInput({
                 onClick={async () => {
                   setShowSourceModal(false);
                   try {
+                    console.log('[PhotoCapture] Requesting camera access...');
                     const stream = await navigator.mediaDevices.getUserMedia({
                       video: {
                         facingMode: 'environment',
@@ -441,11 +442,40 @@ export function PhotoCaptureInput({
                         height: { ideal: 720 },
                       },
                     });
+
+                    // ✅ 스트림 상태 검증
+                    const tracks = stream.getVideoTracks();
+                    if (tracks.length === 0) {
+                      throw new Error('No video tracks available');
+                    }
+
+                    const track = tracks[0];
+                    console.log('[PhotoCapture] Camera track obtained:', {
+                      label: track.label,
+                      enabled: track.enabled,
+                      readyState: track.readyState,
+                    });
+
+                    if (track.readyState !== 'live') {
+                      throw new Error(`Camera track not live: ${track.readyState}`);
+                    }
+
                     setPendingStream(stream);
                     setShowCamera(true);
-                  } catch (error) {
-                    console.error('[PhotoCapture] Camera access denied:', error);
-                    alert('카메라 접근 권한이 필요합니다. 브라우저 설정에서 카메라 권한을 허용해주세요.');
+                    console.log('[PhotoCapture] Camera setup successful');
+                  } catch (error: any) {
+                    console.error('[PhotoCapture] Camera access error:', error);
+
+                    let errorMessage = '카메라 접근 중 오류가 발생했습니다.';
+                    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                      errorMessage = '카메라 접근 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.';
+                    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                      errorMessage = '카메라를 찾을 수 없습니다. 기기에 카메라가 연결되어 있는지 확인해주세요.';
+                    } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                      errorMessage = '카메라가 다른 앱에서 사용 중입니다. 다른 앱을 종료하고 다시 시도해주세요.';
+                    }
+
+                    alert(errorMessage);
                   }
                 }}
                 className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
@@ -478,12 +508,11 @@ export function PhotoCaptureInput({
         </div>
       )}
 
-      {/* 숨겨진 파일 입력 - capture 속성으로 모바일에서 카메라 우선 실행 */}
+      {/* 숨겨진 파일 입력 - 사진첩에서 선택 (capture 속성 제거) */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleFileUpload}
       />
