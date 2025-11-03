@@ -82,6 +82,9 @@ export function MapView({
   const [searchRadius, setSearchRadius] = useState<number>(3); // 기본 3km
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
+  // 목록 필터 상태 (일정관리: 'all' | 'toAdd' | 'added', 현장점검: 'all' | 'target' | 'inProgress')
+  const [listFilter, setListFilter] = useState<'all' | 'toAdd' | 'added' | 'target' | 'inProgress'>('all');
+
   // 이전 지역 정보 추적 (무한 루프 방지)
   const lastRegionRef = useRef<{ sido: string; gugun: string } | null>(null);
   const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -136,15 +139,15 @@ export function MapView({
   // 실제 사용할 locations (props 또는 지도 기반 로딩)
   const displayLocations = useMapBasedLoading ? mapLocations : locations;
 
-  // 반경 내 장비만 필터링 (지도 탭 전용)
+  // 반경 내 장비만 필터링 + 목록 필터 적용 (지도 탭 전용)
   const filteredDisplayLocations = useMemo(() => {
     // 지도가 없거나 지도 중심이 없으면 필터링 불가
     if (!mapCenter) {
       return displayLocations;
     }
 
-    // displayLocations에서 지도 중심으로부터 searchRadius 이내의 장비만 필터링
-    return displayLocations.filter(location => {
+    // Step 1: 반경 내 장비 필터링
+    let filtered = displayLocations.filter(location => {
       // GPS 좌표가 없는 장비는 제외
       if (location.latitude === null || location.longitude === null) {
         return false;
@@ -159,7 +162,32 @@ export function MapView({
 
       return distance <= searchRadius;
     });
-  }, [displayLocations, mapCenter, searchRadius, calculateDistance]);
+
+    // Step 2: 목록 필터 적용
+    if (listFilter !== 'all') {
+      filtered = filtered.filter(location => {
+        const serial = location.equipment_serial;
+
+        if (listFilter === 'toAdd') {
+          // 추가할 목록: 스케줄에 없는 장비
+          return !scheduledEquipment.has(serial);
+        } else if (listFilter === 'added') {
+          // 추가된 목록: 스케줄에 있는 장비
+          return scheduledEquipment.has(serial);
+        } else if (listFilter === 'target') {
+          // 점검대상목록: 스케줄에 있지만 아직 점검 진행 중이 아닌 장비
+          return scheduledEquipment.has(serial) && !inspectionSessions.has(serial);
+        } else if (listFilter === 'inProgress') {
+          // 점검진행목록: 현재 점검 진행 중인 장비
+          return inspectionSessions.has(serial);
+        }
+
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [displayLocations, mapCenter, searchRadius, calculateDistance, listFilter, scheduledEquipment, inspectionSessions]);
 
   // 디버깅: displayLocations 데이터 추적
   useEffect(() => {
@@ -1141,6 +1169,97 @@ export function MapView({
               ))}
             </div>
           </div>
+
+          {/* List Filter Buttons - viewMode에 따라 표시 */}
+          {viewMode === 'admin' ? (
+            <div className="absolute top-16 left-4 bg-white rounded-lg p-1.5 shadow-lg z-10">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    console.log('[MapView] 📋 List filter: 전체');
+                    setListFilter('all');
+                  }}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    listFilter === 'all'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  전체
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('[MapView] 📋 List filter: 추가할 목록');
+                    setListFilter('toAdd');
+                  }}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    listFilter === 'toAdd'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  추가할 목록
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('[MapView] 📋 List filter: 추가된 목록');
+                    setListFilter('added');
+                  }}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    listFilter === 'added'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  추가된 목록
+                </button>
+              </div>
+            </div>
+          ) : viewMode === 'inspection' ? (
+            <div className="absolute top-16 left-4 bg-white rounded-lg p-1.5 shadow-lg z-10">
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    console.log('[MapView] 📋 List filter: 전체');
+                    setListFilter('all');
+                  }}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    listFilter === 'all'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  전체
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('[MapView] 📋 List filter: 점검대상목록');
+                    setListFilter('target');
+                  }}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    listFilter === 'target'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  점검대상목록
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('[MapView] 📋 List filter: 점검진행목록');
+                    setListFilter('inProgress');
+                  }}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
+                    listFilter === 'inProgress'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  점검진행목록
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {/* Selected AED Info Popup */}
           {selectedAED && popupPosition && (
