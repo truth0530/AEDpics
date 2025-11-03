@@ -540,7 +540,22 @@ export const GET = async (request: NextRequest) => {
             ia.assigned_to,
             ia.assigned_by
           FROM aedpics.aed_data a
-          LEFT JOIN aedpics.inspection_assignments ia ON a.equipment_serial = ia.equipment_serial
+          LEFT JOIN LATERAL (
+            SELECT status, scheduled_date, assigned_to, assigned_by, created_at
+            FROM aedpics.inspection_assignments
+            WHERE equipment_serial = a.equipment_serial
+            ORDER BY
+              CASE status
+                WHEN 'in_progress' THEN 1
+                WHEN 'pending' THEN 2
+                WHEN 'completed' THEN 3
+                WHEN 'unavailable' THEN 4
+                WHEN 'cancelled' THEN 5
+                ELSE 6
+              END,
+              created_at DESC
+            LIMIT 1
+          ) ia ON TRUE
           ${whereClause}
           ORDER BY a.id ASC
           LIMIT ${queryLimit}
