@@ -4,6 +4,7 @@ import { memo } from "react"
 import { usePathname } from "next/navigation"
 import { ProfileDropdown } from "@/components/layout/ProfileDropdown"
 import { RegionFilter } from "@/components/layout/RegionFilter"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import type { UserProfile } from "@/packages/types"
 
 interface AppHeaderProps {
@@ -38,7 +39,7 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
   };
 
   return (
-    <header className="hidden md:block h-20 bg-gray-900 border-b border-gray-800">
+    <header className="hidden md:block h-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
       <div className="h-full px-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center relative flex-shrink-0 shadow-lg">
@@ -50,13 +51,15 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
             </svg>
           </div>
           <div className="flex items-baseline gap-3">
-            <h1 className="text-3xl font-bold text-white">AED 픽스</h1>
-            <p className="text-base text-gray-400">{pageTitle}</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AED 픽스</h1>
+            <p className="text-base text-gray-600 dark:text-gray-400">{pageTitle}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <RegionFilter user={user} onChange={handleRegionChange} />
+          {/* ThemeToggle temporarily hidden - light mode needs comprehensive implementation across all page components */}
+          {/* <ThemeToggle /> */}
           <ProfileDropdown user={user} pendingApprovalCount={pendingApprovalCount} />
         </div>
       </div>

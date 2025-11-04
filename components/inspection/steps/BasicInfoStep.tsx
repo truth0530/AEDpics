@@ -608,41 +608,6 @@ export function BasicInfoStep() {
           <div className="flex gap-2 max-w-[60%] mx-auto">
             <button
               type="button"
-              onClick={() => {
-                if (isEditMode) {
-                  handleCancelEdit();
-                } else {
-                  handleMatchAll();
-                }
-              }}
-              disabled={basicInfo.all_matched === true || (!isEditMode && !isBasicInfoMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                basicInfo.all_matched === true
-                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                  : isBasicInfoMatching && !isEditMode
-                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                  : isEditMode
-                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
-                  : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-              }`}
-            >
-              {isEditMode ? (
-                '취소'
-              ) : basicInfo.all_matched === true ? (
-                <span className="flex items-center justify-center gap-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  전체 일치 확인됨
-                </span>
-              ) : basicInfo.all_matched === 'edited' && isBasicInfoMatching ? (
-                '일치로 변경'
-              ) : (
-                '전체 일치'
-              )}
-            </button>
-            <button
-              type="button"
               onClick={handleEditAll}
               disabled={(isEditMode && isBasicInfoMatching) || (basicInfo.all_matched === 'edited' && isBasicInfoMatching)}
               className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
@@ -681,6 +646,41 @@ export function BasicInfoStep() {
                 )
               ) : (
                 '수정'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (isEditMode) {
+                  handleCancelEdit();
+                } else {
+                  handleMatchAll();
+                }
+              }}
+              disabled={basicInfo.all_matched === true || (!isEditMode && !isBasicInfoMatching)}
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                basicInfo.all_matched === true
+                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                  : isBasicInfoMatching && !isEditMode
+                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
+                  : isEditMode
+                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
+                  : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+              }`}
+            >
+              {isEditMode ? (
+                '취소'
+              ) : basicInfo.all_matched === true ? (
+                <span className="flex items-center justify-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  전체 일치 확인됨
+                </span>
+              ) : basicInfo.all_matched === 'edited' && isBasicInfoMatching ? (
+                '일치로 변경'
+              ) : (
+                '전체 일치'
               )}
             </button>
           </div>
@@ -865,41 +865,6 @@ export function BasicInfoStep() {
               type="button"
               onClick={() => {
                 if (isLocationEditMode) {
-                  handleLocationCancelEdit();
-                } else {
-                  handleLocationMatch();
-                }
-              }}
-              disabled={basicInfo.location_matched === true || (!isLocationEditMode && !isLocationMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                basicInfo.location_matched === true
-                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                  : isLocationMatching && !isLocationEditMode
-                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                  : isLocationEditMode
-                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
-                  : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-              }`}
-            >
-              {isLocationEditMode ? (
-                '취소'
-              ) : basicInfo.location_matched === true ? (
-                <span className="flex items-center justify-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  일치 확인됨
-                </span>
-              ) : basicInfo.location_matched === 'edited' && isLocationMatching ? (
-                '일치로 변경'
-              ) : (
-                '일치'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (isLocationEditMode) {
                   handleLocationSaveEdit();
                 } else {
                   handleLocationEdit();
@@ -942,6 +907,41 @@ export function BasicInfoStep() {
                 )
               ) : (
                 '수정'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (isLocationEditMode) {
+                  handleLocationCancelEdit();
+                } else {
+                  handleLocationMatch();
+                }
+              }}
+              disabled={basicInfo.location_matched === true || (!isLocationEditMode && !isLocationMatching)}
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                basicInfo.location_matched === true
+                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                  : isLocationMatching && !isLocationEditMode
+                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
+                  : isLocationEditMode
+                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
+                  : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+              }`}
+            >
+              {isLocationEditMode ? (
+                '취소'
+              ) : basicInfo.location_matched === true ? (
+                <span className="flex items-center justify-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  일치 확인됨
+                </span>
+              ) : basicInfo.location_matched === 'edited' && isLocationMatching ? (
+                '일치로 변경'
+              ) : (
+                '일치'
               )}
             </button>
           </div>

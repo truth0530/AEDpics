@@ -93,13 +93,13 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canAccessI
         )}>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1 hover:bg-gray-800 rounded transition-colors"
+            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
             aria-label={isExpanded ? "사이드바 닫기" : "사이드바 열기"}
           >
             {isExpanded ? (
-              <ChevronLeft className="w-4 h-4 text-gray-400" />
+              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             )}
           </button>
         </div>

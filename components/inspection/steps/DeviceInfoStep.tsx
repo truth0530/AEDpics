@@ -269,6 +269,20 @@ export function DeviceInfoStep() {
             <div className="flex gap-2">
               <button
                 type="button"
+                onClick={handleEditAll}
+                className={`flex-1 sm:flex-none sm:px-6 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation ${
+                  deviceInfo.all_matched === 'edited'
+                    ? 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 cursor-default shadow-lg shadow-yellow-500/20'
+                    : 'bg-gray-700 hover:bg-gray-600 active:bg-gray-500 border border-gray-600 text-gray-200'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                {deviceInfo.all_matched === 'edited' ? '수정됨' : '수정'}
+              </button>
+              <button
+                type="button"
                 onClick={handleMatchAll}
                 disabled={deviceInfo.all_matched === true}
                 className={`flex-1 sm:flex-none sm:px-6 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation ${
@@ -281,20 +295,6 @@ export function DeviceInfoStep() {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 {deviceInfo.all_matched === true ? '전체 일치 확인됨' : '전체 일치'}
-              </button>
-              <button
-                type="button"
-                onClick={handleEditAll}
-                className={`flex-1 sm:flex-none sm:px-6 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation ${
-                  deviceInfo.all_matched === 'edited'
-                    ? 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 cursor-default shadow-lg shadow-yellow-500/20'
-                    : 'bg-gray-700 hover:bg-gray-600 active:bg-gray-500 border border-gray-600 text-gray-200'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                {deviceInfo.all_matched === 'edited' ? '수정됨' : '수정'}
               </button>
             </div>
           ) : (
@@ -427,35 +427,6 @@ export function DeviceInfoStep() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (isActuallyMatching) {
-                        updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
-                      }
-                    }}
-                    disabled={isMatched || !isActuallyMatching}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                      isMatched
-                        ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                        : isActuallyMatching
-                        ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                        : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                    }`}
-                  >
-                    {isMatched ? (
-                      <span className="flex items-center justify-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        일치 확인됨
-                      </span>
-                    ) : isEdited && isActuallyMatching ? (
-                      '일치로 변경'
-                    ) : (
-                      '일치'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
                       if (isEditMode) {
                         // 수정 모드에서 확인 - 원본과 같으면 경고
                         if (isActuallyMatching) {
@@ -507,6 +478,35 @@ export function DeviceInfoStep() {
                       )
                     ) : (
                       '수정'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isActuallyMatching) {
+                        updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
+                      }
+                    }}
+                    disabled={isMatched || !isActuallyMatching}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      isMatched
+                        ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                        : isActuallyMatching
+                        ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
+                        : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    {isMatched ? (
+                      <span className="flex items-center justify-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        일치 확인됨
+                      </span>
+                    ) : isEdited && isActuallyMatching ? (
+                      '일치로 변경'
+                    ) : (
+                      '일치'
                     )}
                   </button>
                 </div>
@@ -654,35 +654,6 @@ export function DeviceInfoStep() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (isActuallyMatching) {
-                          updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
-                        }
-                      }}
-                      disabled={isMatched || !isActuallyMatching}
-                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                        isMatched
-                          ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                          : isActuallyMatching
-                          ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                          : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                      }`}
-                    >
-                      {isMatched ? (
-                        <span className="flex items-center justify-center gap-1">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          일치 확인됨
-                        </span>
-                      ) : isEdited && isActuallyMatching ? (
-                        '일치로 변경'
-                      ) : (
-                        '일치'
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
                         if (isEditMode) {
                           if (isActuallyMatching) {
                             return;
@@ -732,6 +703,35 @@ export function DeviceInfoStep() {
                         )
                       ) : (
                         '수정'
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isActuallyMatching) {
+                          updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
+                        }
+                      }}
+                      disabled={isMatched || !isActuallyMatching}
+                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                        isMatched
+                          ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                          : isActuallyMatching
+                          ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
+                          : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                      }`}
+                    >
+                      {isMatched ? (
+                        <span className="flex items-center justify-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          일치 확인됨
+                        </span>
+                      ) : isEdited && isActuallyMatching ? (
+                        '일치로 변경'
+                      ) : (
+                        '일치'
                       )}
                     </button>
                   </div>

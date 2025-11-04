@@ -53,7 +53,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "bg-gray-950 text-white transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen z-[100] border-r border-gray-800/50 flex flex-col hidden md:flex",
+        "bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-white transition-all duration-300 ease-in-out fixed left-0 top-0 h-screen z-[100] border-r border-gray-200 dark:border-gray-800/50 flex flex-col hidden md:flex",
         isExpanded ? "w-[160px] shadow-2xl" : "w-16",
         className
       )}
@@ -71,7 +71,7 @@ export function SidebarHeader({
   className?: string
 }) {
   return (
-    <div className={cn("border-b border-gray-800/50", className)}>
+    <div className={cn("border-b border-gray-200 dark:border-gray-800/50", className)}>
       {children}
     </div>
   )
@@ -99,7 +99,7 @@ export function SidebarFooter({
   className?: string
 }) {
   return (
-    <div className={cn("p-2 border-t border-gray-800", className)}>
+    <div className={cn("p-2 border-t border-gray-200 dark:border-gray-800", className)}>
       {children}
     </div>
   )
@@ -148,9 +148,9 @@ export function SidebarMenuButton({
     <button
       className={cn(
         "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
-        "hover:bg-gray-800/80 hover:text-white",
-        "text-gray-400",
-        isActive && "bg-gray-800 text-white",
+        "hover:bg-gray-200 dark:hover:bg-gray-800/80 hover:text-gray-900 dark:hover:text-white",
+        "text-gray-600 dark:text-gray-400",
+        isActive && "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white",
         !isExpanded && "justify-center px-2",
         className
       )}
@@ -171,7 +171,7 @@ export function SidebarTrigger({
     <button
       onClick={() => setCollapsed(!collapsed)}
       className={cn(
-        "p-2 hover:bg-gray-800 rounded-lg transition-colors",
+        "p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors",
         className
       )}
       {...props}
