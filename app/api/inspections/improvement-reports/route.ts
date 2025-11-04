@@ -128,14 +128,37 @@ export async function GET(request: NextRequest) {
       ...regionFilter,
     };
 
-    // 날짜 범위
+    // 날짜 범위 (KST 기준)
     if (startDate || endDate) {
       where.inspection_time = {};
-      if (startDate) where.inspection_time.gte = new Date(startDate);
+      const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+
+      if (startDate) {
+        try {
+          // startDate의 KST 00:00:00을 UTC로 변환
+          const [year, month, day] = startDate.split('-').map(Number);
+          const startKST = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - kstOffset);
+          where.inspection_time.gte = startKST;
+        } catch (error) {
+          logger.error('ImprovementReports:GET', 'startDate 파싱 실패', { startDate, error });
+          // 파싱 실패 시 원본 사용 (fallback)
+          where.inspection_time.gte = new Date(startDate);
+        }
+      }
+
       if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        where.inspection_time.lte = end;
+        try {
+          // endDate의 KST 23:59:59을 UTC로 변환
+          const [year, month, day] = endDate.split('-').map(Number);
+          const endKST = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - kstOffset);
+          where.inspection_time.lte = endKST;
+        } catch (error) {
+          logger.error('ImprovementReports:GET', 'endDate 파싱 실패', { endDate, error });
+          // 파싱 실패 시 원본 사용 (fallback)
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          where.inspection_time.lte = end;
+        }
       }
     }
 

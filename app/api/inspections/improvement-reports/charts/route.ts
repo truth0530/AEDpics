@@ -107,13 +107,31 @@ export async function GET(request: NextRequest) {
         ...(equipmentSerials ? { equipment_serial: { in: equipmentSerials } } : {}),
       };
 
+      // 날짜 범위 (KST 기준)
       if (startDate || endDate) {
         where.inspection_time = {};
-        if (startDate) where.inspection_time.gte = new Date(startDate);
+        const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+
+        if (startDate) {
+          try {
+            const [year, month, day] = startDate.split('-').map(Number);
+            where.inspection_time.gte = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - kstOffset);
+          } catch (error) {
+            logger.error('ImprovementCharts:trend', 'startDate 파싱 실패', { startDate, error });
+            where.inspection_time.gte = new Date(startDate);
+          }
+        }
+
         if (endDate) {
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          where.inspection_time.lte = end;
+          try {
+            const [year, month, day] = endDate.split('-').map(Number);
+            where.inspection_time.lte = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - kstOffset);
+          } catch (error) {
+            logger.error('ImprovementCharts:trend', 'endDate 파싱 실패', { endDate, error });
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            where.inspection_time.lte = end;
+          }
         }
       }
 
@@ -193,13 +211,31 @@ export async function GET(request: NextRequest) {
         ...(equipmentSerials ? { equipment_serial: { in: equipmentSerials } } : {}),
       };
 
+      // 날짜 범위 (KST 기준)
       if (startDate || endDate) {
         where.inspection_time = {};
-        if (startDate) where.inspection_time.gte = new Date(startDate);
+        const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+
+        if (startDate) {
+          try {
+            const [year, month, day] = startDate.split('-').map(Number);
+            where.inspection_time.gte = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - kstOffset);
+          } catch (error) {
+            logger.error('ImprovementCharts:distribution', 'startDate 파싱 실패', { startDate, error });
+            where.inspection_time.gte = new Date(startDate);
+          }
+        }
+
         if (endDate) {
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          where.inspection_time.lte = end;
+          try {
+            const [year, month, day] = endDate.split('-').map(Number);
+            where.inspection_time.lte = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - kstOffset);
+          } catch (error) {
+            logger.error('ImprovementCharts:distribution', 'endDate 파싱 실패', { endDate, error });
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            where.inspection_time.lte = end;
+          }
         }
       }
 

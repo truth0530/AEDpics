@@ -86,11 +86,23 @@ export async function GET(request: NextRequest) {
         ...(equipmentSerials ? { equipment_serial: { in: equipmentSerials } } : {})
       };
 
+      // 날짜 범위 (KST 기준)
       if (period1Start && period1End) {
-        where.inspection_time = {
-          gte: new Date(period1Start),
-          lte: new Date(period1End)
-        };
+        const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+        try {
+          const [startYear, startMonth, startDay] = period1Start.split('-').map(Number);
+          const [endYear, endMonth, endDay] = period1End.split('-').map(Number);
+          where.inspection_time = {
+            gte: new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0) - kstOffset),
+            lte: new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59, 999) - kstOffset)
+          };
+        } catch (error) {
+          logger.error('ImprovementCompare:region', '날짜 파싱 실패', { period1Start, period1End, error });
+          where.inspection_time = {
+            gte: new Date(period1Start),
+            lte: new Date(period1End)
+          };
+        }
       }
 
       // 모든 데이터를 한 번에 조회
@@ -154,13 +166,27 @@ export async function GET(request: NextRequest) {
       // 기간 간 비교
       const comparisonData = [];
 
-      // Period 1
+      // Period 1 (KST 기준)
       if (period1Start && period1End) {
-        const where1: any = {
-          inspection_time: {
+        const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+        let inspectionTimeRange: any;
+        try {
+          const [startYear, startMonth, startDay] = period1Start.split('-').map(Number);
+          const [endYear, endMonth, endDay] = period1End.split('-').map(Number);
+          inspectionTimeRange = {
+            gte: new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0) - kstOffset),
+            lte: new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59, 999) - kstOffset)
+          };
+        } catch (error) {
+          logger.error('ImprovementCompare:period1', '날짜 파싱 실패', { period1Start, period1End, error });
+          inspectionTimeRange = {
             gte: new Date(period1Start),
             lte: new Date(period1End)
-          },
+          };
+        }
+
+        const where1: any = {
+          inspection_time: inspectionTimeRange,
           ...(equipmentSerials ? { equipment_serial: { in: equipmentSerials } } : {}),
           ...(region ? { aed_device: { sido: region } } : {})
         };
@@ -190,13 +216,27 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Period 2
+      // Period 2 (KST 기준)
       if (period2Start && period2End) {
-        const where2: any = {
-          inspection_time: {
+        const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+        let inspectionTimeRange: any;
+        try {
+          const [startYear, startMonth, startDay] = period2Start.split('-').map(Number);
+          const [endYear, endMonth, endDay] = period2End.split('-').map(Number);
+          inspectionTimeRange = {
+            gte: new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0) - kstOffset),
+            lte: new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59, 999) - kstOffset)
+          };
+        } catch (error) {
+          logger.error('ImprovementCompare:period2', '날짜 파싱 실패', { period2Start, period2End, error });
+          inspectionTimeRange = {
             gte: new Date(period2Start),
             lte: new Date(period2End)
-          },
+          };
+        }
+
+        const where2: any = {
+          inspection_time: inspectionTimeRange,
           ...(equipmentSerials ? { equipment_serial: { in: equipmentSerials } } : {}),
           ...(region ? { aed_device: { sido: region } } : {})
         };

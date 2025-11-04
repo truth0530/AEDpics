@@ -80,13 +80,13 @@ export function PerformanceDashboard({ userRole }: PerformanceDashboardProps) {
     <div className="p-6 space-y-6">
       {/* 헤더 */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Performance Dashboard</h1>
-        <p className="text-gray-400">시스템 성능 및 Core Web Vitals 모니터링</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Performance Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400">시스템 성능 및 Core Web Vitals 모니터링</p>
       </div>
 
       {/* Core Web Vitals */}
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5" />
           Core Web Vitals
         </h2>
@@ -95,9 +95,9 @@ export function PerformanceDashboard({ userRole }: PerformanceDashboardProps) {
           {loading ? (
             <>
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="bg-gray-900 border-gray-800 p-6 animate-pulse">
-                  <div className="h-16 bg-gray-800 rounded mb-4"></div>
-                  <div className="h-8 bg-gray-800 rounded"></div>
+                <Card key={i} className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                  <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </Card>
               ))}
             </>
@@ -105,7 +105,7 @@ export function PerformanceDashboard({ userRole }: PerformanceDashboardProps) {
             metrics.map((metric, index) => {
               const Icon = metric.icon;
               return (
-                <Card key={index} className="bg-gray-900 border-gray-800 p-6">
+                <Card key={index} className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className={`p-3 rounded-lg ${getStatusBg(metric.status)}`}>
                       <Icon className={`w-6 h-6 ${getStatusColor(metric.status)}`} />
@@ -115,10 +115,10 @@ export function PerformanceDashboard({ userRole }: PerformanceDashboardProps) {
                     </div>
                   </div>
 
-                  <h3 className="text-sm text-gray-400 mb-1">{metric.name}</h3>
-                  <p className="text-3xl font-bold text-white">
+                  <h3 className="text-sm text-gray-600 dark:text-gray-400 mb-1">{metric.name}</h3>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {metric.value}
-                    <span className="text-lg text-gray-500 ml-1">{metric.unit}</span>
+                    <span className="text-lg text-gray-500 dark:text-gray-400 ml-1">{metric.unit}</span>
                   </p>
                 </Card>
               );
@@ -129,30 +129,30 @@ export function PerformanceDashboard({ userRole }: PerformanceDashboardProps) {
 
       {/* API 성능 */}
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
           <Database className="w-5 h-5" />
           API Performance
         </h2>
 
-        <Card className="bg-gray-900 border-gray-800 p-6">
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Timestamp API</p>
-                <p className="text-2xl font-bold text-white">~10ms</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Timestamp API</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">~10ms</p>
               </div>
-              <div className="px-3 py-1 rounded bg-green-500/10 text-green-400 text-sm font-medium">
+              <div className="px-3 py-1 rounded bg-green-500/10 text-green-600 dark:text-green-400 text-sm font-medium">
                 Edge Cached
               </div>
             </div>
 
-            <div className="border-t border-gray-800 pt-4">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">AED Data API</p>
-                  <p className="text-2xl font-bold text-white">~200ms</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">AED Data API</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">~200ms</p>
                 </div>
-                <div className="px-3 py-1 rounded bg-blue-500/10 text-blue-400 text-sm font-medium">
+                <div className="px-3 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-medium">
                   Optimized
                 </div>
               </div>
@@ -163,40 +163,40 @@ export function PerformanceDashboard({ userRole }: PerformanceDashboardProps) {
 
       {/* 최적화 정보 */}
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
           <AlertCircle className="w-5 h-5" />
           Active Optimizations
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gray-900 border-gray-800 p-4">
-            <h3 className="text-sm font-medium text-white mb-2">✅ Vercel Analytics</h3>
-            <p className="text-xs text-gray-400">실시간 Core Web Vitals 모니터링</p>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">✅ Vercel Analytics</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">실시간 Core Web Vitals 모니터링</p>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800 p-4">
-            <h3 className="text-sm font-medium text-white mb-2">✅ Edge Caching</h3>
-            <p className="text-xs text-gray-400">Timestamp API 98% 성능 개선</p>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">✅ Edge Caching</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">Timestamp API 98% 성능 개선</p>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800 p-4">
-            <h3 className="text-sm font-medium text-white mb-2">✅ Rate Limiting</h3>
-            <p className="text-xs text-gray-400">API 남용 방지 및 서버 보호</p>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">✅ Rate Limiting</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">API 남용 방지 및 서버 보호</p>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800 p-4">
-            <h3 className="text-sm font-medium text-white mb-2">✅ Error Boundaries</h3>
-            <p className="text-xs text-gray-400">앱 충돌 방지 및 오류 격리</p>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">✅ Error Boundaries</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">앱 충돌 방지 및 오류 격리</p>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800 p-4">
-            <h3 className="text-sm font-medium text-white mb-2">✅ Skeleton UI</h3>
-            <p className="text-xs text-gray-400">로딩 상태 시각화</p>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">✅ Skeleton UI</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">로딩 상태 시각화</p>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800 p-4">
-            <h3 className="text-sm font-medium text-white mb-2">✅ React Query Caching</h3>
-            <p className="text-xs text-gray-400">클라이언트 사이드 캐싱 (30분 staleTime)</p>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">✅ React Query Caching</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">클라이언트 사이드 캐싱 (30분 staleTime)</p>
           </Card>
         </div>
       </div>
