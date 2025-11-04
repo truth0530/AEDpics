@@ -333,6 +333,7 @@ export function PhotoCaptureInput({
       {/* 사진 미리보기 */}
       {value && !showCamera && (
         <div className="relative inline-block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={value}
             alt={label}

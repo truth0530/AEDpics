@@ -938,41 +938,43 @@ export function AEDFilterBar() {
             </SelectContent>
           </Select>
 
-          {/* 분류3 */}
-          <Select
-            value={draftFilters.category_3?.[0] || 'all'}
-            onValueChange={(value) => {
-              if (typeof window !== 'undefined') {
-                window.sessionStorage.setItem('aed_filters_user_modified', 'true');
-              }
-              setDraftFilters((prev) => ({
-                ...prev,
-                category_3: value === 'all' ? undefined : [value],
-              }) as any);
-            }}
-          >
-            <SelectTrigger
-              className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[40px] lg:w-[50px] xl:w-[70px]")}
-              title={(draftFilters.category_3?.[0] && draftFilters.category_3[0] !== 'all') ? draftFilters.category_3[0] : '분류3'}
+          {/* 분류3 - 모바일에서 숨김 */}
+          {!isMobileLayout && (
+            <Select
+              value={draftFilters.category_3?.[0] || 'all'}
+              onValueChange={(value) => {
+                if (typeof window !== 'undefined') {
+                  window.sessionStorage.setItem('aed_filters_user_modified', 'true');
+                }
+                setDraftFilters((prev) => ({
+                  ...prev,
+                  category_3: value === 'all' ? undefined : [value],
+                }) as any);
+              }}
             >
-              <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
-                {(() => {
-                  const value = draftFilters.category_3?.[0];
-                  if (!value || value === 'all') return '분류3';
-                  // PC에서는 최대 4글자만 표시
-                  return isMobileLayout ? value : (value.length > 4 ? value.substring(0, 4) + '..' : value);
-                })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
-              {filteredCategory3Options.map((option) => (
-                <SelectItem key={option} value={option} className="text-[10px] lg:text-xs xl:text-sm py-1">
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                className="h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none w-[40px] lg:w-[50px] xl:w-[70px]"
+                title={(draftFilters.category_3?.[0] && draftFilters.category_3[0] !== 'all') ? draftFilters.category_3[0] : '분류3'}
+              >
+                <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
+                  {(() => {
+                    const value = draftFilters.category_3?.[0];
+                    if (!value || value === 'all') return '분류3';
+                    // PC에서는 최대 4글자만 표시
+                    return value.length > 4 ? value.substring(0, 4) + '..' : value;
+                  })()}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
+                {filteredCategory3Options.map((option) => (
+                  <SelectItem key={option} value={option} className="text-[10px] lg:text-xs xl:text-sm py-1">
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {/* 배터리 */}
           <ExpirySelectControl
