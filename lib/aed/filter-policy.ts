@@ -230,7 +230,11 @@ export function enforceFilterPolicy({
 
   const missingFilters = policy.required.filter((key) => {
     if (key === 'sido') return !hasRegion;
-    if (key === 'gugun') return !hasCity;
+    if (key === 'gugun') {
+      // allowedCityCodes가 null이면 시도 전체 접근 가능 = gugun 조건 자동 충족
+      if (allowedCityCodes === null) return false;
+      return !hasCity;
+    }
     if (key === 'category_1') return !hasCategory1;
     if (key === 'category_2') return !hasCategory2;
     if (key === 'category_3') return !hasCategory3;

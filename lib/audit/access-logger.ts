@@ -41,6 +41,11 @@ export interface AccessLogEntry {
 }
 
 export async function logDataAccess(entry: AccessLogEntry) {
+  // TODO: Prisma로 마이그레이션 필요 - 현재 임시 비활성화
+  // 로깅 실패는 원본 작업에 영향 주지 않으므로 일단 no-op으로 처리
+  return;
+
+  /*
   try {
     const supabase = await createClient();
 
@@ -63,6 +68,7 @@ export async function logDataAccess(entry: AccessLogEntry) {
     // 로깅 실패는 원본 작업에 영향 주지 않음
     logger.error('AccessLogger:logDataAccess', 'Failed to log data access', error instanceof Error ? error : { error });
   }
+  */
 }
 
 interface AccessRejectionEntry {
