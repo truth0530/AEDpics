@@ -146,7 +146,7 @@ export async function analyzeInspectionFields(
     if (basicInfo.external_display !== undefined) {
       comparisons.push({
         field_name: 'external_display',
-        field_category: 'basic_info',
+        field_category: 'installation',
         inspection_value: normalizeValue(basicInfo.external_display),
         aed_data_value: normalizeValue(aedData.external_display),
       });
