@@ -50,37 +50,49 @@ export interface DashboardData {
 const MANDATORY_CATEGORY = '구비의무기관';
 
 /**
- * 날짜 범위 필터 헬퍼 함수
+ * 날짜 범위 필터 헬퍼 함수 (한국 시간대 기준)
  */
 function getDateRangeForFilter(dateRange: 'today' | 'this_week' | 'this_month' | 'last_month'): {
   startDate: Date;
   endDate: Date;
 } {
-  const now = new Date();
-  const startDate = new Date();
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
+  // 한국 시간대(KST, UTC+9)로 현재 시간 계산
+  const nowUTC = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
+  const nowKST = new Date(nowUTC.getTime() + kstOffset);
+
+  // KST 기준 날짜 계산
+  const year = nowKST.getUTCFullYear();
+  const month = nowKST.getUTCMonth();
+  const date = nowKST.getUTCDate();
+  const dayOfWeek = nowKST.getUTCDay();
+
+  let startDate: Date;
+  let endDate: Date;
 
   switch (dateRange) {
     case 'today':
-      startDate.setHours(0, 0, 0, 0);
+      // 오늘 00:00:00 KST ~ 23:59:59 KST
+      startDate = new Date(Date.UTC(year, month, date, 0, 0, 0, 0) - kstOffset);
+      endDate = new Date(Date.UTC(year, month, date, 23, 59, 59, 999) - kstOffset);
       break;
     case 'this_week':
-      const dayOfWeek = now.getDay();
-      startDate.setDate(now.getDate() - dayOfWeek);
-      startDate.setHours(0, 0, 0, 0);
+      // 이번 주 일요일 00:00:00 KST ~ 오늘 23:59:59 KST
+      startDate = new Date(Date.UTC(year, month, date - dayOfWeek, 0, 0, 0, 0) - kstOffset);
+      endDate = new Date(Date.UTC(year, month, date, 23, 59, 59, 999) - kstOffset);
       break;
     case 'this_month':
-      startDate.setDate(1);
-      startDate.setHours(0, 0, 0, 0);
+      // 이번 달 1일 00:00:00 KST ~ 오늘 23:59:59 KST
+      startDate = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0) - kstOffset);
+      endDate = new Date(Date.UTC(year, month, date, 23, 59, 59, 999) - kstOffset);
       break;
     case 'last_month':
-      startDate.setMonth(now.getMonth() - 1);
-      startDate.setDate(1);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setMonth(now.getMonth());
-      endDate.setDate(0);
-      endDate.setHours(23, 59, 59, 999);
+      // 지난 달 1일 00:00:00 KST ~ 지난 달 마지막날 23:59:59 KST
+      const lastMonthYear = month === 0 ? year - 1 : year;
+      const lastMonth = month === 0 ? 11 : month - 1;
+      const lastDayOfLastMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      startDate = new Date(Date.UTC(lastMonthYear, lastMonth, 1, 0, 0, 0, 0) - kstOffset);
+      endDate = new Date(Date.UTC(lastMonthYear, lastMonth, lastDayOfLastMonth, 23, 59, 59, 999) - kstOffset);
       break;
   }
 

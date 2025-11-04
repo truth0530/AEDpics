@@ -190,22 +190,22 @@ export default function InspectionCompletePage() {
   // 일치 항목 문자열 생성
   const matchedItems: string[] = [];
   if (basicInfo.all_matched === true || basicInfo.all_matched === 'edited') {
-    matchedItems.push(`관리책임자: ${basicInfo.manager || '-'}  |  분류체계: ${basicInfo.category_1 || '-'} > ${basicInfo.category_2 || '-'} > ${basicInfo.category_3 || '-'}`);
+    matchedItems.push(`관리책임자: ${basicInfo.manager || originalData.manager || '-'}  |  분류체계: ${basicInfo.category_1 || originalData.category_1 || '-'} > ${basicInfo.category_2 || originalData.category_2 || '-'} > ${basicInfo.category_3 || originalData.category_3 || '-'}`);
   }
   if (basicInfo.location_matched === true || basicInfo.location_matched === 'edited') {
-    matchedItems.push(`주소: ${basicInfo.address || '-'}  |  GPS 좌표: ${basicInfo.gps_latitude?.toFixed(6) || '-'}, ${basicInfo.gps_longitude?.toFixed(6) || '-'}`);
+    matchedItems.push(`주소: ${basicInfo.address || originalData.installation_address || '-'}  |  GPS 좌표: ${(basicInfo.gps_latitude || originalData.latitude || originalData.gps_latitude)?.toFixed(6) || '-'}, ${(basicInfo.gps_longitude || originalData.longitude || originalData.gps_longitude)?.toFixed(6) || '-'}`);
   }
   if (deviceInfo.all_matched === true || deviceInfo.all_matched === 'edited') {
-    matchedItems.push(`제조사: ${deviceInfo.manufacturer || '-'}  |  모델명: ${deviceInfo.model_name || '-'}  |  제조번호: ${deviceInfo.serial_number || '-'}`);
+    matchedItems.push(`제조사: ${deviceInfo.manufacturer || originalData.manufacturer || '-'}  |  모델명: ${deviceInfo.model_name || originalData.model_name || '-'}  |  제조번호: ${deviceInfo.serial_number || originalData.serial_number || '-'}`);
   }
   if (supplies.mfg_date_matched === true || supplies.mfg_date_matched === 'edited') {
-    matchedItems.push(`제조일자: ${supplies.manufacturing_date || '-'}`);
+    matchedItems.push(`제조일자: ${supplies.manufacturing_date || originalData.manufacturing_date || '-'}`);
   }
   if (supplies.battery_matched === true || supplies.battery_matched === 'edited') {
-    matchedItems.push(`배터리 유효기간: ${supplies.battery_expiry_date || '-'}`);
+    matchedItems.push(`배터리 유효기간: ${supplies.battery_expiry_date || originalData.battery_expiry_date || '-'}`);
   }
   if (supplies.pad_matched === true || supplies.pad_matched === 'edited') {
-    matchedItems.push(`패드 유효기간: ${supplies.pad_expiry_date || '-'}`);
+    matchedItems.push(`패드 유효기간: ${supplies.pad_expiry_date || originalData.patch_expiry_date || originalData.pad_expiry_date || '-'}`);
   }
   if (storage.signage_selected && storage.signage_selected.length > 0) {
     matchedItems.push(`안내표지: ${storage.signage_selected.join(', ')}`);
@@ -259,15 +259,15 @@ export default function InspectionCompletePage() {
               <tbody>
                 <tr style={{ borderTop: '2px solid #333', borderBottom: '1px solid #9ca3af' }}>
                   <td style={{ backgroundColor: '#f3f4f6', padding: '8px', fontWeight: '500', width: '25%', borderRight: '1px solid #9ca3af' }}>설치기관</td>
-                  <td style={{ padding: '8px', borderRight: '1px solid #9ca3af' }}>{basicInfo.installation_org || '-'}</td>
+                  <td style={{ padding: '8px', borderRight: '1px solid #9ca3af' }}>{originalData.installation_institution || originalData.installation_org || '-'}</td>
                   <td style={{ backgroundColor: '#f3f4f6', padding: '8px', fontWeight: '500', width: '25%', borderRight: '1px solid #9ca3af' }}>관리번호</td>
-                  <td style={{ padding: '8px' }}>{basicInfo.management_number || '-'}</td>
+                  <td style={{ padding: '8px' }}>{originalData.management_number || '-'}</td>
                 </tr>
                 <tr style={{ borderBottom: '2px solid #333' }}>
                   <td style={{ backgroundColor: '#f3f4f6', padding: '8px', fontWeight: '500', borderRight: '1px solid #9ca3af' }}>장비연번</td>
                   <td style={{ padding: '8px', borderRight: '1px solid #9ca3af' }}>{inspection.equipment_serial}</td>
                   <td style={{ backgroundColor: '#f3f4f6', padding: '8px', fontWeight: '500', borderRight: '1px solid #9ca3af' }}>관리책임자</td>
-                  <td style={{ padding: '8px' }}>{basicInfo.manager || '-'} / {basicInfo.contact_info || '-'}</td>
+                  <td style={{ padding: '8px' }}>{basicInfo.manager || originalData.manager || '-'} / {basicInfo.contact_info || originalData.institution_contact || '-'}</td>
                 </tr>
               </tbody>
             </table>
