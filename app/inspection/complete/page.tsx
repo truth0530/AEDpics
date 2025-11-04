@@ -118,7 +118,7 @@ export default function InspectionCompletePage() {
   };
 
   // 불일치 항목 수집 (original_data와 비교)
-  const mismatches: Array<{ field: string; original: string; edited: string; reason: string }> = [];
+  const mismatches: Array<{ field: string; original: string; edited: string }> = [];
 
   if (basicInfo.all_matched === 'edited') {
     if (basicInfo.manager !== originalData.manager) {
@@ -126,7 +126,6 @@ export default function InspectionCompletePage() {
         field: '관리책임자',
         original: originalData.manager || '-',
         edited: basicInfo.manager || '-',
-        reason: basicInfo.edit_reason || '정보 수정',
       });
     }
     if (basicInfo.contact_info !== originalData.institution_contact) {
@@ -134,7 +133,6 @@ export default function InspectionCompletePage() {
         field: '연락처',
         original: originalData.institution_contact || '-',
         edited: basicInfo.contact_info || '-',
-        reason: basicInfo.edit_reason || '정보 수정',
       });
     }
   }
@@ -145,7 +143,6 @@ export default function InspectionCompletePage() {
         field: '주소',
         original: originalData.installation_address || '-',
         edited: basicInfo.address || '-',
-        reason: basicInfo.edit_reason || '위치 정보 수정',
       });
     }
   }
@@ -156,7 +153,6 @@ export default function InspectionCompletePage() {
         field: '제조사',
         original: originalData.manufacturer || '-',
         edited: deviceInfo.manufacturer || '-',
-        reason: '장비 정보 수정',
       });
     }
     if (deviceInfo.model_name !== originalData.model_name) {
@@ -164,7 +160,6 @@ export default function InspectionCompletePage() {
         field: '모델명',
         original: originalData.model_name || '-',
         edited: deviceInfo.model_name || '-',
-        reason: '장비 정보 수정',
       });
     }
   }
@@ -174,7 +169,6 @@ export default function InspectionCompletePage() {
       field: '배터리 유효기간',
       original: originalData.battery_expiry_date || '-',
       edited: supplies.battery_expiry_date || '-',
-      reason: '소모품 정보 수정',
     });
   }
 
@@ -183,7 +177,6 @@ export default function InspectionCompletePage() {
       field: '패드 유효기간',
       original: originalData.pad_expiry_date || '-',
       edited: supplies.pad_expiry_date || '-',
-      reason: '소모품 정보 수정',
     });
   }
 
@@ -300,10 +293,9 @@ export default function InspectionCompletePage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px' }}>
                   <thead>
                     <tr style={{ borderTop: '2px solid #333', borderBottom: '1px solid #9ca3af' }}>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '4px', textAlign: 'center', fontWeight: 'bold', width: '20%', borderRight: '1px solid #9ca3af' }}>항목</th>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '4px', textAlign: 'center', fontWeight: 'bold', width: '25%', borderRight: '1px solid #9ca3af' }}>원본값</th>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '4px', textAlign: 'center', fontWeight: 'bold', width: '25%', borderRight: '1px solid #9ca3af' }}>수정값</th>
-                      <th style={{ backgroundColor: '#f3f4f6', padding: '4px', textAlign: 'center', fontWeight: 'bold', width: '30%' }}>조치</th>
+                      <th style={{ backgroundColor: '#f3f4f6', padding: '4px', textAlign: 'center', fontWeight: 'bold', width: '25%', borderRight: '1px solid #9ca3af' }}>항목</th>
+                      <th style={{ backgroundColor: '#f3f4f6', padding: '4px', textAlign: 'center', fontWeight: 'bold', width: '37.5%', borderRight: '1px solid #9ca3af' }}>원본값</th>
+                      <th style={{ backgroundColor: '#f3f4f6', padding: '4px', textAlign: 'center', fontWeight: 'bold', width: '37.5%' }}>수정값</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -311,8 +303,7 @@ export default function InspectionCompletePage() {
                       <tr key={idx} style={{ borderBottom: idx === mismatches.length - 1 ? '2px solid #333' : '1px solid #9ca3af' }}>
                         <td style={{ padding: '4px', borderRight: '1px solid #9ca3af' }}>{mismatch.field}</td>
                         <td style={{ padding: '4px', borderRight: '1px solid #9ca3af' }}>{mismatch.original}</td>
-                        <td style={{ padding: '4px', borderRight: '1px solid #9ca3af' }}>{mismatch.edited}</td>
-                        <td style={{ padding: '4px' }}>{mismatch.reason}</td>
+                        <td style={{ padding: '4px' }}>{mismatch.edited}</td>
                       </tr>
                     ))}
                   </tbody>

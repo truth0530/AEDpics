@@ -143,6 +143,7 @@ export async function GET(request: NextRequest) {
           manager: '관리자명',
           institution_contact: '연락처',
           installation_institution: '설치기관',
+          external_display: '외부표출',
         };
 
         return `

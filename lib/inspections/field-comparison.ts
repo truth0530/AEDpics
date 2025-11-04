@@ -142,6 +142,16 @@ export async function analyzeInspectionFields(
       });
     }
 
+    // 외부표출
+    if (basicInfo.external_display !== undefined) {
+      comparisons.push({
+        field_name: 'external_display',
+        field_category: 'basic_info',
+        inspection_value: normalizeValue(basicInfo.external_display),
+        aed_data_value: normalizeValue(aedData.external_display),
+      });
+    }
+
     // DeviceInfo에서 비교할 필드들
     const deviceInfo = inspectedData.deviceInfo || {};
 

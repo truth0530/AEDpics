@@ -67,6 +67,7 @@ const FIELD_NAME_LABELS: Record<string, string> = {
   manufacturer: '제조사',
   model_name: '모델명',
   serial_number: '시리얼 번호',
+  external_display: '외부표출',
 };
 
 export default function ImprovementReportsPage() {

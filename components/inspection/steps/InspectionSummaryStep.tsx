@@ -9,8 +9,6 @@ interface SummaryItem {
   label: string;
   original?: string;
   corrected?: string;
-  reason?: string;
-  actionType?: 'onsite' | 'office' | null;
 }
 
 interface PhotoDocumentation {
@@ -25,6 +23,7 @@ interface BasicInfoData {
   all_matched?: boolean | 'edited';
   manager?: string;
   contact_info?: string;
+  external_display?: string;
   category_1?: string;
   category_2?: string;
   category_3?: string;
@@ -81,7 +80,6 @@ export function InspectionSummaryStep() {
   const updateStepData = useInspectionSessionStore((state) => state.updateStepData);
   const { user } = useUser();
 
-  const [itemActions, setItemActions] = useState<Record<string, 'onsite' | 'office'>>({});
   const [isSharing, setIsSharing] = useState(false);
 
   const deviceInfo = (session?.current_snapshot || session?.device_info || {}) as Record<string, any>;
@@ -130,6 +128,10 @@ export function InspectionSummaryStep() {
         corrected: basicInfo.contact_info || deviceInfo.contact_info || '-',
       });
       matched.push({
+        label: '외부표출',
+        corrected: basicInfo.external_display || deviceInfo.external_display || '-',
+      });
+      matched.push({
         label: '분류체계',
         corrected: `${basicInfo.category_1 || deviceInfo.category_1 || '-'} > ${basicInfo.category_2 || deviceInfo.category_2 || '-'} > ${basicInfo.category_3 || deviceInfo.category_3 || '-'}`,
       });
@@ -137,6 +139,7 @@ export function InspectionSummaryStep() {
       const fields = [
         { key: 'manager', label: '관리책임자' },
         { key: 'contact_info', label: '담당자 연락처' },
+        { key: 'external_display', label: '외부표출' },
         { key: 'category_1', label: '대분류' },
         { key: 'category_2', label: '중분류' },
         { key: 'category_3', label: '소분류' },
@@ -150,7 +153,6 @@ export function InspectionSummaryStep() {
             label: field.label,
             original: original || '(비어있음)',
             corrected,
-            reason: basicInfo.edit_reason || '수정 사유 없음',
           });
         }
       });
@@ -185,9 +187,8 @@ export function InspectionSummaryStep() {
         if (Math.abs(lat - origLat) > 0.0001 || Math.abs(lng - origLng) > 0.0001) {
           modified.push({
             label: 'GPS 좌표',
-            original: '',
+            original: `${origLat.toFixed(6)}, ${origLng.toFixed(6)}`,
             corrected: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
-            reason: '마커 이동 또는 현재 위치로 변경',
           });
         } else {
           matched.push({
@@ -378,13 +379,6 @@ export function InspectionSummaryStep() {
       severity: 'low' as const,
     };
   }, [totalStats]);
-
-  const handleItemAction = (itemKey: string, action: 'onsite' | 'office') => {
-    setItemActions(prev => ({
-      ...prev,
-      [itemKey]: action
-    }));
-  };
 
   const documentation = stepData.documentation || {};
 
@@ -682,21 +676,17 @@ export function InspectionSummaryStep() {
                     <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
                       <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>항목</th>
                       <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>원본값</th>
-                      <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>수정값</th>
-                      <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>조치</th>
+                      <th style={{ backgroundColor: '#374151', padding: '3px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>수정값</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[...basicInfoSummary.modified, ...deviceInfoSummary.modified].map((item, idx, arr) => {
-                      const itemKey = `modified_${idx}`;
-                      const selectedAction = itemActions[itemKey];
                       const isLast = idx === arr.length - 1;
                       return (
                         <tr key={idx} style={{ borderBottom: isLast ? '2px solid #4b5563' : '1px solid #6b7280' }}>
                           <td style={{ padding: '3px', border: 'none', borderRight: '1px solid #6b7280', color: '#d1d5db' }}>{item.label}</td>
                           <td style={{ padding: '3px', border: 'none', borderRight: '1px solid #6b7280', color: '#d1d5db' }}>{item.original || '-'}</td>
-                          <td style={{ padding: '3px', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#e5e7eb' }}>{item.corrected}</td>
-                          <td style={{ padding: '3px', border: 'none', color: '#d1d5db' }}>{selectedAction === 'onsite' ? '현장' : selectedAction === 'office' ? '사무실' : '-'}</td>
+                          <td style={{ padding: '3px', fontWeight: 'bold', border: 'none', color: '#e5e7eb' }}>{item.corrected}</td>
                         </tr>
                       );
                     })}

@@ -52,6 +52,15 @@ export function DeviceInfoStep() {
   // 실시간 필수 항목 검증
   const missingFields = useMissingFields(deviceInfo);
 
+  // 전체 일치 검증: DEVICE_FIELDS의 모든 필드가 원본과 일치하는지 확인
+  const isActuallyMatching = useMemo(() => {
+    return DEVICE_FIELDS.every((field) => {
+      const originalValue = sessionDeviceInfo[field.dbKey] || '';
+      const currentValue = deviceInfo[field.key] || '';
+      return originalValue === currentValue;
+    });
+  }, [deviceInfo, sessionDeviceInfo]);
+
   // 초기 데이터 설정
   useEffect(() => {
     const snapshotData = session?.current_snapshot || session?.device_info;
@@ -65,6 +74,7 @@ export function DeviceInfoStep() {
         battery_expiry_date: sessionDeviceInfo.battery_expiry_date || '',
         pad_expiry_date: sessionDeviceInfo.patch_expiry_date || '',
         manufacturing_date: sessionDeviceInfo.manufacturing_date || '',
+        operation_status: sessionDeviceInfo.operation_status || '',
         initialized: true,
       };
       updateStepData('deviceInfo', initialData);
@@ -270,30 +280,26 @@ export function DeviceInfoStep() {
               <button
                 type="button"
                 onClick={handleEditAll}
-                className={`flex-1 sm:flex-none sm:px-6 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation ${
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                   deviceInfo.all_matched === 'edited'
                     ? 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 cursor-default shadow-lg shadow-yellow-500/20'
-                    : 'bg-gray-700 hover:bg-gray-600 active:bg-gray-500 border border-gray-600 text-gray-200'
+                    : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
                 {deviceInfo.all_matched === 'edited' ? '수정됨' : '수정'}
               </button>
               <button
                 type="button"
                 onClick={handleMatchAll}
                 disabled={deviceInfo.all_matched === true}
-                className={`flex-1 sm:flex-none sm:px-6 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation ${
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                   deviceInfo.all_matched === true
                     ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                    : 'bg-gray-700 hover:bg-gray-600 active:bg-gray-500 border border-gray-600 text-gray-200'
+                    : isActuallyMatching
+                    ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
+                    : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
                 }`}
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
                 {deviceInfo.all_matched === true ? '전체 일치 확인됨' : '전체 일치'}
               </button>
             </div>
@@ -302,19 +308,21 @@ export function DeviceInfoStep() {
               <button
                 type="button"
                 onClick={handleCancelEdit}
-                className="flex-1 sm:flex-none sm:px-6 py-2.5 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300 text-sm font-medium rounded-lg transition-colors touch-manipulation"
+                className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300 text-xs font-medium rounded-lg transition-colors"
               >
                 취소
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="flex-1 sm:flex-none sm:px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation shadow-lg shadow-yellow-500/20"
+                disabled={isActuallyMatching}
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  isActuallyMatching
+                    ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
+                    : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
+                }`}
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                확인
+                {isActuallyMatching ? '원본과 동일' : '확인'}
               </button>
             </div>
           )}
@@ -739,6 +747,216 @@ export function DeviceInfoStep() {
               </div>
             );
           })}
+        </div>
+
+        {/* 장비정상 작동 여부 */}
+        <div className="mt-4 pt-4 border-t border-gray-700/50 space-y-2">
+          <div className="text-xs font-medium text-gray-400">
+            장비정상 작동 여부
+          </div>
+          {(() => {
+            const originalValue = sessionDeviceInfo.operation_status || '';
+            const currentValue = deviceInfo.operation_status || originalValue;
+            const matchedState = deviceInfo.operation_status_matched;
+            const isEditMode = matchedState === false;
+            const isMatched = matchedState === true;
+            const isEdited = matchedState === 'edited';
+            const isUnchecked = matchedState === undefined;
+            const isActuallyMatching = currentValue === originalValue && currentValue.trim() !== '';
+
+            // 불량 사유 필드
+            const failureReason = deviceInfo.operation_failure_reason || '';
+            const customReason = deviceInfo.operation_custom_reason || '';
+
+            return (
+              <div className="flex flex-col gap-2">
+                {isUnchecked && (
+                  <div className="w-full rounded-lg px-3 py-2 bg-gray-800/50 border border-gray-700 text-sm text-gray-300">
+                    {originalValue === '정상' ? '정상' : originalValue === '불량' ? '불량' : originalValue || '확인 필요'}
+                  </div>
+                )}
+
+                {isMatched && (
+                  <div className="w-full rounded-lg px-3 py-2 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>{currentValue === '정상' ? '정상' : currentValue === '불량' ? '불량' : currentValue || '확인 필요'}</span>
+                  </div>
+                )}
+
+                {isEdited && (
+                  <div className="w-full rounded-lg px-3 py-2 bg-yellow-600/10 border border-yellow-600/50 text-sm text-yellow-300 flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                    <span>{currentValue === '정상' ? '정상' : currentValue === '불량' ? '불량' : currentValue} (수정됨)</span>
+                  </div>
+                )}
+
+                {isEditMode && (
+                  <div className="space-y-2">
+                    <select
+                      value={currentValue}
+                      onChange={(e) => {
+                        handleChange('operation_status', e.target.value);
+                        // 정상 선택 시 사유 필드 초기화
+                        if (e.target.value === '정상') {
+                          handleChange('operation_failure_reason', '');
+                          handleChange('operation_custom_reason', '');
+                        }
+                      }}
+                      className="w-full rounded-lg px-3 py-2 bg-gray-800 border-2 border-yellow-500/50 text-sm text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
+                    >
+                      <option value="">선택</option>
+                      <option value="정상">정상</option>
+                      <option value="불량">불량</option>
+                    </select>
+
+                    {/* 불량 선택 시 사유 입력 */}
+                    {currentValue === '불량' && (
+                      <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
+                        <div className="text-xs text-red-400 font-medium">불량 사유</div>
+                        <select
+                          value={failureReason}
+                          onChange={(e) => {
+                            handleChange('operation_failure_reason', e.target.value);
+                            // 기타 아닌 경우 커스텀 사유 초기화
+                            if (e.target.value !== '기타') {
+                              handleChange('operation_custom_reason', '');
+                            }
+                          }}
+                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        >
+                          <option value="">사유 선택</option>
+                          <option value="전원 안켜짐">전원 안켜짐</option>
+                          <option value="안내 음성 불량">안내 음성 불량</option>
+                          <option value="배터리 경고음">배터리 경고음</option>
+                          <option value="기타">기타</option>
+                        </select>
+
+                        {/* 기타 선택 시 텍스트 입력 */}
+                        {failureReason === '기타' && (
+                          <input
+                            type="text"
+                            value={customReason}
+                            onChange={(e) => handleChange('operation_custom_reason', e.target.value)}
+                            placeholder="기타 사유를 입력하세요"
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {originalValue && (
+                      <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        등록 정보: {originalValue === '정상' ? '정상' : originalValue === '불량' ? '불량' : originalValue}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isEditMode) {
+                        if (isActuallyMatching) {
+                          return;
+                        }
+                        // 불량 상태이지만 사유가 없으면 경고
+                        if (currentValue === '불량') {
+                          if (!failureReason) {
+                            alert('불량 사유를 선택해주세요.');
+                            return;
+                          }
+                          if (failureReason === '기타' && !customReason.trim()) {
+                            alert('기타 사유를 입력해주세요.');
+                            return;
+                          }
+                        }
+                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: 'edited' });
+                      } else if (isEdited && !isActuallyMatching) {
+                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
+                      } else if (isMatched || (!isEdited && !isMatched)) {
+                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
+                      }
+                    }}
+                    disabled={(isEditMode && isActuallyMatching) || (isEdited && isActuallyMatching)}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      isEditMode
+                        ? isActuallyMatching
+                          ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
+                          : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
+                        : isEdited
+                        ? isActuallyMatching
+                          ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                          : 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 cursor-default shadow-lg shadow-yellow-500/20'
+                        : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
+                    }`}
+                  >
+                    {isEditMode ? (
+                      isActuallyMatching ? (
+                        '원본과 동일'
+                      ) : (
+                        <span className="flex items-center justify-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          확인
+                        </span>
+                      )
+                    ) : isEdited ? (
+                      isActuallyMatching ? (
+                        '원본과 동일'
+                      ) : (
+                        <span className="flex items-center justify-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                          </svg>
+                          수정됨
+                        </span>
+                      )
+                    ) : (
+                      '수정'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isActuallyMatching) {
+                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: true });
+                      }
+                    }}
+                    disabled={isMatched || !isActuallyMatching}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      isMatched
+                        ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                        : isActuallyMatching
+                        ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
+                        : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    {isMatched ? (
+                      <span className="flex items-center justify-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        일치 확인됨
+                      </span>
+                    ) : isEdited && isActuallyMatching ? (
+                      '일치로 변경'
+                    ) : (
+                      '일치'
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* 사진 촬영 (선택) */}

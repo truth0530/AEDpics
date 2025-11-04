@@ -76,6 +76,11 @@ export function BasicInfoStep() {
         initialData[field.key] = deviceInfo[field.dbKey] || '';
       });
 
+      // 외부표출 필드 추가
+      DEVICE_INFO_FIELDS.forEach((field) => {
+        initialData[field.key] = deviceInfo[field.dbKey] || '';
+      });
+
       updateStepData('basicInfo', initialData);
       setCurrentLat(initialLat);
       setCurrentLng(initialLng);
@@ -228,8 +233,11 @@ export function BasicInfoStep() {
     }
   }, [isEditMode, categoryHierarchy, deviceInfo.category_1, deviceInfo.category_2, basicInfo.category_1, basicInfo.category_2]);
 
-  // 기본정보 필드들(주소/설치위치 제외)
-  const BASIC_INFO_FIELDS = FIELDS.filter((f) => f.key !== 'address' && f.key !== 'installation_position');
+  // 기본정보 필드들(주소/설치위치 제외, 외부표출 포함)
+  const BASIC_INFO_FIELDS = [
+    ...FIELDS.filter((f) => f.key !== 'address' && f.key !== 'installation_position'),
+    ...DEVICE_INFO_FIELDS
+  ];
 
   // 기본정보가 원본과 일치하는지 확인
   const isBasicInfoMatching = useMemo(() => {
@@ -291,13 +299,6 @@ export function BasicInfoStep() {
         return;
       }
 
-      // ✅ 원본과 다른 경우 수정사유 필수 입력 검증
-      const editReason = basicInfo.edit_reason?.trim() || '';
-      if (!editReason) {
-        alert('수정사유를 입력해주세요.');
-        return;
-      }
-
       // field_changes 업데이트
       BASIC_INFO_FIELDS.forEach((field) => {
         const originalValue = deviceInfo[field.dbKey] || '';
@@ -307,7 +308,7 @@ export function BasicInfoStep() {
           updateFieldChange(field.key, {
             original: originalValue,
             corrected: currentValue,
-            reason: editReason,
+            reason: '',
           });
         }
       });
@@ -364,13 +365,6 @@ export function BasicInfoStep() {
       return;
     }
 
-    // ✅ 원본과 다른 경우 수정사유 필수 입력 검증
-    const editReason = basicInfo.edit_reason?.trim() || '';
-    if (!editReason) {
-      alert('수정사유를 입력해주세요.');
-      return;
-    }
-
     // field_changes 업데이트
     const addressField = FIELDS[2]; // 주소 (인덱스 수정)
     const positionField = FIELDS[3]; // 설치위치 (인덱스 수정)
@@ -384,7 +378,7 @@ export function BasicInfoStep() {
       updateFieldChange(addressField.key, {
         original: originalAddress,
         corrected: currentAddress,
-        reason: editReason,
+        reason: '',
       });
     }
 
@@ -392,7 +386,7 @@ export function BasicInfoStep() {
       updateFieldChange(positionField.key, {
         original: originalPosition,
         corrected: currentPosition,
-        reason: editReason,
+        reason: '',
       });
     }
 
@@ -572,9 +566,28 @@ export function BasicInfoStep() {
             {/* 외부표출 */}
             <div className="space-y-1">
               <div className="text-[10px] font-medium text-gray-400 whitespace-nowrap">외부표출</div>
-              <div className="text-xs font-medium text-gray-100 whitespace-nowrap">
-                {deviceInfo.external_display || '데이터없음'}
-              </div>
+              {!isEditMode ? (
+                <div className="text-xs font-medium text-gray-100 whitespace-nowrap">
+                  {(basicInfo.all_matched === 'edited' && basicInfo.external_display)
+                    ? basicInfo.external_display
+                    : (deviceInfo.external_display || '데이터없음')}
+                </div>
+              ) : (
+                <select
+                  value={basicInfo.external_display || deviceInfo.external_display || 'N'}
+                  onChange={(e) => {
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      external_display: e.target.value,
+                      all_matched: false,
+                    });
+                  }}
+                  className="w-full rounded-lg px-2 py-1.5 bg-gray-800 border border-gray-600 text-xs text-white placeholder-gray-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 appearance-none"
+                >
+                  <option value="Y">Y</option>
+                  <option value="N">N</option>
+                </select>
+              )}
             </div>
           </div>
 
@@ -585,23 +598,6 @@ export function BasicInfoStep() {
             {renderField(FIELDS[6])} {/* 소분류 */}
           </div>
         </div>
-
-        {/* 수정 모드: 수정 사유 입력 */}
-        {isEditMode && hasChanges && (
-          <div className="mt-3 pt-3 border-t border-gray-700/50">
-            <label htmlFor="edit_reason" className="block text-xs font-medium text-gray-400 mb-1.5">
-              수정 사유
-            </label>
-            <input
-              id="edit_reason"
-              type="text"
-              value={basicInfo.edit_reason || ''}
-              onChange={(e) => updateStepData('basicInfo', { ...basicInfo, edit_reason: e.target.value })}
-              className="block w-full rounded-lg px-3 py-1.5 bg-gray-800 border border-gray-600 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-              placeholder="수정 사유를 입력하세요"
-            />
-          </div>
-        )}
 
         {/* 전체 일치/수정 버튼 */}
         <div className="mt-3">
