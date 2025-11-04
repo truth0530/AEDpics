@@ -296,3 +296,25 @@ export async function updateInspectionRecord(
     return { success: false, error: 'Network error' };
   }
 }
+
+/**
+ * 점검불가 상태의 장비 목록 조회
+ * @returns Set<equipment_serial>
+ */
+export async function getUnavailableAssignments(hoursAgo: number = 24): Promise<Set<string>> {
+  try {
+    const response = await fetch(`/api/inspections/unavailable?hours=${hoursAgo}`);
+    if (!response.ok) {
+      console.error('[getUnavailableAssignments] API error:', response.status);
+      return new Set();
+    }
+
+    const data = await response.json();
+    const unavailable = data.unavailable || [];
+
+    return new Set(unavailable.map((u: any) => u.equipment_serial));
+  } catch (error) {
+    console.error('[getUnavailableAssignments] Error:', error);
+    return new Set();
+  }
+}

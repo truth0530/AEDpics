@@ -36,9 +36,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!reason || !['disposed', 'broken', 'other'].includes(reason)) {
+    if (!reason || !['disposed', 'broken', 'lost', 'other'].includes(reason)) {
       return NextResponse.json(
-        { error: 'reason은 disposed, broken, other 중 하나여야 합니다.' },
+        { error: 'reason은 disposed, broken, lost, other 중 하나여야 합니다.' },
         { status: 400 }
       );
     }

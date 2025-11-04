@@ -37,6 +37,8 @@ export const getCachedUserProfile = cache(async (userId: string): Promise<UserPr
         ...profile.organizations,
         latitude: profile.organizations.latitude?.toNumber() ?? null,
         longitude: profile.organizations.longitude?.toNumber() ?? null,
+        createdAt: profile.organizations.created_at,
+        updatedAt: profile.organizations.updated_at,
       } : undefined,
       region: profile.region || undefined,
       region_code: profile.region_code || undefined,

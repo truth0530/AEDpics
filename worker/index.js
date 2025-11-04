@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-globals */
+ 
 /* global self, clients */
 
 // 푸시 알림 이벤트 리스너

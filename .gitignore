@@ -43,6 +43,7 @@ yarn-error.log*
 .env*.local
 .env
 .env.local
+.env.local.backup
 .env.production
 .env.development
 .env.local.vault

@@ -19,7 +19,7 @@ interface UnavailableReasonModalProps {
   onSuccess: () => void;
 }
 
-type UnavailableReason = 'disposed' | 'broken' | 'other';
+type UnavailableReason = 'disposed' | 'broken' | 'lost' | 'other';
 
 const REASON_OPTIONS: { value: UnavailableReason; label: string; description: string }[] = [
   {
@@ -31,6 +31,11 @@ const REASON_OPTIONS: { value: UnavailableReason; label: string; description: st
     value: 'broken',
     label: '고장/수리',
     description: '장비 고장 또는 수리 중인 경우',
+  },
+  {
+    value: 'lost',
+    label: '분실',
+    description: '장비가 분실되어 찾을 수 없는 경우',
   },
   {
     value: 'other',

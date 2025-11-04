@@ -33,7 +33,11 @@ interface LocalFullViewProps {
   isMobile: boolean;
 }
 
-function LocalViewContent() {
+interface LocalViewContentProps {
+  user: UserProfile;
+}
+
+function LocalViewContent({ user }: LocalViewContentProps) {
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
   // ✅ 현장점검에서는 접기/펼치기 불필요 - 항상 필터 표시
   const { data, isLoading } = useAEDData();
@@ -86,7 +90,7 @@ function LocalViewContent() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
               </svg>
-              <span>목록</span>
+              <span>점검대상</span>
             </div>
           </button>
           <button
@@ -116,7 +120,7 @@ function LocalViewContent() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>점검완료</span>
+              <span>점검이력</span>
             </div>
           </button>
         </div>
@@ -149,11 +153,21 @@ function LocalViewContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
               <h3 className="text-lg font-semibold text-gray-300 mb-2">
-                더이상 점검할 데이터가 없습니다
+                {viewMode === 'completed' ? '완료된 점검이 없습니다' : '더이상 점검할 데이터가 없습니다'}
               </h3>
-              <p className="text-sm text-gray-400">
-                관할 보건소 담당자에게 일정추가 요청을 해주세요
+              <p className="text-sm text-gray-400 mb-4">
+                {user.role === 'local_admin'
+                  ? '일정관리 메뉴에서 점검할 장비를 추가해주세요'
+                  : '관할 보건소 담당자에게 일정추가 요청을 해주세요'}
               </p>
+              {user.role === 'local_admin' && (
+                <button
+                  onClick={() => router.push('/aed-data')}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  점검일정 추가하기
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -163,7 +177,6 @@ function LocalViewContent() {
           <>
             {viewMode === 'list' ? (
               <DataTable
-                filterData={(device) => device.inspection_status === 'pending' || device.inspection_status === 'in_progress'}
                 onQuickInspect={(device) => {
                   const serial = device.equipment_serial;
                   handleInspectionStart(serial);
@@ -173,7 +186,6 @@ function LocalViewContent() {
               />
             ) : viewMode === 'completed' ? (
               <DataTable
-                filterData={(device) => device.inspection_status === 'completed' || device.inspection_status === 'unavailable'}
                 showInspectionStatus={true}
                 inspectionCompleted={inspectionCompleted}
               />
@@ -260,7 +272,7 @@ export function LocalMobileView({ user }: { user: UserProfile }) {
   return (
     <InspectionProvider>
       <AEDDataProvider viewMode="inspection" initialFilters={{}} userProfile={user}>
-        <LocalViewContent />
+        <LocalViewContent user={user} />
       </AEDDataProvider>
     </InspectionProvider>
   );
@@ -270,7 +282,7 @@ export function LocalDesktopView({ user }: { user: UserProfile }) {
   return (
     <InspectionProvider>
       <AEDDataProvider viewMode="inspection" initialFilters={{}} userProfile={user}>
-        <LocalViewContent />
+        <LocalViewContent user={user} />
       </AEDDataProvider>
     </InspectionProvider>
   );

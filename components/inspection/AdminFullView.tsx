@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import {
   getActiveInspectionSessions,
   getCompletedInspections,
+  getUnavailableAssignments,
   cancelInspectionSession,
   getInspectionHistory,
   updateInspectionRecord,
@@ -51,6 +52,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   // 점검 세션 상태 관리
   const [inspectionSessions, setInspectionSessions] = useState<Map<string, InspectionSession>>(new Map());
   const [completedInspections, setCompletedInspections] = useState<Set<string>>(new Set());
+  const [unavailableAssignments, setUnavailableAssignments] = useState<Set<string>>(new Set());
   const [selectedSession, setSelectedSession] = useState<InspectionSession | null>(null);
   const [showInProgressModal, setShowInProgressModal] = useState(false);
 
@@ -71,12 +73,14 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   // 점검 세션 및 완료 목록 로드
   useEffect(() => {
     async function loadInspectionData() {
-      const [sessions, completed] = await Promise.all([
+      const [sessions, completed, unavailable] = await Promise.all([
         getActiveInspectionSessions(),
         getCompletedInspections(24), // 최근 24시간
+        getUnavailableAssignments(720), // 최근 30일
       ]);
       setInspectionSessions(sessions);
       setCompletedInspections(completed);
+      setUnavailableAssignments(unavailable);
     }
 
     loadInspectionData();
@@ -475,7 +479,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
               </svg>
-              <span>점검대상목록</span>
+              <span>점검대상</span>
             </div>
           </button>
           <button
@@ -505,7 +509,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>점검진행목록</span>
+              <span>점검이력</span>
             </div>
           </button>
         </div>
@@ -618,11 +622,13 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               const equipmentSerial = device.equipment_serial || '';
               const hasActiveSession = inspectionSessions.has(equipmentSerial);
               const isCompleted = completedInspections.has(equipmentSerial);
-              // 점검완료 탭: 점검중 + 완료된 장비만
-              return isCompleted || hasActiveSession;
+              const isUnavailable = unavailableAssignments.has(equipmentSerial);
+              // 점검완료 탭: 점검중 + 완료된 장비 + 점검불가 처리된 장비
+              return isCompleted || hasActiveSession || isUnavailable;
             }}
             showInspectionStatus={true}
             inspectionCompleted={completedInspections}
+            inspectionUnavailable={unavailableAssignments}
             inspectionSessions={inspectionSessions}
             onInspectionInProgress={handleInspectionInProgress}
             onViewInspectionHistory={handleViewInspectionHistory}
@@ -658,12 +664,14 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
             setSelectedSession(null);
             setCurrentSessionInspectionStatus(undefined);
             // 30초 대기하지 않고 즉시 갱신
-            const [sessions, completed] = await Promise.all([
+            const [sessions, completed, unavailable] = await Promise.all([
               getActiveInspectionSessions(),
               getCompletedInspections(24),
+              getUnavailableAssignments(720),
             ]);
             setInspectionSessions(sessions);
             setCompletedInspections(completed);
+            setUnavailableAssignments(unavailable);
           }}
           inspectorName={selectedSession.inspector_name || '알 수 없음'}
           equipmentSerial={selectedSession.equipment_serial}

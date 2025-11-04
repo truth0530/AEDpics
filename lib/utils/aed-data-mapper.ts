@@ -90,6 +90,10 @@ function normalizeString(value: unknown): string | null {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
   }
+  // Date 객체는 ISO 문자열로 변환
+  if (value instanceof Date) {
+    return value.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+  }
   return null;
 }
 
