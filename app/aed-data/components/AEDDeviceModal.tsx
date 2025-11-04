@@ -183,17 +183,17 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
       onClick={handleBackdropClick}
     >
       <div className="bg-gray-900 rounded-lg border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-2 sm:p-4 border-b border-gray-700">
-          <div className="flex justify-between items-start mb-1 sm:mb-2">
-            <div className="flex-1 flex items-baseline gap-2">
-              <h2 className="text-lg font-semibold text-white">
+        <div className="p-2 border-b border-gray-700">
+          <div className="flex justify-between items-start mb-0.5">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-semibold text-white mb-1">
                 {device.installation_institution || '-'}
               </h2>
-              <span className="text-sm text-gray-500">
-                {device.management_number || '-'}
-              </span>
+              <div className="text-base font-semibold text-gray-300 tracking-wide w-[80%]">
+                {device.management_number || '-'} <span className="text-gray-600 mx-2">|</span> {device.equipment_serial || '-'}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-2 flex-shrink-0">
               {viewMode === 'inspection' && allowQuickInspect && (
                 <Button
                   onClick={handleStartInspection}
@@ -252,54 +252,40 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
               </button>
             </div>
           </div>
-          <div className="text-xs text-gray-500">
-            {device.equipment_serial || '-'}
-          </div>
         </div>
-        <div className="p-2 sm:p-6 space-y-0">
+        <div className="p-2.5 space-y-1.5">
           {/* 외부표출 차단 경고 */}
           {device.external_non_display_reason &&
            device.external_non_display_reason !== '구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박' && (
-            <div className="pb-2 mb-2 sm:pb-5 sm:mb-5 border-b border-red-500/30">
-              <div className="text-sm font-medium text-red-400 mb-1 sm:mb-2">외부표출 차단</div>
-              <div className="text-sm text-red-300/90">{device.external_non_display_reason}</div>
+            <div className="pb-1.5 mb-1.5 border-b border-red-500/30">
+              <div className="text-xs font-medium text-red-400 mb-0.5">{device.external_non_display_reason}</div>
             </div>
           )}
 
           {/* 설치 위치 */}
-          <div className="pb-2 mb-2 sm:pb-5 sm:mb-5 border-b border-gray-800">
-            <InfoField
-              label="주소"
-              value={device.installation_address || device.installation_location_address}
-              fullWidth
-            />
-            <div className="mt-1.5 sm:mt-3 grid grid-cols-2 gap-x-6 gap-y-1 sm:gap-y-3">
-              {device.installation_position && (
-                <InfoField
-                  label="상세주소"
-                  value={device.installation_position}
-                  isSensitive={maskedFields.includes('상세주소')}
-                />
-              )}
-              <InfoField
-                label="외부표출"
-                value={device.external_display}
-              />
-            </div>
-            <div className="mt-1.5 sm:mt-3 grid gap-x-6 gap-y-1 sm:gap-y-3" style={{ gridTemplateColumns: '80px 100px 1fr' }}>
+          <div className="pb-1.5 mb-1.5 border-b border-gray-700">
+            <div className="grid grid-cols-3 gap-x-2 gap-y-1 mb-1">
               <InfoField
                 label="시도"
                 value={device.sido || (device.region_code ? getRegionLabel(device.region_code) : undefined)}
               />
               <InfoField label="시군구" value={device.gugun || device.city_code} />
-              <InfoField label="관할보건소" value={device.jurisdiction_health_center} />
+              <InfoField
+                label="장비상태"
+                value={device.operation_status}
+                valueClassName="text-sm font-medium text-emerald-400"
+              />
             </div>
+            <InfoField
+              label="주소"
+              value={device.installation_address || device.installation_location_address}
+              fullWidth
+            />
           </div>
 
-          {/* 유효기간 */}
-          <div className="pb-2 mb-2 sm:pb-5 sm:mb-5 border-b border-gray-800">
-            <div className="text-sm font-medium text-gray-400 mb-1.5 sm:mb-3">유효기간</div>
-            <div className="grid grid-cols-3 gap-x-6 gap-y-1 sm:gap-y-3">
+          {/* 유효기간 및 점검 */}
+          <div className="pb-1.5 mb-1.5 border-b border-gray-700">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
               <InfoField
                 label="배터리"
                 value={formatDate(device.battery_expiry_date)}
@@ -309,35 +295,19 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                 value={formatDate(device.patch_expiry_date)}
               />
               <InfoField
-                label="교체예정일"
+                label="교체예정"
                 value={formatDate(device.replacement_date)}
               />
-            </div>
-          </div>
-
-          {/* 점검 이력 */}
-          <div className="pb-2 mb-2 sm:pb-5 sm:mb-5 border-b border-gray-800">
-            <div className="text-sm font-medium text-gray-400 mb-1.5 sm:mb-3">점검 이력</div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1 sm:gap-y-3">
               <InfoField
-                label="최종점검일"
+                label="최종점검"
                 value={formatDate(device.last_inspection_date)}
               />
-              <InfoField
-                label="최근사용일"
-                value={formatDate(device.last_use_date)}
-              />
-              <InfoField
-                label="장비상태"
-                value={device.operation_status}
-              />
             </div>
           </div>
 
-          {/* 관리 */}
-          <div className="pb-2 mb-2 sm:pb-5 sm:mb-5 border-b border-gray-800">
-            <div className="text-sm font-medium text-gray-400 mb-1.5 sm:mb-3">관리</div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1 sm:gap-y-3">
+          {/* 관리 정보 */}
+          <div className="pb-1.5 mb-1.5 border-b border-gray-700">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
               <InfoField label="관리자" value={device.manager} />
               <InfoField label="설치자" value={device.establisher} />
               {device.institution_contact && (
@@ -347,61 +317,28 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                   isSensitive={maskedFields.includes('연락처')}
                 />
               )}
+              <InfoField
+                label="설치일"
+                value={formatDate(device.installation_date)}
+              />
             </div>
           </div>
 
           {/* 제조 정보 */}
-          <div className="pb-2 mb-2 sm:pb-5 sm:mb-5 border-b border-gray-800">
-            <div className="text-sm font-medium text-gray-400 mb-1.5 sm:mb-3">제조 정보</div>
-            <div className="space-y-1.5 sm:space-y-3">
-              <div className="grid grid-cols-3 gap-x-6 gap-y-1 sm:gap-y-3">
-                <InfoField label="제조사" value={device.manufacturer} />
-                <InfoField label="모델명" value={device.model_name} />
-                <InfoField label="제조국가" value={device.manufacturing_country} />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1 sm:gap-y-3">
-                <InfoField label="시리얼번호" value={device.serial_number} />
-                <InfoField
-                  label="설치일"
-                  value={formatDate(device.installation_date)}
-                />
-                <InfoField
-                  label="설치방법"
-                  value={device.installation_method}
-                />
-                <InfoField label="정부지원" value={device.government_support} />
-              </div>
+          <div className="pb-1.5 mb-1.5 border-b border-gray-700">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+              <InfoField label="제조사" value={device.manufacturer} />
+              <InfoField label="모델명" value={device.model_name} />
+              <InfoField label="제조국가" value={device.manufacturing_country} />
+              <InfoField label="시리얼" value={device.serial_number} />
             </div>
           </div>
 
-          {/* 추가 정보 */}
-          {(device.external_non_display_reason || device.remarks) && (
-            <div className="pb-2 mb-2 sm:pb-5 sm:mb-5 border-b border-gray-800">
-              <div className="text-sm font-medium text-gray-400 mb-1.5 sm:mb-3">추가 정보</div>
-              <div className="space-y-1.5 sm:space-y-3">
-                {device.external_non_display_reason && (
-                  <InfoField
-                    label="외부표출 차단 사유"
-                    value={device.external_non_display_reason}
-                    fullWidth
-                  />
-                )}
-                {device.remarks && (
-                  <InfoField
-                    label="비고"
-                    value={device.remarks}
-                    fullWidth
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
           {/* 마스킹 정보 */}
           {maskedFields.length > 0 && (
-            <div className="pt-2">
-              <div className="text-xs text-gray-500">
-                마스킹 처리: {maskedFields.join(', ')}
+            <div className="pt-0.5">
+              <div className="text-[10px] text-gray-500">
+                마스킹: {maskedFields.join(', ')}
               </div>
             </div>
           )}
@@ -443,10 +380,9 @@ function InfoField({ label, value, fullWidth, isSensitive, valueClassName }: Inf
 
   return (
     <div className={fullWidth ? 'col-span-full' : ''}>
-      <div className="text-xs text-gray-500 mb-0.5 sm:mb-1">{label}</div>
-      <div className={`text-sm flex items-center gap-2 ${valueClassName || 'text-white'}`}>
+      <div className="text-[11px] text-gray-500 mb-0.5">{label}</div>
+      <div className={`text-sm whitespace-nowrap overflow-hidden text-ellipsis ${valueClassName || 'text-white'}`}>
         <span className={displayValue === '-' ? 'text-gray-600' : ''}>{displayValue}</span>
-        {isSensitive && <span className="text-yellow-400 text-xs" title="마스킹된 정보">[마스킹]</span>}
       </div>
     </div>
   );
