@@ -27,9 +27,13 @@ interface RegionStats {
   blockedInspected: number;
   blockedInspectedMandatory: number;
   blockedInspectedNonMandatory: number;
+  blockedAssigned: number;
+  blockedFieldInspected: number;
   uninspected: number;
   uninspectedMandatory: number;
   uninspectedNonMandatory: number;
+  uninspectedAssigned: number;
+  uninspectedFieldInspected: number;
   fieldInspected: number;
   fieldInspectedMandatory: number;
   fieldInspectedNonMandatory: number;
@@ -118,8 +122,12 @@ export default function ImprovedDashboard({
 
     const totalBlocked = dashboardData.data.reduce((sum, r) => sum + r.blocked, 0);
     const totalBlockedInspected = dashboardData.data.reduce((sum, r) => sum + r.blockedInspected, 0);
+    const totalBlockedAssigned = dashboardData.data.reduce((sum, r) => sum + r.blockedAssigned, 0);
+    const totalBlockedFieldInspected = dashboardData.data.reduce((sum, r) => sum + r.blockedFieldInspected, 0);
 
     const totalUninspected = dashboardData.data.reduce((sum, r) => sum + r.uninspected, 0);
+    const totalUninspectedAssigned = dashboardData.data.reduce((sum, r) => sum + r.uninspectedAssigned, 0);
+    const totalUninspectedFieldInspected = dashboardData.data.reduce((sum, r) => sum + r.uninspectedFieldInspected, 0);
 
     return {
       totalAED,
@@ -134,7 +142,11 @@ export default function ImprovedDashboard({
       fieldInspectedTotal,
       totalBlocked,
       totalBlockedInspected,
+      totalBlockedAssigned,
+      totalBlockedFieldInspected,
       totalUninspected,
+      totalUninspectedAssigned,
+      totalUninspectedFieldInspected,
       unavailableTotal,
       unavailableMandatory,
       unavailableNonMandatory,
@@ -313,6 +325,22 @@ export default function ImprovedDashboard({
               total: stats.totalBlocked,
               percentage: stats.totalBlocked > 0 ? Math.round((stats.totalBlockedInspected / stats.totalBlocked) * 100) : 0,
               color: 'purple' as const
+            },
+            {
+              id: 2,
+              label: '일정추가',
+              value: stats.totalBlockedAssigned,
+              total: stats.totalBlocked,
+              percentage: stats.totalBlocked > 0 ? Math.round((stats.totalBlockedAssigned / stats.totalBlocked) * 100) : 0,
+              color: 'orange' as const
+            },
+            {
+              id: 3,
+              label: '현장점검',
+              value: stats.totalBlockedFieldInspected,
+              total: stats.totalBlockedAssigned,
+              percentage: stats.totalBlockedAssigned > 0 ? Math.round((stats.totalBlockedFieldInspected / stats.totalBlockedAssigned) * 100) : 0,
+              color: 'green' as const
             }
           ]}
         />
@@ -329,6 +357,22 @@ export default function ImprovedDashboard({
               total: stats.totalUninspected,
               percentage: 0,
               color: 'purple' as const
+            },
+            {
+              id: 2,
+              label: '일정추가',
+              value: stats.totalUninspectedAssigned,
+              total: stats.totalUninspected,
+              percentage: stats.totalUninspected > 0 ? Math.round((stats.totalUninspectedAssigned / stats.totalUninspected) * 100) : 0,
+              color: 'orange' as const
+            },
+            {
+              id: 3,
+              label: '현장점검',
+              value: stats.totalUninspectedFieldInspected,
+              total: stats.totalUninspectedAssigned,
+              percentage: stats.totalUninspectedAssigned > 0 ? Math.round((stats.totalUninspectedFieldInspected / stats.totalUninspectedAssigned) * 100) : 0,
+              color: 'green' as const
             }
           ]}
         />

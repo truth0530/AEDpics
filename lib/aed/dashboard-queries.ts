@@ -18,9 +18,13 @@ interface DashboardStats {
   blockedInspected: number;
   blockedInspectedMandatory: number;
   blockedInspectedNonMandatory: number;
+  blockedAssigned: number;
+  blockedFieldInspected: number;
   uninspected: number;
   uninspectedMandatory: number;
   uninspectedNonMandatory: number;
+  uninspectedAssigned: number;
+  uninspectedFieldInspected: number;
   fieldInspected: number;
   fieldInspectedMandatory: number;
   fieldInspectedNonMandatory: number;
@@ -355,6 +359,178 @@ export const getCachedDashboardData = cache(async (
         scheduleCounts = [];
       }
 
+      // 외부표출 차단(blocked) AED의 일정추가 건수 조회
+      let blockedScheduleCounts: Array<{
+        region: string;
+        count: bigint;
+      }> = [];
+
+      try {
+        if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+          blockedScheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT s.id)::bigint as count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.external_display = 'N'
+            GROUP BY a.gugun
+          `;
+        } else if (normalizedSido && normalizedSido !== '전체') {
+          blockedScheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT s.id)::bigint as count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.external_display = 'N'
+            GROUP BY a.gugun
+          `;
+        } else {
+          blockedScheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.sido as region,
+              COUNT(DISTINCT s.id)::bigint as count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.external_display = 'N'
+            GROUP BY a.sido
+          `;
+        }
+      } catch (error) {
+        logger.error('dashboard-queries', 'Failed to fetch blocked schedule counts', { error });
+        blockedScheduleCounts = [];
+      }
+
+      // 외부표출 차단(blocked) AED의 현장점검 건수 조회
+      let blockedInspectionCounts: Array<{
+        region: string;
+        count: bigint;
+      }> = [];
+
+      try {
+        if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+          blockedInspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT i.id)::bigint as count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.external_display = 'N'
+            GROUP BY a.gugun
+          `;
+        } else if (normalizedSido && normalizedSido !== '전체') {
+          blockedInspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT i.id)::bigint as count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.external_display = 'N'
+            GROUP BY a.gugun
+          `;
+        } else {
+          blockedInspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.sido as region,
+              COUNT(DISTINCT i.id)::bigint as count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.external_display = 'N'
+            GROUP BY a.sido
+          `;
+        }
+      } catch (error) {
+        logger.error('dashboard-queries', 'Failed to fetch blocked inspection counts', { error });
+        blockedInspectionCounts = [];
+      }
+
+      // 미점검(uninspected) AED의 일정추가 건수 조회
+      let uninspectedScheduleCounts: Array<{
+        region: string;
+        count: bigint;
+      }> = [];
+
+      try {
+        if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+          uninspectedScheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT s.id)::bigint as count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.last_inspection_date IS NULL
+            GROUP BY a.gugun
+          `;
+        } else if (normalizedSido && normalizedSido !== '전체') {
+          uninspectedScheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT s.id)::bigint as count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.last_inspection_date IS NULL
+            GROUP BY a.gugun
+          `;
+        } else {
+          uninspectedScheduleCounts = await prisma.$queryRaw`
+            SELECT
+              a.sido as region,
+              COUNT(DISTINCT s.id)::bigint as count
+            FROM aedpics.inspection_schedule_entries s
+            INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE a.last_inspection_date IS NULL
+            GROUP BY a.sido
+          `;
+        }
+      } catch (error) {
+        logger.error('dashboard-queries', 'Failed to fetch uninspected schedule counts', { error });
+        uninspectedScheduleCounts = [];
+      }
+
+      // 미점검(uninspected) AED의 현장점검 건수 조회
+      let uninspectedInspectionCounts: Array<{
+        region: string;
+        count: bigint;
+      }> = [];
+
+      try {
+        if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+          uninspectedInspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT i.id)::bigint as count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.last_inspection_date IS NULL
+            GROUP BY a.gugun
+          `;
+        } else if (normalizedSido && normalizedSido !== '전체') {
+          uninspectedInspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT i.id)::bigint as count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.sido = ${normalizedSido} AND a.last_inspection_date IS NULL
+            GROUP BY a.gugun
+          `;
+        } else {
+          uninspectedInspectionCounts = await prisma.$queryRaw`
+            SELECT
+              a.sido as region,
+              COUNT(DISTINCT i.id)::bigint as count
+            FROM aedpics.inspections i
+            INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE a.last_inspection_date IS NULL
+            GROUP BY a.sido
+          `;
+        }
+      } catch (error) {
+        logger.error('dashboard-queries', 'Failed to fetch uninspected inspection counts', { error });
+        uninspectedInspectionCounts = [];
+      }
+
       // 점검 건수를 Map으로 변환 (빠른 조회)
       const inspectionCountMap = new Map(
         inspectionCounts.map(ic => [
@@ -379,6 +555,26 @@ export const getCachedDashboardData = cache(async (
         ])
       );
 
+      // blocked 일정추가 건수를 Map으로 변환
+      const blockedScheduleCountMap = new Map(
+        blockedScheduleCounts.map(bsc => [bsc.region, Number(bsc.count)])
+      );
+
+      // blocked 현장점검 건수를 Map으로 변환
+      const blockedInspectionCountMap = new Map(
+        blockedInspectionCounts.map(bic => [bic.region, Number(bic.count)])
+      );
+
+      // uninspected 일정추가 건수를 Map으로 변환
+      const uninspectedScheduleCountMap = new Map(
+        uninspectedScheduleCounts.map(usc => [usc.region, Number(usc.count)])
+      );
+
+      // uninspected 현장점검 건수를 Map으로 변환
+      const uninspectedInspectionCountMap = new Map(
+        uninspectedInspectionCounts.map(uic => [uic.region, Number(uic.count)])
+      );
+
       const regionStats: RegionStats[] = aggregatedStats.map((stat) => {
         const total = Number(stat.total);
         const mandatory = Number(stat.mandatory);
@@ -401,6 +597,14 @@ export const getCachedDashboardData = cache(async (
         const assignedMandatory = scheduleData.mandatory;
         const assignedNonMandatory = scheduleData.nonMandatory;
 
+        // blocked 관련 건수 조회
+        const blockedAssigned = blockedScheduleCountMap.get(stat.region) || 0;
+        const blockedFieldInspected = blockedInspectionCountMap.get(stat.region) || 0;
+
+        // uninspected 관련 건수 조회
+        const uninspectedAssigned = uninspectedScheduleCountMap.get(stat.region) || 0;
+        const uninspectedFieldInspected = uninspectedInspectionCountMap.get(stat.region) || 0;
+
         return {
           region: stat.region || '알 수 없음',
           total,
@@ -416,9 +620,13 @@ export const getCachedDashboardData = cache(async (
           blockedInspected: 0,
           blockedInspectedMandatory: 0,
           blockedInspectedNonMandatory: 0,
+          blockedAssigned,
+          blockedFieldInspected,
           uninspected,
           uninspectedMandatory: mandatory - completedMandatory,
           uninspectedNonMandatory: nonMandatory - completedNonMandatory,
+          uninspectedAssigned,
+          uninspectedFieldInspected,
           fieldInspected,
           fieldInspectedMandatory,
           fieldInspectedNonMandatory,
@@ -501,9 +709,13 @@ export const getCachedDashboardData = cache(async (
         blockedInspected: 0,
         blockedInspectedMandatory: 0,
         blockedInspectedNonMandatory: 0,
+        blockedAssigned: 0,
+        blockedFieldInspected: 0,
         uninspected: total - completed,
         uninspectedMandatory: mandatory - completedMandatory,
         uninspectedNonMandatory: (total - mandatory) - (completed - completedMandatory),
+        uninspectedAssigned: 0,
+        uninspectedFieldInspected: 0,
         fieldInspected: 0,
         fieldInspectedMandatory: 0,
         fieldInspectedNonMandatory: 0,
@@ -580,7 +792,7 @@ export const getCachedHourlyInspections = cache(async (
 
     // 2. 점검 데이터 조회 (지역 필터링 적용)
     const whereClause: any = {
-      inspection_date: {
+      created_at: {
         gte: startDate,
         lte: endDate
       }
@@ -593,19 +805,23 @@ export const getCachedHourlyInspections = cache(async (
     const inspections = await prisma.inspections.findMany({
       where: whereClause,
       select: {
-        inspection_date: true
+        created_at: true
       }
     });
 
-    // 시간별 집계
+    // 시간별 집계 (KST 기준)
     const hourlyData = Array(24).fill(null).map((_, hour) => ({
       hour: `${hour}시`,
       count: 0
     }));
 
+    const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
     inspections.forEach(inspection => {
-      if (inspection.inspection_date) {
-        const hour = new Date(inspection.inspection_date).getHours();
+      if (inspection.created_at) {
+        // KST(UTC+9) 기준으로 시간 추출
+        const inspectionTime = new Date(inspection.created_at).getTime();
+        const kstTime = new Date(inspectionTime + kstOffset);
+        const hour = kstTime.getUTCHours();
         hourlyData[hour].count++;
       }
     });
@@ -660,7 +876,7 @@ export const getCachedDailyInspections = cache(async (
 
     // 2. 점검 데이터 조회 (지역 필터링 적용)
     const whereClause: any = {
-      inspection_date: {
+      created_at: {
         gte: startDate,
         lte: endDate
       }
@@ -670,35 +886,35 @@ export const getCachedDailyInspections = cache(async (
       whereClause.equipment_serial = { in: equipmentSerials };
     }
 
-    const inspections = await prisma.inspections.groupBy({
-      by: ['inspection_date'],
-      _count: {
-        _all: true
-      },
+    const inspections = await prisma.inspections.findMany({
       where: whereClause,
-      orderBy: {
-        inspection_date: 'asc'
+      select: {
+        created_at: true
       }
     });
 
-    // 날짜별 데이터 포맷
+    // 날짜별 데이터 포맷 (KST 기준)
+    const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
     const dailyMap = new Map<string, number>();
     inspections.forEach(item => {
-      if (item.inspection_date) {
-        const dateStr = new Date(item.inspection_date).toISOString().split('T')[0];
-        dailyMap.set(dateStr, item._count._all);
+      if (item.created_at) {
+        // KST(UTC+9) 기준으로 날짜 추출
+        const inspectionTime = new Date(item.created_at).getTime();
+        const kstDate = new Date(inspectionTime + kstOffset);
+        const dateStr = kstDate.toISOString().split('T')[0];
+        dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + 1);
       }
     });
 
-    // 날짜 범위에 맞는 데이터 생성
+    // 날짜 범위에 맞는 데이터 생성 (KST 기준)
     const dailyData = [];
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
     for (let i = 0; i <= daysDiff; i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
+      const date = new Date(startDate.getTime() + kstOffset);
+      date.setUTCDate(date.getUTCDate() + i);
       const dateStr = date.toISOString().split('T')[0];
-      const dayLabel = `${date.getMonth() + 1}/${date.getDate()}`;
+      const dayLabel = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
 
       dailyData.push({
         day: dayLabel,
@@ -710,15 +926,16 @@ export const getCachedDailyInspections = cache(async (
   } catch (error) {
     logger.error('DashboardQueries:getCachedDailyInspections', 'Daily inspections query error', error instanceof Error ? error : { error });
 
-    // 에러 시 빈 데이터 반환
+    // 에러 시 빈 데이터 반환 (KST 기준)
     const { startDate, endDate } = getDateRangeForFilter(dateRange || 'today');
+    const kstOffset = 9 * 60 * 60 * 1000;
     const dailyData = [];
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
     for (let i = 0; i <= daysDiff; i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
-      const dayLabel = `${date.getMonth() + 1}/${date.getDate()}`;
+      const date = new Date(startDate.getTime() + kstOffset);
+      date.setUTCDate(date.getUTCDate() + i);
+      const dayLabel = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
 
       dailyData.push({
         day: dayLabel,
