@@ -824,12 +824,13 @@ export function AEDFilterBar() {
             </Button>
 
             {/* 조회 버튼 */}
-            <button
+            <Button
               onClick={handleApply}
-              className="h-6 lg:h-7 xl:h-8 px-1.5 sm:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
+              size="sm"
+              className="h-6 lg:h-7 xl:h-8 px-1.5 sm:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
             >
               조회
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -1091,12 +1092,13 @@ export function AEDFilterBar() {
             </Button>
 
             {/* 조회 버튼 - 크기 축소 */}
-            <button
+            <Button
               onClick={handleApply}
-              className="h-6 lg:h-7 xl:h-8 px-1 lg:px-1.5 xl:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
+              size="sm"
+              className="h-6 lg:h-7 xl:h-8 px-1 lg:px-1.5 xl:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
             >
               조회
-            </button>
+            </Button>
           </div>
         )}
           </>
@@ -1260,12 +1262,13 @@ export function AEDFilterBar() {
                   </Button>
 
                   {/* 조회 버튼 - 우측 고정 */}
-                  <button
+                  <Button
                     onClick={handleApply}
-                    className="h-10 lg:h-7 xl:h-8 px-3 lg:px-1.5 xl:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors flex-shrink-0 text-sm lg:text-xs xl:text-sm whitespace-nowrap"
+                    size="sm"
+                    className="h-10 lg:h-7 xl:h-8 px-3 lg:px-1.5 xl:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-sm lg:text-xs xl:text-sm whitespace-nowrap"
                   >
                     조회
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

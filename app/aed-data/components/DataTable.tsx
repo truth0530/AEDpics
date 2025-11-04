@@ -595,11 +595,11 @@ const MobileCard = memo(({
           </div>
 
           {/* 둘째 줄: 관리번호 | 장비연번 */}
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-white tracking-wide">
             <span className="truncate">
               {device.management_number || '-'}
             </span>
-            <span className="flex-shrink-0">|</span>
+            <span className="flex-shrink-0 text-gray-600 mx-0.5">|</span>
             <span className="truncate">
               {device.equipment_serial || '-'}
             </span>
