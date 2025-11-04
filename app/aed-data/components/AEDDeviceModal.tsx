@@ -36,9 +36,10 @@ interface AEDDeviceModalProps {
   onQuickInspect?: (device: AEDDevice) => void;
   scheduledEquipment?: Set<string>;
   onCancelSchedule?: (equipmentSerial: string) => void;
+  onSchedule?: (devices: AEDDevice[]) => void;
 }
 
-export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQuickInspect, onQuickInspect, scheduledEquipment, onCancelSchedule }: AEDDeviceModalProps) {
+export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQuickInspect, onQuickInspect, scheduledEquipment, onCancelSchedule, onSchedule }: AEDDeviceModalProps) {
   const maskedFields = accessScope ? getMaskedFieldLabels(device, accessScope) : [];
   const [isInspectionMode, setIsInspectionMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -185,11 +186,11 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
       <div className="bg-gray-900 rounded-lg border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-2 border-b border-gray-700">
           <div className="flex justify-between items-start mb-0.5">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-base font-semibold text-white mb-1">
+            <div className="flex-1 min-w-0 mr-2">
+              <h2 className="text-base font-semibold text-white mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
                 {device.installation_institution || '-'}
               </h2>
-              <div className="text-base font-semibold text-gray-300 tracking-wide w-[80%]">
+              <div className="text-sm font-semibold text-gray-300 tracking-wide whitespace-nowrap overflow-hidden text-ellipsis">
                 {device.management_number || '-'} <span className="text-gray-600 mx-2">|</span> {device.equipment_serial || '-'}
               </div>
             </div>
@@ -198,22 +199,33 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                 <Button
                   onClick={handleStartInspection}
                   disabled={isSubmitting}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 h-7"
                 >
-                  {isSubmitting ? '처리 중...' : '점검 시작'}
+                  {isSubmitting ? '처리 중...' : '점검'}
                 </Button>
               )}
               {viewMode === 'admin' && (
                 <>
-                  {/* "일정 추가" 버튼 제거: 체크박스 선택 후 "일정 예약 (N개)" 버튼 사용 */}
+                  {!isScheduled && onSchedule && (
+                    <Button
+                      onClick={() => {
+                        onSchedule([device]);
+                        onClose();
+                      }}
+                      disabled={isSubmitting}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2 py-1 h-7"
+                    >
+                      {isSubmitting ? '처리 중...' : '추가'}
+                    </Button>
+                  )}
 
                   {isScheduled && assignmentStatus === 'pending' && (
                     <Button
                       onClick={handleCancelAssignment}
                       disabled={isSubmitting}
-                      className="bg-red-600 hover:bg-red-700 text-white"
+                      className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 h-7"
                     >
-                      {isSubmitting ? '처리 중...' : '일정 취소'}
+                      {isSubmitting ? '처리 중...' : '취소'}
                     </Button>
                   )}
 
@@ -221,11 +233,11 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                     <Button
                       onClick={() => setShowCancelConfirm(true)}
                       disabled={isSubmitting}
-                      className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1"
+                      className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 h-7 flex items-center gap-1"
                     >
                       {isSubmitting ? '처리 중...' : (
                         <>
-                          <span>일정 취소</span>
+                          <span>취소</span>
                           <span className="text-yellow-300">⚠️</span>
                         </>
                       )}
@@ -238,7 +250,7 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                         // TODO: 점검 기록 보기
                         showSuccess('기록 보기 기능은 곧 추가됩니다.');
                       }}
-                      className="bg-gray-600 hover:bg-gray-700 text-white"
+                      className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 h-7"
                     >
                       기록 보기
                     </Button>

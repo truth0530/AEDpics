@@ -65,10 +65,12 @@ const DesktopTableRow = memo(({
   onCancelSchedule,
   showInspectionStatus,
   inspectionCompleted,
+  inspectionUnavailable,
   onShowUnavailable,
   inspectionSession,
   onInspectionInProgress,
   onViewInspectionHistory,
+  rowIndex,
 }: {
   device: AEDDevice;
   accessScope: UserAccessScope | undefined;
@@ -77,7 +79,7 @@ const DesktopTableRow = memo(({
   enableSelection: boolean;
   viewMode: 'admin' | 'inspection';
   isSelected: boolean;
-  onToggleSelect: (id: string, checked: boolean) => void;
+  onToggleSelect: (id: string, checked: boolean, event?: React.MouseEvent, rowIndex?: number) => void;
   onViewDetails: (device: AEDDevice) => void;
   onQuickInspect: (device: AEDDevice) => void;
   onSchedule: (devices: AEDDevice[]) => void;
@@ -85,10 +87,12 @@ const DesktopTableRow = memo(({
   onCancelSchedule?: (equipmentSerial: string) => void;
   showInspectionStatus?: boolean;
   inspectionCompleted?: Set<string>;
+  inspectionUnavailable?: Set<string>;
   onShowUnavailable?: (device: AEDDevice) => void;
   inspectionSession?: InspectionSession;
   onInspectionInProgress?: (equipmentSerial: string) => void;
   onViewInspectionHistory?: (equipmentSerial: string) => void;
+  rowIndex?: number;
 }) => {
   const deviceId = getDeviceId(device);
   const statusKey = device.operation_status || 'unknown';
@@ -110,9 +114,9 @@ const DesktopTableRow = memo(({
     device.external_non_display_reason &&
     device.external_non_display_reason !== '구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박';
 
-  const handleCheckChange = (checked: boolean | 'indeterminate') => {
+  const handleCheckChange = (checked: boolean | 'indeterminate', event?: React.MouseEvent) => {
     if (checked !== 'indeterminate') {
-      onToggleSelect(deviceId, checked);
+      onToggleSelect(deviceId, checked, event, rowIndex);
     }
   };
 
@@ -127,10 +131,17 @@ const DesktopTableRow = memo(({
     >
     {/* 데스크톱 테이블 행 */}
       {enableSelection && (
-        <div className="flex items-center pl-2">
+        <div
+          className="flex items-center pl-2"
+          onClick={(e) => {
+            // Checkbox 클릭 시 이벤트와 함께 처리
+            const newChecked = !isSelected;
+            handleCheckChange(newChecked, e);
+          }}
+        >
           <Checkbox
             checked={isSelected}
-            onCheckedChange={handleCheckChange}
+            onCheckedChange={(checked) => handleCheckChange(checked)}
             aria-label={`${device.installation_institution || device.installation_institution || '미등록'} 선택`}
           />
         </div>
@@ -190,7 +201,7 @@ const DesktopTableRow = memo(({
       {/* 6. 상태 (점검 모드일 때만) */}
       {showInspectionStatus && (
         <div className="flex justify-center">
-          {device.inspection_status === 'unavailable' ? (
+          {inspectionUnavailable?.has(device.equipment_serial) ? (
             <span className="px-2 py-0.5 text-xs lg:text-sm xl:text-base bg-red-500/20 text-red-400 rounded">
               점검불가
             </span>
@@ -203,7 +214,7 @@ const DesktopTableRow = memo(({
             </button>
           ) : (
             <span className="px-2 py-0.5 text-xs lg:text-sm xl:text-base bg-yellow-500/20 text-yellow-400 rounded">
-              점검진행중
+              진행중
             </span>
           )}
         </div>
@@ -355,10 +366,12 @@ const MobileCard = memo(({
   onCancelSchedule,
   showInspectionStatus,
   inspectionCompleted,
+  inspectionUnavailable,
   onShowUnavailable,
   inspectionSession,
   onInspectionInProgress,
   onViewInspectionHistory,
+  rowIndex,
 }: {
   device: AEDDevice;
   accessScope: UserAccessScope | undefined;
@@ -367,7 +380,7 @@ const MobileCard = memo(({
   enableSelection: boolean;
   viewMode: 'admin' | 'inspection';
   isSelected: boolean;
-  onToggleSelect: (id: string, checked: boolean) => void;
+  onToggleSelect: (id: string, checked: boolean, event?: React.MouseEvent, rowIndex?: number) => void;
   onViewDetails: (device: AEDDevice) => void;
   onQuickInspect: (device: AEDDevice) => void;
   onSchedule: (devices: AEDDevice[]) => void;
@@ -375,10 +388,12 @@ const MobileCard = memo(({
   onCancelSchedule?: (equipmentSerial: string) => void;
   showInspectionStatus?: boolean;
   inspectionCompleted?: Set<string>;
+  inspectionUnavailable?: Set<string>;
   onShowUnavailable?: (device: AEDDevice) => void;
   inspectionSession?: InspectionSession;
   onInspectionInProgress?: (equipmentSerial: string) => void;
   onViewInspectionHistory?: (equipmentSerial: string) => void;
+  rowIndex?: number;
 }) => {
   const deviceId = getDeviceId(device);
   const statusKey = device.operation_status || 'unknown';
@@ -422,10 +437,10 @@ const MobileCard = memo(({
     touchCurrentRef.current = null;
   };
 
-  const handleCheckChange = (checked: boolean | 'indeterminate') => {
+  const handleCheckChange = (checked: boolean | 'indeterminate', event?: React.MouseEvent) => {
     if (checked !== 'indeterminate') {
       closeActions();
-      onToggleSelect(deviceId, checked);
+      onToggleSelect(deviceId, checked, event, rowIndex);
     }
   };
 
@@ -476,12 +491,21 @@ const MobileCard = memo(({
       >
         {/* 체크박스: 카드 세로 중앙 정렬 */}
         {enableSelection && (
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={handleCheckChange}
-            aria-label={`${device.installation_institution || '미등록'} 선택`}
-            className="flex-shrink-0 h-5 w-5 sm:h-4 sm:w-4 self-center"
-          />
+          <div
+            onClick={(e) => {
+              e.stopPropagation(); // 카드 클릭 이벤트와 분리
+              const newChecked = !isSelected;
+              handleCheckChange(newChecked, e);
+            }}
+            className="flex-shrink-0 self-center"
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={(checked) => handleCheckChange(checked)}
+              aria-label={`${device.installation_institution || '미등록'} 선택`}
+              className="h-5 w-5 sm:h-4 sm:w-4"
+            />
+          </div>
         )}
 
         {/* 콘텐츠 영역 */}
@@ -509,7 +533,7 @@ const MobileCard = memo(({
                 불가
               </button>
             ) : showInspectionStatus ? (
-              device.inspection_status === 'unavailable' ? (
+              inspectionUnavailable?.has(device.equipment_serial) ? (
                 <span className="px-2 py-0.5 text-[10px] bg-red-500/20 text-red-400 rounded flex-shrink-0">
                   점검불가
                 </span>
@@ -522,7 +546,7 @@ const MobileCard = memo(({
                 </button>
               ) : (
                 <span className="px-2 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-400 rounded flex-shrink-0">
-                  점검진행중
+                  진행중
                 </span>
               )
             ) : viewMode === 'inspection' ? (
@@ -634,6 +658,7 @@ interface DataTableProps {
   filterData?: (device: any) => boolean;
   showInspectionStatus?: boolean;
   inspectionCompleted?: Set<string>;
+  inspectionUnavailable?: Set<string>; // 점검불가 항목
   onQuickInspect?: (device: any) => void;
   selectedDeviceIds?: Set<string>;
   onDeviceSelect?: (deviceId: string, checked: boolean) => void;
@@ -657,6 +682,7 @@ export function DataTable({
   filterData,
   showInspectionStatus,
   inspectionCompleted = new Set(),
+  inspectionUnavailable = new Set(),
   onQuickInspect,
   selectedDeviceIds,
   onDeviceSelect,
@@ -711,6 +737,11 @@ export function DataTable({
   const [isMobile, setIsMobile] = useState(false);
   const [currentPosition, setCurrentPosition] = useState<{ lat: number; lng: number } | null>(null);
   const hasAppliedStoredLimit = useRef(false);
+
+  // 범위 선택 기능을 위한 state
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartIndexRef = useRef<number | null>(null);
 
   const currentPage = filters.page ?? pagination?.page ?? 1;
   const hasMore = pagination?.hasMore ?? false;
@@ -910,8 +941,35 @@ export function DataTable({
   const isAllSelected = enableSelection && devices.length > 0 && devices.every((device) => selectedIds.has(getDeviceId(device)));
   const isIndeterminate = enableSelection && selectedCount > 0 && !isAllSelected;
 
-  const toggleSelect = useCallback((id: string, checked: boolean) => {
+  const toggleSelect = useCallback((id: string, checked: boolean, event?: React.MouseEvent, rowIndex?: number) => {
     if (!enableSelection || !id) return;
+
+    // Shift+클릭으로 범위 선택 (데스크톱)
+    if (event?.shiftKey && lastSelectedIndex !== null && rowIndex !== undefined) {
+      const start = Math.min(lastSelectedIndex, rowIndex);
+      const end = Math.max(lastSelectedIndex, rowIndex);
+      const rangeIds = devices.slice(start, end + 1).map(d => getDeviceId(d));
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        rangeIds.forEach(rangeId => {
+          if (checked) {
+            next.add(rangeId);
+          } else {
+            next.delete(rangeId);
+          }
+        });
+        return next;
+      });
+
+      // 범위 선택 후에도 마지막 인덱스 업데이트
+      if (rowIndex !== undefined) {
+        setLastSelectedIndex(rowIndex);
+      }
+      return;
+    }
+
+    // 일반 선택
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (checked) {
@@ -921,7 +979,12 @@ export function DataTable({
       }
       return next;
     });
-  }, [enableSelection]);
+
+    // 마지막 선택 인덱스 업데이트
+    if (rowIndex !== undefined) {
+      setLastSelectedIndex(rowIndex);
+    }
+  }, [enableSelection, lastSelectedIndex, devices]);
 
   const toggleSelectAll = useCallback((checked: boolean | 'indeterminate') => {
     console.log('[DataTable] toggleSelectAll called:', {
@@ -1151,7 +1214,7 @@ export function DataTable({
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {/* 모바일 / 태블릿 뷰 */}
           <div className="lg:hidden p-1.5 space-y-1">
-            {devices.map((device) => {
+            {devices.map((device, index) => {
               const deviceId = getDeviceId(device);
               return (
                 <MobileCard
@@ -1171,10 +1234,12 @@ export function DataTable({
                   onCancelSchedule={onCancelSchedule}
                   showInspectionStatus={showInspectionStatus}
                   inspectionCompleted={inspectionCompleted}
+                  inspectionUnavailable={inspectionUnavailable}
                   onShowUnavailable={handleShowUnavailable}
                   inspectionSession={inspectionSessions.get(device.equipment_serial)}
                   onInspectionInProgress={onInspectionInProgress}
                   onViewInspectionHistory={onViewInspectionHistory}
+                  rowIndex={index}
                 />
               );
             })}
@@ -1182,7 +1247,7 @@ export function DataTable({
 
           {/* 데스크톱 뷰 */}
           <div className="hidden lg:block pr-4">
-          {devices.map((device) => {
+          {devices.map((device, index) => {
             const deviceId = getDeviceId(device);
             return (
               <DesktopTableRow
@@ -1202,10 +1267,12 @@ export function DataTable({
                 onCancelSchedule={onCancelSchedule}
                 showInspectionStatus={showInspectionStatus}
                 inspectionCompleted={inspectionCompleted}
+                inspectionUnavailable={inspectionUnavailable}
                 onShowUnavailable={handleShowUnavailable}
                 inspectionSession={inspectionSessions.get(device.equipment_serial)}
                 onInspectionInProgress={onInspectionInProgress}
                 onViewInspectionHistory={onViewInspectionHistory}
+                rowIndex={index}
               />
             );
           })}
@@ -1250,6 +1317,7 @@ export function DataTable({
           onQuickInspect={handleQuickInspect}
           scheduledEquipment={scheduledEquipment}
           onCancelSchedule={onCancelSchedule}
+          onSchedule={handleSchedule}
         />
       )}
 
