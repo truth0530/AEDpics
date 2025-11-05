@@ -216,13 +216,13 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               type="text"
               value={weekdayBatchTime}
               onChange={(e) => setWeekdayBatchTime(formatTimeInput(e.target.value))}
-              className="w-full px-3 py-2 text-center text-sm bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+              className="w-full px-2 py-1.5 text-center text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
               placeholder="04:30~25:30"
             />
             <button
               type="button"
               onClick={applyWeekdayBatch}
-              className="w-full px-2 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="w-full px-2 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               월~금 일괄
             </button>
@@ -233,13 +233,13 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               type="text"
               value={weekendBatchTime}
               onChange={(e) => setWeekendBatchTime(formatTimeInput(e.target.value))}
-              className="w-full px-3 py-2 text-center text-sm bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+              className="w-full px-2 py-1.5 text-center text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
               placeholder="04:30~25:30"
             />
             <button
               type="button"
               onClick={applyWeekendBatch}
-              className="w-full px-2 py-2 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+              className="w-full px-2 py-1.5 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
               토,공휴일
             </button>
@@ -249,8 +249,8 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
 
       {/* 요일별 체크박스와 시간 입력 - 모바일 최적화 (24시간 미선택 시만 표시) */}
       {!value.is24hours && (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-y-2 gap-x-2 sm:gap-x-3">
+        <div className="space-y-1">
+          <div className="grid grid-cols-2 gap-y-1.5 gap-x-2">
             {DAYS.map(({ key, label }) => (
               <div key={key} className="flex items-center gap-1">
                 <span className="text-[10px] sm:text-xs text-gray-400 min-w-fit">{label}</span>
@@ -264,7 +264,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
                   type="text"
                   value={getDayTime(key)}
                   onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
-                  className="w-20 px-1 py-1 text-center text-xs sm:text-sm bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:bg-gray-900 disabled:text-gray-600"
+                  className="w-24 px-2 py-1.5 text-center text-sm bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:bg-gray-900 disabled:text-gray-600"
                   placeholder="04:30~25:30"
                   disabled={!isDayChecked(key)}
                 />
