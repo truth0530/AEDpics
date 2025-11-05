@@ -56,11 +56,13 @@ export function BasicInfoStep() {
 
   // 지도 관련 state
   const mapRef = useRef<HTMLDivElement>(null);
+  const roadviewRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const [marker, setMarker] = useState<any>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [mapError, setMapError] = useState<string>('');
+  const [showRoadview, setShowRoadview] = useState(false);
 
   // GPS 좌표
   const initialLat = deviceInfo.latitude || deviceInfo.gps_latitude || 37.5665;
@@ -109,36 +111,79 @@ export function BasicInfoStep() {
         const mapInstance = new window.kakao.maps.Map(mapRef.current, options);
         setMap(mapInstance);
 
-        // AED 마커 추가 (카카오 기본 마커)
+        // AED 커스텀 오버레이 생성
         const markerPosition = new window.kakao.maps.LatLng(currentLat, currentLng);
-        const markerInstance = new window.kakao.maps.Marker({
+        const overlayContent = document.createElement('div');
+        overlayContent.innerHTML = `
+          <div class="flex flex-col items-center cursor-move">
+            <div class="bg-red-600 rounded-full p-3 shadow-lg border-2 border-white hover:shadow-xl transition-shadow">
+              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-13h4v4h-4zm0 6h4v4h-4z"/>
+              </svg>
+            </div>
+            <div class="text-xs font-semibold text-white bg-gray-900 px-2 py-1 rounded mt-1 whitespace-nowrap shadow">자동심장충격기</div>
+          </div>
+        `;
+        overlayContent.style.transform = 'translate(-50%, -100%)';
+
+        // @ts-ignore - CustomOverlay API
+        const customOverlay = new window.kakao.maps.CustomOverlay({
           position: markerPosition,
+          content: overlayContent,
+          xAnchor: 0.5,
+          yAnchor: 1,
           map: mapInstance,
-          draggable: true,
         });
 
-        setMarker(markerInstance);
-
-        // 마커 드래그 이벤트
-        window.kakao.maps.event.addListener(markerInstance, 'dragstart', () => {
-          setIsDragging(true);
+        // 커스텀 오버레이를 마커로 사용하기 위해 드래그 기능 구현
+        let isDraggingOverlay = false;
+        overlayContent.addEventListener('mousedown', () => {
+          isDraggingOverlay = true;
         });
 
-        window.kakao.maps.event.addListener(markerInstance, 'dragend', () => {
-          const position = markerInstance.getPosition();
-          const newLat = position.getLat();
-          const newLng = position.getLng();
+        document.addEventListener('mousemove', (e) => {
+          if (isDraggingOverlay && mapInstance) {
+            const container = mapRef.current;
+            if (container) {
+              const rect = container.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
 
-          setCurrentLat(newLat);
-          setCurrentLng(newLng);
-          setHasMovedMarker(true);
-          updateStepData('basicInfo', {
-            ...basicInfo,
-            gps_latitude: newLat,
-            gps_longitude: newLng,
-          });
-          setIsDragging(false);
+              const bounds = mapInstance.getBounds();
+              const latlngFromCoords = (mapInstance as any).getProjection().fromContainerPixelToLatLng({
+                x,
+                y,
+              });
+
+              setCurrentLat(latlngFromCoords.getLat());
+              setCurrentLng(latlngFromCoords.getLng());
+              setHasMovedMarker(true);
+
+              const newPosition = new window.kakao.maps.LatLng(latlngFromCoords.getLat(), latlngFromCoords.getLng());
+              customOverlay.setPosition(newPosition);
+            }
+          }
         });
+
+        document.addEventListener('mouseup', () => {
+          if (isDraggingOverlay) {
+            isDraggingOverlay = false;
+            updateStepData('basicInfo', {
+              ...basicInfo,
+              gps_latitude: currentLat,
+              gps_longitude: currentLng,
+            });
+          }
+        });
+
+        // 마커로 사용하기 위해 ref에 저장 (기본 마커 대신)
+        const dummyMarker = {
+          getPosition: () => markerPosition,
+          setPosition: (pos: any) => {
+            customOverlay.setPosition(pos);
+          },
+        };
+        setMarker(dummyMarker as any);
 
         // 줌 컨트롤 추가
         const zoomControl = new window.kakao.maps.ZoomControl();
@@ -156,6 +201,78 @@ export function BasicInfoStep() {
       cancelled = true;
     };
   }, []);
+
+  // 로드뷰 초기화
+  useEffect(() => {
+    if (!showRoadview || !roadviewRef.current) return;
+
+    // 로드뷰 초기화
+    const initializeRoadview = async () => {
+      await waitForKakaoMaps();
+
+      if (!roadviewRef.current) return;
+
+      try {
+        // @ts-ignore - Roadview API가 window.kakao.maps에 포함됨
+        const roadviewInstance = new window.kakao.maps.Roadview(
+          roadviewRef.current,
+          {
+            position: new window.kakao.maps.LatLng(currentLat, currentLng),
+          }
+        );
+
+        // 로드뷰가 로드된 후 커스텀 오버레이 추가
+        window.kakao.maps.event.addListener(roadviewInstance, 'init', () => {
+          // AED 커스텀 오버레이 컨텐츠
+          const overlayContent = document.createElement('div');
+          overlayContent.innerHTML = `
+            <div class="flex flex-col items-center">
+              <div class="bg-red-600 rounded-full p-2 shadow-lg border-2 border-white">
+                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-13h4v4h-4zm0 6h4v4h-4z"/>
+                </svg>
+              </div>
+              <div class="text-xs font-semibold text-white bg-gray-900 px-2 py-1 rounded mt-1 whitespace-nowrap">자동심장충격기</div>
+            </div>
+          `;
+          overlayContent.style.transform = 'translate(-50%, -100%)';
+
+          // @ts-ignore - CustomOverlay API
+          const customOverlay = new window.kakao.maps.CustomOverlay({
+            position: new window.kakao.maps.LatLng(currentLat, currentLng),
+            content: overlayContent,
+            xAnchor: 0.5,
+            yAnchor: 0.5,
+          });
+
+          customOverlay.setMap(roadviewInstance);
+
+          // 오버레이를 로드뷰 중앙에 배치하도록 viewpoint 조정
+          const projection = (roadviewInstance as any).getProjection();
+          if (projection) {
+            const viewpoint = projection.viewpointFromCoords(
+              new window.kakao.maps.LatLng(currentLat, currentLng),
+              0
+            );
+            roadviewInstance.setViewpoint(viewpoint);
+          }
+        });
+
+        // 도로명 주소 표시
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        geocoder.coord2Address(currentLng, currentLat, (result: any, status: string) => {
+          if (status === (window.kakao.maps.services as any).Status.OK) {
+            const address = result[0]?.road_address?.address_name || result[0]?.address?.address_name || '';
+            console.log('로드뷰 위치:', address);
+          }
+        });
+      } catch (error) {
+        console.error('로드뷰 초기화 오류:', error);
+      }
+    };
+
+    initializeRoadview();
+  }, [showRoadview, currentLat, currentLng]);
 
   // ✅ 카테고리 데이터 로드 (API에서 동적으로)
   useEffect(() => {
@@ -761,10 +878,7 @@ export function BasicInfoStep() {
         <div className="mt-2 flex gap-2">
           {/* 로드뷰 버튼 */}
           <button
-            onClick={() => {
-              const url = `https://map.kakao.com/link/roadview/${currentLat},${currentLng}`;
-              window.open(url, 'kakaoRoadview');
-            }}
+            onClick={() => setShowRoadview(!showRoadview)}
             className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isMapLoaded}
             title="로드뷰 보기"
@@ -817,6 +931,31 @@ export function BasicInfoStep() {
             실제 위치와 다른 경우 마커를 드래그하여 이동해주세요
           </p>
         </div>
+
+        {/* 로드뷰 컨테이너 */}
+        {showRoadview && (
+          <div className="mt-4 border border-gray-700 rounded-lg overflow-hidden">
+            {/* 로드뷰 헤더 */}
+            <div className="bg-gray-800 px-3 py-2 flex items-center justify-between border-b border-gray-700">
+              <h3 className="text-xs font-semibold text-gray-300">로드뷰</h3>
+              <button
+                onClick={() => setShowRoadview(false)}
+                className="text-gray-400 hover:text-gray-200 p-0.5 transition-colors"
+                title="로드뷰 닫기"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* 로드뷰 본체 */}
+            <div
+              ref={roadviewRef}
+              className="w-full h-64 bg-gray-900"
+            />
+          </div>
+        )}
       </div>
 
       {/* 위치정보 */}
