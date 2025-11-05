@@ -962,7 +962,7 @@ export function BasicInfoStep() {
             <Label className="text-xs font-medium text-white mb-2 block">
               설치 위치 접근 허용 범위 <span className="text-red-500">*</span>
             </Label>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -974,13 +974,13 @@ export function BasicInfoStep() {
                   delete newAccessibility.accessibility_reason;
                   updateStepData('basicInfo', { accessibility: newAccessibility });
                 }}
-                className={`px-3 py-2 text-xs sm:text-xs font-medium rounded-lg transition-all ${
+                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
                   basicInfo.accessibility?.accessibility_level === 'public'
                     ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
                     : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
                 }`}
               >
-                누구나 접근 가능
+                누구나
               </button>
 
               <button
@@ -993,13 +993,13 @@ export function BasicInfoStep() {
                   };
                   updateStepData('basicInfo', { accessibility: newAccessibility });
                 }}
-                className={`px-3 py-2 text-xs sm:text-xs font-medium rounded-lg transition-all ${
+                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
                   basicInfo.accessibility?.accessibility_level === 'restricted'
                     ? 'bg-yellow-600 text-white border-2 border-yellow-500 shadow-lg shadow-yellow-500/20'
                     : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
                 }`}
               >
-                일부가능
+                일부
               </button>
 
               <button
@@ -1012,13 +1012,13 @@ export function BasicInfoStep() {
                   };
                   updateStepData('basicInfo', { accessibility: newAccessibility });
                 }}
-                className={`px-3 py-2 text-xs sm:text-xs font-medium rounded-lg transition-all ${
+                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
                   basicInfo.accessibility?.accessibility_level === 'private'
                     ? 'bg-red-600 text-white border-2 border-red-500 shadow-lg shadow-red-500/20'
                     : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
                 }`}
               >
-                불가능
+                불가
               </button>
             </div>
 
