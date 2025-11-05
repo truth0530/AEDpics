@@ -111,79 +111,39 @@ export function BasicInfoStep() {
         const mapInstance = new window.kakao.maps.Map(mapRef.current, options);
         setMap(mapInstance);
 
-        // AED 커스텀 오버레이 생성
+        // AED 파란색 기본 마커 생성
         const markerPosition = new window.kakao.maps.LatLng(currentLat, currentLng);
-        const overlayContent = document.createElement('div');
-        overlayContent.innerHTML = `
-          <div class="flex flex-col items-center cursor-move">
-            <div class="bg-red-600 rounded-full p-3 shadow-lg border-2 border-white hover:shadow-xl transition-shadow">
-              <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-13h4v4h-4zm0 6h4v4h-4z"/>
-              </svg>
-            </div>
-            <div class="text-xs font-semibold text-white bg-gray-900 px-2 py-1 rounded mt-1 whitespace-nowrap shadow">자동심장충격기</div>
-          </div>
-        `;
-        overlayContent.style.transform = 'translate(-50%, -100%)';
 
-        // @ts-ignore - CustomOverlay API
-        const customOverlay = new window.kakao.maps.CustomOverlay({
+        // @ts-ignore - Marker API
+        const marker = new window.kakao.maps.Marker({
           position: markerPosition,
-          content: overlayContent,
-          xAnchor: 0.5,
-          yAnchor: 1,
           map: mapInstance,
+          draggable: true,
         });
 
-        // 커스텀 오버레이를 마커로 사용하기 위해 드래그 기능 구현
-        let isDraggingOverlay = false;
-        overlayContent.addEventListener('mousedown', () => {
-          isDraggingOverlay = true;
+        // 마커 드래그 이벤트 처리
+        window.kakao.maps.event.addListener(marker, 'dragstart', () => {
+          setIsDragging(true);
         });
 
-        document.addEventListener('mousemove', (e) => {
-          if (isDraggingOverlay && mapInstance) {
-            const container = mapRef.current;
-            if (container) {
-              const rect = container.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const y = e.clientY - rect.top;
-
-              const bounds = mapInstance.getBounds();
-              const latlngFromCoords = (mapInstance as any).getProjection().fromContainerPixelToLatLng({
-                x,
-                y,
-              });
-
-              setCurrentLat(latlngFromCoords.getLat());
-              setCurrentLng(latlngFromCoords.getLng());
-              setHasMovedMarker(true);
-
-              const newPosition = new window.kakao.maps.LatLng(latlngFromCoords.getLat(), latlngFromCoords.getLng());
-              customOverlay.setPosition(newPosition);
-            }
-          }
+        window.kakao.maps.event.addListener(marker, 'drag', () => {
+          const position = marker.getPosition();
+          setCurrentLat(position.getLat());
+          setCurrentLng(position.getLng());
+          setHasMovedMarker(true);
         });
 
-        document.addEventListener('mouseup', () => {
-          if (isDraggingOverlay) {
-            isDraggingOverlay = false;
-            updateStepData('basicInfo', {
-              ...basicInfo,
-              gps_latitude: currentLat,
-              gps_longitude: currentLng,
-            });
-          }
+        window.kakao.maps.event.addListener(marker, 'dragend', () => {
+          setIsDragging(false);
+          const position = marker.getPosition();
+          updateStepData('basicInfo', {
+            ...basicInfo,
+            gps_latitude: position.getLat(),
+            gps_longitude: position.getLng(),
+          });
         });
 
-        // 마커로 사용하기 위해 ref에 저장 (기본 마커 대신)
-        const dummyMarker = {
-          getPosition: () => markerPosition,
-          setPosition: (pos: any) => {
-            customOverlay.setPosition(pos);
-          },
-        };
-        setMarker(dummyMarker as any);
+        setMarker(marker);
 
         // 줌 컨트롤 추가
         const zoomControl = new window.kakao.maps.ZoomControl();
