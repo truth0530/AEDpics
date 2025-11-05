@@ -207,13 +207,13 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               type="text"
               value={weekdayBatchTime}
               onChange={(e) => setWeekdayBatchTime(formatTimeInput(e.target.value))}
-              className="w-full px-2 py-2 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+              className="w-full px-2 py-1 text-center text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
               placeholder="04:30~25:30"
             />
             <button
               type="button"
               onClick={applyWeekdayBatch}
-              className="w-full px-2 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="w-full px-2 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               월~금 일괄
             </button>
@@ -224,13 +224,13 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               type="text"
               value={weekendBatchTime}
               onChange={(e) => setWeekendBatchTime(formatTimeInput(e.target.value))}
-              className="w-full px-2 py-2 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+              className="w-full px-2 py-1 text-center text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
               placeholder="04:30~25:30"
             />
             <button
               type="button"
               onClick={applyWeekendBatch}
-              className="w-full px-2 py-2 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+              className="w-full px-2 py-1.5 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
               토,공휴일
             </button>
@@ -255,7 +255,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
                   type="text"
                   value={getDayTime(key)}
                   onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
-                  className="w-20 px-1 py-1 text-[8px] sm:text-xs bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:bg-gray-900 disabled:text-gray-600"
+                  className="w-16 px-0.5 py-0.5 text-center text-[7px] sm:text-xs bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:bg-gray-900 disabled:text-gray-600"
                   placeholder="04:30~25:30"
                   disabled={!isDayChecked(key)}
                 />
