@@ -44,19 +44,5 @@ jobs:
           echo "Generating Prisma Client..."
           npx prisma generate
 
-          echo "Running migration SQL..."
-          PGPASSWORD="${{ secrets.DATABASE_PASSWORD }}" psql \\
-            -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com \\
-            -U aedpics_admin \\
-            -d aedpics_production \\
-            -f prisma/migrations/20251105_add_organization_change_requests/migration.sql
-
-          echo "Verifying table creation..."
-          PGPASSWORD="${{ secrets.DATABASE_PASSWORD }}" psql \\
-            -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com \\
-            -U aedpics_admin \\
-            -d aedpics_production \\
-            -c "\\dt aedpics.organization_change_requests"
-
-          echo ""
-          echo "=== Migration Complete ===\"
+          echo "Running migration script..."
+          npx ts-node scripts/migrate-database.ts
