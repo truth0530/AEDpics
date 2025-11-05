@@ -526,7 +526,7 @@ Supabase Auth를 NextAuth.js로 완전 전환하여 국정원 인증 요구사�
 | **인증 한국 서버 처리** | **진행 중** | **70%** | **12개 페이지 API 미구축** |
 | **세션 한국 서버 관리** | **진행 중** | **70%** | **NextAuth 완전 전환 필요** |
 | 빌드 시스템 안정화 | 완료 | 100% | - |
-| 해외 서비스 미사용 | 진행 중 | 70% | Supabase 잔여 의존성 제거 필요 |
+| 해외 서비스 미사용 | 완료 | 95% | 주요 Supabase 레거시 코드 제거 완료 (2025-11-05) |
 
 ### 기술 부채 및 TODO
 
@@ -547,12 +547,16 @@ Supabase Auth를 NextAuth.js로 완전 전환하여 국정원 인증 요구사�
    - GET /api/admin/statistics - 통계
    - GET /api/admin/external-mapping - 외부 시스템 매핑
 
-#### lib 파일 정리 (낮은 우선순위)
-- lib/auth/email-service.ts - Supabase 의존성 제거
-- lib/auth/otp.ts - Supabase 의존성 제거
-- lib/notifications/NotificationManager.ts - Supabase 의존성 제거
-- lib/realtime/ - Supabase Realtime 대체 방안 (폴링 또는 SSE)
-- lib/services/aed-data-service.ts - Supabase 의존성 제거
+#### lib 파일 정리 (2025-11-05 완료)
+- ✅ lib/notifications/NotificationManager.ts - 삭제 완료 (사용되지 않음)
+- ✅ lib/services/aed-data-service.ts - 삭제 완료 (사용되지 않음)
+- ✅ lib/monitoring/error-logger.ts - logger.ts 기반으로 재구현 완료
+- ✅ components/notifications/* - 레거시 파일 2개 삭제
+- ✅ components/realtime/QueueStatus.tsx - 삭제 완료
+- ✅ app/protected/* - Supabase 스타터 템플릿 삭제
+- 🔄 lib/auth/email-service.ts - 부분적 Supabase 의존성 (서버 전용 API)
+- 🔄 lib/auth/otp.ts - 부분적 Supabase 의존성 (서버 전용 API)
+- 🔄 lib/realtime/ - Supabase Realtime stub (향후 SSE/폴링 대체)
 
 #### 성능 최적화 (향후)
 - Prisma 쿼리 최적화
