@@ -841,17 +841,14 @@ export function BasicInfoStep() {
             {/* 로드뷰 버튼 */}
             <button
               onClick={() => setShowRoadview(!showRoadview)}
-              className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!isMapLoaded}
-              title="로드뷰 보기"
+              title="로드뷰 펼치기"
             >
               <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 13h3v8H3z"/>
-                <path d="M9 5h3v16H9z"/>
-                <path d="M15 9h3v12h-3z"/>
-                <path d="M21 11h1v10h-1z"/>
+                <path d="M7 10l5 5 5-5z"/>
               </svg>
-              <span>로드뷰</span>
+              <span>로드뷰 펼치기</span>
             </button>
           </div>
 
