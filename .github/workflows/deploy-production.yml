@@ -130,9 +130,9 @@ jobs:
 
           echo "=== Phase 2.5: Run database migrations ==="
           echo "Checking for pending migrations..."
-          if [ -f "scripts/migrate-database.js" ]; then
+          if [ -f "scripts/migrate-database.cjs" ]; then
             echo "Running database migrations..."
-            if node scripts/migrate-database.js; then
+            if node scripts/migrate-database.cjs; then
               echo "Migration successful!"
             else
               echo "ERROR: Migration failed!"

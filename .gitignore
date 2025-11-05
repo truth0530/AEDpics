@@ -81,8 +81,12 @@ scripts/upload_to_ncp.py
 next-env.d.ts
 
 # Migration and test files
-*.sql
-migrate-*.js
+# *.sql 제거: prisma/migrations/**/*.sql 파일은 필요함
+# 임시 SQL 파일만 무시하려면 더 구체적인 패턴 사용
+temp-*.sql
+# migrate-*.js 제거: scripts/migrate-database.js는 프로덕션 마이그레이션에 필요함
+# 임시 마이그레이션 파일만 무시하려면 더 구체적인 패턴 사용
+# migrate-temp-*.js
 test-*.js
 verify-*.js
 standard-*.js
