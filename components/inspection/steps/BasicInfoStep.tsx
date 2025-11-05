@@ -189,38 +189,92 @@ export function BasicInfoStep() {
 
         // 로드뷰가 로드된 후 커스텀 오버레이 추가
         window.kakao.maps.event.addListener(roadviewInstance, 'init', () => {
-          // AED 커스텀 오버레이 컨텐츠
-          const overlayContent = document.createElement('div');
-          overlayContent.innerHTML = `
-            <div class="flex flex-col items-center">
-              <div class="bg-green-500 rounded-full p-2 shadow-lg border-2 border-white" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
-                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">
-                  <!-- 흰색 하트 -->
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="white"/>
-                  <!-- 녹색 번개 -->
-                  <polygon points="12,2 5,12 10,12 8,22 16,10 12,10 14,2" fill="#22c55e"/>
-                </svg>
-              </div>
-              <div class="text-xs font-semibold text-white bg-gray-900 px-2 py-1 rounded mt-1 whitespace-nowrap">자동심장충격기</div>
-            </div>
-          `;
-          overlayContent.style.transform = 'translate(-50%, -100%)';
+          try {
+            // 컨테이너 생성
+            const overlayContent = document.createElement('div');
+            overlayContent.style.cssText = 'display: flex; flex-direction: column; align-items: center;';
 
-          // @ts-ignore - CustomOverlay API
-          const customOverlay = new window.kakao.maps.CustomOverlay({
-            position: position,
-            content: overlayContent,
-            xAnchor: 0.5,
-            yAnchor: 0.5,
-          });
+            // 원형 배경 생성
+            const circle = document.createElement('div');
+            circle.style.cssText = `
+              width: 48px;
+              height: 48px;
+              background-color: #22c55e;
+              border-radius: 50%;
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+              border: 2px solid white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              position: relative;
+              flex-shrink: 0;
+            `;
 
-          customOverlay.setMap(roadviewInstance);
+            // SVG 네임스페이스 활용하여 하트 아이콘 생성
+            const svgNS = 'http://www.w3.org/2000/svg';
 
-          // 오버레이를 로드뷰 중앙에 배치하도록 viewpoint 조정
-          const projection = (roadviewInstance as any).getProjection();
-          if (projection) {
-            const viewpoint = projection.viewpointFromCoords(position, 0);
-            roadviewInstance.setViewpoint(viewpoint);
+            // 하트 SVG 생성
+            const heartSvg = document.createElementNS(svgNS, 'svg');
+            heartSvg.setAttribute('viewBox', '0 0 24 24');
+            heartSvg.setAttribute('width', '20');
+            heartSvg.setAttribute('height', '20');
+            heartSvg.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);';
+
+            const heartPath = document.createElementNS(svgNS, 'path');
+            heartPath.setAttribute('d', 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z');
+            heartPath.setAttribute('fill', 'white');
+            heartSvg.appendChild(heartPath);
+
+            // 번개 SVG 생성
+            const boltSvg = document.createElementNS(svgNS, 'svg');
+            boltSvg.setAttribute('viewBox', '0 0 24 24');
+            boltSvg.setAttribute('width', '12');
+            boltSvg.setAttribute('height', '12');
+            boltSvg.style.cssText = 'position: absolute; bottom: 2px; right: 2px;';
+
+            const boltPolygon = document.createElementNS(svgNS, 'polygon');
+            boltPolygon.setAttribute('points', '12,2 5,12 10,12 8,22 16,10 12,10 14,2');
+            boltPolygon.setAttribute('fill', '#22c55e');
+            boltSvg.appendChild(boltPolygon);
+
+            circle.appendChild(heartSvg);
+            circle.appendChild(boltSvg);
+
+            // 라벨 생성
+            const label = document.createElement('div');
+            label.style.cssText = `
+              margin-top: 4px;
+              font-size: 12px;
+              font-weight: 600;
+              color: white;
+              background-color: rgba(17, 24, 39, 0.9);
+              padding: 4px 8px;
+              border-radius: 4px;
+              white-space: nowrap;
+            `;
+            label.textContent = '자동심장충격기';
+
+            overlayContent.appendChild(circle);
+            overlayContent.appendChild(label);
+
+            // @ts-ignore - CustomOverlay API
+            const customOverlay = new window.kakao.maps.CustomOverlay({
+              position: position,
+              content: overlayContent,
+              xAnchor: 0.5,
+              yAnchor: 1.0,
+            });
+
+            customOverlay.setMap(roadviewInstance);
+
+            // 오버레이를 로드뷰 중앙에 배치하도록 viewpoint 조정
+            const projection = (roadviewInstance as any).getProjection();
+            if (projection) {
+              const viewpoint = projection.viewpointFromCoords(position, 0);
+              roadviewInstance.setViewpoint(viewpoint);
+            }
+          } catch (error) {
+            console.error('CustomOverlay 설정 오류:', error);
           }
         });
 
