@@ -248,8 +248,8 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
       {!value.is24hours && (
         <div>
           <div className="text-[10px] sm:text-xs text-gray-400 mb-2">일요일 사용 가능 주</div>
-          <div className="flex justify-between items-center gap-2">
-            <div className="flex items-center gap-1 px-2 py-1">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1">
               <Checkbox
                 id="sunday-every-week"
                 checked={value.sundayWeeks?.everyWeek || false}
@@ -270,7 +270,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               <label htmlFor="sunday-every-week" className="text-xs sm:text-sm text-white cursor-pointer font-medium">매주</label>
             </div>
             {['week1', 'week2', 'week3', 'week4', 'week5'].map((week, idx) => (
-              <div key={week} className="flex items-center gap-1 px-2 py-1">
+              <div key={week} className="flex items-center gap-1">
                 <Checkbox
                   id={`sunday-${week}`}
                   checked={value.sundayWeeks?.[week as keyof Omit<typeof value.sundayWeeks, 'everyWeek'>] || false}
