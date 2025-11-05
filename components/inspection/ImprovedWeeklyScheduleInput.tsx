@@ -221,23 +221,31 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
       {/* 요일별 시간 입력 - 체크박스 제거 (24시간 미선택 시만 표시) */}
       {!value.is24hours && (
         <div className="grid grid-cols-3 gap-y-2 gap-x-2">
-          {DAYS.map(({ key, fullLabel }) => (
-            <div key={key} className="space-y-1">
-              <div className="text-xs text-gray-400 font-medium px-1">{fullLabel}</div>
-              <input
-                type="text"
-                value={getDayTime(key)}
-                onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
-                placeholder="04:30~25:30"
-                className="w-full px-1.5 py-1 text-center text-[11px] bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
-              />
-            </div>
-          ))}
+          {DAYS.map(({ key, fullLabel }) => {
+            const getLabelColor = () => {
+              if (key === 'saturday') return 'text-blue-800';
+              if (key === 'sunday' || key === 'holiday') return 'text-red-800';
+              return 'text-gray-400';
+            };
+
+            return (
+              <div key={key} className="space-y-1">
+                <div className={`text-xs ${getLabelColor()} font-medium px-1`}>{fullLabel}</div>
+                <input
+                  type="text"
+                  value={getDayTime(key)}
+                  onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
+                  placeholder="04:30~25:30"
+                  className="w-full px-1.5 py-1 text-center text-[11px] bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* 일요일 사용 가능 주 선택 */}
-      {isDayActive('sunday') && (
+      {!value.is24hours && (
         <div className="space-y-2 p-2 bg-gray-900/50 rounded-lg border border-gray-700">
           <div className="text-xs text-gray-400">일요일 사용 가능 주</div>
           <div className="flex flex-wrap gap-2">
