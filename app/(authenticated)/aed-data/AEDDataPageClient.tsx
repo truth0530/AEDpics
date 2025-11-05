@@ -13,7 +13,7 @@ import type { UserProfile } from '@/packages/types';
 import { normalizeRegionName } from '@/lib/constants/regions';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
 import { useAEDDataFreshness } from '@/lib/hooks/use-aed-data-cache';
-import { getActiveInspectionSessions, InspectionSession } from '@/lib/inspections/session-utils';
+import { getActiveInspectionSessions, getCompletedInspections, InspectionSession } from '@/lib/inspections/session-utils';
 
 interface AEDDataPageClientProps {
   initialFilters: Record<string, string | string[] | undefined>;
@@ -55,6 +55,14 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
   const { data: inspectionSessions = new Map() } = useQuery({
     queryKey: ['active-inspection-sessions'],
     queryFn: getActiveInspectionSessions,
+    refetchInterval: 30000, // 30초마다 갱신
+    staleTime: 25000,
+  });
+
+  // ✅ 완료된 점검 조회 (24시간 이내, 30초마다 자동 갱신)
+  const { data: inspectionCompleted = new Set() } = useQuery({
+    queryKey: ['completed-inspections'],
+    queryFn: () => getCompletedInspections(24), // 24시간 이내 완료된 점검
     refetchInterval: 30000, // 30초마다 갱신
     staleTime: 25000,
   });
@@ -700,6 +708,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
             <DataTable
               scheduledEquipment={scheduledEquipment}
               inspectionSessions={inspectionSessions}
+              inspectionCompleted={inspectionCompleted}
               onCancelSchedule={(equipmentSerial) => {
                 cancelScheduleMutation.mutate(equipmentSerial);
               }}
@@ -728,6 +737,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
               viewMode="admin"
               scheduledEquipment={scheduledEquipment}
               inspectionSessions={inspectionSessions}
+              inspectionCompleted={inspectionCompleted}
               onSchedule={(locations) => {
                 const devices = locations.map(loc => ({
                   id: loc.equipment_serial,

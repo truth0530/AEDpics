@@ -906,14 +906,23 @@ export function DataTable({
 
     // 서브 필터 적용
     if (scheduleFilter === 'unscheduled') {
-      return rawDevices.filter(device => !scheduledEquipment.has(device.equipment_serial));
+      // 추가할목록: 일정 추가되지 않았고, 점검 세션이 없고, 점검 완료되지 않은 장비만 표시
+      return rawDevices.filter(device => {
+        const serial = device.equipment_serial;
+        const isScheduled = scheduledEquipment.has(serial);
+        const hasSession = inspectionSessions.has(serial);
+        const isCompleted = inspectionCompleted.has(serial) || device.inspection_status === 'completed';
+
+        // 일정 추가, 점검 중, 점검 완료 모두 제외
+        return !isScheduled && !hasSession && !isCompleted;
+      });
     } else if (scheduleFilter === 'scheduled') {
       return rawDevices.filter(device => scheduledEquipment.has(device.equipment_serial));
     } else {
       // 'all' - 모든 장비 표시
       return rawDevices;
     }
-  }, [data, scheduleFilter, scheduledEquipment]);
+  }, [data, scheduleFilter, scheduledEquipment, inspectionSessions, inspectionCompleted]);
 
   const deviceMap = useMemo(() => {
     const map = new Map<string, AEDDevice>();

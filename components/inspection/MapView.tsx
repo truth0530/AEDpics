@@ -44,6 +44,7 @@ interface MapViewProps {
   onCancelSchedule?: (equipmentSerial: string) => void; // 일정 취소 핸들러
   scheduledEquipment?: Set<string>; // 일정추가된 장비 시리얼 목록
   inspectionSessions?: Map<string, InspectionSession>; // 활성 점검 세션
+  inspectionCompleted?: Set<string>; // 완료된 점검 장비 시리얼 목록
   onInspectionInProgress?: (equipmentSerial: string) => void; // 점검 진행중 핸들러
   filters?: any; // AEDFilterBar의 필터 상태
 }
@@ -60,6 +61,7 @@ export function MapView({
   onCancelSchedule,
   scheduledEquipment = new Set(),
   inspectionSessions = new Map(),
+  inspectionCompleted = new Set(),
   onInspectionInProgress,
   filters
 }: MapViewProps) {
@@ -169,8 +171,8 @@ export function MapView({
         const serial = location.equipment_serial;
 
         if (listFilter === 'toAdd') {
-          // 추가할 목록: 스케줄에 없는 장비
-          return !scheduledEquipment.has(serial);
+          // 추가할 목록: 스케줄에 없고, 점검 세션이 없고, 점검 완료되지 않은 장비
+          return !scheduledEquipment.has(serial) && !inspectionSessions.has(serial) && !inspectionCompleted.has(serial);
         } else if (listFilter === 'added') {
           // 추가된 목록: 스케줄에 있는 장비
           return scheduledEquipment.has(serial);
@@ -187,7 +189,7 @@ export function MapView({
     }
 
     return filtered;
-  }, [displayLocations, mapCenter, searchRadius, calculateDistance, listFilter, scheduledEquipment, inspectionSessions]);
+  }, [displayLocations, mapCenter, searchRadius, calculateDistance, listFilter, scheduledEquipment, inspectionSessions, inspectionCompleted]);
 
   // 디버깅: displayLocations 데이터 추적
   useEffect(() => {
