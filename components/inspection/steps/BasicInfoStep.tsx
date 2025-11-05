@@ -63,6 +63,7 @@ export function BasicInfoStep() {
   const [isDragging, setIsDragging] = useState(false);
   const [mapError, setMapError] = useState<string>('');
   const [showRoadview, setShowRoadview] = useState(false);
+  const [roadviewError, setRoadviewError] = useState<string>('');
 
   // GPS 좌표
   const initialLat = deviceInfo.latitude || deviceInfo.gps_latitude || 37.5665;
@@ -173,22 +174,33 @@ export function BasicInfoStep() {
       if (!roadviewRef.current) return;
 
       try {
-        // @ts-ignore - Roadview API가 window.kakao.maps에 포함됨
+        // @ts-ignore - Roadview API
         const roadviewInstance = new window.kakao.maps.Roadview(roadviewRef.current);
-
         const position = new window.kakao.maps.LatLng(currentLat, currentLng);
 
-        // RoadviewClient를 사용하여 가장 가까운 파노라마 찾기
         // @ts-ignore - RoadviewClient API
         const rvClient = new window.kakao.maps.RoadviewClient();
 
-        rvClient.getNearestPanoId(position, 50, (panoId: string) => {
-          // 파노라마 ID를 사용하여 로드뷰 설정
+        rvClient.getNearestPanoId(position, 50, (panoId: string | null) => {
+          console.log('로드뷰 파노라마 ID:', panoId);
+
+          if (!panoId) {
+            const errorMessage = '해당 위치에서 로드뷰를 사용할 수 없습니다';
+            console.warn(errorMessage);
+            setRoadviewError(errorMessage);
+            // 로드뷰 자동 닫기
+            setShowRoadview(false);
+            return;
+          }
+
+          // 에러 메시지 제거
+          setRoadviewError('');
           roadviewInstance.setPanoId(panoId, position);
         });
 
         // 로드뷰가 로드된 후 커스텀 오버레이 추가
         window.kakao.maps.event.addListener(roadviewInstance, 'init', () => {
+          console.log('로드뷰 init 이벤트 발생');
           try {
             // 컨테이너 생성
             const overlayContent = document.createElement('div');
@@ -210,35 +222,29 @@ export function BasicInfoStep() {
               flex-shrink: 0;
             `;
 
-            // SVG 네임스페이스 활용하여 하트 아이콘 생성
+            // SVG 네임스페이스 사용
             const svgNS = 'http://www.w3.org/2000/svg';
 
-            // 하트 SVG 생성
-            const heartSvg = document.createElementNS(svgNS, 'svg');
-            heartSvg.setAttribute('viewBox', '0 0 24 24');
-            heartSvg.setAttribute('width', '20');
-            heartSvg.setAttribute('height', '20');
-            heartSvg.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);';
+            // 단일 SVG 요소 생성 (하트 + 번개)
+            const svg = document.createElementNS(svgNS, 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('width', '32');
+            svg.setAttribute('height', '32');
+            svg.style.cssText = 'position: absolute;';
 
+            // 흰색 하트 path
             const heartPath = document.createElementNS(svgNS, 'path');
             heartPath.setAttribute('d', 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z');
             heartPath.setAttribute('fill', 'white');
-            heartSvg.appendChild(heartPath);
+            svg.appendChild(heartPath);
 
-            // 번개 SVG 생성
-            const boltSvg = document.createElementNS(svgNS, 'svg');
-            boltSvg.setAttribute('viewBox', '0 0 24 24');
-            boltSvg.setAttribute('width', '12');
-            boltSvg.setAttribute('height', '12');
-            boltSvg.style.cssText = 'position: absolute; bottom: 2px; right: 2px;';
-
+            // 녹색 번개 polygon
             const boltPolygon = document.createElementNS(svgNS, 'polygon');
             boltPolygon.setAttribute('points', '12,2 5,12 10,12 8,22 16,10 12,10 14,2');
             boltPolygon.setAttribute('fill', '#22c55e');
-            boltSvg.appendChild(boltPolygon);
+            svg.appendChild(boltPolygon);
 
-            circle.appendChild(heartSvg);
-            circle.appendChild(boltSvg);
+            circle.appendChild(svg);
 
             // 라벨 생성
             const label = document.createElement('div');
@@ -266,24 +272,9 @@ export function BasicInfoStep() {
             });
 
             customOverlay.setMap(roadviewInstance);
-
-            // 오버레이를 로드뷰 중앙에 배치하도록 viewpoint 조정
-            const projection = (roadviewInstance as any).getProjection();
-            if (projection) {
-              const viewpoint = projection.viewpointFromCoords(position, 0);
-              roadviewInstance.setViewpoint(viewpoint);
-            }
+            console.log('오버레이 설정 완료');
           } catch (error) {
-            console.error('CustomOverlay 설정 오류:', error);
-          }
-        });
-
-        // 도로명 주소 표시
-        const geocoder = new window.kakao.maps.services.Geocoder();
-        geocoder.coord2Address(currentLng, currentLat, (result: any, status: string) => {
-          if (status === (window.kakao.maps.services as any).Status.OK) {
-            const address = result[0]?.road_address?.address_name || result[0]?.address?.address_name || '';
-            console.log('로드뷰 위치:', address);
+            console.error('오버레이 설정 오류:', error);
           }
         });
       } catch (error) {
@@ -912,12 +903,27 @@ export function BasicInfoStep() {
           {/* 로드뷰 섹션 또는 GPS 확인 버튼 */}
           {showRoadview ? (
             <div className="relative bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-700">
-              <div
-                ref={roadviewRef}
-                className="w-full h-64 bg-gray-900"
-              />
+              {roadviewError ? (
+                <div className="w-full h-64 bg-gray-900 flex flex-col items-center justify-center p-4">
+                  <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-gray-400 text-sm">{roadviewError}</p>
+                    <p className="text-gray-500 text-xs mt-2">이 위치는 로드뷰 서비스 지역이 아닙니다</p>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  ref={roadviewRef}
+                  className="w-full h-64 bg-gray-900"
+                />
+              )}
               <button
-                onClick={() => setShowRoadview(false)}
+                onClick={() => {
+                  setShowRoadview(false);
+                  setRoadviewError('');
+                }}
                 className="absolute top-2 right-2 z-10 text-gray-400 hover:text-gray-200 p-0.5 transition-colors bg-gray-900/80 rounded-lg backdrop-blur-sm"
                 title="로드뷰 닫기"
               >
