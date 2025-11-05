@@ -1,0 +1,91 @@
+name: Emergency Fix - Session Status Enum
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-enum:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Fix Database Enum Type
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          cd /var/www/aedpics
+
+          echo "=== Step 1: Check current database state ==="
+          PGPASSWORD="${DATABASE_URL##*@*:}" psql \
+            -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com \
+            -U aedpics_admin \
+            -d aedpics_production \
+            -c "SELECT data_type, udt_name FROM information_schema.columns WHERE table_schema = 'aedpics' AND table_name = 'inspection_sessions' AND column_name = 'status';"
+
+          echo ""
+          echo "=== Step 2: Create enum and convert column type ==="
+          cat > /tmp/fix-enum.sql << 'SQLEOF'
+-- Create enum if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'session_status' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'aedpics')) THEN
+        CREATE TYPE "aedpics"."session_status" AS ENUM ('active', 'in_progress', 'completed', 'cancelled', 'paused');
+        RAISE NOTICE 'Created session_status enum';
+    ELSE
+        RAISE NOTICE 'session_status enum already exists';
+    END IF;
+END $$;
+
+-- Convert column type
+DO $$
+DECLARE
+    v_column_type TEXT;
+BEGIN
+    SELECT data_type INTO v_column_type
+    FROM information_schema.columns
+    WHERE table_schema = 'aedpics' AND table_name = 'inspection_sessions' AND column_name = 'status';
+
+    IF v_column_type IN ('character varying', 'text') THEN
+        ALTER TABLE "aedpics"."inspection_sessions" ALTER COLUMN "status" TYPE "aedpics"."session_status" USING "status"::text::"aedpics"."session_status";
+        RAISE NOTICE 'Converted column to enum';
+    ELSE
+        RAISE NOTICE 'Column is already enum type: %', v_column_type;
+    END IF;
+END $$;
+SQLEOF
+
+          PGPASSWORD="${DATABASE_URL##*@*:}" psql \
+            -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com \
+            -U aedpics_admin \
+            -d aedpics_production \
+            -f /tmp/fix-enum.sql
+
+          echo ""
+          echo "=== Step 3: Verify fix ==="
+          PGPASSWORD="${DATABASE_URL##*@*:}" psql \
+            -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com \
+            -U aedpics_admin \
+            -d aedpics_production \
+            -c "SELECT data_type, udt_name FROM information_schema.columns WHERE table_schema = 'aedpics' AND table_name = 'inspection_sessions' AND column_name = 'status';"
+
+          rm /tmp/fix-enum.sql
+
+          echo ""
+          echo "=== Step 4: Regenerate Prisma Client ==="
+          npx prisma generate
+
+          echo ""
+          echo "=== Step 5: Reload PM2 ==="
+          pm2 reload ecosystem.config.cjs
+
+          echo ""
+          echo "=== Step 6: Wait and check logs ==="
+          sleep 10
+          pm2 logs --nostream --lines 20
+
+          echo ""
+          echo "=== Fix completed ==="
