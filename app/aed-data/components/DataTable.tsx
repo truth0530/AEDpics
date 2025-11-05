@@ -197,7 +197,15 @@ const DesktopTableRow = memo(({
           {device.last_inspection_date ? (
             // 디버깅용: 11-0010656 장비인 경우 원본 날짜와 파싱된 날짜 모두 표시
             device.equipment_serial === '11-0010656' ? (
-              `원본: ${device.last_inspection_date} → ${new Date(device.last_inspection_date).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}`
+              <>
+                {console.log('[DEBUG 11-0010656]', {
+                  last_inspection_date: device.last_inspection_date,
+                  recent_inspection_date: (device as any).recent_inspection_date,
+                  inspection_completed_at: (device as any).inspection_completed_at,
+                  all_fields: Object.keys(device).filter(k => k.includes('inspection') || k.includes('date'))
+                })}
+                {`AED원본: ${device.last_inspection_date} → ${new Date(device.last_inspection_date).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}`}
+              </>
             ) : (
               new Date(device.last_inspection_date).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')
             )
@@ -1207,7 +1215,7 @@ export function DataTable({
             <div className="text-center text-xs lg:text-sm xl:text-base">설치기관</div>
             <div className="text-center text-xs lg:text-sm xl:text-base">관리번호</div>
             <div className="text-center text-xs lg:text-sm xl:text-base">장비연번</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base whitespace-nowrap">최근점검일</div>
+            <div className="text-center text-xs lg:text-sm xl:text-base whitespace-nowrap">원본점검일<br/><span className="text-[8px] text-gray-500">(e-gen)</span></div>
             {showInspectionStatus && <div className="text-center text-xs lg:text-sm xl:text-base">상태</div>}
             <div className="text-center text-xs lg:text-sm xl:text-base">표출</div>
             <div className="text-center text-xs lg:text-sm xl:text-base">주소</div>
