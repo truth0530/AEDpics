@@ -765,7 +765,7 @@ export function BasicInfoStep() {
               const url = `https://map.kakao.com/link/roadview/${currentLat},${currentLng}`;
               window.open(url, 'kakaoRoadview');
             }}
-            className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isMapLoaded}
             title="로드뷰 보기"
           >
