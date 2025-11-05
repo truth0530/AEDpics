@@ -10,7 +10,7 @@ async function runMigration() {
 
     const migrationPath = join(
       __dirname,
-      '../prisma/migrations/20251105_fix_timezone_and_duplicate_index/migration.sql'
+      '../prisma/migrations/20251105_enum_and_index_improvements/migration.sql'
     );
 
     console.log(`Reading migration SQL from: ${migrationPath}`);

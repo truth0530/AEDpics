@@ -204,13 +204,13 @@ model inspection_schedule_entries {
 }
 
 model inspection_schedules {
-  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aed_data_id         Int?
   equipment_serial    String
-  scheduled_for       DateTime?      @db.Timestamptz(6)
+  scheduled_for       DateTime?       @db.Timestamptz(6)
   assignee_identifier String?
   priority            String?
-  status              String?        @default("pending")
+  status              schedule_status @default(scheduled)
   notes               String?
   created_by          String?        @db.Uuid
   created_at          DateTime?      @default(now()) @db.Timestamptz(6)
@@ -225,7 +225,7 @@ model inspection_sessions {
   id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   equipment_serial    String         @db.VarChar(255)
   inspector_id        String?        @db.Uuid
-  status              String?        @default("active")
+  status              session_status @default(active)
   current_step        Int?           @default(1)
   step_data           Json?
   started_at          DateTime?      @default(now()) @db.Timestamptz(6)
@@ -320,6 +320,7 @@ model inspection_field_comparisons {
   @@index([status_at_inspection], map: "idx_field_comparisons_status")
   @@index([improvement_status], map: "idx_field_comparisons_improvement")
   @@index([field_category], map: "idx_field_comparisons_category")
+  @@index([equipment_serial, improvement_status, inspection_time(sort: Desc)], map: "idx_field_comparisons_equipment_improvement_time")
   @@index([inspection_time], map: "idx_field_comparisons_time")
   @@index([equipment_serial, field_category, improvement_status], map: "idx_field_comparisons_query")
 }
@@ -709,6 +710,7 @@ model user_profiles {
   @@index([email], map: "idx_user_profiles_email")
   @@index([organization_name], map: "idx_user_profiles_organization_name")
   @@index([role], map: "idx_user_profiles_role")
+  @@index([role, is_active], map: "idx_user_profiles_role_active")
   @@index([created_at, role], map: "idx_user_profiles_created_at_role")
   @@index([region_code, role], map: "idx_user_profiles_region_role")
 }
@@ -902,6 +904,7 @@ enum schedule_type {
 
 enum session_status {
   active
+  in_progress
   completed
   cancelled
   paused
