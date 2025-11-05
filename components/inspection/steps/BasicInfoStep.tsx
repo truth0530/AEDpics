@@ -193,9 +193,20 @@ export function BasicInfoStep() {
           const overlayContent = document.createElement('div');
           overlayContent.innerHTML = `
             <div class="flex flex-col items-center">
-              <div class="bg-red-600 rounded-full p-2 shadow-lg border-2 border-white">
-                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-13h4v4h-4zm0 6h4v4h-4z"/>
+              <div class="bg-green-500 rounded-full p-2 shadow-lg border-2 border-white" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <!-- 녹색 하트 + 흰색 번개 시그니처 로고 -->
+                  <defs>
+                    <mask id="lightning-mask">
+                      <rect width="24" height="24" fill="white"/>
+                      <!-- 번개 모양 -->
+                      <polygon points="12,2 5,12 10,12 8,22 16,10 12,10 14,2" fill="black"/>
+                    </mask>
+                  </defs>
+                  <!-- 하트 배경 -->
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="white" mask="url(#lightning-mask)"/>
+                  <!-- 번개 -->
+                  <polygon points="12,2 5,12 10,12 8,22 16,10 12,10 14,2" fill="white"/>
                 </svg>
               </div>
               <div class="text-xs font-semibold text-white bg-gray-900 px-2 py-1 rounded mt-1 whitespace-nowrap">자동심장충격기</div>
@@ -841,7 +852,7 @@ export function BasicInfoStep() {
             {/* 로드뷰 버튼 */}
             <button
               onClick={() => setShowRoadview(!showRoadview)}
-              className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!isMapLoaded}
               title="로드뷰 펼치기"
             >
