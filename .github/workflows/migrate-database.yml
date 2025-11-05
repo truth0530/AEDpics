@@ -36,10 +36,11 @@ jobs:
           echo ""
 
           echo "Pulling latest code..."
-          git pull origin main
+          git fetch origin main
+          git reset --hard origin/main
 
           echo "Installing dependencies..."
-          npm ci --production=false
+          npm install
 
           echo "Generating Prisma Client..."
           npx prisma generate
