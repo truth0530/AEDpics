@@ -90,7 +90,6 @@ model aed_data {
   @@index([management_number], map: "idx_aed_data_management_number")
   @@index([sido, gugun, category_1, operation_status], map: "idx_aed_data_region_with_filters")
   @@index([search_vector], map: "idx_aed_data_search_vector", type: Gin)
-  @@index([equipment_serial], map: "idx_aed_data_serial")
   @@index([sido, gugun], map: "idx_aed_data_sido_gugun")
   @@index([sido, manufacturer], map: "idx_aed_data_sido_manufacturer")
 }
@@ -128,7 +127,7 @@ model gps_analysis_logs {
   execution_time_ms     Int?
   status                String?  @db.VarChar(20)
   error_message         String?
-  created_at            DateTime @default(now()) @db.Timestamp(6)
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([analysis_date], map: "idx_gps_analysis_date")
 }
@@ -147,10 +146,10 @@ model gps_issues {
   distance_km       Decimal?       @db.Decimal(10, 2)
   metadata          Json?
   is_resolved       Boolean        @default(false)
-  resolved_at       DateTime?      @db.Timestamp(6)
+  resolved_at       DateTime?      @db.Timestamptz(6)
   resolved_by       String?        @db.VarChar(255)
-  created_at        DateTime       @default(now()) @db.Timestamp(6)
-  updated_at        DateTime       @default(now()) @db.Timestamp(6)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
   aed_data          aed_data       @relation(fields: [aed_data_id], references: [id], onDelete: Cascade)
 
   @@index([aed_data_id], map: "idx_gps_issues_aed_id")

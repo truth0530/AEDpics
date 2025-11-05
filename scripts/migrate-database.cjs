@@ -10,7 +10,7 @@ async function runMigration() {
 
     const migrationPath = join(
       __dirname,
-      '../prisma/migrations/20251105_add_organization_change_requests/migration.sql'
+      '../prisma/migrations/20251105_fix_timezone_and_duplicate_index/migration.sql'
     );
 
     console.log(`Reading migration SQL from: ${migrationPath}`);
@@ -63,19 +63,40 @@ async function runMigration() {
 
     console.log('\n✓ Migration completed successfully');
 
-    // Verify table creation
-    const result = await prisma.$queryRaw`
-      SELECT tablename
-      FROM pg_tables
-      WHERE schemaname = 'aedpics'
-        AND tablename = 'organization_change_requests'
+    // Verify timezone changes
+    const timezoneCheck = await prisma.$queryRaw`
+      SELECT
+        column_name,
+        data_type
+      FROM information_schema.columns
+      WHERE table_schema = 'aedpics'
+        AND (
+          (table_name = 'gps_issues' AND column_name IN ('resolved_at', 'created_at', 'updated_at'))
+          OR (table_name = 'gps_analysis_logs' AND column_name = 'created_at')
+        )
     `;
 
-    if (result.length > 0) {
-      console.log('✓ Table organization_change_requests verified');
+    const allTimestamptz = timezoneCheck.every(col => col.data_type === 'timestamp with time zone');
+    if (allTimestamptz) {
+      console.log('✓ All timestamp columns converted to timestamptz');
     } else {
-      console.error('⚠ Table verification failed');
-      process.exit(1);
+      console.warn('⚠ Some columns may not be timestamptz');
+      console.log(timezoneCheck);
+    }
+
+    // Verify index removal
+    const indexCheck = await prisma.$queryRaw`
+      SELECT indexname
+      FROM pg_indexes
+      WHERE schemaname = 'aedpics'
+        AND tablename = 'aed_data'
+        AND indexname = 'idx_aed_data_serial'
+    `;
+
+    if (indexCheck.length === 0) {
+      console.log('✓ Duplicate index removed successfully');
+    } else {
+      console.warn('⚠ Duplicate index may still exist');
     }
 
     console.log('\n=== Migration Complete ===');
