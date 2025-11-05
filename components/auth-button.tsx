@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 /**
  * Auth Button Component
  *
- * TODO: Supabase에서 NextAuth로 전환 완료
+ * NextAuth 기반 인증 버튼 (NCP 마이그레이션 완료)
  */
 export async function AuthButton() {
   const session = await getServerSession(authOptions);
