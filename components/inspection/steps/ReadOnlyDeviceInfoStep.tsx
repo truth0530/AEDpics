@@ -89,7 +89,7 @@ export function ReadOnlyDeviceInfoStep({ stepData, inspection }: ReadOnlyDeviceI
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
         <h4 className="text-sm font-semibold text-gray-200 mb-3">소모품 정보</h4>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* 배터리 유효기간 */}
           <div className="space-y-1">
             <div className="text-[10px] font-medium text-gray-400">배터리 유효기간</div>
@@ -113,10 +113,18 @@ export function ReadOnlyDeviceInfoStep({ stepData, inspection }: ReadOnlyDeviceI
               {formatDate(deviceInfo.manufacturing_date)}
             </div>
           </div>
+
+          {/* 작동상태 */}
+          <div className="space-y-1">
+            <div className="text-[10px] font-medium text-gray-400">작동상태</div>
+            <div className="text-xs font-medium text-gray-100">
+              {deviceInfo.operation_status || '-'}
+            </div>
+          </div>
         </div>
 
         {/* 소모품 상태 표시 */}
-        {(deviceInfo.battery_expiry_date_matched || deviceInfo.pad_expiry_date_matched || deviceInfo.manufacturing_date_matched) && (
+        {(deviceInfo.battery_expiry_date_matched || deviceInfo.pad_expiry_date_matched || deviceInfo.manufacturing_date_matched || deviceInfo.operation_status_matched) && (
           <div className="mt-3 rounded-lg px-2.5 py-1.5 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
             <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

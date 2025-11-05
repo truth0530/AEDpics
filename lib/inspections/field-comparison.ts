@@ -208,6 +208,26 @@ export async function analyzeInspectionFields(
       });
     }
 
+    // 제조일자
+    if (supplies.manufacturing_date !== undefined) {
+      comparisons.push({
+        field_name: 'manufacturing_date',
+        field_category: 'device',
+        inspection_value: formatDate(supplies.manufacturing_date),
+        aed_data_value: formatDate(aedData.manufacturing_date),
+      });
+    }
+
+    // 작동상태
+    if (supplies.operation_status !== undefined) {
+      comparisons.push({
+        field_name: 'operation_status',
+        field_category: 'device',
+        inspection_value: normalizeValue(supplies.operation_status),
+        aed_data_value: normalizeValue(aedData.operation_status),
+      });
+    }
+
     // 각 비교 항목에 대해 상태 및 심각도 결정 후 저장
     const records = comparisons.map(comp => {
       const isGood = isEqual(comp.inspection_value, comp.aed_data_value);

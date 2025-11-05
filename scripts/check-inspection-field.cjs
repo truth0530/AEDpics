@@ -73,30 +73,76 @@ function main() {
 
   const projectRoot = path.join(__dirname, '..');
 
-  // 1. BasicInfoStep.tsx
-  log('1️⃣  BasicInfoStep.tsx 검사 중...', BLUE);
-  checkFile(
-    path.join(projectRoot, 'components/inspection/steps/BasicInfoStep.tsx'),
-    [
-      {
-        name: 'FIELDS 또는 DEVICE_INFO_FIELDS 배열에 필드 정의',
-        test: (content) => {
-          const fieldsRegex = new RegExp(`{\\s*key:\\s*['"\`]${fieldName}['"\`]`);
-          return fieldsRegex.test(content);
+  // 필드 타입 구분 (supply 필드는 DeviceInfoStep에 있음)
+  const supplyFields = ['battery_expiry_date', 'pad_expiry_date', 'manufacturing_date', 'operation_status'];
+  const isSupplyField = supplyFields.includes(fieldName);
+
+  // 필드 별칭 (Prisma 스키마와 코드에서 다른 이름을 사용하는 경우)
+  const fieldAliases = {
+    'pad_expiry_date': ['pad_expiry_date', 'patch_expiry_date']
+  };
+  const fieldNames = fieldAliases[fieldName] || [fieldName];
+
+  // 1. BasicInfoStep.tsx 또는 DeviceInfoStep.tsx
+  if (isSupplyField) {
+    log('1️⃣  DeviceInfoStep.tsx 검사 중...', BLUE);
+    checkFile(
+      path.join(projectRoot, 'components/inspection/steps/DeviceInfoStep.tsx'),
+      [
+        {
+          name: 'SUPPLY_FIELDS 배열에 필드 정의 또는 직접 구현',
+          test: (content) => {
+            return fieldNames.some(name => {
+              const fieldsRegex = new RegExp(`{\\s*key:\\s*['"\`]${name}['"\`]`);
+              const directImpl = new RegExp(`(deviceInfo|sessionDeviceInfo)\\.${name}`);
+              return fieldsRegex.test(content) || directImpl.test(content);
+            });
+          },
+          location: '27-31번 라인 또는 직접 구현'
         },
-        location: '16-28번 라인'
-      },
-      {
-        name: 'UI 렌더링 (필드명 표시)',
-        test: (content) => {
-          // 필드명이 deviceInfo 또는 basicInfo에서 참조되는지 확인
-          const regex = new RegExp(`(deviceInfo|basicInfo)\\.${fieldName}`);
-          return regex.test(content);
+        {
+          name: 'UI 렌더링 (필드명 표시)',
+          test: (content) => {
+            // field.key 패턴도 감지
+            const fieldKeyPattern = /field\.key/;
+            const hasFieldKeyUsage = fieldKeyPattern.test(content);
+
+            // 또는 직접 참조 패턴
+            const directRef = fieldNames.some(name => {
+              const regex = new RegExp(`(deviceInfo|sessionDeviceInfo)\\.${name}`);
+              return regex.test(content);
+            });
+
+            return hasFieldKeyUsage || directRef;
+          },
+          location: '소모품 정보 섹션'
+        }
+      ]
+    );
+  } else {
+    log('1️⃣  BasicInfoStep.tsx 검사 중...', BLUE);
+    checkFile(
+      path.join(projectRoot, 'components/inspection/steps/BasicInfoStep.tsx'),
+      [
+        {
+          name: 'FIELDS 또는 DEVICE_INFO_FIELDS 배열에 필드 정의',
+          test: (content) => {
+            const fieldsRegex = new RegExp(`{\\s*key:\\s*['"\`]${fieldName}['"\`]`);
+            return fieldsRegex.test(content);
+          },
+          location: '16-28번 라인'
         },
-        location: '567-598번 라인'
-      }
-    ]
-  );
+        {
+          name: 'UI 렌더링 (필드명 표시)',
+          test: (content) => {
+            const regex = new RegExp(`(deviceInfo|basicInfo)\\.${fieldName}`);
+            return regex.test(content);
+          },
+          location: '567-598번 라인'
+        }
+      ]
+    );
+  }
 
   // 2. InspectionSummaryStep.tsx
   log('\n2️⃣  InspectionSummaryStep.tsx 검사 중...', BLUE);
@@ -106,8 +152,11 @@ function main() {
       {
         name: 'BasicInfoData 인터페이스에 필드 타입 정의',
         test: (content) => {
-          const regex = new RegExp(`${fieldName}\\??:\\s*(string|number|boolean)`);
-          return regex.test(content);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`${name}\\??:\\s*(string|number|boolean)`);
+            return regex.test(content);
+          });
         },
         location: '24-38번 라인'
       },
@@ -115,30 +164,49 @@ function main() {
         name: 'basicInfoSummary 로직에 필드 처리',
         test: (content) => {
           // matched 또는 modified 로직에 필드가 있는지 확인
-          const regex = new RegExp(`(label|key):\\s*['"\`][^'"\`]*${fieldName}`);
-          return regex.test(content) || content.includes(`basicInfo.${fieldName}`);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`(label|key):\\s*['"\`][^'"\`]*${name}`);
+            return regex.test(content) || content.includes(`basicInfo.${name}`);
+          });
         },
         location: '118-202번 라인'
       }
     ]
   );
 
-  // 3. ReadOnlyBasicInfoStep.tsx
-  log('\n3️⃣  ReadOnlyBasicInfoStep.tsx 검사 중...', BLUE);
-  checkFile(
-    path.join(projectRoot, 'components/inspection/steps/ReadOnlyBasicInfoStep.tsx'),
-    [
-      {
-        name: 'UI 렌더링 (필드 표시)',
-        test: (content) => {
-          // inspection.step_data?.['basicInfo']?.field_name 또는 basicInfo.field_name 패턴 찾기
-          const regex = new RegExp(`(inspection\\.step_data.*basicInfo.*${fieldName}|basicInfo\\.${fieldName})`);
-          return regex.test(content);
-        },
-        location: '45-70번 라인'
-      }
-    ]
-  );
+  // 3. ReadOnlyBasicInfoStep.tsx 또는 ReadOnlyDeviceInfoStep.tsx
+  if (isSupplyField) {
+    log('\n3️⃣  ReadOnlyDeviceInfoStep.tsx 검사 중...', BLUE);
+    checkFile(
+      path.join(projectRoot, 'components/inspection/steps/ReadOnlyDeviceInfoStep.tsx'),
+      [
+        {
+          name: 'UI 렌더링 (필드 표시)',
+          test: (content) => {
+            const regex = new RegExp(`(inspection\\.step_data.*deviceInfo.*${fieldName}|deviceInfo\\.${fieldName})`);
+            return regex.test(content);
+          },
+          location: 'deviceInfo 섹션'
+        }
+      ]
+    );
+  } else {
+    log('\n3️⃣  ReadOnlyBasicInfoStep.tsx 검사 중...', BLUE);
+    checkFile(
+      path.join(projectRoot, 'components/inspection/steps/ReadOnlyBasicInfoStep.tsx'),
+      [
+        {
+          name: 'UI 렌더링 (필드 표시)',
+          test: (content) => {
+            const regex = new RegExp(`(inspection\\.step_data.*basicInfo.*${fieldName}|basicInfo\\.${fieldName})`);
+            return regex.test(content);
+          },
+          location: '45-70번 라인'
+        }
+      ]
+    );
+  }
 
   // 4. field-comparison.ts
   log('\n4️⃣  field-comparison.ts 검사 중...', BLUE);
@@ -149,8 +217,11 @@ function main() {
         name: 'analyzeInspectionFields 함수에 비교 로직',
         test: (content) => {
           // comparisons.push 안에 field_name이 있는지 확인
-          const regex = new RegExp(`field_name:\\s*['"\`]${fieldName}['"\`]`);
-          return regex.test(content);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`field_name:\\s*['"\`]${name}['"\`]`);
+            return regex.test(content);
+          });
         },
         location: '102-200번 라인'
       }
@@ -165,8 +236,11 @@ function main() {
       {
         name: 'FIELD_NAME_LABELS에 한글 레이블',
         test: (content) => {
-          const regex = new RegExp(`${fieldName}:\\s*['"\`][^'"\`]+['"\`]`);
-          return regex.test(content);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`${name}:\\s*['"\`][^'"\`]+['"\`]`);
+            return regex.test(content);
+          });
         },
         location: '60-70번 라인'
       }
@@ -181,8 +255,11 @@ function main() {
       {
         name: 'FIELD_NAME_LABELS에 한글 레이블',
         test: (content) => {
-          const regex = new RegExp(`${fieldName}:\\s*['"\`][^'"\`]+['"\`]`);
-          return regex.test(content);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`${name}:\\s*['"\`][^'"\`]+['"\`]`);
+            return regex.test(content);
+          });
         },
         location: '60-70번 라인'
       }
@@ -200,8 +277,11 @@ function main() {
           // aed_data 모델 내에서 필드 찾기
           const aedDataMatch = content.match(/model aed_data \{[\s\S]*?\n\}/);
           if (!aedDataMatch) return false;
-          const regex = new RegExp(`\\s${fieldName}\\s+`);
-          return regex.test(aedDataMatch[0]);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`\\s${name}\\s+`);
+            return regex.test(aedDataMatch[0]);
+          });
         },
         location: 'aed_data 모델'
       }
@@ -219,8 +299,11 @@ function main() {
           // fieldLabels 객체 안에서 필드 찾기
           const fieldLabelsMatch = content.match(/const fieldLabels[:\s]*Record<string,\s*string>\s*=\s*\{[\s\S]*?\};/);
           if (!fieldLabelsMatch) return false;
-          const regex = new RegExp(`${fieldName}:\\s*['"\`][^'"\`]+['"\`]`);
-          return regex.test(fieldLabelsMatch[0]);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`${name}:\\s*['"\`][^'"\`]+['"\`]`);
+            return regex.test(fieldLabelsMatch[0]);
+          });
         },
         location: '140-146번 라인'
       }
@@ -238,8 +321,11 @@ function main() {
           // FIELD_NAME_LABELS 객체 안에서 필드 찾기
           const labelsMatch = content.match(/const FIELD_NAME_LABELS[:\s]*Record<string,\s*string>\s*=\s*\{[\s\S]*?\};/);
           if (!labelsMatch) return false;
-          const regex = new RegExp(`${fieldName}:\\s*['"\`][^'"\`]+['"\`]`);
-          return regex.test(labelsMatch[0]);
+          // 필드 별칭 지원
+          return fieldNames.some(name => {
+            const regex = new RegExp(`${name}:\\s*['"\`][^'"\`]+['"\`]`);
+            return regex.test(labelsMatch[0]);
+          });
         },
         location: '40-50번 라인'
       }

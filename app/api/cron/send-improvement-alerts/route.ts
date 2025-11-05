@@ -144,6 +144,8 @@ export async function GET(request: NextRequest) {
           institution_contact: '연락처',
           installation_institution: '설치기관',
           external_display: '외부표출',
+          manufacturing_date: '제조일자',
+          operation_status: '작동상태',
         };
 
         return `

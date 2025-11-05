@@ -54,6 +54,7 @@ interface DeviceInfoData {
   battery_expiry_date?: string;
   pad_expiry_date?: string;
   manufacturing_date?: string;
+  operation_status?: string;
   serial_number_photo?: string;
   battery_mfg_date_photo?: string;
   device_mfg_date_photo?: string;
@@ -255,11 +256,16 @@ export function InspectionSummaryStep() {
         label: '제조일자',
         corrected: devInfo.manufacturing_date || deviceInfo.manufacturing_date || '-',
       });
+      matched.push({
+        label: '작동상태',
+        corrected: devInfo.operation_status || deviceInfo.operation_status || '-',
+      });
     } else if (devInfo.supplies_matched === 'edited') {
       const supplyFields = [
         { key: 'battery_expiry_date', label: '배터리 유효기간', dbKey: 'battery_expiry_date' },
         { key: 'pad_expiry_date', label: '패드 유효기간', dbKey: 'patch_expiry_date' },
         { key: 'manufacturing_date', label: '제조일자', dbKey: 'manufacturing_date' },
+        { key: 'operation_status', label: '작동상태', dbKey: 'operation_status' },
       ];
 
       supplyFields.forEach(field => {

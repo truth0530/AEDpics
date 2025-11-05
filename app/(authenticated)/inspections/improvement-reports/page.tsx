@@ -68,6 +68,8 @@ const FIELD_NAME_LABELS: Record<string, string> = {
   model_name: '모델명',
   serial_number: '시리얼 번호',
   external_display: '외부표출',
+  manufacturing_date: '제조일자',
+  operation_status: '작동상태',
 };
 
 export default function ImprovementReportsPage() {
