@@ -200,18 +200,18 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
 
       {/* 일괄 적용 버튼 (24시간 미선택 시만 표시) */}
       {!value.is24hours && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex gap-2 flex-nowrap">
           <button
             type="button"
             onClick={applyWeekdayBatch}
-            className="px-2 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="flex-1 px-1.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             월~금 일괄
           </button>
           <button
             type="button"
             onClick={applyWeekendBatch}
-            className="px-2 py-1.5 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+            className="flex-1 px-1.5 py-1 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
           >
             토,공휴일
           </button>
