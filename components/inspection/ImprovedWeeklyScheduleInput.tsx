@@ -135,37 +135,46 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
     onChange(newSchedule);
   };
 
-  // 시간 형식 검증 및 포맷팅
+  // 시간 형식 검증 및 포맷팅 (실시간 변환)
   const formatTimeInput = (input: string): string => {
     // 숫자만 추출
     const digitsOnly = input.replace(/[^0-9]/g, '');
 
-    // 8자리 숫자면 자동으로 HH:MM~HH:MM 형태로 변환
-    if (digitsOnly.length === 8) {
-      const startHour = digitsOnly.substring(0, 2);
-      const startMin = digitsOnly.substring(2, 4);
-      const endHour = digitsOnly.substring(4, 6);
-      const endMin = digitsOnly.substring(6, 8);
-      return `${startHour}:${startMin}~${endHour}:${endMin}`;
-    }
-
-    // 8자리보다 적으면 입력 중이므로 숫자만 반환
-    if (digitsOnly.length < 8) {
+    // 4자리 미만: 숫자만 반환
+    if (digitsOnly.length < 4) {
       return digitsOnly;
     }
 
-    // 기존 형식 유지
-    const cleaned = input.replace(/[^0-9:~]/g, '');
-    if (cleaned.includes('~')) {
-      const parts = cleaned.split('~');
-      if (parts.length === 2) {
-        const start = parts[0].replace(/[^0-9:]/g, '');
-        const end = parts[1].replace(/[^0-9:]/g, '');
-        return `${start}~${end}`;
+    // 4자리: HH:MM 형태로 변환
+    if (digitsOnly.length === 4) {
+      const hour = digitsOnly.substring(0, 2);
+      const min = digitsOnly.substring(2, 4);
+      return `${hour}:${min}`;
+    }
+
+    // 4자리 초과 8자리 미만: HH:MM~ 또는 HH:MM~H 형태
+    if (digitsOnly.length < 8) {
+      const startHour = digitsOnly.substring(0, 2);
+      const startMin = digitsOnly.substring(2, 4);
+      const endPart = digitsOnly.substring(4);
+
+      // 끝 시간의 시 부분만 있으면 시:분 형태로 포맷팅
+      if (endPart.length <= 2) {
+        return `${startHour}:${startMin}~${endPart}`;
+      } else {
+        // 끝 시간의 시:분 형태로 포맷팅
+        const endHour = endPart.substring(0, 2);
+        const endMin = endPart.substring(2, 4);
+        return `${startHour}:${startMin}~${endHour}:${endMin}`;
       }
     }
 
-    return cleaned;
+    // 8자리 이상: HH:MM~HH:MM 형태로 변환
+    const startHour = digitsOnly.substring(0, 2);
+    const startMin = digitsOnly.substring(2, 4);
+    const endHour = digitsOnly.substring(4, 6);
+    const endMin = digitsOnly.substring(6, 8);
+    return `${startHour}:${startMin}~${endHour}:${endMin}`;
   };
 
   // 요일이 활성화되었는지 확인
@@ -207,13 +216,13 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               type="text"
               value={weekdayBatchTime}
               onChange={(e) => setWeekdayBatchTime(formatTimeInput(e.target.value))}
-              className="w-full px-2 py-1 text-center text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+              className="w-full px-3 py-2 text-center text-sm bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
               placeholder="04:30~25:30"
             />
             <button
               type="button"
               onClick={applyWeekdayBatch}
-              className="w-full px-2 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="w-full px-2 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               월~금 일괄
             </button>
@@ -224,13 +233,13 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               type="text"
               value={weekendBatchTime}
               onChange={(e) => setWeekendBatchTime(formatTimeInput(e.target.value))}
-              className="w-full px-2 py-1 text-center text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+              className="w-full px-3 py-2 text-center text-sm bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
               placeholder="04:30~25:30"
             />
             <button
               type="button"
               onClick={applyWeekendBatch}
-              className="w-full px-2 py-1.5 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+              className="w-full px-2 py-2 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
               토,공휴일
             </button>
@@ -255,7 +264,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
                   type="text"
                   value={getDayTime(key)}
                   onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
-                  className="w-16 px-0.5 py-0.5 text-center text-[7px] sm:text-xs bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:bg-gray-900 disabled:text-gray-600"
+                  className="w-20 px-1 py-1 text-center text-xs sm:text-sm bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:bg-gray-900 disabled:text-gray-600"
                   placeholder="04:30~25:30"
                   disabled={!isDayChecked(key)}
                 />
