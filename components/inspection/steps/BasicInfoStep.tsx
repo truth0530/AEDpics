@@ -124,23 +124,37 @@ export function BasicInfoStep() {
 
         // 마커 드래그 이벤트 처리
         window.kakao.maps.event.addListener(marker, 'dragstart', () => {
+          console.log('[Marker] dragstart');
           setIsDragging(true);
         });
 
         window.kakao.maps.event.addListener(marker, 'drag', () => {
           const position = marker.getPosition();
-          setCurrentLat(position.getLat());
-          setCurrentLng(position.getLng());
-          setHasMovedMarker(true);
+          const lat = position.getLat();
+          const lng = position.getLng();
+          console.log('[Marker] drag:', lat, lng);
+          // drag 이벤트에서는 콘솔 로그만 남김 (성능 최적화)
         });
 
         window.kakao.maps.event.addListener(marker, 'dragend', () => {
+          console.log('[Marker] dragend');
           setIsDragging(false);
           const position = marker.getPosition();
+          const lat = position.getLat();
+          const lng = position.getLng();
+          console.log('[Marker] final position:', lat, lng);
+
+          // dragend에서만 상태 업데이트 (한 번만)
+          setCurrentLat(lat);
+          setCurrentLng(lng);
+          setHasMovedMarker(true);
+
+          // 최신 basicInfo 객체 생성하여 업데이트
+          const currentBasicInfo = (useInspectionSessionStore.getState().stepData.basicInfo || {}) as Record<string, unknown>;
           updateStepData('basicInfo', {
-            ...basicInfo,
-            gps_latitude: position.getLat(),
-            gps_longitude: position.getLng(),
+            ...currentBasicInfo,
+            gps_latitude: lat,
+            gps_longitude: lng,
           });
         });
 
