@@ -180,13 +180,13 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
         <button
           type="button"
           onClick={handle24HoursToggle}
-          className={`px-3 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+          className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex-shrink-0 ${
             value.is24hours
               ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
               : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
           }`}
         >
-          24시간 사용 가능
+          24시간 사용가능
         </button>
         <input
           type="text"
@@ -194,7 +194,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
           onChange={(e) => handleBatchTimeChange(e.target.value)}
           placeholder="04:30~25:30"
           disabled={value.is24hours}
-          className="flex-1 px-2 py-2 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-32 px-2 py-1.5 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -220,16 +220,16 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
 
       {/* 요일별 시간 입력 - 체크박스 제거 (24시간 미선택 시만 표시) */}
       {!value.is24hours && (
-        <div className="grid grid-cols-4 gap-y-1.5 gap-x-1">
+        <div className="grid grid-cols-2 gap-y-1 gap-x-2">
           {DAYS.map(({ key, label }) => (
-            <div key={key} className="flex flex-col items-center gap-1">
-              <span className="text-xs text-gray-400 font-medium">{label}</span>
+            <div key={key} className="flex items-center gap-1">
+              <span className="text-xs text-gray-400 font-medium min-w-fit">{label}</span>
               <input
                 type="text"
                 value={getDayTime(key)}
                 onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
                 placeholder={getDayTime(key) ? '04:30~25:30' : '미운영'}
-                className={`w-full px-1 py-1.5 text-center text-xs bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20 ${
+                className={`flex-1 px-2 py-1.5 text-center text-xs bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20 ${
                   getDayTime(key) ? 'placeholder-gray-500' : 'placeholder-gray-600'
                 }`}
               />
