@@ -81,7 +81,6 @@ export default function InspectionCompletePage() {
   const stepData = inspection.step_data || {};
   const basicInfo = stepData.basicInfo || {};
   const deviceInfo = stepData.deviceInfo || {};
-  const supplies = stepData.supplies || {};  // supplies 정보 추출
   const storage = stepData.storage || {};
   const documentation = stepData.documentation || {};
 
@@ -164,19 +163,19 @@ export default function InspectionCompletePage() {
     }
   }
 
-  if (supplies.battery_matched === 'edited') {
+  if (deviceInfo.battery_expiry_date_matched === 'edited') {
     mismatches.push({
       field: '배터리 유효기간',
       original: originalData.battery_expiry_date || '-',
-      edited: supplies.battery_expiry_date || '-',
+      edited: deviceInfo.battery_expiry_date || '-',
     });
   }
 
-  if (supplies.pad_matched === 'edited') {
+  if (deviceInfo.pad_expiry_date_matched === 'edited') {
     mismatches.push({
       field: '패드 유효기간',
       original: originalData.pad_expiry_date || '-',
-      edited: supplies.pad_expiry_date || '-',
+      edited: deviceInfo.pad_expiry_date || '-',
     });
   }
 
@@ -191,14 +190,14 @@ export default function InspectionCompletePage() {
   if (deviceInfo.all_matched === true || deviceInfo.all_matched === 'edited') {
     matchedItems.push(`제조사: ${deviceInfo.manufacturer || originalData.manufacturer || '-'}  |  모델명: ${deviceInfo.model_name || originalData.model_name || '-'}  |  제조번호: ${deviceInfo.serial_number || originalData.serial_number || '-'}`);
   }
-  if (supplies.mfg_date_matched === true || supplies.mfg_date_matched === 'edited') {
-    matchedItems.push(`제조일자: ${supplies.manufacturing_date || originalData.manufacturing_date || '-'}`);
+  if (deviceInfo.manufacturing_date_matched === true || deviceInfo.manufacturing_date_matched === 'edited') {
+    matchedItems.push(`제조일자: ${deviceInfo.manufacturing_date || originalData.manufacturing_date || '-'}`);
   }
-  if (supplies.battery_matched === true || supplies.battery_matched === 'edited') {
-    matchedItems.push(`배터리 유효기간: ${supplies.battery_expiry_date || originalData.battery_expiry_date || '-'}`);
+  if (deviceInfo.battery_expiry_date_matched === true || deviceInfo.battery_expiry_date_matched === 'edited') {
+    matchedItems.push(`배터리 유효기간: ${deviceInfo.battery_expiry_date || originalData.battery_expiry_date || '-'}`);
   }
-  if (supplies.pad_matched === true || supplies.pad_matched === 'edited') {
-    matchedItems.push(`패드 유효기간: ${supplies.pad_expiry_date || originalData.patch_expiry_date || originalData.pad_expiry_date || '-'}`);
+  if (deviceInfo.pad_expiry_date_matched === true || deviceInfo.pad_expiry_date_matched === 'edited') {
+    matchedItems.push(`패드 유효기간: ${deviceInfo.pad_expiry_date || originalData.patch_expiry_date || originalData.pad_expiry_date || '-'}`);
   }
   if (storage.signage_selected && storage.signage_selected.length > 0) {
     matchedItems.push(`안내표지: ${storage.signage_selected.join(', ')}`);

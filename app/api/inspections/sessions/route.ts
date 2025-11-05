@@ -612,7 +612,6 @@ export const PATCH = async (request: NextRequest) => {
         // 2. inspection 레코드 생성 (finalData에서 추출)
         const basicInfo = finalData.basicInfo as any || {};
         const deviceInfo = finalData.deviceInfo as any || {};
-        const supplies = finalData.supplies as any || {};
         const storage = finalData.storage as any || {};
 
         const createdInspection = await tx.inspections.create({
@@ -621,22 +620,21 @@ export const PATCH = async (request: NextRequest) => {
             inspector_id: userId,
             inspection_date: new Date(),
             inspection_type: 'monthly',
-            battery_status: supplies.battery_matched === true ? 'good' : (supplies.battery_matched === 'edited' ? 'replaced' : 'not_checked'),
-            pad_status: supplies.pad_matched === true ? 'good' : (supplies.pad_matched === 'edited' ? 'replaced' : 'not_checked'),
+            battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' : (deviceInfo.battery_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
+            pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' : (deviceInfo.pad_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
             overall_status: (finalData.overallStatus as any) || 'pass',
             notes: payload.notes,
             original_data: session.device_info || {},  // 원본 장비 데이터 저장
             inspected_data: {
               basicInfo: basicInfo,
               deviceInfo: deviceInfo,
-              supplies: supplies,  // supplies 정보 추가
               storage: storage,
               confirmedLocation: basicInfo.address,
               confirmedManufacturer: deviceInfo.manufacturer,
               confirmedModelName: deviceInfo.model_name,
               confirmedSerialNumber: deviceInfo.serial_number,
-              batteryExpiryChecked: supplies.battery_expiry_date,
-              padExpiryChecked: supplies.pad_expiry_date
+              batteryExpiryChecked: deviceInfo.battery_expiry_date,
+              padExpiryChecked: deviceInfo.pad_expiry_date
             }
           }
         });

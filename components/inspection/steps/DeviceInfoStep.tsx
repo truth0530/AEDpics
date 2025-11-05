@@ -417,12 +417,46 @@ export function DeviceInfoStep() {
                 )}
 
                 {isMatched && (
-                  <div className="w-full rounded-lg px-3 py-2 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>{formattedCurrentValue || '정보 없음'}</span>
-                  </div>
+                  <>
+                    <div className="w-full rounded-lg px-3 py-2 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>{formattedCurrentValue || '정보 없음'}</span>
+                    </div>
+                    {/* 일치 확인했지만 만료 상태면 조치계획 필수 */}
+                    {currentIsExpired && formattedCurrentValue && (
+                      <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
+                        <div className="text-xs text-red-400 font-medium">유효기간 경과 - 조치계획</div>
+                        <select
+                          value={actionPlan}
+                          onChange={(e) => {
+                            handleChange('battery_action_plan', e.target.value);
+                            if (e.target.value !== '기타') {
+                              handleChange('battery_action_custom_reason', '');
+                            }
+                          }}
+                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        >
+                          <option value="">조치계획 선택</option>
+                          <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
+                          <option value="과태료 부과 예정">과태료 부과 예정</option>
+                          <option value="구매신청서 확인">구매신청서 확인</option>
+                          <option value="기타">기타</option>
+                        </select>
+
+                        {actionPlan === '기타' && (
+                          <input
+                            type="text"
+                            value={actionCustomReason}
+                            onChange={(e) => handleChange('battery_action_custom_reason', e.target.value)}
+                            placeholder="기타 조치계획을 입력하세요"
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {isEdited && (
@@ -458,8 +492,9 @@ export function DeviceInfoStep() {
                           className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                         >
                           <option value="">조치계획 선택</option>
-                          <option value="교체 예정">교체 예정</option>
-                          <option value="교체완료 다음 점검시 반영예정">교체완료 다음 점검시 반영예정</option>
+                          <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
+                          <option value="과태료 부과 예정">과태료 부과 예정</option>
+                          <option value="구매신청서 확인">구매신청서 확인</option>
                           <option value="기타">기타</option>
                         </select>
 
@@ -475,17 +510,36 @@ export function DeviceInfoStep() {
                       </div>
                     )}
 
-                    {/* 수정 후 유효 → 수정사유 입력 */}
+                    {/* 수정 후 유효 → 수정사유 선택 */}
                     {!currentIsExpired && formattedCurrentValue && originalIsExpired && (
                       <div className="space-y-2 pl-3 border-l-2 border-blue-500/50">
-                        <div className="text-xs text-blue-400 font-medium">수정사유</div>
-                        <input
-                          type="text"
+                        <div className="text-xs text-blue-400 font-medium">수정사유 (월별 점검자에게 안내)</div>
+                        <select
                           value={modificationReason}
-                          onChange={(e) => handleChange('battery_modification_reason', e.target.value)}
-                          placeholder="유효기간을 수정한 사유를 입력하세요"
-                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                        />
+                          onChange={(e) => {
+                            handleChange('battery_modification_reason', e.target.value);
+                            if (e.target.value !== '기타') {
+                              handleChange('battery_action_custom_reason', '');
+                            }
+                          }}
+                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                        >
+                          <option value="">수정사유 선택</option>
+                          <option value="교체완료 다음 점검시 반영예정">교체완료 다음 점검시 반영예정</option>
+                          <option value="구매신청서 확인, 다음 점검시 반영예정">구매신청서 확인, 다음 점검시 반영예정</option>
+                          <option value="이상없음 확인, 다음 점검시 반영안내">이상없음 확인, 다음 점검시 반영안내</option>
+                          <option value="기타">기타</option>
+                        </select>
+
+                        {modificationReason === '기타' && (
+                          <input
+                            type="text"
+                            value={actionCustomReason}
+                            onChange={(e) => handleChange('battery_action_custom_reason', e.target.value)}
+                            placeholder="기타 수정사유를 입력하세요"
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          />
+                        )}
                       </div>
                     )}
 
@@ -505,9 +559,10 @@ export function DeviceInfoStep() {
                     type="button"
                     onClick={() => {
                       if (isEditMode) {
-                        // 수정 모드에서 확인 - 원본과 같으면 경고
+                        // 수정 모드에서 확인 - 원본과 같으면 자동으로 일치 상태로 전환
                         if (isActuallyMatching) {
-                          return; // 원본과 같으면 아무 것도 하지 않음 (버튼 비활성화됨)
+                          updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
+                          return;
                         }
 
                         // 만료 상태 검증
@@ -582,6 +637,17 @@ export function DeviceInfoStep() {
                     type="button"
                     onClick={() => {
                       if (isActuallyMatching) {
+                        // 일치 확인 시에도 만료 상태면 조치계획 필수
+                        if (currentIsExpired && formattedCurrentValue) {
+                          if (!actionPlan) {
+                            alert('유효기간이 경과한 배터리에 대한 조치계획을 선택해주세요.');
+                            return;
+                          }
+                          if (actionPlan === '기타' && !actionCustomReason.trim()) {
+                            alert('기타 조치계획을 입력해주세요.');
+                            return;
+                          }
+                        }
                         updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
                       }
                     }}
@@ -757,12 +823,48 @@ export function DeviceInfoStep() {
                   )}
 
                   {isMatched && (
-                    <div className="w-full rounded-lg px-3 py-2 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
-                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span>{formattedCurrentValue || '정보 없음'}</span>
-                    </div>
+                    <>
+                      <div className="w-full rounded-lg px-3 py-2 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
+                        <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>{formattedCurrentValue || '정보 없음'}</span>
+                      </div>
+                      {/* 일치 확인했지만 만료 상태면 조치계획 필수 */}
+                      {currentIsExpired && formattedCurrentValue && (
+                        <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
+                          <div className="text-xs text-red-400 font-medium">
+                            {field.key === 'manufacturing_date' ? '제조일 10년 경과 - 조치계획' : '유효기간 경과 - 조치계획'}
+                          </div>
+                          <select
+                            value={actionPlan}
+                            onChange={(e) => {
+                              handleChange(actionPlanKey, e.target.value);
+                              if (e.target.value !== '기타') {
+                                handleChange(actionCustomReasonKey, '');
+                              }
+                            }}
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                          >
+                            <option value="">조치계획 선택</option>
+                            <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
+                            <option value="과태료 부과 예정">과태료 부과 예정</option>
+                            <option value="구매신청서 확인">구매신청서 확인</option>
+                            <option value="기타">기타</option>
+                          </select>
+
+                          {actionPlan === '기타' && (
+                            <input
+                              type="text"
+                              value={actionCustomReason}
+                              onChange={(e) => handleChange(actionCustomReasonKey, e.target.value)}
+                              placeholder="기타 조치계획을 입력하세요"
+                              className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {isEdited && (
@@ -800,8 +902,9 @@ export function DeviceInfoStep() {
                             className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                           >
                             <option value="">조치계획 선택</option>
-                            <option value="교체 예정">교체 예정</option>
-                            <option value="교체완료 다음 점검시 반영예정">교체완료 다음 점검시 반영예정</option>
+                            <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
+                            <option value="과태료 부과 예정">과태료 부과 예정</option>
+                            <option value="구매신청서 확인">구매신청서 확인</option>
                             <option value="기타">기타</option>
                           </select>
 
@@ -817,17 +920,36 @@ export function DeviceInfoStep() {
                         </div>
                       )}
 
-                      {/* 수정 후 유효 → 수정사유 입력 */}
+                      {/* 수정 후 유효 → 수정사유 선택 */}
                       {!currentIsExpired && formattedCurrentValue && originalIsExpired && (
                         <div className="space-y-2 pl-3 border-l-2 border-blue-500/50">
-                          <div className="text-xs text-blue-400 font-medium">수정사유</div>
-                          <input
-                            type="text"
+                          <div className="text-xs text-blue-400 font-medium">수정사유 (월별 점검자에게 안내)</div>
+                          <select
                             value={modificationReason}
-                            onChange={(e) => handleChange(modificationReasonKey, e.target.value)}
-                            placeholder={field.key === 'manufacturing_date' ? '제조일자를 수정한 사유를 입력하세요' : '유효기간을 수정한 사유를 입력하세요'}
-                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                          />
+                            onChange={(e) => {
+                              handleChange(modificationReasonKey, e.target.value);
+                              if (e.target.value !== '기타') {
+                                handleChange(actionCustomReasonKey, '');
+                              }
+                            }}
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          >
+                            <option value="">수정사유 선택</option>
+                            <option value="교체완료 다음 점검시 반영예정">교체완료 다음 점검시 반영예정</option>
+                            <option value="구매신청서 확인, 다음 점검시 반영예정">구매신청서 확인, 다음 점검시 반영예정</option>
+                            <option value="이상없음 확인, 다음 점검시 반영안내">이상없음 확인, 다음 점검시 반영안내</option>
+                            <option value="기타">기타</option>
+                          </select>
+
+                          {modificationReason === '기타' && (
+                            <input
+                              type="text"
+                              value={actionCustomReason}
+                              onChange={(e) => handleChange(actionCustomReasonKey, e.target.value)}
+                              placeholder="기타 수정사유를 입력하세요"
+                              className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                            />
+                          )}
                         </div>
                       )}
 
@@ -847,7 +969,9 @@ export function DeviceInfoStep() {
                       type="button"
                       onClick={() => {
                         if (isEditMode) {
+                          // 수정 모드에서 확인 - 원본과 같으면 자동으로 일치 상태로 전환
                           if (isActuallyMatching) {
+                            updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
                             return;
                           }
 
@@ -924,6 +1048,18 @@ export function DeviceInfoStep() {
                       type="button"
                       onClick={() => {
                         if (isActuallyMatching) {
+                          // 일치 확인 시에도 만료 상태면 조치계획 필수
+                          if (currentIsExpired && formattedCurrentValue) {
+                            if (!actionPlan) {
+                              const fieldName = field.key === 'manufacturing_date' ? '제조일 10년 경과' : '유효기간 경과';
+                              alert(`${fieldName}에 대한 조치계획을 선택해주세요.`);
+                              return;
+                            }
+                            if (actionPlan === '기타' && !actionCustomReason.trim()) {
+                              alert('기타 조치계획을 입력해주세요.');
+                              return;
+                            }
+                          }
                           updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
                         }
                       }}
@@ -984,12 +1120,46 @@ export function DeviceInfoStep() {
                 )}
 
                 {isMatched && (
-                  <div className="w-full rounded-lg px-3 py-2 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>{currentValue === '정상' ? '정상' : currentValue === '불량' ? '불량' : currentValue || '확인 필요'}</span>
-                  </div>
+                  <>
+                    <div className="w-full rounded-lg px-3 py-2 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>{currentValue === '정상' ? '정상' : currentValue === '불량' ? '불량' : currentValue || '확인 필요'}</span>
+                    </div>
+                    {/* 일치 확인했지만 불량 상태면 조치계획 필수 */}
+                    {currentValue === '불량' && (
+                      <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
+                        <div className="text-xs text-red-400 font-medium">불량 확인 - 조치계획</div>
+                        <select
+                          value={failureReason}
+                          onChange={(e) => {
+                            handleChange('operation_failure_reason', e.target.value);
+                            if (e.target.value !== '기타') {
+                              handleChange('operation_custom_reason', '');
+                            }
+                          }}
+                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        >
+                          <option value="">조치계획 선택</option>
+                          <option value="AS 요청">AS 요청</option>
+                          <option value="장비 교체 예정">장비 교체 예정</option>
+                          <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
+                          <option value="기타">기타</option>
+                        </select>
+
+                        {failureReason === '기타' && (
+                          <input
+                            type="text"
+                            value={customReason}
+                            onChange={(e) => handleChange('operation_custom_reason', e.target.value)}
+                            placeholder="기타 조치계획을 입력하세요"
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {isEdited && (
@@ -1002,45 +1172,69 @@ export function DeviceInfoStep() {
                 )}
 
                 {isEditMode && (
-                  <div className="space-y-2">
-                    <select
-                      value={currentValue}
-                      onChange={(e) => {
-                        handleChange('operation_status', e.target.value);
-                        // 정상 선택 시 사유 필드 초기화
-                        if (e.target.value === '정상') {
+                  <div className="space-y-3">
+                    {/* 정상/불량 선택 (라디오 버튼 방식) */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleChange('operation_status', '정상');
+                          // 정상 선택 시 사유 필드 초기화
                           handleChange('operation_failure_reason', '');
                           handleChange('operation_custom_reason', '');
-                        }
-                      }}
-                      className="w-full rounded-lg px-3 py-2 bg-gray-800 border-2 border-yellow-500/50 text-sm text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
-                    >
-                      <option value="">선택</option>
-                      <option value="정상">정상</option>
-                      <option value="불량">불량</option>
-                    </select>
+                        }}
+                        className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                          currentValue === '정상'
+                            ? 'border-green-500 bg-green-600/20 text-green-300'
+                            : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
+                        }`}
+                      >
+                        정상
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleChange('operation_status', '불량')}
+                        className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                          currentValue === '불량'
+                            ? 'border-red-500 bg-red-600/20 text-red-300'
+                            : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
+                        }`}
+                      >
+                        불량
+                      </button>
+                    </div>
 
-                    {/* 불량 선택 시 사유 입력 */}
+                    {/* 불량 선택 시 사유 버튼들 */}
                     {currentValue === '불량' && (
                       <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
                         <div className="text-xs text-red-400 font-medium">불량 사유</div>
-                        <select
-                          value={failureReason}
-                          onChange={(e) => {
-                            handleChange('operation_failure_reason', e.target.value);
-                            // 기타 아닌 경우 커스텀 사유 초기화
-                            if (e.target.value !== '기타') {
-                              handleChange('operation_custom_reason', '');
-                            }
-                          }}
-                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-                        >
-                          <option value="">사유 선택</option>
-                          <option value="전원 안켜짐">전원 안켜짐</option>
-                          <option value="안내 음성 불량">안내 음성 불량</option>
-                          <option value="배터리 경고음">배터리 경고음</option>
-                          <option value="기타">기타</option>
-                        </select>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { value: '전원 안켜짐', label: '전원 안켜짐' },
+                            { value: '안내 음성 불량', label: '안내 음성 불량' },
+                            { value: '배터리 경고음', label: '배터리 경고음' },
+                            { value: '기타', label: '기타' }
+                          ].map((reason) => (
+                            <button
+                              key={reason.value}
+                              type="button"
+                              onClick={() => {
+                                handleChange('operation_failure_reason', reason.value);
+                                // 기타 아닌 경우 커스텀 사유 초기화
+                                if (reason.value !== '기타') {
+                                  handleChange('operation_custom_reason', '');
+                                }
+                              }}
+                              className={`py-2 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                failureReason === reason.value
+                                  ? 'border-red-500 bg-red-600/20 text-red-300'
+                                  : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
+                              }`}
+                            >
+                              {reason.label}
+                            </button>
+                          ))}
+                        </div>
 
                         {/* 기타 선택 시 텍스트 입력 */}
                         {failureReason === '기타' && (
@@ -1071,7 +1265,9 @@ export function DeviceInfoStep() {
                     type="button"
                     onClick={() => {
                       if (isEditMode) {
+                        // 수정 모드에서 확인 - 원본과 같으면 자동으로 일치 상태로 전환
                         if (isActuallyMatching) {
+                          updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: true });
                           return;
                         }
                         // 불량 상태이지만 사유가 없으면 경고
@@ -1135,6 +1331,17 @@ export function DeviceInfoStep() {
                     type="button"
                     onClick={() => {
                       if (isActuallyMatching) {
+                        // 일치 확인 시 불량 상태면 조치계획 필수
+                        if (currentValue === '불량') {
+                          if (!failureReason) {
+                            alert('불량 상태에 대한 조치계획을 선택해주세요.');
+                            return;
+                          }
+                          if (failureReason === '기타' && !customReason.trim()) {
+                            alert('기타 조치계획을 입력해주세요.');
+                            return;
+                          }
+                        }
                         updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: true });
                       }
                     }}
@@ -1224,10 +1431,16 @@ function useMissingFields(deviceInfo: Record<string, any>) {
   return useMemo(() => {
     const missing: string[] = [];
 
+    // ✅ all_matched가 true 또는 'edited' 상태이면 모든 필수 항목이 확인된 것으로 간주
+    if (deviceInfo.all_matched === true || deviceInfo.all_matched === 'edited') {
+      return missing; // 빈 배열 반환 (필수 항목 없음)
+    }
+
+    // all_matched가 false 또는 undefined인 경우에만 개별 필드 검증
     if (!deviceInfo.serial_number?.trim()) {
       missing.push('장비 일련번호(시리얼번호)');
     }
 
     return missing;
-  }, [deviceInfo.serial_number]);
+  }, [deviceInfo.serial_number, deviceInfo.all_matched]);
 }
