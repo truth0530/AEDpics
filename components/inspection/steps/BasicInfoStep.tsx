@@ -747,7 +747,7 @@ export function BasicInfoStep() {
           {/* 현재 위치로 이동 버튼 - 지도 내 오버레이 */}
           <button
             onClick={moveToCurrentLocation}
-            className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded-lg text-xs transition-colors touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="absolute bottom-3 left-3 z-10 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded-lg text-xs transition-colors touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             disabled={!isMapLoaded}
             title="현재 위치로 지도 이동"
           >
