@@ -22,6 +22,26 @@ export const GET = apiHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // 사용자 정보 조회 (권한 확인)
+  const userProfile = await prisma.user_profiles.findUnique({
+    where: { id: session.user.id },
+    include: {
+      organizations: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          region_code: true,
+          city_code: true
+        }
+      }
+    }
+  });
+
+  if (!userProfile) {
+    return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+  }
+
   // 시간 범위 계산
   const cutoffDate = new Date();
   cutoffDate.setHours(cutoffDate.getHours() - hoursAgo);
@@ -37,7 +57,83 @@ export const GET = apiHandler(async (request: NextRequest) => {
     where.equipment_serial = equipmentSerial;
   }
 
+  // 권한별 필터링
+  if (userProfile.role === 'local_admin' && userProfile.organizations) {
+    // 보건소 담당자: 해당 지역의 점검만 조회
+    const regionCode = userProfile.organizations.region_code;
+    const cityCode = userProfile.organizations.city_code;
+
+    logger.info('InspectionHistory:GET', 'Local admin filtering', {
+      email: userProfile.email,
+      organization: userProfile.organizations.name,
+      regionCode,
+      cityCode
+    });
+
+    // AED 데이터와 조인하여 지역 필터링 - Prisma relation 필터링 사용
+    const aedFilter: any = {};
+
+    if (regionCode) {
+      // 시도 코드 매핑 (예: DAE -> 대구광역시)
+      const sidoMap: Record<string, string> = {
+        'SEL': '서울특별시',
+        'BUS': '부산광역시',
+        'DAE': '대구광역시',
+        'INC': '인천광역시',
+        'GWA': '광주광역시',
+        'DAJ': '대전광역시',
+        'ULS': '울산광역시',
+        'SEJ': '세종특별자치시',
+        'GYE': '경기도',
+        'GAN': '강원도',
+        'CHB': '충청북도',
+        'CHN': '충청남도',
+        'JEB': '전라북도',
+        'JEN': '전라남도',
+        'GYB': '경상북도',
+        'GYN': '경상남도',
+        'JEJ': '제주특별자치도'
+      };
+
+      const sido = sidoMap[regionCode];
+      if (sido) {
+        aedFilter.sido = sido;
+      }
+
+      // 시군구 필터링
+      if (cityCode && userProfile.organizations.name) {
+        // 조직명에서 시군구 추출 (예: "대구광역시 중구 보건소" -> "중구")
+        const nameParts = userProfile.organizations.name.split(' ');
+        const gugunIndex = nameParts.findIndex(part => part.includes('구') || part.includes('군') || part.includes('시'));
+        if (gugunIndex >= 0) {
+          const gugun = nameParts[gugunIndex];
+          aedFilter.gugun = gugun;
+        }
+      }
+
+      logger.info('InspectionHistory:GET', 'AED filter constructed', aedFilter);
+
+      // Prisma relation 필터링 적용
+      if (Object.keys(aedFilter).length > 0) {
+        where.aed_data = aedFilter;
+      }
+    }
+  } else if (userProfile.role === 'master' ||
+             userProfile.role === 'emergency_center_admin' ||
+             userProfile.role === 'ministry_admin' ||
+             userProfile.role === 'regional_admin' ||
+             userProfile.role === 'regional_emergency_center_admin' ||
+             userProfile.email?.endsWith('@nmc.or.kr')) {
+    // 전국 권한: 모든 데이터 조회 가능
+    // 추가 필터 없음
+  } else if (userProfile.role === 'temporary_inspector') {
+    // 점검자: 자신이 점검한 내역만 조회
+    where.inspector_id = session.user.id;
+  }
+
   try {
+    logger.info('InspectionHistory:GET', 'Query conditions', { where });
+
     const inspections = await prisma.inspections.findMany({
       where,
       include: {
@@ -59,6 +155,12 @@ export const GET = apiHandler(async (request: NextRequest) => {
       orderBy: {
         inspection_date: 'desc'
       }
+    });
+
+    logger.info('InspectionHistory:GET', `Found ${inspections.length} inspections`, {
+      userEmail: userProfile.email,
+      userRole: userProfile.role,
+      organization: userProfile.organizations?.name
     });
 
     // 응답 데이터 포맷팅
