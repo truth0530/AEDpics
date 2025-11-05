@@ -504,6 +504,109 @@ await sharp(buffer)
 
 **상세**: [docs/IMAGE_OPTIMIZATION_STRATEGY.md](docs/IMAGE_OPTIMIZATION_STRATEGY.md)
 
+### 12. 서버 디스크 공간 관리 (2025-11-05 사건)
+
+**문제**: 배포 실패 - ENOSPC: no space left on device
+```
+err: Error: ENOSPC: no space left on device, write
+Build failed! Rolling back...
+디스크 사용률: 100% (9.3G / 9.8G 사용)
+```
+
+**근본 원인**: 10GB 서버에서 빌드 캐시, node_modules, .next 누적으로 디스크 포화
+
+**진단 방법**:
+```bash
+# 디스크 사용률 확인
+df -h | grep -E '/$|Filesystem'
+
+# 디렉토리별 용량 확인
+du -sh /var/www/aedpics/.next
+du -sh /var/www/aedpics/node_modules
+```
+
+**긴급 해결 (GitHub Actions Workflow)**:
+
+가장 효과적인 방법: `aggressive-cleanup.yml` workflow 실행
+```bash
+# GitHub CLI로 실행
+gh workflow run aggressive-cleanup.yml
+
+# 또는 GitHub 웹에서 Actions > Aggressive Disk Cleanup > Run workflow
+```
+
+**Aggressive Cleanup이 하는 일**:
+1. PM2 프로세스 중지 및 로그 정리
+2. node_modules 완전 삭제 (1.3G 확보)
+3. .next 및 백업 디렉토리 삭제
+4. npm cache 정리
+5. 임시 파일 및 오래된 로그 정리
+6. 디스크 사용률 확인
+
+**실제 효과** (2025-11-05 실행 결과):
+- Before: /dev/vda2  9.8G  9.3G  0  100% /
+- After:  /dev/vda2  9.8G  5.6G  3.7G  61% /
+- **3.7GB 확보** (39% → 61% 사용률)
+
+**대안 방법들** (우선순위 순):
+
+1. **emergency-cleanup.yml** (중간 강도)
+   - 빌드 캐시와 백업만 삭제
+   - 효과: 약 500MB~1GB 확보
+   - PM2 중단 없음
+
+2. **cleanup-server.yml** (약한 강도)
+   - npm cache와 임시 파일만 정리
+   - 효과: 약 200MB~500MB 확보
+   - 서비스 영향 없음
+
+3. **full-rebuild.yml** (완전 재구축)
+   - 디스크 공간이 충분할 때만 사용
+   - PM2 중지 → 전체 삭제 → 재설치 → 재시작
+   - 주의: 디스크 100%일 때는 빌드 실패 가능
+
+**예방 조치**:
+
+1. **정기 모니터링**:
+```bash
+# 주간 디스크 확인 (자동화 권장)
+df -h /
+du -sh /var/www/aedpics/*
+```
+
+2. **배포 전 자동 정리** (deploy-production.yml에 이미 포함):
+```yaml
+echo "Cleaning build caches..."
+rm -rf .next/cache
+rm -rf .next.backup
+```
+
+3. **로그 로테이션 설정**:
+   - PM2 로그 자동 정리: `pm2 flush`
+   - 시스템 로그: 30일 이상 된 로그 자동 삭제
+
+**장기 해결책**:
+
+- 서버 디스크 용량 증설 검토 (10GB → 20GB)
+- Object Storage로 정적 파일 이전
+- 빌드 결과물 최적화
+
+**교훈**:
+- 10GB 서버는 지속적 용량 관리 필수
+- **디스크 100% = 배포 불가** 상태이므로 80% 이상 시 즉시 정리
+- `aggressive-cleanup.yml`이 가장 빠르고 안전한 해결책
+- 정기적인 디스크 모니터링으로 예방 가능
+
+**향후 개선**:
+이 문서는 더 효과적이고 안전한 디스크 정리 방법이 발견되면 지속적으로 업데이트됩니다.
+새로운 방법을 발견하거나 개선 사항이 있으면 이 섹션을 업데이트하여 시행착오를 줄이세요.
+
+**관련 Workflow 파일**:
+- `.github/workflows/aggressive-cleanup.yml` - 최우선 사용
+- `.github/workflows/emergency-cleanup.yml` - 2순위
+- `.github/workflows/cleanup-server.yml` - 일반 정기 정리용
+- `.github/workflows/full-rebuild.yml` - 완전 재구축용 (디스크 여유 시)
+
 ## 필수: NCP 이메일 발송 문제 해결
 
 ### 이메일 발송 실패 시 최우선 체크
