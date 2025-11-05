@@ -621,7 +621,7 @@ export interface AccessibilityData {
   accessibility_reason?: string; // restricted/private일 때 필수
 
   // 24시간 사용 가능 여부
-  availability_24h: 'always' | 'limited';
+  availability_24h?: 'always' | 'limited'; // 기존 필드 (optional for backward compatibility)
   weekly_schedule?: {
     monday?: { start: string; end: string };
     tuesday?: { start: string; end: string };
@@ -630,6 +630,18 @@ export interface AccessibilityData {
     friday?: { start: string; end: string };
     saturday?: { start: string; end: string };
     sunday?: { start: string; end: string };
+  };
+  // 개선된 스케줄 형식 (새로운 UI용)
+  improved_schedule?: {
+    is24hours: boolean;
+    monday?: { enabled: boolean; timeRange: string };
+    tuesday?: { enabled: boolean; timeRange: string };
+    wednesday?: { enabled: boolean; timeRange: string };
+    thursday?: { enabled: boolean; timeRange: string };
+    friday?: { enabled: boolean; timeRange: string };
+    saturday?: { enabled: boolean; timeRange: string };
+    sunday?: { enabled: boolean; timeRange: string };
+    holiday?: { enabled: boolean; timeRange: string };
   };
 }
 
