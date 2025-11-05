@@ -194,13 +194,28 @@ const DesktopTableRow = memo(({
       {/* 5. 최근점검일 - 축소 */}
       <div className="min-w-0 pl-2">
         <div className="text-[10px] lg:text-xs xl:text-sm text-gray-300 truncate" title={device.last_inspection_date || '-'}>
-          {device.last_inspection_date ?
-            new Date(device.last_inspection_date).toLocaleDateString('ko-KR', {
-              year: '2-digit',
-              month: '2-digit',
-              day: '2-digit'
-            }).replace(/\. /g, '.').replace(/\.$/, '')
-            : '-'}
+          {(() => {
+            if (!device.last_inspection_date) return '-';
+
+            // 디버깅: 문제가 있는 장비들의 날짜 확인
+            if (device.equipment_serial === '11-0010656' || device.equipment_serial === '11-0010666') {
+              console.log(`[날짜 디버그 ${device.equipment_serial}]`, {
+                raw: device.last_inspection_date,
+                parsed: new Date(device.last_inspection_date),
+                formatted: new Date(device.last_inspection_date).toLocaleDateString('ko-KR', {
+                  year: '2-digit',
+                  month: '2-digit',
+                  day: '2-digit'
+                })
+              });
+            }
+
+            const date = new Date(device.last_inspection_date);
+            const year = String(date.getFullYear()).slice(-2);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}.${month}.${day}`;
+          })()}
         </div>
       </div>
 
