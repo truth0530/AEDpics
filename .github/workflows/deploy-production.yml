@@ -128,6 +128,21 @@ jobs:
           echo "Generating Prisma client..."
           npx prisma generate
 
+          echo "=== Phase 2.5: Run database migrations ==="
+          echo "Checking for pending migrations..."
+          if [ -f "scripts/migrate-database.js" ]; then
+            echo "Running database migrations..."
+            if node scripts/migrate-database.js; then
+              echo "Migration successful!"
+            else
+              echo "ERROR: Migration failed!"
+              echo "Deployment aborted."
+              exit 1
+            fi
+          else
+            echo "No migration script found. Skipping migrations."
+          fi
+
           echo "=== Phase 3: Build new version ==="
           echo "Cleaning PWA cache files..."
           rm -rf public/sw.js public/sw.js.map public/workbox-*.js public/workbox-*.js.map
