@@ -743,20 +743,23 @@ export function BasicInfoStep() {
               </div>
             </div>
           )}
-        </div>
 
-        {/* 지도 컨트롤 버튼 */}
-        <div className="grid grid-cols-2 gap-2 mt-2">
+          {/* 현재 위치로 이동 버튼 - 지도 내 오버레이 */}
           <button
             onClick={moveToCurrentLocation}
-            className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded-lg text-xs transition-colors touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded-lg text-xs transition-colors touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             disabled={!isMapLoaded}
+            title="현재 위치로 지도 이동"
           >
             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
             </svg>
-            <span>현재 위치로 이동</span>
+            <span>현재 위치</span>
           </button>
+        </div>
+
+        {/* GPS 위치 확인 버튼 */}
+        <div className="mt-2">
           <button
             onClick={() => {
               updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
