@@ -66,7 +66,7 @@ model aed_data {
   registration_date             DateTime?                      @db.Date
   remarks                       String?                        @db.VarChar
   created_at                    DateTime                       @default(now()) @db.Timestamptz(6)
-  updated_at                    DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime                       @default(now()) @updatedAt @db.Timestamptz(6)
   report_date                   DateTime?                      @db.Date
   installation_location_address String?                        @db.VarChar(255)
   saeum_deletion_status         String?                        @db.VarChar(255)
@@ -95,7 +95,7 @@ model aed_data {
 }
 
 model audit_logs {
-  id            String         @id @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id       String?        @db.Uuid
   action        String
   entity_type   String?
@@ -115,7 +115,7 @@ model audit_logs {
 }
 
 model gps_analysis_logs {
-  id                    String   @id @db.Uuid
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   analysis_date         DateTime @unique @db.Date
   total_records         Int?
   issues_found          Int?
@@ -133,7 +133,7 @@ model gps_analysis_logs {
 }
 
 model gps_issues {
-  id                String         @id @db.Uuid
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aed_data_id       Int
   management_number String         @db.VarChar(255)
   issue_type        gps_issue_type
@@ -149,7 +149,7 @@ model gps_issues {
   resolved_at       DateTime?      @db.Timestamptz(6)
   resolved_by       String?        @db.VarChar(255)
   created_at        DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
   aed_data          aed_data       @relation(fields: [aed_data_id], references: [id], onDelete: Cascade)
 
   @@index([aed_data_id], map: "idx_gps_issues_aed_id")
@@ -175,7 +175,7 @@ model inspection_assignments {
   completed_at                                                    DateTime?      @db.Timestamptz(6)
   cancelled_at                                                    DateTime?      @db.Timestamptz(6)
   created_at                                                      DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at                                                      DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at                                                      DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
   user_profiles_inspection_assignments_assigned_byTouser_profiles user_profiles? @relation("inspection_assignments_assigned_byTouser_profiles", fields: [assigned_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user_profiles_inspection_assignments_assigned_toTouser_profiles user_profiles? @relation("inspection_assignments_assigned_toTouser_profiles", fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -186,7 +186,7 @@ model inspection_assignments {
 }
 
 model inspection_schedule_entries {
-  id                      String            @id @db.Uuid
+  id                      String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   device_equipment_serial String            @db.VarChar(255)
   scheduled_for           DateTime          @db.Timestamptz(6)
   assignee_identifier     String
@@ -195,7 +195,7 @@ model inspection_schedule_entries {
   notes                   String?
   created_by              String            @db.Uuid
   created_at              DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at              DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
   user_profiles           user_profiles     @relation(fields: [created_by], references: [id])
 
   @@index([created_by], map: "idx_inspection_schedule_entries_created_by")
@@ -214,7 +214,7 @@ model inspection_schedules {
   notes               String?
   created_by          String?        @db.Uuid
   created_at          DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
   aed_data            aed_data?      @relation(fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user_profiles       user_profiles? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -243,7 +243,7 @@ model inspection_sessions {
   refresh_status      String?        @db.VarChar(20)
   refresh_error       String?
   created_at          DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
   aed_data            aed_data?      @relation("SessionToAedData", fields: [equipment_serial], references: [equipment_serial], onDelete: NoAction, onUpdate: NoAction)
   user_profiles       user_profiles? @relation(fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -275,7 +275,7 @@ model inspections {
   registered_data              Json?
   inspected_data               Json?
   created_at                   DateTime?                      @default(now()) @db.Timestamptz(6)
-  updated_at                   DateTime?                      @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime?                      @default(now()) @updatedAt @db.Timestamptz(6)
   completed_at                 DateTime?                      @db.Timestamptz(6)
   aed_data                     aed_data?                      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
   user_profiles                user_profiles?                 @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
@@ -313,7 +313,7 @@ model inspection_field_comparisons {
   aed_device aed_data    @relation(fields: [equipment_serial], references: [equipment_serial], onDelete: Cascade)
 
   created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@index([inspection_id], map: "idx_field_comparisons_inspection")
   @@index([equipment_serial], map: "idx_field_comparisons_equipment")
@@ -325,7 +325,7 @@ model inspection_field_comparisons {
 }
 
 model login_history {
-  id            String         @id @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id       String?        @db.Uuid
   login_time    DateTime       @default(now()) @db.Timestamptz(6)
   ip_address    String?
@@ -362,7 +362,7 @@ model management_number_group_mapping {
   modified_at_2025                                                               DateTime?      @db.Timestamptz(6)
   modification_note_2025                                                         String?
   created_at                                                                     DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at                                                                     DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at                                                                     DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
   user_profiles_management_number_group_mapping_confirmed_by_2024Touser_profiles user_profiles? @relation("management_number_group_mapping_confirmed_by_2024Touser_profiles", fields: [confirmed_by_2024], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user_profiles_management_number_group_mapping_confirmed_by_2025Touser_profiles user_profiles? @relation("management_number_group_mapping_confirmed_by_2025Touser_profiles", fields: [confirmed_by_2025], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user_profiles_management_number_group_mapping_modified_by_2024Touser_profiles  user_profiles? @relation("management_number_group_mapping_modified_by_2024Touser_profiles", fields: [modified_by_2024], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -385,7 +385,7 @@ model notification_templates {
 }
 
 model notifications {
-  id                                                      String            @id @db.Uuid
+  id                                                      String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   recipient_id                                            String            @db.Uuid
   sender_id                                               String?           @db.Uuid
   type                                                    notification_type
@@ -405,7 +405,7 @@ model notifications {
 }
 
 model organizations {
-  id                           String                         @id @db.Uuid
+  id                           String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                         String
   type                         organization_type
   parent_id                    String?                        @db.Uuid
@@ -416,7 +416,7 @@ model organizations {
   latitude                     Decimal?                       @db.Decimal(10, 8)
   longitude                    Decimal?                       @db.Decimal(11, 8)
   created_at                   DateTime                       @default(now()) @db.Timestamptz(6)
-  updated_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime                       @default(now()) @updatedAt @db.Timestamptz(6)
   organizations                organizations?                 @relation("organizationsToorganizations", fields: [parent_id], references: [id])
   other_organizations          organizations[]                @relation("organizationsToorganizations")
   task_assignments             task_assignments[]
@@ -431,14 +431,14 @@ model organizations {
 }
 
 model otp_rate_limits {
-  id                String   @id @db.Uuid
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email             String
   request_count     Int      @default(1)
   first_request_at  DateTime @default(now()) @db.Timestamptz(6)
   last_request_at   DateTime @default(now()) @db.Timestamptz(6)
   window_expires_at DateTime @db.Timestamptz(6)
   created_at        DateTime @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@index([email], map: "idx_otp_rate_limits_email")
   @@index([window_expires_at], map: "idx_otp_rate_limits_window_expires")
@@ -459,7 +459,7 @@ model email_verification_codes {
 }
 
 model schedule_instances {
-  id                 String          @id @db.Uuid
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   schedule_id        String          @db.Uuid
   scheduled_date     DateTime        @db.Date
   scheduled_time     DateTime?       @db.Time(6)
@@ -471,7 +471,7 @@ model schedule_instances {
   rescheduled_to     DateTime?       @db.Date
   rescheduled_reason String?
   created_at         DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
   team_members       team_members?   @relation(fields: [assigned_inspector], references: [id])
 
   @@index([scheduled_date], map: "idx_schedule_instances_date")
@@ -500,7 +500,7 @@ model target_list_2024 {
   data_year         Int?      @default(2024)
   imported_at       DateTime? @db.Timestamptz(6)
   created_at        DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@index([target_keygroup], map: "idx_target_2024_keygroup")
   @@index([sido, gugun], map: "idx_target_2024_location")
@@ -509,7 +509,7 @@ model target_list_2024 {
 }
 
 model target_list_devices {
-  id                                                           String          @id @db.Uuid
+  id                                                           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   target_list_year                                             Int
   target_institution_id                                        String          @db.VarChar(50)
   equipment_serial                                             String          @db.VarChar(255)
@@ -521,7 +521,7 @@ model target_list_devices {
   verified_by                                                  String?         @db.Uuid
   verified_at                                                  DateTime?       @db.Timestamptz(6)
   created_at                                                   DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at                                                   DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at                                                   DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
   user_profiles_target_list_devices_matched_byTouser_profiles  user_profiles?  @relation("target_list_devices_matched_byTouser_profiles", fields: [matched_by], references: [id])
   user_profiles_target_list_devices_verified_byTouser_profiles user_profiles?  @relation("target_list_devices_verified_byTouser_profiles", fields: [verified_by], references: [id])
 
@@ -533,7 +533,7 @@ model target_list_devices {
 }
 
 model task_assignments {
-  id                 String               @id @db.Uuid
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organization_id    String               @db.Uuid
   task_type          task_type
   title              String
@@ -550,7 +550,7 @@ model task_assignments {
   notes              String?
   attachments        Json?
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
   user_profiles      user_profiles        @relation(fields: [assigned_by], references: [id])
   organizations      organizations        @relation(fields: [organization_id], references: [id])
   team_activity_logs team_activity_logs[]
@@ -562,7 +562,7 @@ model task_assignments {
 }
 
 model team_activity_logs {
-  id                   String            @id @db.Uuid
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organization_id      String            @db.Uuid
   activity_type        String
   activity_description String
@@ -584,7 +584,7 @@ model team_activity_logs {
 }
 
 model team_members {
-  id                                                        String               @id @db.Uuid
+  id                                                        String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organization_id                                           String               @db.Uuid
   name                                                      String
   email                                                     String?
@@ -598,7 +598,7 @@ model team_members {
   temporary_period_start                                    DateTime?            @db.Date
   temporary_period_end                                      DateTime?            @db.Date
   created_at                                                DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at                                                DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at                                                DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
   schedule_instances                                        schedule_instances[]
   team_activity_logs                                        team_activity_logs[]
   user_profiles_team_members_added_byTouser_profiles        user_profiles        @relation("team_members_added_byTouser_profiles", fields: [added_by], references: [id])
@@ -612,7 +612,7 @@ model team_members {
 }
 
 model team_permissions {
-  id                      String        @id @db.Uuid
+  id                      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   team_member_id          String        @db.Uuid
   can_view_team_members   Boolean       @default(false)
   can_manage_team_members Boolean       @default(false)
@@ -631,7 +631,7 @@ model team_permissions {
 }
 
 model user_profiles {
-  id                                                                                               String                            @id @db.Uuid
+  id                                                                                               String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email                                                                                            String                            @unique
   full_name                                                                                        String
   phone                                                                                            String?
@@ -655,7 +655,7 @@ model user_profiles {
   account_locked                                                                                   Boolean                           @default(false)
   lock_reason                                                                                      String?
   created_at                                                                                       DateTime                          @default(now()) @db.Timestamptz(6)
-  updated_at                                                                                       DateTime                          @default(now()) @db.Timestamptz(6)
+  updated_at                                                                                       DateTime                          @default(now()) @updatedAt @db.Timestamptz(6)
   password_hash                                                                                    String?
   employee_id                                                                                      String?
   permission_scope                                                                                 String[]
