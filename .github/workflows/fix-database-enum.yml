@@ -100,9 +100,10 @@ jobs:
         if: github.event.inputs.action == 'fix'
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.NCP_HOST }}
+          username: ${{ secrets.NCP_USERNAME }}
+          key: ${{ secrets.NCP_SSH_KEY }}
+          port: ${{ secrets.NCP_SSH_PORT }}
           script: |
             cd /var/www/aedpics
 
@@ -175,4 +176,5 @@ jobs:
             Database Enum Fix: ${{ github.event.inputs.action }}
             Status: ${{ job.status }}
             Branch: ${{ github.ref_name }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
