@@ -45,7 +45,7 @@ const DAYS = [
 
 export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyScheduleInputProps) {
   // 일괄 입력을 위한 시간 상태
-  const [batchTime, setBatchTime] = useState('04:30~25:30');
+  const [batchTime, setBatchTime] = useState('09:00~18:00');
 
   // 24시간 사용가능 토글
   const handle24HoursToggle = () => {
@@ -192,9 +192,9 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
           type="text"
           value={batchTime}
           onChange={(e) => handleBatchTimeChange(e.target.value)}
-          placeholder="04:30~25:30"
+          placeholder="09:00~18:00"
           disabled={value.is24hours}
-          className="w-32 px-2 py-1.5 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 px-2 py-1.5 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
