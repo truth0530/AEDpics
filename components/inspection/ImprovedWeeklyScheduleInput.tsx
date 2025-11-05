@@ -248,7 +248,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
       {!value.is24hours && (
         <div>
           <div className="text-[10px] sm:text-xs text-gray-400 mb-2">일요일 사용 가능 주</div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-nowrap overflow-x-auto">
             <div className="flex items-center gap-1">
               <Checkbox
                 id="sunday-every-week"
