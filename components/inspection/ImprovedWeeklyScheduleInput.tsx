@@ -194,7 +194,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
           onChange={(e) => handleBatchTimeChange(e.target.value)}
           placeholder="09:00~18:00"
           disabled={value.is24hours}
-          className="w-28 px-2 py-1.5 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-28 px-1 py-1.5 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -204,14 +204,14 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
           <button
             type="button"
             onClick={applyWeekdayBatch}
-            className="flex-1 px-1.5 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="flex-1 px-1 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             월~금 일괄
           </button>
           <button
             type="button"
             onClick={applyWeekendBatch}
-            className="flex-1 px-1.5 py-1.5 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+            className="flex-1 px-1 py-1.5 text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
           >
             토,공휴일
           </button>
