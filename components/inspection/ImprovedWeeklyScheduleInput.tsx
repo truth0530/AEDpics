@@ -221,19 +221,17 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
       {/* 요일별 시간 입력 - 체크박스 제거 (24시간 미선택 시만 표시) */}
       {!value.is24hours && (
         <div className="grid grid-cols-2 gap-y-1 gap-x-2">
-          {DAYS.map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-1">
-              <span className="text-xs text-gray-400 font-medium min-w-fit">{label}</span>
-              <input
-                type="text"
-                value={getDayTime(key)}
-                onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
-                placeholder={getDayTime(key) ? '04:30~25:30' : '미운영'}
-                className={`flex-1 px-2 py-1.5 text-center text-xs bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20 ${
-                  getDayTime(key) ? 'placeholder-gray-500' : 'placeholder-gray-600'
-                }`}
-              />
-            </div>
+          {DAYS.map(({ key, fullLabel }) => (
+            <input
+              key={key}
+              type="text"
+              value={getDayTime(key)}
+              onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
+              placeholder={getDayTime(key) ? '04:30~25:30' : fullLabel}
+              className={`px-2 py-1.5 text-center text-xs bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20 ${
+                getDayTime(key) ? 'placeholder-gray-500' : 'placeholder-gray-600'
+              }`}
+            />
           ))}
         </div>
       )}
