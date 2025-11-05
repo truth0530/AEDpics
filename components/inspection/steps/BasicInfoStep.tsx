@@ -150,11 +150,13 @@ export function BasicInfoStep() {
           setHasMovedMarker(true);
 
           // 최신 basicInfo 객체 생성하여 업데이트
+          // 마커를 움직이면 gps_verified를 false로 리셋 (위치가 변경되었으므로 재확인 필요)
           const currentBasicInfo = (useInspectionSessionStore.getState().stepData.basicInfo || {}) as Record<string, unknown>;
           updateStepData('basicInfo', {
             ...currentBasicInfo,
             gps_latitude: lat,
             gps_longitude: lng,
+            gps_verified: false,  // 위치 변경 시 확인 상태 리셋
           });
         });
 

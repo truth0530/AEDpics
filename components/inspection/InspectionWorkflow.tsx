@@ -315,15 +315,19 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           }
         }
 
-        // 필수: 24시간 사용 가능 여부 선택
-        if (!accessibility?.availability_24h) {
+        // 필수: 24시간 사용 가능 여부 선택 (improved_schedule 구조 사용)
+        const improvedSchedule = accessibility?.improved_schedule as Record<string, any> | undefined;
+
+        // improved_schedule이 없거나, is24hours가 명시적으로 설정되지 않은 경우
+        if (!improvedSchedule || improvedSchedule.is24hours === undefined) {
           missing.push('접근성 정보 - 24시간 사용 가능 여부를 선택해주세요');
         }
 
-        // 일부 사용 시 주간 스케줄 확인
-        if (accessibility?.availability_24h === 'limited') {
-          const schedule = accessibility.weekly_schedule as Record<string, any> | undefined;
-          const hasSchedule = schedule && Object.keys(schedule).length > 0;
+        // 24시간이 아닌 경우 주간 스케줄 확인
+        if (improvedSchedule && improvedSchedule.is24hours === false) {
+          // monday ~ sunday, holiday 중 하나라도 있는지 확인
+          const hasSchedule = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'holiday']
+            .some(day => improvedSchedule[day]?.timeRange);
 
           if (!hasSchedule) {
             missing.push('접근성 정보 - 사용 가능한 요일 및 시간을 최소 1개 이상 입력해주세요');
