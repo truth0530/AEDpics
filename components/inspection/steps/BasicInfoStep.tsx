@@ -214,12 +214,18 @@ export function BasicInfoStep() {
 
       try {
         // @ts-ignore - Roadview API가 window.kakao.maps에 포함됨
-        const roadviewInstance = new window.kakao.maps.Roadview(
-          roadviewRef.current,
-          {
-            position: new window.kakao.maps.LatLng(currentLat, currentLng),
-          }
-        );
+        const roadviewInstance = new window.kakao.maps.Roadview(roadviewRef.current);
+
+        const position = new window.kakao.maps.LatLng(currentLat, currentLng);
+
+        // RoadviewClient를 사용하여 가장 가까운 파노라마 찾기
+        // @ts-ignore - RoadviewClient API
+        const rvClient = new window.kakao.maps.RoadviewClient();
+
+        rvClient.getNearestPanoId(position, 50, (panoId: string) => {
+          // 파노라마 ID를 사용하여 로드뷰 설정
+          roadviewInstance.setPanoId(panoId, position);
+        });
 
         // 로드뷰가 로드된 후 커스텀 오버레이 추가
         window.kakao.maps.event.addListener(roadviewInstance, 'init', () => {
@@ -239,7 +245,7 @@ export function BasicInfoStep() {
 
           // @ts-ignore - CustomOverlay API
           const customOverlay = new window.kakao.maps.CustomOverlay({
-            position: new window.kakao.maps.LatLng(currentLat, currentLng),
+            position: position,
             content: overlayContent,
             xAnchor: 0.5,
             yAnchor: 0.5,
@@ -250,10 +256,7 @@ export function BasicInfoStep() {
           // 오버레이를 로드뷰 중앙에 배치하도록 viewpoint 조정
           const projection = (roadviewInstance as any).getProjection();
           if (projection) {
-            const viewpoint = projection.viewpointFromCoords(
-              new window.kakao.maps.LatLng(currentLat, currentLng),
-              0
-            );
+            const viewpoint = projection.viewpointFromCoords(position, 0);
             roadviewInstance.setViewpoint(viewpoint);
           }
         });
