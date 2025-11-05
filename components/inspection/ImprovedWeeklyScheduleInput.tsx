@@ -229,7 +229,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
                 value={getDayTime(key)}
                 onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
                 placeholder="04:30~25:30"
-                className="w-full px-2 py-1.5 text-center text-xs bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+                className="w-full px-1.5 py-1 text-center text-[11px] bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
               />
             </div>
           ))}
