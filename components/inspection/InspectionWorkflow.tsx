@@ -8,6 +8,7 @@ import { useInspectionSessionStore } from '@/lib/state/inspection-session-store'
 import { BasicInfoStep } from './steps/BasicInfoStep';
 import { DeviceInfoStep } from './steps/DeviceInfoStep';
 import { StorageChecklistStep } from './steps/StorageChecklistStep';
+import { ManagerEducationStep } from './steps/ManagerEducationStep';
 import { InspectionSummaryStep } from './steps/InspectionSummaryStep';
 import { ValidationSummary } from './ValidationSummary';
 import { showSaveSuccess, showSaveError, showSuccess, showError } from '@/utils/feedback';
@@ -16,6 +17,7 @@ const STEP_COMPONENTS = [
   BasicInfoStep,
   DeviceInfoStep,
   StorageChecklistStep,
+  ManagerEducationStep,
   InspectionSummaryStep,
 ];
 
@@ -23,6 +25,7 @@ const STEP_TITLES = [
   '기본 정보 확인',
   '장비 및 소모품 점검',
   '보관함 점검',
+  '관리책임자 교육',
   '점검 요약',
 ];
 
@@ -417,7 +420,33 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         }
         break;
 
-      case 3: // InspectionSummaryStep - 검증 단계, 필수 항목 없음
+      case 3: // ManagerEducationStep
+        const managerEducation = stepData.managerEducation as Record<string, any> | undefined;
+
+        // 관리책임자 교육 이수 현황 필수
+        if (!managerEducation?.education_status) {
+          missing.push('관리책임자 교육 이수 현황을 선택해주세요');
+        }
+
+        // 미이수 선택 시 사유 필수
+        if (managerEducation?.education_status === 'not_completed' && !managerEducation?.not_completed_reason) {
+          missing.push('미이수 사유를 선택해주세요');
+        }
+
+        // 미이수 기타 사유 입력 필수
+        if (managerEducation?.not_completed_reason === 'other' && !managerEducation?.not_completed_other_text?.trim()) {
+          missing.push('미이수 기타 사유를 입력해주세요');
+        }
+
+        // 교육 이수 현황 기타 내용 입력 필수
+        if (managerEducation?.education_status === 'other' && !managerEducation?.education_other_text?.trim()) {
+          missing.push('교육 이수 현황 기타 내용을 입력해주세요');
+        }
+
+        // 보건복지부 전달사항은 선택사항이므로 검증하지 않음
+        break;
+
+      case 4: // InspectionSummaryStep - 검증 단계, 필수 항목 없음
         break;
     }
 

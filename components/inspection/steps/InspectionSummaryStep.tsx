@@ -67,11 +67,20 @@ interface StorageInfoData {
   edit_reason?: string;
 }
 
+interface ManagerEducationData {
+  education_status?: 'manager_education' | 'legal_mandatory_education' | 'not_completed' | 'other';
+  not_completed_reason?: 'new_manager' | 'recent_installation' | 'other';
+  not_completed_other_text?: string;
+  education_other_text?: string;
+  message_to_mohw?: string;
+}
+
 interface StepData {
   basicInfo?: BasicInfoData;
   locationInfo?: LocationInfoData;
   deviceInfo?: DeviceInfoData;
   storageInfo?: StorageInfoData;
+  managerEducation?: ManagerEducationData;
   [key: string]: any;
 }
 
@@ -814,6 +823,52 @@ export function InspectionSummaryStep() {
           </div>
         </div>
 
+        {/* 4. 관리책임자 교육 이수 현황 (Ⅳ. 관리책임자 교육 이수 현황) */}
+        <div className="report-section">
+          <div className="section-title">Ⅳ. 관리책임자 교육 이수 현황</div>
+          <table className="report-table" style={{ borderCollapse: 'collapse' }}>
+            <tbody>
+              <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
+                <td className="header" style={{ width: '25%', border: 'none', borderRight: '1px solid #6b7280', backgroundColor: '#374151', color: '#f3f4f6', fontWeight: '500' }}>교육 이수 현황</td>
+                <td style={{ border: 'none', color: '#d1d5db' }}>
+                  {(() => {
+                    const managerEducation = stepData.managerEducation;
+                    if (!managerEducation?.education_status) return '미입력';
+
+                    switch (managerEducation.education_status) {
+                      case 'manager_education':
+                        return '관리책임자 교육 이수';
+                      case 'legal_mandatory_education':
+                        return '법정의무교육 이수';
+                      case 'not_completed':
+                        if (managerEducation.not_completed_reason === 'new_manager') {
+                          return '미이수 (관리책임자 신규지정)';
+                        } else if (managerEducation.not_completed_reason === 'recent_installation') {
+                          return '미이수 (최근 설치로 교육 이수 예정)';
+                        } else if (managerEducation.not_completed_reason === 'other') {
+                          return `미이수 (${managerEducation.not_completed_other_text || '기타 사유'})`;
+                        }
+                        return '미이수';
+                      case 'other':
+                        return managerEducation.education_other_text || '기타';
+                      default:
+                        return '미입력';
+                    }
+                  })()}
+                </td>
+              </tr>
+              {stepData.managerEducation?.message_to_mohw && (
+                <tr style={{ borderBottom: '2px solid #4b5563' }}>
+                  <td className="header" style={{ border: 'none', borderRight: '1px solid #6b7280', backgroundColor: '#374151', color: '#f3f4f6', fontWeight: '500' }}>보건복지부 전달사항</td>
+                  <td style={{ border: 'none', color: '#d1d5db' }}>
+                    {stepData.managerEducation.message_to_mohw}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
         {/* 10. 서명 */}
         <div className="report-section" style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #4b5563', textAlign: 'right' }}>
           <p style={{ margin: 0, marginBottom: '5px', fontSize: '11px', color: '#d1d5db' }}>{formatDate(documentation.completed_time || new Date().toISOString())}</p>
@@ -830,16 +885,20 @@ export function InspectionSummaryStep() {
           <div style={{ fontSize: '9px', color: '#9ca3af' }}></div>
           <div style={{ fontSize: '9px', color: '#9ca3af' }}>https://aed.pics</div>
         </div>
+      </div>
 
-        {/* 인쇄 버튼 */}
-        <div className="no-print mt-4 flex justify-center">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="rounded bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            인쇄 / PDF 저장
-          </button>
+      {/* 미리보기 안내 메시지 */}
+      <div className="mt-4 rounded-lg bg-blue-900/20 border border-blue-700/30 p-4">
+        <div className="flex items-start gap-2">
+          <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="text-sm text-gray-300">
+            <p className="font-medium mb-1">이것은 점검 결과 미리보기입니다</p>
+            <p className="text-xs text-gray-400">
+              점검을 완료하면 전체 보고서를 확인하고 인쇄하거나 PDF로 저장할 수 있습니다.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -646,6 +646,27 @@ export interface AccessibilityData {
 }
 
 /**
+ * 관리책임자 교육 이수 현황 타입
+ * 4단계에서 사용되는 관리책임자 교육 관련 데이터
+ */
+export interface ManagerEducationData {
+  // 교육 이수 현황
+  education_status?: 'manager_education' | 'legal_mandatory_education' | 'not_completed' | 'other';
+
+  // 미이수 사유 (education_status가 'not_completed'일 때)
+  not_completed_reason?: 'new_manager' | 'recent_installation' | 'other';
+  not_completed_other_text?: string; // not_completed_reason이 'other'일 때
+
+  // 기타 교육 내용 (education_status가 'other'일 때)
+  education_other_text?: string;
+
+  // 보건복지부 재난의료대응과로 전달할 사항
+  message_to_mohw?: string;
+
+  [key: string]: unknown;
+}
+
+/**
  * BasicInfo 단계 데이터 타입
  */
 export interface BasicInfoData {
