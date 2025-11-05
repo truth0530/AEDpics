@@ -70,12 +70,27 @@ jobs:
           set -e  # Exit on any error
           cd /var/www/aedpics
 
+          echo "=== Phase 0: Disk space cleanup ==="
+          echo "Checking disk usage before cleanup..."
+          df -h | grep -E '/$|Filesystem'
+
+          echo "Cleaning build caches..."
+          rm -rf .next/cache
+          rm -rf .next.backup
+
+          echo "Cleaning PM2 logs..."
+          pm2 flush || true
+
+          echo "Checking disk usage after cleanup..."
+          df -h | grep -E '/$|Filesystem'
+
           echo "=== Phase 1: Backup current version ==="
           if [ -d ".next" ]; then
-            echo "Backing up current build..."
+            echo "Backing up current build (excluding cache)..."
             rm -rf .next.backup
-            cp -r .next .next.backup
-            echo "Backup created: .next.backup"
+            mkdir -p .next.backup
+            rsync -a --exclude='cache' .next/ .next.backup/
+            echo "Backup created: .next.backup (cache excluded)"
           else
             echo "No existing build to backup (first deployment)"
           fi

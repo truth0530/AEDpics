@@ -1,0 +1,61 @@
+name: Emergency Disk Cleanup
+
+on:
+  workflow_dispatch:  # 수동 실행 전용
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Emergency disk cleanup on NCP Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          set -e
+          cd /var/www/aedpics
+
+          echo "=== Emergency Disk Cleanup ==="
+          echo "Current disk usage:"
+          df -h | grep -E '/$|Filesystem'
+          echo ""
+
+          echo "Checking directory sizes..."
+          du -sh .next 2>/dev/null || echo "No .next directory"
+          du -sh .next.backup 2>/dev/null || echo "No .next.backup directory"
+          du -sh node_modules 2>/dev/null || echo "No node_modules directory"
+          echo ""
+
+          echo "Step 1: Removing build caches..."
+          rm -rf .next/cache
+          echo "✓ Removed .next/cache"
+
+          echo "Step 2: Removing old backups..."
+          rm -rf .next.backup
+          echo "✓ Removed .next.backup"
+
+          echo "Step 3: Cleaning PM2 logs..."
+          pm2 flush || true
+          echo "✓ Cleaned PM2 logs"
+
+          echo "Step 4: Removing old log files..."
+          find . -type f -name "*.log" -mtime +7 -delete 2>/dev/null || true
+          echo "✓ Removed old log files"
+
+          echo ""
+          echo "Final disk usage:"
+          df -h | grep -E '/$|Filesystem'
+          echo ""
+
+          echo "Directory sizes after cleanup:"
+          du -sh .next 2>/dev/null || echo "No .next directory"
+          du -sh node_modules 2>/dev/null || echo "No node_modules directory"
+
+          echo ""
+          echo "=== Cleanup complete! ==="
+          echo "You can now run the deployment workflow."
