@@ -247,9 +247,9 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
       {/* 일요일 사용 가능 주 선택 */}
       {!value.is24hours && (
         <div>
-          <div className="text-[10px] sm:text-xs text-gray-400 mb-1">일요일 사용 가능 주</div>
-          <div className="flex flex-wrap gap-1">
-            <div className="flex items-center gap-0.5">
+          <div className="text-[10px] sm:text-xs text-gray-400 mb-2">일요일 사용 가능 주</div>
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-1 px-2 py-1">
               <Checkbox
                 id="sunday-every-week"
                 checked={value.sundayWeeks?.everyWeek || false}
@@ -267,10 +267,10 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
                   });
                 }}
               />
-              <label htmlFor="sunday-every-week" className="text-[10px] sm:text-xs text-white cursor-pointer">매주</label>
+              <label htmlFor="sunday-every-week" className="text-xs sm:text-sm text-white cursor-pointer font-medium">매주</label>
             </div>
             {['week1', 'week2', 'week3', 'week4', 'week5'].map((week, idx) => (
-              <div key={week} className="flex items-center gap-0.5">
+              <div key={week} className="flex items-center gap-1 px-2 py-1">
                 <Checkbox
                   id={`sunday-${week}`}
                   checked={value.sundayWeeks?.[week as keyof Omit<typeof value.sundayWeeks, 'everyWeek'>] || false}
@@ -284,7 +284,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
                     });
                   }}
                 />
-                <label htmlFor={`sunday-${week}`} className="text-[10px] sm:text-xs text-white cursor-pointer">{idx + 1}주</label>
+                <label htmlFor={`sunday-${week}`} className="text-xs sm:text-sm text-white cursor-pointer font-medium">{idx + 1}주</label>
               </div>
             ))}
           </div>
