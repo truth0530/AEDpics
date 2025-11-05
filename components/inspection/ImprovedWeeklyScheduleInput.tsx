@@ -235,8 +235,8 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
                   type="text"
                   value={getDayTime(key)}
                   onChange={(e) => handleTimeChange(key, formatTimeInput(e.target.value))}
-                  placeholder="04:30~25:30"
-                  className="w-full px-1.5 py-1 text-center text-[11px] bg-gray-800 border border-gray-600 rounded text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+                  placeholder="미운영"
+                  className="w-full px-1.5 py-1 text-center text-[11px] bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
                 />
               </div>
             );
