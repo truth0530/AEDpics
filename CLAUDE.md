@@ -607,6 +607,110 @@ rm -rf .next.backup
 - `.github/workflows/cleanup-server.yml` - 일반 정기 정리용
 - `.github/workflows/full-rebuild.yml` - 완전 재구축용 (디스크 여유 시)
 
+### 13. Prisma Migration 혼동 사건 (2025-11-05)
+
+**사건 개요**: session_status enum 타입 에러로 시작된 연쇄 실패
+- 주니어 개발자: `prisma generate`와 `migrate`를 혼동하여 해결 실패
+- 시니어 개발자: 문제는 해결했지만 배포 프로세스를 파괴
+- 최종: 배포 프로세스를 Graceful하게 수정하여 완전 해결
+
+**핵심 교훈 - Prisma 명령어의 차이**:
+
+| 명령어 | 실제 동작 | DB 변경 | 흔한 착각 |
+|--------|----------|---------|----------|
+| `prisma generate` | TypeScript 클라이언트 코드 생성 | ❌ 없음 | "DB가 바뀌었을 것" |
+| `prisma migrate dev` | 개발 DB에 스키마 변경 적용 | ✅ 있음 | - |
+| `prisma migrate deploy` | 프로덕션 DB에 마이그레이션 적용 | ✅ 있음 | - |
+
+**실제 에러와 원인**:
+```sql
+-- Prisma가 생성한 쿼리
+WHERE status = 'active'::session_status  -- enum 타입 캐스팅
+
+-- 실제 DB 칼럼
+status TEXT  -- TEXT 타입
+
+-- 결과
+Error: operator does not exist: text = session_status
+```
+
+**잘못된 해결 시도들**:
+```bash
+# 주니어: generate만 반복 (DB 변경 없음)
+npx prisma generate  # 10번 실행해도 DB는 그대로
+
+# 시니어 초기: migrate deploy 강제 (배포 중단)
+npx prisma migrate deploy  # 실패 시 배포 중단
+```
+
+**최종 해결책 - Graceful Degradation**:
+```yaml
+# deploy-production.yml Phase 2.5
+if [ -d "prisma/migrations" ] && [ "$(ls -A prisma/migrations)" ]; then
+  if npx prisma migrate deploy --skip-seed; then
+    echo "Migrations applied successfully!"
+  else
+    echo "WARNING: Migration deploy failed. Continuing deployment..."
+    # 실패해도 서비스는 계속되어야 함!
+  fi
+fi
+```
+
+**모니터링 및 자동화**:
+```bash
+# 마이그레이션 상태 모니터링 (6시간마다)
+gh workflow run monitor-migrations.yml
+
+# Baseline 적용 (수동 변경 시)
+gh workflow run apply-baseline.yml -f confirm=APPLY -f dry_run=false
+
+# 긴급 enum 수정
+gh workflow run fix-database-enum.yml -f action=fix
+```
+
+**재발 방지 체크리스트**:
+
+1. **스키마 변경 시 올바른 순서**:
+   ```bash
+   # 1. 로컬 개발
+   npx prisma migrate dev --name descriptive_name
+
+   # 2. 테스트
+   npm run test
+
+   # 3. 배포 (자동 migrate deploy)
+   git push
+   ```
+
+2. **문제 진단 우선순위**:
+   ```bash
+   # 1. 에러 로그 확인 (추측 금지)
+   pm2 logs --err --lines 50
+
+   # 2. 마이그레이션 상태 확인
+   npx prisma migrate status
+
+   # 3. DB 타입 직접 확인
+   psql -c "SELECT data_type FROM information_schema.columns WHERE column_name='status'"
+   ```
+
+3. **배포 실패 시 대응**:
+   - 서비스 중단보다 경고가 낫다
+   - 완벽하지 않아도 동작은 해야 한다
+   - 문제는 나중에 해결 가능하다
+
+**관련 문서**:
+- [주니어 개발자를 위한 마이그레이션 가이드](docs/migration/JUNIOR_MIGRATION_GUIDE.md)
+- [시니어 개발자의 분석](docs/troubleshooting/SESSION_ENUM_SENIOR_ANALYSIS.md)
+- [실행 가이드](docs/troubleshooting/SESSION_ENUM_FIX_EXECUTION_GUIDE.md)
+- [마이그레이션 설정](docs/migration/PRISMA_MIGRATION_SETUP.md)
+
+**핵심 메시지**:
+- 기본 개념을 정확히 이해하라 (`generate` vs `migrate`)
+- 에러 로그를 신뢰하라 (추측 금지)
+- 서비스 가용성을 최우선으로 하라 (Graceful Degradation)
+- 실패를 인정하고 빠르게 수정하라
+
 ## 필수: NCP 이메일 발송 문제 해결
 
 ### 이메일 발송 실패 시 최우선 체크

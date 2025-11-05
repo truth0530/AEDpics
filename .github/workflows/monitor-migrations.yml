@@ -1,0 +1,177 @@
+name: Monitor Migration Status
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  push:
+    paths:
+      - 'prisma/schema.prisma'
+      - 'prisma/migrations/**'
+
+jobs:
+  monitor-migrations:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check migration status
+        id: check-status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "========================================="
+          echo "Checking Prisma Migration Status"
+          echo "========================================="
+
+          # Capture output and exit code
+          if npx prisma migrate status 2>&1 | tee migration-status.txt; then
+            echo "status=up-to-date" >> $GITHUB_OUTPUT
+            echo "✅ Database schema is up to date"
+          else
+            # Check for pending migrations
+            if grep -q "Following migrations have not yet been applied" migration-status.txt; then
+              echo "status=pending" >> $GITHUB_OUTPUT
+              echo "⚠️ Pending migrations found:"
+              grep -A 20 "Following migrations have not yet been applied" migration-status.txt
+
+              # Extract pending migrations list
+              PENDING=$(grep -A 20 "Following migrations have not yet been applied" migration-status.txt | tail -n +2 | grep -E "^[0-9]" || true)
+              echo "pending_migrations<<EOF" >> $GITHUB_OUTPUT
+              echo "$PENDING" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            else
+              echo "status=error" >> $GITHUB_OUTPUT
+              echo "❌ Error checking migration status:"
+              cat migration-status.txt
+            fi
+          fi
+
+      - name: Check enum types in database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo ""
+          echo "========================================="
+          echo "Checking Database Enum Types"
+          echo "========================================="
+
+          # Parse DATABASE_URL
+          DB_URL="${DATABASE_URL}"
+          if [[ $DB_URL =~ postgresql://([^:]+):([^@]+)@([^:]+):([^/]+)/([^?]+) ]]; then
+            DB_USER="${BASH_REMATCH[1]}"
+            DB_PASS="${BASH_REMATCH[2]}"
+            DB_HOST="${BASH_REMATCH[3]}"
+            DB_PORT="${BASH_REMATCH[4]}"
+            DB_NAME="${BASH_REMATCH[5]}"
+
+            # Check session_status enum
+            PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "
+              SELECT
+                CASE
+                  WHEN COUNT(*) > 0 THEN '✅ session_status enum exists'
+                  ELSE '❌ session_status enum NOT found'
+                END as status
+              FROM pg_type t
+              JOIN pg_namespace n ON t.typnamespace = n.oid
+              WHERE t.typname = 'session_status'
+              AND n.nspname = 'aedpics';
+            " || echo "❌ Failed to check enum status"
+          fi
+
+      - name: Create issue if migrations are pending
+        if: steps.check-status.outputs.status == 'pending'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pendingMigrations = `${{ steps.check-status.outputs.pending_migrations }}`;
+            const issueTitle = '[Alert] Pending Prisma Migrations Detected';
+            const issueBody = `
+            ## ⚠️ Pending Migrations Detected
+
+            The following migrations have not been applied to the production database:
+
+            \`\`\`
+            ${pendingMigrations}
+            \`\`\`
+
+            ### Action Required
+            1. Review the pending migrations
+            2. Run the baseline workflow if these are already manually applied
+            3. Or deploy the application to apply migrations automatically
+
+            ### Commands
+            - To apply migrations: \`gh workflow run apply-baseline.yml\`
+            - To check status: \`gh workflow run monitor-migrations.yml\`
+
+            ---
+            *This issue was automatically created by the Migration Monitor workflow*
+            `;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'migration-pending'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: ['migration-pending', 'automated']
+              });
+            } else {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: issueBody
+              });
+            }
+
+      - name: Send Slack notification
+        if: steps.check-status.outputs.status != 'up-to-date'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "Migration Status Alert",
+              attachments: [{
+                color: '${{ steps.check-status.outputs.status == 'error' && 'danger' || 'warning' }}',
+                text: `Migration Status: ${{ steps.check-status.outputs.status }}\n${{ steps.check-status.outputs.status == 'pending' && 'Pending migrations detected. Please review.' || 'Error checking migration status.' }}`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Summary
+        run: |
+          echo "## Migration Monitor Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ steps.check-status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ steps.check-status.outputs.status }}" == "pending" ]]; then
+            echo "### Pending Migrations:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.check-status.outputs.pending_migrations }}" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

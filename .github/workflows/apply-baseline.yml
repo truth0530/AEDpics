@@ -1,0 +1,199 @@
+name: Apply Prisma Migration Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type APPLY to confirm baseline application'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run only (check status without applying)'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  apply-baseline:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'APPLY'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Parse DATABASE_URL
+        id: parse-db
+        run: |
+          DB_URL="${{ secrets.DATABASE_URL }}"
+
+          if [[ $DB_URL =~ postgresql://([^:]+):([^@]+)@([^:]+):([^/]+)/([^?]+) ]]; then
+            echo "DB_USER=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "DB_PASS=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+            echo "DB_HOST=${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
+            echo "DB_PORT=${BASH_REMATCH[4]}" >> $GITHUB_OUTPUT
+            echo "DB_NAME=${BASH_REMATCH[5]}" >> $GITHUB_OUTPUT
+
+            echo "✓ DATABASE_URL parsed successfully"
+          else
+            echo "✗ Failed to parse DATABASE_URL"
+            exit 1
+          fi
+
+      - name: Check current migration status
+        run: |
+          echo "========================================="
+          echo "Current Migration Table Status"
+          echo "========================================="
+
+          PGPASSWORD="${{ steps.parse-db.outputs.DB_PASS }}" psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -c "
+              SELECT migration_name,
+                     finished_at IS NOT NULL as applied,
+                     logs
+              FROM aedpics._prisma_migrations
+              ORDER BY migration_name;
+            " || echo "No migration table found (this is expected for first setup)"
+
+      - name: Dry run mode
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "========================================="
+          echo "DRY RUN MODE - No changes will be made"
+          echo "========================================="
+          echo ""
+          echo "This is what would be applied:"
+          cat scripts/baseline-prisma-migrations.sql
+          echo ""
+          echo "To actually apply these changes, run this workflow again with:"
+          echo "- confirm: APPLY"
+          echo "- dry_run: false"
+
+      - name: Apply baseline migrations
+        if: github.event.inputs.dry_run == 'false'
+        env:
+          PGPASSWORD: ${{ steps.parse-db.outputs.DB_PASS }}
+        run: |
+          echo "========================================="
+          echo "Applying Baseline Migrations"
+          echo "========================================="
+
+          psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -f scripts/baseline-prisma-migrations.sql \
+            || {
+              echo "❌ Failed to apply baseline"
+              exit 1
+            }
+
+          echo "✅ Baseline applied successfully"
+
+      - name: Verify baseline application
+        if: github.event.inputs.dry_run == 'false'
+        env:
+          PGPASSWORD: ${{ steps.parse-db.outputs.DB_PASS }}
+        run: |
+          echo "========================================="
+          echo "Verifying Baseline Application"
+          echo "========================================="
+
+          # Check all migrations are marked as applied
+          UNAPPLIED_COUNT=$(psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -t -c "
+              SELECT COUNT(*)
+              FROM aedpics._prisma_migrations
+              WHERE finished_at IS NULL;
+            ")
+
+          if [ "$UNAPPLIED_COUNT" -eq 0 ]; then
+            echo "✅ All migrations are marked as applied"
+          else
+            echo "❌ Found $UNAPPLIED_COUNT unapplied migrations"
+            exit 1
+          fi
+
+          # Show final status
+          psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -c "
+              SELECT migration_name,
+                     CASE
+                       WHEN logs LIKE '%Baseline%' THEN 'Baselined'
+                       ELSE 'Normal'
+                     END as type,
+                     finished_at IS NOT NULL as applied
+              FROM aedpics._prisma_migrations
+              ORDER BY migration_name;
+            "
+
+      - name: SSH to server and regenerate Prisma
+        if: github.event.inputs.dry_run == 'false'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.NCP_HOST }}
+          username: ${{ secrets.NCP_USERNAME }}
+          key: ${{ secrets.NCP_SSH_KEY }}
+          port: ${{ secrets.NCP_SSH_PORT }}
+          script: |
+            cd /var/www/aedpics
+
+            echo "Regenerating Prisma Client..."
+            npx prisma generate
+
+            echo "Reloading PM2..."
+            pm2 reload ecosystem.config.cjs
+
+            echo "Checking PM2 status..."
+            pm2 status
+
+            echo "✅ Server updated successfully"
+
+      - name: Send Slack notification
+        if: github.event.inputs.dry_run == 'false'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "Prisma Migration Baseline Applied",
+              attachments: [{
+                color: 'good',
+                text: `Successfully applied baseline migrations to production database\nAll migrations are now marked as applied`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Summary
+        run: |
+          echo "## Baseline Application Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "**Mode**: DRY RUN (no changes made)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Mode**: APPLIED" >> $GITHUB_STEP_SUMMARY
+            echo "**Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
