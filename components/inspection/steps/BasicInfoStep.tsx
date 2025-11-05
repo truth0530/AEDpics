@@ -854,12 +854,12 @@ export function BasicInfoStep() {
               onClick={() => setShowRoadview(!showRoadview)}
               className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!isMapLoaded}
-              title="로드뷰 펼치기"
+              title={showRoadview ? "로드뷰 접기" : "로드뷰 펼치기"}
             >
-              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 flex-shrink-0 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24" style={{ transform: showRoadview ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                 <path d="M7 10l5 5 5-5z"/>
               </svg>
-              <span>로드뷰 펼치기</span>
+              <span>{showRoadview ? "로드뷰 접기" : "로드뷰 펼치기"}</span>
             </button>
           </div>
 
