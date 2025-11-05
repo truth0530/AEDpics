@@ -194,19 +194,11 @@ export function BasicInfoStep() {
           overlayContent.innerHTML = `
             <div class="flex flex-col items-center">
               <div class="bg-green-500 rounded-full p-2 shadow-lg border-2 border-white" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <!-- 녹색 하트 + 흰색 번개 시그니처 로고 -->
-                  <defs>
-                    <mask id="lightning-mask">
-                      <rect width="24" height="24" fill="white"/>
-                      <!-- 번개 모양 -->
-                      <polygon points="12,2 5,12 10,12 8,22 16,10 12,10 14,2" fill="black"/>
-                    </mask>
-                  </defs>
-                  <!-- 하트 배경 -->
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="white" mask="url(#lightning-mask)"/>
-                  <!-- 번개 -->
-                  <polygon points="12,2 5,12 10,12 8,22 16,10 12,10 14,2" fill="white"/>
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">
+                  <!-- 흰색 하트 -->
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="white"/>
+                  <!-- 녹색 번개 -->
+                  <polygon points="12,2 5,12 10,12 8,22 16,10 12,10 14,2" fill="#22c55e"/>
                 </svg>
               </div>
               <div class="text-xs font-semibold text-white bg-gray-900 px-2 py-1 rounded mt-1 whitespace-nowrap">자동심장충격기</div>
