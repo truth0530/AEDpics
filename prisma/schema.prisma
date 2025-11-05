@@ -26,61 +26,61 @@ model accounts {
 }
 
 model aed_data {
-  id                            Int                      @id @default(autoincrement())
-  equipment_serial              String                   @unique @db.VarChar(255)
-  management_number             String?                  @db.VarChar
-  model_name                    String?                  @db.VarChar
-  manufacturer                  String?                  @db.VarChar
-  manufacturing_country         String?                  @db.VarChar
-  manufacturing_date            DateTime?                @db.Date
-  serial_number                 String?                  @db.VarChar
-  installation_date             DateTime?                @db.Date
-  first_installation_date       DateTime?                @db.Date
-  installation_institution      String?                  @db.VarChar
-  installation_address          String?                  @db.VarChar
-  installation_position         String?                  @db.VarChar
-  installation_method           String?                  @db.VarChar
-  jurisdiction_health_center    String?                  @db.VarChar
-  manager                       String?                  @db.VarChar
-  institution_contact           String?                  @db.VarChar
-  establisher                   String?                  @db.VarChar
-  purchase_institution          String?                  @db.VarChar
-  sido                          String?                  @db.VarChar
-  gugun                         String?                  @db.VarChar
-  longitude                     Decimal?                 @db.Decimal(11, 8)
-  latitude                      Decimal?                 @db.Decimal(10, 8)
-  operation_status              String?                  @db.VarChar
-  display_allowed               String?                  @db.VarChar
-  external_display              String?                  @db.VarChar
-  external_non_display_reason   String?                  @db.VarChar
-  government_support            String?                  @db.VarChar
-  battery_expiry_date           DateTime?                @db.Date
-  patch_available               String?                  @db.VarChar
-  patch_expiry_date             DateTime?                @db.Date
-  last_inspection_date          DateTime?                @db.Date
+  id                            Int                            @id @default(autoincrement())
+  equipment_serial              String                         @unique @db.VarChar(255)
+  management_number             String?                        @db.VarChar
+  model_name                    String?                        @db.VarChar
+  manufacturer                  String?                        @db.VarChar
+  manufacturing_country         String?                        @db.VarChar
+  manufacturing_date            DateTime?                      @db.Date
+  serial_number                 String?                        @db.VarChar
+  installation_date             DateTime?                      @db.Date
+  first_installation_date       DateTime?                      @db.Date
+  installation_institution      String?                        @db.VarChar
+  installation_address          String?                        @db.VarChar
+  installation_position         String?                        @db.VarChar
+  installation_method           String?                        @db.VarChar
+  jurisdiction_health_center    String?                        @db.VarChar
+  manager                       String?                        @db.VarChar
+  institution_contact           String?                        @db.VarChar
+  establisher                   String?                        @db.VarChar
+  purchase_institution          String?                        @db.VarChar
+  sido                          String?                        @db.VarChar
+  gugun                         String?                        @db.VarChar
+  longitude                     Decimal?                       @db.Decimal(11, 8)
+  latitude                      Decimal?                       @db.Decimal(10, 8)
+  operation_status              String?                        @db.VarChar
+  display_allowed               String?                        @db.VarChar
+  external_display              String?                        @db.VarChar
+  external_non_display_reason   String?                        @db.VarChar
+  government_support            String?                        @db.VarChar
+  battery_expiry_date           DateTime?                      @db.Date
+  patch_available               String?                        @db.VarChar
+  patch_expiry_date             DateTime?                      @db.Date
+  last_inspection_date          DateTime?                      @db.Date
   last_use_date                 Decimal?
-  replacement_date              DateTime?                @db.Date
-  category_1                    String?                  @db.VarChar
-  category_2                    String?                  @db.VarChar
-  category_3                    String?                  @db.VarChar
-  registration_date             DateTime?                @db.Date
-  remarks                       String?                  @db.VarChar
-  created_at                    DateTime                 @default(now()) @db.Timestamptz(6)
-  updated_at                    DateTime                 @default(now()) @db.Timestamptz(6)
-  report_date                   DateTime?                @db.Date
-  installation_location_address String?                  @db.VarChar(255)
-  saeum_deletion_status         String?                  @db.VarChar(255)
+  replacement_date              DateTime?                      @db.Date
+  category_1                    String?                        @db.VarChar
+  category_2                    String?                        @db.VarChar
+  category_3                    String?                        @db.VarChar
+  registration_date             DateTime?                      @db.Date
+  remarks                       String?                        @db.VarChar
+  created_at                    DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime                       @default(now()) @db.Timestamptz(6)
+  report_date                   DateTime?                      @db.Date
+  installation_location_address String?                        @db.VarChar(255)
+  saeum_deletion_status         String?                        @db.VarChar(255)
   data_status                   String?
-  first_seen_date               DateTime?                @db.Date
-  last_seen_date                DateTime?                @db.Date
-  consecutive_missing_days      Int?                     @default(0)
-  deletion_suspected_date       DateTime?                @db.Date
+  first_seen_date               DateTime?                      @db.Date
+  last_seen_date                DateTime?                      @db.Date
+  consecutive_missing_days      Int?                           @default(0)
+  deletion_suspected_date       DateTime?                      @db.Date
   sync_batch_id                 String?
   search_vector                 Unsupported("tsvector")?
   gps_issues                    gps_issues[]
   inspection_schedules          inspection_schedules[]
-  inspection_sessions           inspection_sessions[]     @relation("SessionToAedData")
-  inspections                   inspections[]             @relation("InspectionToAedData")
+  inspection_sessions           inspection_sessions[]          @relation("SessionToAedData")
+  inspections                   inspections[]                  @relation("InspectionToAedData")
   inspection_field_comparisons  inspection_field_comparisons[]
 
   @@index([latitude, longitude], map: "idx_aed_data_coordinates")
@@ -255,31 +255,31 @@ model inspection_sessions {
 }
 
 model inspections {
-  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aed_data_id          Int?
-  equipment_serial     String
-  inspector_id         String?        @db.Uuid
-  inspection_date      DateTime?      @default(dbgenerated("CURRENT_DATE")) @db.Date
-  inspection_type      String?
-  visual_status        String?
-  battery_status       String?
-  pad_status           String?
-  operation_status     String?
-  overall_status       String?
-  notes                String?
-  issues_found         String[]
-  photos               String[]
-  inspection_latitude  Decimal?       @db.Decimal
-  inspection_longitude Decimal?       @db.Decimal
-  issues               Json?
-  original_data        Json?
-  registered_data      Json?
-  inspected_data       Json?
-  created_at           DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime?      @default(now()) @db.Timestamptz(6)
-  completed_at         DateTime?      @db.Timestamptz(6)
-  aed_data             aed_data?      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
-  user_profiles        user_profiles? @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
+  id                           String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aed_data_id                  Int?
+  equipment_serial             String
+  inspector_id                 String?                        @db.Uuid
+  inspection_date              DateTime?                      @default(dbgenerated("CURRENT_DATE")) @db.Date
+  inspection_type              String?
+  visual_status                String?
+  battery_status               String?
+  pad_status                   String?
+  operation_status             String?
+  overall_status               String?
+  notes                        String?
+  issues_found                 String[]
+  photos                       String[]
+  inspection_latitude          Decimal?                       @db.Decimal
+  inspection_longitude         Decimal?                       @db.Decimal
+  issues                       Json?
+  original_data                Json?
+  registered_data              Json?
+  inspected_data               Json?
+  created_at                   DateTime?                      @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime?                      @default(now()) @db.Timestamptz(6)
+  completed_at                 DateTime?                      @db.Timestamptz(6)
+  aed_data                     aed_data?                      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
+  user_profiles                user_profiles?                 @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
   inspection_field_comparisons inspection_field_comparisons[]
 
   @@index([equipment_serial], map: "idx_inspections_equipment_serial")
@@ -287,34 +287,34 @@ model inspections {
 }
 
 model inspection_field_comparisons {
-  id                    String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  inspection_id         String      @db.Uuid
-  equipment_serial      String      @db.VarChar(255)
-  field_name            String      @db.VarChar(100)
-  field_category        String      @db.VarChar(50)
+  id               String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inspection_id    String @db.Uuid
+  equipment_serial String @db.VarChar(255)
+  field_name       String @db.VarChar(100)
+  field_category   String @db.VarChar(50)
 
   // 점검 시점 데이터
-  inspection_value      String?
-  aed_data_value        String?
-  inspection_time       DateTime    @db.Timestamptz(6)
+  inspection_value String?
+  aed_data_value   String?
+  inspection_time  DateTime @db.Timestamptz(6)
 
   // 분류
-  status_at_inspection  String      @db.VarChar(20)
-  issue_severity        String?     @db.VarChar(20)
+  status_at_inspection String  @db.VarChar(20)
+  issue_severity       String? @db.VarChar(20)
 
   // 개선 추적
   current_aed_value     String?
-  last_checked_at       DateTime    @default(now()) @db.Timestamptz(6)
-  improvement_status    String?     @db.VarChar(20)
-  improved_at           DateTime?   @db.Timestamptz(6)
+  last_checked_at       DateTime  @default(now()) @db.Timestamptz(6)
+  improvement_status    String?   @db.VarChar(20)
+  improved_at           DateTime? @db.Timestamptz(6)
   days_since_inspection Int?
 
   // 관계
-  inspection            inspections @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
-  aed_device            aed_data    @relation(fields: [equipment_serial], references: [equipment_serial], onDelete: Cascade)
+  inspection inspections @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
+  aed_device aed_data    @relation(fields: [equipment_serial], references: [equipment_serial], onDelete: Cascade)
 
-  created_at            DateTime    @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime    @default(now()) @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([inspection_id], map: "idx_field_comparisons_inspection")
   @@index([equipment_serial], map: "idx_field_comparisons_equipment")
@@ -406,24 +406,26 @@ model notifications {
 }
 
 model organizations {
-  id                  String               @id @db.Uuid
-  name                String
-  type                organization_type
-  parent_id           String?              @db.Uuid
-  region_code         String?
-  city_code           String?
-  address             String?
-  contact             String?
-  latitude            Decimal?             @db.Decimal(10, 8)
-  longitude           Decimal?             @db.Decimal(11, 8)
-  created_at          DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime             @default(now()) @db.Timestamptz(6)
-  organizations       organizations?       @relation("organizationsToorganizations", fields: [parent_id], references: [id])
-  other_organizations organizations[]      @relation("organizationsToorganizations")
-  task_assignments    task_assignments[]
-  team_activity_logs  team_activity_logs[]
-  team_members        team_members[]
-  user_profiles       user_profiles[]
+  id                           String                         @id @db.Uuid
+  name                         String
+  type                         organization_type
+  parent_id                    String?                        @db.Uuid
+  region_code                  String?
+  city_code                    String?
+  address                      String?
+  contact                      String?
+  latitude                     Decimal?                       @db.Decimal(10, 8)
+  longitude                    Decimal?                       @db.Decimal(11, 8)
+  created_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  organizations                organizations?                 @relation("organizationsToorganizations", fields: [parent_id], references: [id])
+  other_organizations          organizations[]                @relation("organizationsToorganizations")
+  task_assignments             task_assignments[]
+  team_activity_logs           team_activity_logs[]
+  team_members                 team_members[]
+  user_profiles                user_profiles[]
+  change_requests_as_current   organization_change_requests[] @relation("change_request_current_org")
+  change_requests_as_requested organization_change_requests[] @relation("change_request_requested_org")
 
   @@index([region_code], map: "idx_organizations_region")
   @@index([type], map: "idx_organizations_type")
@@ -677,7 +679,7 @@ model user_profiles {
   inspection_schedule_entries                                                                      inspection_schedule_entries[]
   inspection_schedules                                                                             inspection_schedules[]
   inspection_sessions                                                                              inspection_sessions[]
-  inspections                                                                                      inspections[]                         @relation("InspectionToInspector")
+  inspections                                                                                      inspections[]                     @relation("InspectionToInspector")
   login_history                                                                                    login_history[]
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2024Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2024Touser_profiles")
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2025Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2025Touser_profiles")
@@ -697,17 +699,19 @@ model user_profiles {
   other_user_profiles                                                                              user_profiles[]                   @relation("user_profilesTouser_profiles")
   organizations                                                                                    organizations?                    @relation(fields: [organization_id], references: [id])
 
+  approval_notifications_sent              approval_notifications[]       @relation("approval_notifications_sender")
+  approval_notifications_received          approval_notifications[]       @relation("approval_notifications_recipient")
+  notification_settings                    notification_settings?
+  push_subscriptions                       push_subscriptions[]
+  organization_change_requests_as_user     organization_change_requests[] @relation("change_request_user")
+  organization_change_requests_as_reviewer organization_change_requests[] @relation("change_request_reviewer")
+
   @@index([account_type], map: "idx_user_profiles_account_type")
   @@index([email], map: "idx_user_profiles_email")
   @@index([organization_name], map: "idx_user_profiles_organization_name")
   @@index([role], map: "idx_user_profiles_role")
   @@index([created_at, role], map: "idx_user_profiles_created_at_role")
   @@index([region_code, role], map: "idx_user_profiles_region_role")
-
-  approval_notifications_sent     approval_notifications[] @relation("approval_notifications_sender")
-  approval_notifications_received approval_notifications[] @relation("approval_notifications_recipient")
-  notification_settings           notification_settings?
-  push_subscriptions              push_subscriptions[]
 }
 
 model verification_tokens {
@@ -871,6 +875,7 @@ enum review_status {
   approved
   rejected
   requires_revision
+  cancelled
 }
 
 enum schedule_priority {
@@ -947,21 +952,21 @@ enum user_role {
 // ========== 알림 시스템 ==========
 
 model approval_notifications {
-  id                String         @id @default(uuid()) @db.Uuid
-  recipient_id      String         @db.Uuid
-  sender_id         String?        @db.Uuid
-  new_user_id       String         @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
+  recipient_id      String    @db.Uuid
+  sender_id         String?   @db.Uuid
+  new_user_id       String    @db.Uuid
   new_user_email    String
   new_user_name     String
   new_user_region   String?
   new_user_org      String?
-  notification_type String         @db.VarChar(50) // 'new_signup', 'reminder'
-  is_read           Boolean        @default(false)
-  read_at           DateTime?      @db.Timestamptz(6)
-  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  notification_type String    @db.VarChar(50) // 'new_signup', 'reminder'
+  is_read           Boolean   @default(false)
+  read_at           DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
 
-  recipient         user_profiles  @relation("approval_notifications_recipient", fields: [recipient_id], references: [id], onDelete: Cascade)
-  sender            user_profiles? @relation("approval_notifications_sender", fields: [sender_id], references: [id], onDelete: SetNull)
+  recipient user_profiles  @relation("approval_notifications_recipient", fields: [recipient_id], references: [id], onDelete: Cascade)
+  sender    user_profiles? @relation("approval_notifications_sender", fields: [sender_id], references: [id], onDelete: SetNull)
 
   @@index([recipient_id, is_read, created_at], map: "idx_approval_notif_recipient")
   @@index([new_user_id], map: "idx_approval_notif_new_user")
@@ -969,39 +974,65 @@ model approval_notifications {
 }
 
 model notification_settings {
-  id                    String        @id @default(uuid()) @db.Uuid
-  user_id               String        @unique @db.Uuid
-  sound_enabled         Boolean       @default(true)
-  voice_enabled         Boolean       @default(true)
-  browser_push_enabled  Boolean       @default(true)
-  toast_enabled         Boolean       @default(true)
-  reminder_enabled      Boolean       @default(true)
-  reminder_interval     Int           @default(60) // 초 단위 (기본: 60초 = 1분)
-  quiet_hours_enabled   Boolean       @default(false)
-  quiet_hours_start     String?       @db.VarChar(5) // "22:00" 형식
-  quiet_hours_end       String?       @db.VarChar(5) // "08:00" 형식
-  created_at            DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+  id                   String   @id @default(uuid()) @db.Uuid
+  user_id              String   @unique @db.Uuid
+  sound_enabled        Boolean  @default(true)
+  voice_enabled        Boolean  @default(true)
+  browser_push_enabled Boolean  @default(true)
+  toast_enabled        Boolean  @default(true)
+  reminder_enabled     Boolean  @default(true)
+  reminder_interval    Int      @default(60) // 초 단위 (기본: 60초 = 1분)
+  quiet_hours_enabled  Boolean  @default(false)
+  quiet_hours_start    String?  @db.VarChar(5) // "22:00" 형식
+  quiet_hours_end      String?  @db.VarChar(5) // "08:00" 형식
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
-  user                  user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "idx_notification_settings_user")
 }
 
 model push_subscriptions {
-  id           String        @id @default(uuid()) @db.Uuid
-  user_id      String        @db.Uuid
-  endpoint     String        @db.VarChar(500)
-  p256dh_key   String        @db.VarChar(200)
-  auth_key     String        @db.VarChar(200)
-  user_agent   String?       @db.VarChar(500)
-  created_at   DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
-  last_used_at DateTime?     @db.Timestamptz(6)
+  id           String    @id @default(uuid()) @db.Uuid
+  user_id      String    @db.Uuid
+  endpoint     String    @db.VarChar(500)
+  p256dh_key   String    @db.VarChar(200)
+  auth_key     String    @db.VarChar(200)
+  user_agent   String?   @db.VarChar(500)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  last_used_at DateTime? @db.Timestamptz(6)
 
-  user         user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, endpoint])
   @@index([user_id], map: "idx_push_subscriptions_user")
   @@index([endpoint], map: "idx_push_subscriptions_endpoint")
+}
+
+// ========== 조직 변경 요청 ==========
+
+model organization_change_requests {
+  id                        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                   String        @db.Uuid
+  current_organization_id   String?       @db.Uuid
+  requested_organization_id String        @db.Uuid
+  reason                    String?
+  status                    review_status @default(pending)
+  requested_at              DateTime      @default(now()) @db.Timestamptz(6)
+  reviewed_by               String?       @db.Uuid
+  reviewed_at               DateTime?     @db.Timestamptz(6)
+  review_notes              String?
+  created_at                DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user                   user_profiles  @relation("change_request_user", fields: [user_id], references: [id], onDelete: Cascade)
+  current_organization   organizations? @relation("change_request_current_org", fields: [current_organization_id], references: [id], onDelete: SetNull)
+  requested_organization organizations  @relation("change_request_requested_org", fields: [requested_organization_id], references: [id], onDelete: Cascade)
+  reviewer               user_profiles? @relation("change_request_reviewer", fields: [reviewed_by], references: [id], onDelete: SetNull)
+
+  @@index([user_id], map: "idx_org_change_requests_user")
+  @@index([status], map: "idx_org_change_requests_status")
+  @@index([requested_at], map: "idx_org_change_requests_requested_at")
 }
