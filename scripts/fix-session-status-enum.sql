@@ -1,0 +1,133 @@
+-- Fix session_status enum type issue
+-- Date: 2025-11-05
+-- Issue: operator does not exist: text = session_status
+
+-- ========================================
+-- Step 1: Check if session_status enum exists
+-- ========================================
+
+DO $$
+DECLARE
+    v_enum_exists BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 FROM pg_type
+        WHERE typname = 'session_status'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'aedpics')
+    ) INTO v_enum_exists;
+
+    IF v_enum_exists THEN
+        RAISE NOTICE '✓ session_status enum exists';
+    ELSE
+        RAISE NOTICE '⚠ session_status enum does NOT exist - will create';
+    END IF;
+END $$;
+
+-- ========================================
+-- Step 2: Create session_status enum if missing
+-- ========================================
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type
+        WHERE typname = 'session_status'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'aedpics')
+    ) THEN
+        CREATE TYPE "aedpics"."session_status" AS ENUM (
+            'active',
+            'in_progress',
+            'completed',
+            'cancelled',
+            'paused'
+        );
+        RAISE NOTICE '✓ Created session_status enum';
+    ELSE
+        RAISE NOTICE '✓ session_status enum already exists';
+    END IF;
+END $$;
+
+-- ========================================
+-- Step 3: Check inspection_sessions.status column type
+-- ========================================
+
+DO $$
+DECLARE
+    v_column_type TEXT;
+BEGIN
+    SELECT data_type INTO v_column_type
+    FROM information_schema.columns
+    WHERE table_schema = 'aedpics'
+      AND table_name = 'inspection_sessions'
+      AND column_name = 'status';
+
+    RAISE NOTICE 'Current inspection_sessions.status type: %', v_column_type;
+END $$;
+
+-- ========================================
+-- Step 4: Convert status column to session_status enum
+-- ========================================
+
+DO $$
+DECLARE
+    v_column_type TEXT;
+BEGIN
+    SELECT data_type INTO v_column_type
+    FROM information_schema.columns
+    WHERE table_schema = 'aedpics'
+      AND table_name = 'inspection_sessions'
+      AND column_name = 'status';
+
+    IF v_column_type = 'USER-DEFINED' THEN
+        RAISE NOTICE '✓ inspection_sessions.status is already an enum';
+    ELSIF v_column_type IN ('character varying', 'text') THEN
+        RAISE NOTICE '⚠ inspection_sessions.status is text/varchar - converting to enum';
+
+        -- Convert column type
+        ALTER TABLE "aedpics"."inspection_sessions"
+        ALTER COLUMN "status" TYPE "aedpics"."session_status"
+        USING "status"::text::"aedpics"."session_status";
+
+        RAISE NOTICE '✓ Converted inspection_sessions.status to session_status enum';
+    ELSE
+        RAISE WARNING '⚠ Unknown column type: %', v_column_type;
+    END IF;
+END $$;
+
+-- ========================================
+-- Step 5: Verification
+-- ========================================
+
+DO $$
+DECLARE
+    v_enum_values TEXT[];
+    v_column_type TEXT;
+    v_enum_type TEXT;
+BEGIN
+    -- Check enum values
+    SELECT ARRAY_AGG(enumlabel ORDER BY enumsortorder)
+    INTO v_enum_values
+    FROM pg_enum
+    WHERE enumtypid = (
+        SELECT oid FROM pg_type
+        WHERE typname = 'session_status'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'aedpics')
+    );
+
+    -- Check column type
+    SELECT data_type, udt_name INTO v_column_type, v_enum_type
+    FROM information_schema.columns
+    WHERE table_schema = 'aedpics'
+      AND table_name = 'inspection_sessions'
+      AND column_name = 'status';
+
+    RAISE NOTICE '=== Verification Results ===';
+    RAISE NOTICE 'session_status enum values: %', v_enum_values;
+    RAISE NOTICE 'inspection_sessions.status type: % (%)', v_column_type, v_enum_type;
+
+    IF v_column_type = 'USER-DEFINED' AND v_enum_type = 'session_status' THEN
+        RAISE NOTICE '✓ SUCCESS: inspection_sessions.status is correctly set to session_status enum';
+    ELSE
+        RAISE WARNING '⚠ FAILED: inspection_sessions.status type mismatch';
+    END IF;
+END $$;

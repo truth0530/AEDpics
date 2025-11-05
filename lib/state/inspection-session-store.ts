@@ -606,3 +606,53 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
     });
   },
 }));
+
+// ========================================
+// Step Data 타입 정의
+// ========================================
+
+/**
+ * 접근성 정보 타입
+ * 점검 항목에 추가된 접근성 검증 데이터
+ */
+export interface AccessibilityData {
+  // 설치 위치 접근 허용 범위
+  accessibility_level: 'public' | 'restricted' | 'private';
+  accessibility_reason?: string; // restricted/private일 때 필수
+
+  // 24시간 사용 가능 여부
+  availability_24h: 'always' | 'limited';
+  weekly_schedule?: {
+    monday?: { start: string; end: string };
+    tuesday?: { start: string; end: string };
+    wednesday?: { start: string; end: string };
+    thursday?: { start: string; end: string };
+    friday?: { start: string; end: string };
+    saturday?: { start: string; end: string };
+    sunday?: { start: string; end: string };
+  };
+}
+
+/**
+ * BasicInfo 단계 데이터 타입
+ */
+export interface BasicInfoData {
+  all_matched?: boolean | string;
+  location_matched?: boolean | string;
+  gps_verified?: boolean;
+  gps_latitude?: number;
+  gps_longitude?: number;
+  manager?: string;
+  contact_info?: string;
+  address?: string;
+  installation_position?: string;
+  category_1?: string;
+  category_2?: string;
+  category_3?: string;
+  edit_reason?: string;
+
+  // 🆕 접근성 정보 추가
+  accessibility?: AccessibilityData;
+
+  [key: string]: unknown;
+}

@@ -299,6 +299,36 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         if (basicInfo?.location_matched === 'edited' && !basicInfo.address?.trim()) {
           missing.push('주소가 비어있음');
         }
+
+        // ✅ 접근성 정보 검증
+        const accessibility = basicInfo?.accessibility as Record<string, any> | undefined;
+
+        // 필수: 접근 허용 범위 선택
+        if (!accessibility?.accessibility_level) {
+          missing.push('접근성 정보 - 설치 위치 접근 허용 범위를 선택해주세요');
+        }
+
+        // 접근 제한 시 사유 입력 확인
+        if (accessibility?.accessibility_level === 'restricted' || accessibility?.accessibility_level === 'private') {
+          if (!accessibility.accessibility_reason?.trim()) {
+            missing.push('접근성 정보 - 접근 제한 사유를 입력해주세요');
+          }
+        }
+
+        // 필수: 24시간 사용 가능 여부 선택
+        if (!accessibility?.availability_24h) {
+          missing.push('접근성 정보 - 24시간 사용 가능 여부를 선택해주세요');
+        }
+
+        // 일부 사용 시 주간 스케줄 확인
+        if (accessibility?.availability_24h === 'limited') {
+          const schedule = accessibility.weekly_schedule as Record<string, any> | undefined;
+          const hasSchedule = schedule && Object.keys(schedule).length > 0;
+
+          if (!hasSchedule) {
+            missing.push('접근성 정보 - 사용 가능한 요일 및 시간을 최소 1개 이상 입력해주세요');
+          }
+        }
         break;
 
       case 1: // DeviceInfoStep - 장비 정보 및 소모품 확인 필수

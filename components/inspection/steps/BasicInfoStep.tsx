@@ -2,9 +2,15 @@
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useInspectionSessionStore } from '@/lib/state/inspection-session-store';
+import type { AccessibilityData } from '@/lib/state/inspection-session-store';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
 import { ValidationWarning } from '../ValidationWarning';
+import { WeeklyScheduleInput } from '../WeeklyScheduleInput';
+import type { WeeklySchedule } from '../WeeklyScheduleInput';
 import type { Category } from '@/lib/constants/aed-categories';
 
 interface FieldChange {
@@ -940,6 +946,154 @@ export function BasicInfoStep() {
                 '일치'
               )}
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 접근성 정보 섹션 */}
+      <div className="p-6 bg-gray-900/50 rounded-lg border border-gray-700/50">
+        <h3 className="text-lg font-semibold mb-4 text-white">접근성 정보</h3>
+
+        <div className="space-y-6">
+          {/* 1. 설치 위치 접근 허용 범위 */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium text-white">
+              설치 위치 접근 허용 범위 <span className="text-red-500">*</span>
+            </Label>
+
+            <RadioGroup
+              value={basicInfo.accessibility?.accessibility_level || ''}
+              onValueChange={(value: 'public' | 'restricted' | 'private') => {
+                const newAccessibility: AccessibilityData = {
+                  ...(basicInfo.accessibility || {}),
+                  accessibility_level: value,
+                  availability_24h: basicInfo.accessibility?.availability_24h || 'always',
+                };
+
+                // restricted/private가 아닌 경우 reason 제거
+                if (value === 'public') {
+                  delete newAccessibility.accessibility_reason;
+                }
+
+                updateStepData('basicInfo', {
+                  accessibility: newAccessibility
+                });
+              }}
+              className="flex flex-col space-y-2"
+            >
+              <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50">
+                <RadioGroupItem value="public" id="access-public" />
+                <Label htmlFor="access-public" className="flex-1 cursor-pointer text-white">
+                  누구나 접근 가능
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50">
+                <RadioGroupItem value="restricted" id="access-restricted" />
+                <Label htmlFor="access-restricted" className="flex-1 cursor-pointer text-white">
+                  일부가능 (제한적 접근)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50">
+                <RadioGroupItem value="private" id="access-private" />
+                <Label htmlFor="access-private" className="flex-1 cursor-pointer text-white">
+                  불가능
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {/* 접근 제한 사유 입력 (조건부 표시) */}
+            {(basicInfo.accessibility?.accessibility_level === 'restricted' ||
+              basicInfo.accessibility?.accessibility_level === 'private') && (
+              <div className="mt-3">
+                <Label htmlFor="access-reason" className="text-sm text-gray-300">
+                  접근 제한 사유 <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="access-reason"
+                  placeholder="예: 근무 시간에만 출입 가능, 회원 전용 시설, 보안구역 등"
+                  value={basicInfo.accessibility?.accessibility_reason || ''}
+                  onChange={(e) => {
+                    const newAccessibility: AccessibilityData = {
+                      ...(basicInfo.accessibility || {}),
+                      accessibility_level: basicInfo.accessibility?.accessibility_level || 'restricted',
+                      accessibility_reason: e.target.value,
+                      availability_24h: basicInfo.accessibility?.availability_24h || 'always',
+                    };
+
+                    updateStepData('basicInfo', {
+                      accessibility: newAccessibility
+                    });
+                  }}
+                  className="mt-2 bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 2. 24시간 사용 가능 여부 */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium text-white">
+              24시간 사용 가능 여부 <span className="text-red-500">*</span>
+            </Label>
+
+            <RadioGroup
+              value={basicInfo.accessibility?.availability_24h || ''}
+              onValueChange={(value: 'always' | 'limited') => {
+                const newAccessibility: AccessibilityData = {
+                  ...(basicInfo.accessibility || {}),
+                  accessibility_level: basicInfo.accessibility?.accessibility_level || 'public',
+                  availability_24h: value,
+                };
+
+                // always인 경우 weekly_schedule 제거
+                if (value === 'always') {
+                  delete newAccessibility.weekly_schedule;
+                }
+
+                updateStepData('basicInfo', {
+                  accessibility: newAccessibility
+                });
+              }}
+              className="flex flex-col space-y-2"
+            >
+              <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50">
+                <RadioGroupItem value="always" id="availability-always" />
+                <Label htmlFor="availability-always" className="flex-1 cursor-pointer text-white">
+                  24시간 사용가능
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50">
+                <RadioGroupItem value="limited" id="availability-limited" />
+                <Label htmlFor="availability-limited" className="flex-1 cursor-pointer text-white">
+                  일부 사용 (시간 제한)
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {/* 요일별/시간대 입력 (조건부 표시) */}
+            {basicInfo.accessibility?.availability_24h === 'limited' && (
+              <div className="mt-3">
+                <WeeklyScheduleInput
+                  value={(basicInfo.accessibility?.weekly_schedule as WeeklySchedule) || {}}
+                  onChange={(schedule: WeeklySchedule) => {
+                    const newAccessibility: AccessibilityData = {
+                      ...(basicInfo.accessibility || {}),
+                      accessibility_level: basicInfo.accessibility?.accessibility_level || 'public',
+                      availability_24h: 'limited',
+                      weekly_schedule: schedule,
+                    };
+
+                    updateStepData('basicInfo', {
+                      accessibility: newAccessibility
+                    });
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
