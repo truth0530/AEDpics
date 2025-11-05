@@ -246,7 +246,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
 
       {/* 일요일 사용 가능 주 선택 */}
       {!value.is24hours && (
-        <div className="p-2 bg-gray-900/50 rounded-lg border border-gray-700">
+        <div>
           <div className="text-[10px] sm:text-xs text-gray-400 mb-1">일요일 사용 가능 주</div>
           <div className="flex flex-wrap gap-1">
             <div className="flex items-center gap-0.5">
