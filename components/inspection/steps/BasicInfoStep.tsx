@@ -792,118 +792,79 @@ export function BasicInfoStep() {
           </div>
         </div>
 
-        {/* 카카오 지도 */}
-        <div className="relative">
-          <div
-            ref={mapRef}
-            className="w-full h-48 rounded-lg overflow-hidden border border-gray-700"
-          />
+        {/* 지도와 로드뷰 - 반응형 레이아웃 (모바일: 상하, 데스크톱: 좌우) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-gray-700 rounded-lg overflow-hidden">
+          {/* 지도 섹션 */}
+          <div className="relative">
+            <div
+              ref={mapRef}
+              className="w-full h-64 bg-gray-900"
+            />
 
-          {/* 로딩 오버레이 */}
-          {!isMapLoaded && !mapError && (
-            <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg">
-              <div className="text-center">
-                <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin mb-2"></div>
-                <p className="text-gray-300 text-sm">지도 로딩 중...</p>
+            {/* 로딩 오버레이 */}
+            {!isMapLoaded && !mapError && (
+              <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <p className="text-gray-300 text-sm">지도 로딩 중...</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 에러 메시지 */}
-          {mapError && (
-            <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg">
-              <div className="text-center">
-                <p className="text-red-400 text-sm mb-2">{mapError}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="text-xs text-gray-400 underline"
-                >
-                  페이지 새로고침
-                </button>
+            {/* 에러 메시지 */}
+            {mapError && (
+              <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-red-400 text-sm mb-2">{mapError}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="text-xs text-gray-400 underline"
+                  >
+                    페이지 새로고침
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 현재 위치로 이동 버튼 - 지도 내 오버레이 */}
-          <button
-            onClick={moveToCurrentLocation}
-            className="absolute bottom-3 left-3 z-10 flex items-center justify-center bg-white/40 hover:bg-white/60 text-gray-700 hover:text-gray-900 p-1.5 rounded-lg transition-all touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
-            disabled={!isMapLoaded}
-            title="현재 위치로 지도 이동"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-            </svg>
-          </button>
-        </div>
+            {/* 현재 위치로 이동 버튼 */}
+            <button
+              onClick={moveToCurrentLocation}
+              className="absolute bottom-3 left-3 z-10 flex items-center justify-center bg-white/40 hover:bg-white/60 text-gray-700 hover:text-gray-900 p-1.5 rounded-lg transition-all touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+              disabled={!isMapLoaded}
+              title="현재 위치로 지도 이동"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+              </svg>
+            </button>
 
-        {/* 로드뷰 및 GPS 위치 확인 버튼 */}
-        <div className="mt-2 flex gap-2">
-          {/* 로드뷰 버튼 */}
-          <button
-            onClick={() => setShowRoadview(!showRoadview)}
-            className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!isMapLoaded}
-            title="로드뷰 보기"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M3 13h3v8H3z"/>
-              <path d="M9 5h3v16H9z"/>
-              <path d="M15 9h3v12h-3z"/>
-              <path d="M21 11h1v10h-1z"/>
-            </svg>
-            <span>로드뷰</span>
-          </button>
+            {/* 로드뷰 버튼 */}
+            <button
+              onClick={() => setShowRoadview(!showRoadview)}
+              className="absolute bottom-3 right-3 z-10 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!isMapLoaded}
+              title="로드뷰 보기"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 13h3v8H3z"/>
+                <path d="M9 5h3v16H9z"/>
+                <path d="M15 9h3v12h-3z"/>
+                <path d="M21 11h1v10h-1z"/>
+              </svg>
+              <span>로드뷰</span>
+            </button>
+          </div>
 
-          {/* GPS 위치 확인 버튼 */}
-          <button
-            onClick={() => {
-              updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
-              // ✅ 시각적 피드백 추가
-              const btn = document.activeElement as HTMLButtonElement;
-              if (btn) {
-                btn.classList.add('ring-2', 'ring-green-400');
-                setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
-              }
-            }}
-            className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
-              basicInfo.gps_verified
-                ? 'bg-green-600/30 border-2 border-green-500 text-green-200'
-                : hasMovedMarker
-                ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
-                : 'bg-green-600 hover:bg-green-700 text-white'
-            }`}
-            disabled={!isMapLoaded}
-          >
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-            </svg>
-            <span>
-              {basicInfo.gps_verified 
-                ? '위치 확인됨' 
-                : hasMovedMarker 
-                ? '변경된 위치로 저장' 
-                : '설치위치와 동일'
-              }
-            </span>
-          </button>
-        </div>
-
-        <div className="mt-2">
-          <p className="text-xs text-gray-400">
-            실제 위치와 다른 경우 마커를 드래그하여 이동해주세요
-          </p>
-        </div>
-
-        {/* 로드뷰 컨테이너 */}
-        {showRoadview && (
-          <div className="mt-4 border border-gray-700 rounded-lg overflow-hidden">
-            {/* 로드뷰 헤더 */}
-            <div className="bg-gray-800 px-3 py-2 flex items-center justify-between border-b border-gray-700">
-              <h3 className="text-xs font-semibold text-gray-300">로드뷰</h3>
+          {/* 로드뷰 섹션 또는 GPS 확인 버튼 */}
+          {showRoadview ? (
+            <div className="relative bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-700">
+              <div
+                ref={roadviewRef}
+                className="w-full h-64 bg-gray-900"
+              />
               <button
                 onClick={() => setShowRoadview(false)}
-                className="text-gray-400 hover:text-gray-200 p-0.5 transition-colors"
+                className="absolute top-2 right-2 z-10 text-gray-400 hover:text-gray-200 p-0.5 transition-colors bg-gray-900/80 rounded-lg backdrop-blur-sm"
                 title="로드뷰 닫기"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -911,12 +872,117 @@ export function BasicInfoStep() {
                 </svg>
               </button>
             </div>
+          ) : (
+            <div className="hidden lg:flex flex-col items-center justify-center bg-gray-900 border-l border-gray-700 p-4">
+              <button
+                onClick={() => {
+                  updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
+                  const btn = document.activeElement as HTMLButtonElement;
+                  if (btn) {
+                    btn.classList.add('ring-2', 'ring-green-400');
+                    setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
+                  }
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
+                  basicInfo.gps_verified
+                    ? 'bg-green-600/30 border-2 border-green-500 text-green-200'
+                    : hasMovedMarker
+                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+                disabled={!isMapLoaded}
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <span>
+                  {basicInfo.gps_verified
+                    ? '위치 확인됨'
+                    : hasMovedMarker
+                    ? '변경된 위치로 저장'
+                    : '설치위치와 동일'
+                  }
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
 
-            {/* 로드뷰 본체 */}
-            <div
-              ref={roadviewRef}
-              className="w-full h-64 bg-gray-900"
-            />
+        {/* 설명 문구 */}
+        <div className="mt-2">
+          <p className="text-xs text-gray-400">
+            실제 위치와 다른 경우 마커를 드래그하여 이동해주세요
+          </p>
+        </div>
+
+        {/* 모바일 GPS 확인 버튼 (로드뷰 닫혔을 때만 표시) */}
+        {!showRoadview && (
+          <div className="lg:hidden mt-2">
+            <button
+              onClick={() => {
+                updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
+                const btn = document.activeElement as HTMLButtonElement;
+                if (btn) {
+                  btn.classList.add('ring-2', 'ring-green-400');
+                  setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
+                }
+              }}
+              className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
+                basicInfo.gps_verified
+                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200'
+                  : hasMovedMarker
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
+              disabled={!isMapLoaded}
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+              <span>
+                {basicInfo.gps_verified
+                  ? '위치 확인됨'
+                  : hasMovedMarker
+                  ? '변경된 위치로 저장'
+                  : '설치위치와 동일'
+                }
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* 로드뷰 확장 시 설치위치와 동일 버튼 표시 */}
+        {showRoadview && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => {
+                handleLocationMatch();
+              }}
+              disabled={basicInfo.location_matched === true || (!isLocationEditMode && !isLocationMatching)}
+              className={`w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                basicInfo.location_matched === true
+                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                  : isLocationMatching && !isLocationEditMode
+                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
+                  : isLocationEditMode
+                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
+                  : 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
+              }`}
+            >
+              {basicInfo.location_matched === true ? (
+                <span className="flex items-center justify-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  일치 확인됨
+                </span>
+              ) : basicInfo.location_matched === 'edited' && isLocationMatching ? (
+                '일치로 변경'
+              ) : (
+                '설치위치와 동일'
+              )}
+            </button>
           </div>
         )}
       </div>
