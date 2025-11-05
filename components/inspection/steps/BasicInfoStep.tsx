@@ -914,7 +914,7 @@ export function BasicInfoStep() {
             </button>
           </div>
 
-          {/* 로드뷰 섹션 또는 GPS 확인 버튼 */}
+          {/* 로드뷰 섹션 */}
           {showRoadview ? (
             <div className="relative bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-700">
               {roadviewError ? (
@@ -947,38 +947,7 @@ export function BasicInfoStep() {
               </button>
             </div>
           ) : (
-            <div className="hidden lg:flex flex-col items-center justify-center bg-gray-900 border-l border-gray-700 p-4">
-              <button
-                onClick={() => {
-                  updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
-                  const btn = document.activeElement as HTMLButtonElement;
-                  if (btn) {
-                    btn.classList.add('ring-2', 'ring-green-400');
-                    setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
-                  }
-                }}
-                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
-                  basicInfo.gps_verified
-                    ? 'bg-green-600/30 border-2 border-green-500 text-green-200'
-                    : hasMovedMarker
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-                disabled={!isMapLoaded}
-              >
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                </svg>
-                <span>
-                  {basicInfo.gps_verified
-                    ? '위치 확인됨'
-                    : hasMovedMarker
-                    ? '변경된 위치로 저장'
-                    : '설치위치와 동일'
-                  }
-                </span>
-              </button>
-            </div>
+            <div className="bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-700"></div>
           )}
         </div>
 
@@ -989,76 +958,40 @@ export function BasicInfoStep() {
           </p>
         </div>
 
-        {/* 모바일 GPS 확인 버튼 (로드뷰 닫혔을 때만 표시) */}
-        {!showRoadview && (
-          <div className="lg:hidden mt-2">
-            <button
-              onClick={() => {
-                updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
-                const btn = document.activeElement as HTMLButtonElement;
-                if (btn) {
-                  btn.classList.add('ring-2', 'ring-green-400');
-                  setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
-                }
-              }}
-              className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs transition-all font-semibold touch-manipulation whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
-                basicInfo.gps_verified
-                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200'
-                  : hasMovedMarker
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
-              }`}
-              disabled={!isMapLoaded}
-            >
-              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-              </svg>
-              <span>
-                {basicInfo.gps_verified
-                  ? '위치 확인됨'
-                  : hasMovedMarker
-                  ? '변경된 위치로 저장'
-                  : '설치위치와 동일'
-                }
-              </span>
-            </button>
-          </div>
-        )}
-
-        {/* 로드뷰 확장 시 설치위치와 동일 버튼 표시 */}
-        {showRoadview && (
-          <div className="mt-2">
-            <button
-              type="button"
-              onClick={() => {
-                handleLocationMatch();
-              }}
-              disabled={basicInfo.location_matched === true || (!isLocationEditMode && !isLocationMatching)}
-              className={`w-full px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                basicInfo.location_matched === true
-                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                  : isLocationMatching && !isLocationEditMode
-                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                  : isLocationEditMode
-                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
-                  : 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
-              }`}
-            >
-              {basicInfo.location_matched === true ? (
-                <span className="flex items-center justify-center gap-1">
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  일치 확인됨
-                </span>
-              ) : basicInfo.location_matched === 'edited' && isLocationMatching ? (
-                '일치로 변경'
-              ) : (
-                '설치위치와 동일'
-              )}
-            </button>
-          </div>
-        )}
+        {/* 통합 GPS 확인 버튼 - 로드뷰 상태와 무관하게 항상 표시 */}
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
+              const btn = document.activeElement as HTMLButtonElement;
+              if (btn) {
+                btn.classList.add('ring-2', 'ring-green-400');
+                setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
+              }
+            }}
+            disabled={basicInfo.gps_verified === true || !isMapLoaded}
+            className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+              basicInfo.gps_verified === true
+                ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                : hasMovedMarker
+                ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
+                : 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+            <span>
+              {basicInfo.gps_verified === true
+                ? '위치 확인됨'
+                : hasMovedMarker
+                ? '변경된 위치로 저장'
+                : '설치위치와 동일'
+              }
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* 위치정보 */}
