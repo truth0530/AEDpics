@@ -194,7 +194,14 @@ const DesktopTableRow = memo(({
       {/* 5. 최근점검일 - 축소 */}
       <div className="min-w-0 pl-2">
         <div className="text-[10px] lg:text-xs xl:text-sm text-gray-300 truncate" title={device.last_inspection_date || '-'}>
-          {device.last_inspection_date ? new Date(device.last_inspection_date).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '') : '-'}
+          {device.last_inspection_date ? (
+            // 디버깅용: 11-0010656 장비인 경우 원본 날짜와 파싱된 날짜 모두 표시
+            device.equipment_serial === '11-0010656' ? (
+              `원본: ${device.last_inspection_date} → ${new Date(device.last_inspection_date).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}`
+            ) : (
+              new Date(device.last_inspection_date).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')
+            )
+          ) : '-'}
         </div>
       </div>
 
