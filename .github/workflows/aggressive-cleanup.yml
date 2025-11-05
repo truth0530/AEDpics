@@ -1,0 +1,66 @@
+name: Aggressive Disk Cleanup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Aggressive disk cleanup
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          set -e
+          echo "=== Aggressive Disk Cleanup ==="
+          echo "Current disk usage:"
+          df -h | grep -E '/$|Filesystem'
+          echo ""
+
+          echo "Stopping PM2..."
+          pm2 stop all || true
+          pm2 flush || true
+
+          cd /var/www/aedpics
+
+          echo "Step 1: Removing node_modules (1.3G)..."
+          rm -rf node_modules
+          echo "Removed node_modules"
+
+          echo "Step 2: Removing .next directory..."
+          rm -rf .next .next.backup
+          echo "Removed .next and backups"
+
+          echo "Step 3: Removing package-lock.json..."
+          rm -f package-lock.json
+          echo "Removed package-lock.json"
+
+          echo "Step 4: Cleaning npm cache..."
+          npm cache clean --force
+          echo "Cleaned npm cache"
+
+          echo "Step 5: Cleaning temp files..."
+          rm -rf /tmp/npm-* /tmp/next-* 2>/dev/null || true
+          echo "Cleaned temp files"
+
+          echo "Step 6: Cleaning old logs..."
+          find /var/log -type f -name "*.log" -mtime +30 -delete 2>/dev/null || true
+          find /var/www/aedpics -type f -name "*.log" -mtime +7 -delete 2>/dev/null || true
+          echo "Cleaned old logs"
+
+          echo "Step 7: Checking for large files..."
+          du -sh /var/www/aedpics/* 2>/dev/null | sort -h | tail -20 || true
+
+          echo ""
+          echo "Final disk usage:"
+          df -h | grep -E '/$|Filesystem'
+          echo ""
+
+          echo "=== Cleanup Complete ==="
+          echo "Now run the deployment workflow to rebuild"
