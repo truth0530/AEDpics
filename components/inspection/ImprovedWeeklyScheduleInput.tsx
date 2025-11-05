@@ -210,7 +210,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
               onClick={applyWeekendBatch}
               className="px-1.5 py-1 text-xs font-medium whitespace-nowrap flex-shrink-0 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
-              토,공휴일
+              토,공 일괄
             </button>
           </>
         )}
