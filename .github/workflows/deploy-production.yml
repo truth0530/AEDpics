@@ -129,19 +129,19 @@ jobs:
           npx prisma generate
 
           echo "=== Phase 2.5: Run database migrations ==="
-          echo "Checking for pending migrations..."
-          if [ -f "scripts/migrate-database.cjs" ]; then
-            echo "Running database migrations..."
-            if node scripts/migrate-database.cjs; then
-              echo "Migration successful!"
-            else
-              echo "ERROR: Migration failed!"
-              echo "Deployment aborted."
-              exit 1
-            fi
+          echo "Applying Prisma migrations to production database..."
+          if npx prisma migrate deploy; then
+            echo "Prisma migrations applied successfully!"
           else
-            echo "No migration script found. Skipping migrations."
+            echo "ERROR: Prisma migration failed!"
+            echo "Checking migration status..."
+            npx prisma migrate status || true
+            echo "Deployment aborted."
+            exit 1
           fi
+
+          echo "Verifying migration status..."
+          npx prisma migrate status
 
           echo "=== Phase 3: Build new version ==="
           echo "Cleaning PWA cache files..."

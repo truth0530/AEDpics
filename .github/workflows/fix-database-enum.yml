@@ -1,0 +1,178 @@
+name: Fix Database Enum (Verified)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - diagnose
+          - fix
+        default: 'diagnose'
+
+jobs:
+  fix-enum:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Parse DATABASE_URL
+        id: parse-db
+        run: |
+          # DATABASE_URL 형식: postgresql://user:pass@host:port/dbname?schema=xxx
+          DB_URL="${{ secrets.DATABASE_URL }}"
+
+          # 정규식으로 파싱 (bash parameter expansion 대신)
+          if [[ $DB_URL =~ postgresql://([^:]+):([^@]+)@([^:]+):([^/]+)/([^?]+) ]]; then
+            echo "DB_USER=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "DB_PASS=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+            echo "DB_HOST=${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
+            echo "DB_PORT=${BASH_REMATCH[4]}" >> $GITHUB_OUTPUT
+            echo "DB_NAME=${BASH_REMATCH[5]}" >> $GITHUB_OUTPUT
+
+            echo "✓ DATABASE_URL 파싱 성공"
+            echo "  Host: ${BASH_REMATCH[3]}"
+            echo "  Port: ${BASH_REMATCH[4]}"
+            echo "  Database: ${BASH_REMATCH[5]}"
+            echo "  User: ${BASH_REMATCH[1]}"
+          else
+            echo "✗ DATABASE_URL 파싱 실패"
+            exit 1
+          fi
+
+      - name: Test database connection
+        env:
+          PGPASSWORD: ${{ steps.parse-db.outputs.DB_PASS }}
+        run: |
+          echo "Testing database connection..."
+          psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -c "SELECT version();" || {
+              echo "✗ Database connection failed"
+              exit 1
+            }
+          echo "✓ Database connection successful"
+
+      - name: Diagnose enum status
+        if: github.event.inputs.action == 'diagnose'
+        env:
+          PGPASSWORD: ${{ steps.parse-db.outputs.DB_PASS }}
+        run: |
+          echo "========================================";
+          echo "Running diagnostic script..."
+          echo "========================================";
+
+          psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -f scripts/diagnose-session-enum.sql
+
+      - name: Fix enum type
+        if: github.event.inputs.action == 'fix'
+        env:
+          PGPASSWORD: ${{ steps.parse-db.outputs.DB_PASS }}
+        run: |
+          echo "========================================";
+          echo "Running fix script..."
+          echo "========================================";
+
+          psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -f scripts/fix-session-enum-verified.sql
+
+      - name: SSH to server and regenerate Prisma
+        if: github.event.inputs.action == 'fix'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/aedpics
+
+            echo "Regenerating Prisma Client..."
+            npx prisma generate
+
+            echo "Reloading PM2..."
+            pm2 reload ecosystem.config.cjs
+
+            echo "Waiting for services to stabilize..."
+            sleep 5
+
+            echo "Checking PM2 status..."
+            pm2 status
+
+            echo "Checking recent logs..."
+            pm2 logs --lines 20 --nostream
+
+      - name: Verify fix
+        if: github.event.inputs.action == 'fix'
+        env:
+          PGPASSWORD: ${{ steps.parse-db.outputs.DB_PASS }}
+        run: |
+          echo "========================================";
+          echo "Verifying fix..."
+          echo "========================================";
+
+          # Enum 타입 확인
+          ENUM_EXISTS=$(psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -t -c "SELECT COUNT(*) FROM pg_type t JOIN pg_namespace n ON t.typnamespace = n.oid WHERE t.typname = 'session_status' AND n.nspname = 'aedpics';")
+
+          if [ "$ENUM_EXISTS" -eq 1 ]; then
+            echo "✓ session_status enum exists"
+          else
+            echo "✗ session_status enum NOT found"
+            exit 1
+          fi
+
+          # 칼럼 타입 확인
+          COLUMN_TYPE=$(psql \
+            -h ${{ steps.parse-db.outputs.DB_HOST }} \
+            -p ${{ steps.parse-db.outputs.DB_PORT }} \
+            -U ${{ steps.parse-db.outputs.DB_USER }} \
+            -d ${{ steps.parse-db.outputs.DB_NAME }} \
+            -t -c "SELECT udt_name FROM information_schema.columns WHERE table_schema = 'aedpics' AND table_name = 'inspection_sessions' AND column_name = 'status';")
+
+          COLUMN_TYPE=$(echo $COLUMN_TYPE | xargs)  # trim whitespace
+
+          if [ "$COLUMN_TYPE" = "session_status" ]; then
+            echo "✓ Column type is session_status"
+          else
+            echo "✗ Column type is $COLUMN_TYPE (expected: session_status)"
+            exit 1
+          fi
+
+          echo "========================================";
+          echo "✓ All verifications passed!"
+          echo "========================================";
+
+      - name: Send Slack notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Database Enum Fix: ${{ github.event.inputs.action }}
+            Status: ${{ job.status }}
+            Branch: ${{ github.ref_name }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
