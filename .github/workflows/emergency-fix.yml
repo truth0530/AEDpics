@@ -1,7 +1,7 @@
 name: Emergency Server Fix
 
 on:
-  workflow_dispatch:  # Manual trigger only
+  workflow_dispatch:  # Manual trigger only - updated
 
 jobs:
   emergency-fix:
