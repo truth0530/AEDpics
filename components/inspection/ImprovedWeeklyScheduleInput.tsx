@@ -230,7 +230,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
 
             return (
               <div key={key} className="space-y-1">
-                <div className={`text-xs ${getLabelColor()} font-medium px-1`}>{fullLabel}</div>
+                <div className={`text-[10px] sm:text-xs ${getLabelColor()} font-medium px-1`}>{fullLabel}</div>
                 <input
                   type="text"
                   value={getDayTime(key)}
