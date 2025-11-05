@@ -242,8 +242,8 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
         </div>
       )}
 
-      {/* 일요일 사용 가능 주 선택 */}
-      {!value.is24hours && (
+      {/* 일요일 사용 가능 주 선택 - 일요일 운영시간이 설정되었을 때만 활성화 */}
+      {!value.is24hours && value.sunday?.timeRange && (
         <div>
           <div className="text-[10px] sm:text-xs text-gray-400 mb-2">일요일 사용 가능 주</div>
           <div className="flex items-center gap-2 flex-nowrap overflow-x-auto">
