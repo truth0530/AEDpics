@@ -194,7 +194,7 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
           onChange={(e) => handleBatchTimeChange(e.target.value)}
           placeholder="09:00~18:00"
           disabled={value.is24hours}
-          className="w-24 px-0.5 py-1 text-xs flex-shrink-0 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-20 px-0.5 py-1 text-xs flex-shrink-0 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-center"
         />
         {!value.is24hours && (
           <>
