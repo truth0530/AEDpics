@@ -107,8 +107,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
       // 주소 기준 필터링 (기본값): 물리적 위치가 해당 시도/시군구인 AED
       if (regionCode) {
         // 시도 코드 매핑 (예: DAE -> 대구광역시)
+        // 검증 결과 (2025-11-07): 실제 데이터베이스의 region_code 값과 일치하도록 수정
         const sidoMap: Record<string, string> = {
-          'SEL': '서울특별시',
+          'SEO': '서울특별시',      // 수정: SEL -> SEO (중앙응급의료센터 코드)
           'BUS': '부산광역시',
           'DAE': '대구광역시',
           'INC': '인천광역시',
@@ -116,7 +117,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
           'DAJ': '대전광역시',
           'ULS': '울산광역시',
           'SEJ': '세종특별자치시',
-          'GYG': '경기도',
+          'GYE': '경기도',           // 수정: GYG -> GYE (경기도 정확한 코드)
           'GAN': '강원도',
           'CHB': '충청북도',
           'CHN': '충청남도',
@@ -124,7 +125,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
           'JEN': '전라남도',
           'GYB': '경상북도',
           'GYN': '경상남도',
-          'JEJ': '제주특별자치도'
+          'JEJ': '제주특별자치도',
+          'CBN': '충청북도',         // 추가: 청주시 보건소 (충청북도 소속)
+          'KR': '전국'              // 추가: 보건복지부 (전국 권한)
         };
 
         const sido = sidoMap[regionCode];
@@ -202,7 +205,19 @@ export const GET = apiHandler(async (request: NextRequest) => {
       // 점검일자 데이터 소스 판단
       // - inspection_date: AEDpics 시스템에서 기록한 실제 점검일
       // - last_inspection_date_egen: e-gen 원본 시스템의 점검일 (참고용)
-      const dataSource = 'aedpics';  // 항상 AEDpics이 소스 (이 테이블에서 조회하기 때문)
+      // 데이터 소스 결정 로직:
+      // 1. original_data에 e-gen 메타데이터가 있으면 'egen'으로 표시 (향후 e-gen 동기화 데이터용)
+      // 2. 그 외는 'aedpics' (AEDpics 시스템에서 직접 생성)
+      let dataSource = 'aedpics';  // 기본값
+
+      // e-gen 동기화 데이터 판단 (향후 구현을 위한 인프라)
+      if (inspection.original_data &&
+          typeof inspection.original_data === 'object' &&
+          (inspection.original_data.source === 'egen' ||
+           inspection.original_data.from_egen === true ||
+           inspection.original_data.e_gen_inspection_date !== undefined)) {
+        dataSource = 'egen';
+      }
 
       return {
         id: inspection.id,

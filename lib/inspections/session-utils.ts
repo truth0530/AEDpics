@@ -234,11 +234,23 @@ export interface InspectionHistory {
   updated_at: string;
 }
 
-export async function getInspectionHistory(equipmentSerial?: string, hoursAgo: number = 24): Promise<InspectionHistory[]> {
+/**
+ * 점검 이력 조회
+ * @param equipmentSerial - 특정 장비의 점검 이력만 조회
+ * @param hoursAgo - 조회 범위 (기본값: 24시간)
+ * @param mode - 지역 필터링 기준 ('address'=물리적 위치, 'jurisdiction'=관할보건소, 기본값: 'address')
+ * @returns 점검 이력 배열
+ */
+export async function getInspectionHistory(
+  equipmentSerial?: string,
+  hoursAgo: number = 24,
+  mode: 'address' | 'jurisdiction' = 'address'
+): Promise<InspectionHistory[]> {
   try {
     const params = new URLSearchParams();
     if (equipmentSerial) params.append('equipment_serial', equipmentSerial);
     params.append('hours', hoursAgo.toString());
+    params.append('mode', mode);
 
     const response = await fetch(`/api/inspections/history?${params.toString()}`);
 
