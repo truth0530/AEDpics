@@ -33,7 +33,7 @@ echo "=========================================="
   echo "## 역할별 사용량"
   echo ""
   find /var/log/aedpics/export_stats -name "export_${MONTH}*.log" -exec grep -h 'Export:Success' {} \; 2>/dev/null | \
-    grep -o '"role":"\[^"]*"' | \
+    grep -o '"role": "[^"]*"' | \
     awk -F'"' '{print $4}' | \
     sort | uniq -c | \
     sort -rn | \
@@ -43,9 +43,9 @@ echo "=========================================="
   echo "## 지역별 사용량 (상위 10)"
   echo ""
   find /var/log/aedpics/export_stats -name "export_${MONTH}*.log" -exec grep -h 'Export:Success' {} \; 2>/dev/null | \
-    grep -o '"regionCodes":"\[?[^\"]*' | \
+    grep -o '"regionCodes": \[[^]]*\]' | \
     head -10 | \
-    awk '{printf "- %s\n", substr($0, 15)}'
+    awk '{printf "- %s\n", $0}'
 
   echo ""
   echo "## 성능 분석"

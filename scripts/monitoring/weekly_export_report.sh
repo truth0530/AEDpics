@@ -34,11 +34,11 @@ echo "=========================================="
   echo "## 역할별 사용 현황"
   echo ""
   find /var/log/aedpics/export_stats -name "export_*.log" -mtime -7 -exec grep -h 'Export:Success' {} \; | \
-    grep -o '"role":"\[^"]*"' | \
+    grep -o '"role": "[^"]*"' | \
     awk -F'"' '{print $4}' | \
     sort | uniq -c | \
     sort -rn | \
-    sed 's/^/- /'
+    sed 's/^[[:space:]]*/- /'
 
   echo ""
   echo "## 경고 및 주의사항"
