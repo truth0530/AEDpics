@@ -531,6 +531,60 @@ export const getCachedDashboardData = cache(async (
         uninspectedInspectionCounts = [];
       }
 
+      // 점검 불가(unavailable) 건수 조회 (inspection_assignments 테이블 - 의무기관/비의무기관 구분)
+      let unavailableCounts: Array<{
+        region: string;
+        count: bigint;
+        mandatory_count: bigint;
+        non_mandatory_count: bigint;
+      }> = [];
+
+      try {
+        if (normalizedGugun && normalizedGugun !== '전체' && normalizedSido && normalizedSido !== '전체') {
+          // 특정 구군의 불가 건수
+          unavailableCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT ia.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN ia.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN ia.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspection_assignments ia
+            INNER JOIN aedpics.aed_data a ON ia.equipment_serial = a.equipment_serial
+            WHERE ia.status = 'unavailable' AND a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun}
+            GROUP BY a.gugun
+          `;
+        } else if (normalizedSido && normalizedSido !== '전체') {
+          // 특정 시도의 구군별 불가 건수
+          unavailableCounts = await prisma.$queryRaw`
+            SELECT
+              a.gugun as region,
+              COUNT(DISTINCT ia.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN ia.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN ia.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspection_assignments ia
+            INNER JOIN aedpics.aed_data a ON ia.equipment_serial = a.equipment_serial
+            WHERE ia.status = 'unavailable' AND a.sido = ${normalizedSido}
+            GROUP BY a.gugun
+          `;
+        } else {
+          // 전국 시도별 불가 건수
+          unavailableCounts = await prisma.$queryRaw`
+            SELECT
+              a.sido as region,
+              COUNT(DISTINCT ia.id)::bigint as count,
+              COUNT(DISTINCT CASE WHEN a.category_1 = '구비의무기관' THEN ia.id END)::bigint as mandatory_count,
+              COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN ia.id END)::bigint as non_mandatory_count
+            FROM aedpics.inspection_assignments ia
+            INNER JOIN aedpics.aed_data a ON ia.equipment_serial = a.equipment_serial
+            WHERE ia.status = 'unavailable'
+            GROUP BY a.sido
+          `;
+        }
+      } catch (error) {
+        logger.error('dashboard-queries', 'Failed to fetch unavailable counts', { error });
+        unavailableCounts = [];
+      }
+
       // 점검 건수를 Map으로 변환 (빠른 조회)
       const inspectionCountMap = new Map(
         inspectionCounts.map(ic => [
@@ -575,6 +629,18 @@ export const getCachedDashboardData = cache(async (
         uninspectedInspectionCounts.map(uic => [uic.region, Number(uic.count)])
       );
 
+      // unavailable 건수를 Map으로 변환 (의무기관/비의무기관 구분)
+      const unavailableCountMap = new Map(
+        unavailableCounts.map(ac => [
+          ac.region,
+          {
+            total: Number(ac.count),
+            mandatory: Number(ac.mandatory_count),
+            nonMandatory: Number(ac.non_mandatory_count)
+          }
+        ])
+      );
+
       const regionStats: RegionStats[] = aggregatedStats.map((stat) => {
         const total = Number(stat.total);
         const mandatory = Number(stat.mandatory);
@@ -605,6 +671,12 @@ export const getCachedDashboardData = cache(async (
         const uninspectedAssigned = uninspectedScheduleCountMap.get(stat.region) || 0;
         const uninspectedFieldInspected = uninspectedInspectionCountMap.get(stat.region) || 0;
 
+        // unavailable 관련 건수 조회 (의무기관/비의무기관 구분)
+        const unavailableData = unavailableCountMap.get(stat.region) || { total: 0, mandatory: 0, nonMandatory: 0 };
+        const unavailable = unavailableData.total;
+        const unavailableMandatory = unavailableData.mandatory;
+        const unavailableNonMandatory = unavailableData.nonMandatory;
+
         return {
           region: stat.region || '알 수 없음',
           total,
@@ -633,9 +705,9 @@ export const getCachedDashboardData = cache(async (
           assigned,
           assignedMandatory,
           assignedNonMandatory,
-          unavailable: 0,
-          unavailableMandatory: 0,
-          unavailableNonMandatory: 0,
+          unavailable,
+          unavailableMandatory,
+          unavailableNonMandatory,
           rate: total > 0 ? (completed / total) * 100 : 0
         };
       });

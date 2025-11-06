@@ -935,6 +935,7 @@ enum task_type {
 enum unavailable_reason {
   disposed
   broken
+  lost
   other
 }
 
