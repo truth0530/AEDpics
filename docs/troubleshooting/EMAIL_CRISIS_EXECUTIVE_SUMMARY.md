@@ -3,6 +3,17 @@
 **작성일**: 2025-11-07
 **상태**: 긴급 대응 완료, 모니터링 중
 
+## 🚨 긴급 공지: youth991230@nmc.or.kr 오해 해소
+
+**오해**: "youth991230@nmc.or.kr이 관리자인 것처럼 이메일을 발송하고 있다"
+**진실**: youth991230@nmc.or.kr은 **수신자(피해자)**입니다. 발송자 차단으로 이메일을 못 받았습니다.
+
+- NCP Console의 "수신자" 표시는 정확합니다
+- SEND_BLOCK_ADDRESS는 발송자(noreply@aed.pics) 차단을 의미합니다
+- **즉시 조치**: NCP Console에서 noreply@aed.pics 차단 해제 필요
+
+자세한 설명: [NCP_CONSOLE_DISPLAY_CLARIFICATION.md](./NCP_CONSOLE_DISPLAY_CLARIFICATION.md)
+
 ## 1. 핵심 문제
 
 ### 발견된 3가지 주요 문제

@@ -7,7 +7,6 @@ import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
-
 export async function POST(request: NextRequest) {
   try {
     const { email, fullName, organizationName, region, accountType } = await request.json();
@@ -15,39 +14,24 @@ export async function POST(request: NextRequest) {
     // Master 관리자 이메일 목록 가져오기
     const masterEmails = getMasterAdminEmails();
 
-    // 추가로 실제 승인 권한이 있는 관리자들만 가져오기
-    // ministry_admin은 제외 (승인 권한 없음)
+    // 추가로 중앙응급의료센터 관리자들 가져오기
     const adminProfiles = await prisma.user_profiles.findMany({
       where: {
-        role: { in: ['master', 'emergency_center_admin'] }, // ministry_admin 제외
+        role: { in: ['master', 'emergency_center_admin', 'ministry_admin'] },
         is_active: true,
       },
       select: {
         email: true,
-        full_name: true, // 실제 이름도 가져오기
       },
     });
 
-    // 이메일과 이름을 매핑
-    const adminEmailMap = new Map<string, string>();
-
-    // Master 이메일들 처리
-    for (const masterEmail of masterEmails) {
-      // Master 이메일의 실제 이름 조회
-      const masterProfile = await prisma.user_profiles.findUnique({
-        where: { email: masterEmail },
-        select: { full_name: true }
-      });
-      adminEmailMap.set(masterEmail, masterProfile?.full_name || '관리자');
-    }
-
-    // 데이터베이스에서 가져온 관리자들 처리
-    for (const profile of adminProfiles || []) {
-      adminEmailMap.set(profile.email, profile.full_name || '관리자');
-    }
+    const adminEmails = [
+      ...masterEmails,
+      ...(adminProfiles?.map(p => p.email) || [])
+    ].filter((email, index, self) => self.indexOf(email) === index); // 중복 제거
 
     // 각 관리자에게 이메일 발송
-    const emailPromises = Array.from(adminEmailMap.entries()).map(async ([adminEmail, adminName]) => {
+    const emailPromises = adminEmails.map(async (adminEmail) => {
       try {
         await sendSimpleEmail(
           {
@@ -57,7 +41,7 @@ export async function POST(request: NextRequest) {
             senderName: 'AED 픽스'
           },
           adminEmail,
-          adminName,  // ✅ 실제 이름 사용 (양미연, 이경진 등)
+          '관리자',
           `[AED 시스템] 새로운 회원가입 승인 요청 - ${fullName}`,
           `
               <h2>새로운 회원가입 승인 요청</h2>
@@ -96,31 +80,15 @@ export async function POST(request: NextRequest) {
             `,
           { maxRetries: 3, initialDelay: 1000, exponentialBase: 2 }
         );
-
-        logger.info('API:notifyNewSignup', 'Email sent successfully', {
-          to: adminEmail,
-          recipientName: adminName
-        });
       } catch (error) {
-        logger.error('API:notifyNewSignup', 'Failed to send notification email', {
-          to: adminEmail,
-          error: error instanceof Error ? error : { error }
-        });
+        logger.error('API:notifyNewSignup', 'Failed to send notification email', error instanceof Error ? error : { error });
       }
     });
 
     await Promise.all(emailPromises);
 
-    logger.info('API:notifyNewSignup', 'All notifications sent', {
-      newUser: email,
-      newUserName: fullName,
-      notifiedCount: adminEmailMap.size
-    });
-
-    return NextResponse.json({
-      success: true,
-      notifiedAdmins: adminEmailMap.size
-    });
+    logger.info('API:notifyNewSignup', 'Notifications sent', { email, fullName });
+    return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('API:notifyNewSignup', 'Error sending admin notifications', error instanceof Error ? error : { error });
     return NextResponse.json(

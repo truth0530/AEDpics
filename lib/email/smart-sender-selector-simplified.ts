@@ -33,7 +33,8 @@ const DOMAIN_SENDER_MAPPING: Record<string, string[]> = {
   'go.kr': ['noreply@nmc.or.kr', 'noreply@aed.pics'],
 
   // nmc.or.kr - 특별 처리 (같은 도메인 발송 문제)
-  'nmc.or.kr': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
+  // 중요: noreply@nmc.or.kr을 우선 사용 (noreply@aed.pics는 NCP에서 차단됨)
+  'nmc.or.kr': ['noreply@nmc.or.kr', 'noreply@aed.pics'],
 
   // 기타 도메인 기본값
   'default': ['noreply@aed.pics', 'noreply@nmc.or.kr']
