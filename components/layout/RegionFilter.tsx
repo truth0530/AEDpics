@@ -36,10 +36,45 @@ const GUGUN_MAP: Record<string, string[]> = {
 
 // city_code를 실제 gugun 이름으로 변환
 const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
-  // 제주도
+  // 제주도 (JEJ)
   'jeju': '제주시',
   'seogwipo': '서귀포시',
-  // 필요한 다른 지역 추가
+
+  // 대구광역시 (DAE)
+  'jung': '중구',
+  'dalseo': '달서구',
+  'buk': '북구',
+  'suseong': '수성구',
+  'seo': '서구',
+
+  // 인천광역시 (INC)
+  'namdong': '남동구',
+  'ganghwa': '강화군',
+  'gyeyang': '계양구',
+  'michuhol': '미추홀구',
+  'bupyeong': '부평구',
+  'yeonsu': '연수구',
+  'ongjin': '옹진군',
+  'jung_yeongjong': '영종',
+
+  // 경남 (GYN)
+  'gimhae': '김해시',
+
+  // 충청북도 (CHB)
+  'goesan': '괴산군',
+  'danyang': '단양군',
+  'boeun': '보은군',
+  'yeongdong': '영동군',
+  'okcheon': '옥천군',
+  'eumseong': '음성군',
+  'jecheon': '제천시',
+  'jeungpyeong': '증평군',
+  'jincheon': '진천군',
+  'cheongju': '청주시',
+  'chungju': '충주시',
+
+  // 세종특별자치시 (SEJ)
+  'seju': '세종특별자치시',
 };
 
 function mapCityCodeToGugun(cityCode: string | undefined): string {
