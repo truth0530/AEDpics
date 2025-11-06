@@ -212,6 +212,10 @@ export interface InspectionHistory {
   inspector_name: string;
   inspector_email?: string;
   inspection_date: string;
+  // e-gen 원본 시스템의 최근 점검일 (참고용)
+  last_inspection_date_egen?: string | null;
+  // 점검 데이터 출처 ('aedpics' 또는 'egen')
+  data_source?: string;
   inspection_type: string;
   visual_status: string;
   battery_status: string;
@@ -224,6 +228,8 @@ export interface InspectionHistory {
   inspection_latitude?: number;
   inspection_longitude?: number;
   step_data?: Record<string, any>;  // 4단계 전체 데이터 (basicInfo, deviceInfo, storage, documentation)
+  original_data?: Record<string, any>;  // e-gen 원본 데이터
+  aed_data?: Record<string, any>;  // AED 장치 정보 (위치, 관할보건소 등)
   created_at: string;
   updated_at: string;
 }
