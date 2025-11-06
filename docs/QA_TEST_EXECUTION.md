@@ -32,7 +32,16 @@ curl -X POST "${BASE_URL}/api/inspections/export" \
 # (특별한 경우가 아니면 위의 POST Body 방식 권장)
 curl -X POST "${BASE_URL}/api/inspections/export?regionCodes=JEJ&cityCodes=seogwipo&limit=100" \
   -H "Authorization: Bearer <token>"
+
+# 레거시 파라미터명도 지원됨 (하위 호환성)
+curl -X POST "${BASE_URL}/api/inspections/export?region=JEJ&city=seogwipo&limit=100" \
+  -H "Authorization: Bearer <token>"
 ```
+
+**파라미터명 호환성**:
+- `regionCodes` 또는 `region` (둘 다 지원, 현재/레거시)
+- `cityCodes` 또는 `city` (둘 다 지원, 현재/레거시)
+- 둘 다 사용된 경우 중복 제거 후 병합
 
 **중요**:
 - POST body 방식이 우선적으로 시도됨 → 실패 시에만 query string 사용
@@ -543,12 +552,18 @@ pm2 logs | grep "Export:CityCodeMapping"
 
 ---
 
-## 추가 검증 사항 (2025-11-06)
+## 추가 검증 사항 (2025-11-06 수정)
 
 ### POST Body 필터 전달 정상 작동 확인
 - [ ] POST body JSON 방식으로 필터 전달 시 정상 작동
 - [ ] Query string 방식으로 필터 전달 시 정상 작동 (fallback)
 - [ ] 두 방식 모두 동일한 결과 반환
+
+### Query String 파라미터명 호환성 확인
+- [ ] `?cityCodes=seogwipo` 형식으로 요청 시 정상 작동
+- [ ] `?city=seogwipo` 형식으로 요청 시 정상 작동 (레거시)
+- [ ] `?regionCodes=JEJ` 형식으로 요청 시 정상 작동
+- [ ] `?region=JEJ` 형식으로 요청 시 정상 작동 (레거시)
 
 ### City_code 매핑 실패 감지 확인
 - [ ] E-3 시나리오 실행 후 로그 확인
@@ -556,8 +571,24 @@ pm2 logs | grep "Export:CityCodeMapping"
 - [ ] 무효한 city_code는 자동으로 필터에서 제외됨
 - [ ] 유효한 city_code만 매핑되어 데이터 조회에 사용됨
 
+### 배열 요소 타입 검증 확인
+- [ ] POST body `{"cityCodes": [123]}` 요청 시 400 반환 (숫자 거부)
+- [ ] POST body `{"regionCodes": ["JEJ", null]}` 요청 시 400 반환 (null 거부)
+- [ ] POST body `{"cityCodes": [{}]}` 요청 시 400 반환 (객체 거부)
+- [ ] POST body `{"cityCodes": ["seogwipo"]}` 요청 시 200 반환 (문자열만 허용)
+
 ---
 
-**상태**: 🟢 QA 실행 준비 완료 (2025-11-06 수정)
-**마지막 업데이트**: mapCityCodeToGugun 실패 감지 + POST body 필터 지원 추가
-**다음**: 실제 테스트 환경에서 8개 시나리오 실행
+**상태**: 🟢 QA 실행 준비 완료 (2025-11-06 최종 수정)
+**마지막 업데이트**:
+- mapCityCodeToGugun 실패 감지 + POST body 필터 지원 추가
+- Query string 파라미터명 호환성 추가 (cityCodes + city, regionCodes + region)
+- 배열 요소 타입 검증 강화 (non-string 요소 거부)
+
+**검증 완료**:
+- ✅ TypeScript 컴파일
+- ✅ ESLint 검사
+- ✅ 전체 빌드 (118개 페이지)
+- ✅ 모든 pre-commit 훅 통과
+
+**다음**: 실제 테스트 환경에서 8개 시나리오 + 추가 검증 케이스 실행
