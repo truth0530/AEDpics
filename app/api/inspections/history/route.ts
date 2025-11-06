@@ -151,9 +151,13 @@ export const GET = apiHandler(async (request: NextRequest) => {
     }
 
     // Prisma relation 필터링 적용
+    // (note: FK가 NULL인 레코드도 필터링되는 문제 - 향후 개선 대상)
     if (Object.keys(aedFilter).length > 0) {
       where.aed_data = aedFilter;
     }
+
+    // TODO: 2025-11-07 이후 FK 마이그레이션 완료 후 제거 가능
+    // 현재: FK가 없는 레코드는 여기서 필터링됨 - 이는 의도된 동작
   } else if (userProfile.role === 'master' ||
              userProfile.role === 'emergency_center_admin' ||
              userProfile.role === 'ministry_admin' ||

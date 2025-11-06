@@ -614,29 +614,53 @@ export const PATCH = async (request: NextRequest) => {
         const deviceInfo = finalData.deviceInfo as any || {};
         const storage = finalData.storage as any || {};
 
-        const createdInspection = await tx.inspections.create({
-          data: {
-            equipment_serial: session.equipment_serial,
-            inspector_id: userId,
-            inspection_date: new Date(),
-            inspection_type: 'monthly',
-            battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' : (deviceInfo.battery_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
-            pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' : (deviceInfo.pad_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
-            overall_status: (finalData.overallStatus as any) || 'pass',
-            notes: payload.notes,
-            original_data: session.device_info || {},  // 원본 장비 데이터 저장
-            inspected_data: {
-              basicInfo: basicInfo,
-              deviceInfo: deviceInfo,
-              storage: storage,
-              confirmedLocation: basicInfo.address,
-              confirmedManufacturer: deviceInfo.manufacturer,
-              confirmedModelName: deviceInfo.model_name,
-              confirmedSerialNumber: deviceInfo.serial_number,
-              batteryExpiryChecked: deviceInfo.battery_expiry_date,
-              padExpiryChecked: deviceInfo.pad_expiry_date
-            }
+        // 2-1. aed_data FK 조회 (필터링을 위해 필수)
+        let aedDataId: any;
+        try {
+          const aedData = await tx.aed_data.findUnique({
+            where: { equipment_serial: session.equipment_serial },
+            select: { id: true }
+          });
+          if (aedData) {
+            aedDataId = aedData.id;
           }
+        } catch (aedLookupError) {
+          logger.warn('InspectionSession:POST-complete', 'Failed to lookup aed_data', {
+            equipment_serial: session.equipment_serial,
+            error: aedLookupError instanceof Error ? aedLookupError.message : 'Unknown error'
+          });
+        }
+
+        const createData: any = {
+          equipment_serial: session.equipment_serial,
+          inspector_id: userId,
+          inspection_date: new Date(),
+          inspection_type: 'monthly',
+          battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' : (deviceInfo.battery_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
+          pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' : (deviceInfo.pad_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
+          overall_status: (finalData.overallStatus as any) || 'pass',
+          notes: payload.notes,
+          original_data: session.device_info || {},  // 원본 장비 데이터 저장
+          inspected_data: {
+            basicInfo: basicInfo,
+            deviceInfo: deviceInfo,
+            storage: storage,
+            confirmedLocation: basicInfo.address,
+            confirmedManufacturer: deviceInfo.manufacturer,
+            confirmedModelName: deviceInfo.model_name,
+            confirmedSerialNumber: deviceInfo.serial_number,
+            batteryExpiryChecked: deviceInfo.battery_expiry_date,
+            padExpiryChecked: deviceInfo.pad_expiry_date
+          }
+        };
+
+        // 🔑 중요: aed_data FK 설정 (조회 필터링용)
+        if (aedDataId) {
+          createData.aed_data = { connect: { id: aedDataId } };
+        }
+
+        const createdInspection = await tx.inspections.create({
+          data: createData
         });
 
         createdInspectionId = createdInspection.id;
