@@ -1093,22 +1093,34 @@ export const GET = async (request: NextRequest) => {
     const to = totalCount === 0 || pageItemCount === 0 ? 0 : pageStart + pageItemCount;
 
     // includeSchedule이 true이면 일정추가된 장비 조회
+    // ⚠️ 최적화: 현재 페이지 데이터에 포함된 장비만 일정 여부 확인
     let scheduledEquipment: string[] | undefined = undefined;
     if (includeSchedule) {
-      const assignments = await prisma.inspection_assignments.findMany({
-        where: {
-          assigned_to: session.user.id,
-          status: { in: ['pending', 'in_progress'] }
-        },
-        select: {
-          equipment_serial: true
-        }
-      });
+      // 현재 페이지에 있는 장비들만 필터링 (응답 크기 최적화)
+      const currentEquipmentSerials = maskedData.map(d => d.equipment_serial);
 
-      scheduledEquipment = assignments.map(a => a.equipment_serial);
-      logger.info('AEDDataAPI:GET', 'includeSchedule: Found scheduled equipment', {
-        count: scheduledEquipment.length
-      });
+      if (currentEquipmentSerials.length > 0) {
+        const assignments = await prisma.inspection_assignments.findMany({
+          where: {
+            equipment_serial: { in: currentEquipmentSerials },
+            status: { in: ['pending', 'in_progress'] }
+          },
+          select: {
+            equipment_serial: true
+          }
+        });
+
+        scheduledEquipment = assignments.map(a => a.equipment_serial);
+        logger.info('AEDDataAPI:GET', 'includeSchedule: Found scheduled equipment in current page', {
+          currentPageCount: currentEquipmentSerials.length,
+          scheduledCount: scheduledEquipment.length
+        });
+      } else {
+        scheduledEquipment = [];
+        logger.info('AEDDataAPI:GET', 'includeSchedule: Current page has no equipment', {
+          currentPageCount: 0
+        });
+      }
     }
 
     // 접근 로깅 (민감 정보 제외)
