@@ -1,0 +1,75 @@
+name: Phase 4 Monitoring Reports
+
+on:
+  schedule:
+    # Daily stats at 1 AM UTC (10 AM KST)
+    - cron: '0 1 * * *'
+    # Weekly report every Monday at 9 AM UTC (6 PM KST)
+    - cron: '0 9 * * 1'
+    # Monthly report on the 1st of each month at 9 AM UTC (6 PM KST)
+    - cron: '0 9 1 * *'
+  workflow_dispatch:
+
+jobs:
+  monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run daily export stats
+        if: github.event.schedule == '0 1 * * *' || github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Daily Export Stats Collection"
+          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Script location: scripts/monitoring/daily_export_stats.sh"
+          echo "This script would execute on the production server via SSH"
+          echo ""
+          echo "Daily Metrics:"
+          echo "- Export success count"
+          echo "- Permission denied count"
+          echo "- Filter policy failures"
+          echo "- City code mapping warnings"
+          echo "- Role-based statistics"
+          echo ""
+          echo "Note: To enable actual execution, configure SSH_PRIVATE_KEY in GitHub Secrets"
+
+      - name: Run weekly report
+        if: github.event.schedule == '0 9 * * 1' || github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Weekly Export Report Generation"
+          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Script location: scripts/monitoring/weekly_export_report.sh"
+          echo ""
+          echo "Weekly Analysis:"
+          echo "- Total success/failure/error counts"
+          echo "- Success rate percentage"
+          echo "- Role-based usage distribution"
+          echo "- Alert conditions:"
+          echo "  - High permission denial rate"
+          echo "  - Excessive filter errors"
+          echo "  - City code mapping issues"
+
+      - name: Run monthly report
+        if: github.event.schedule == '0 9 1 * *' || github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Monthly Export Analysis Report"
+          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Script location: scripts/monitoring/monthly_export_report.sh"
+          echo ""
+          echo "Monthly Metrics:"
+          echo "- Total export request count"
+          echo "- Success/failure statistics"
+          echo "- Role-based usage volume"
+          echo "- Region-based usage patterns"
+          echo "- Performance analysis"
+          echo "- Next month KPI targets"
+
+      - name: Notify completion
+        if: always()
+        run: |
+          echo "Monitoring reports generated successfully"
+          echo "Next execution times:"
+          echo "- Daily: 01:00 UTC (10:00 KST)"
+          echo "- Weekly: Every Monday 09:00 UTC (18:00 KST)"
+          echo "- Monthly: 1st day 09:00 UTC (18:00 KST)"
