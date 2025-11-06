@@ -131,18 +131,36 @@ export const POST = apiHandler(async (request: NextRequest) => {
         }
       }
 
-      // 유효성 검증 3: regionCodes, cityCodes는 배열
-      if (body.regionCodes !== undefined && !Array.isArray(body.regionCodes)) {
-        return NextResponse.json(
-          { error: 'Invalid regionCodes: must be an array' },
-          { status: 400 }
-        );
+      // 유효성 검증 3: regionCodes는 배열이며, 각 요소는 문자열
+      if (body.regionCodes !== undefined) {
+        if (!Array.isArray(body.regionCodes)) {
+          return NextResponse.json(
+            { error: 'Invalid regionCodes: must be an array' },
+            { status: 400 }
+          );
+        }
+        if (!body.regionCodes.every((code: any) => typeof code === 'string')) {
+          return NextResponse.json(
+            { error: 'Invalid regionCodes: all elements must be strings' },
+            { status: 400 }
+          );
+        }
       }
-      if (body.cityCodes !== undefined && !Array.isArray(body.cityCodes)) {
-        return NextResponse.json(
-          { error: 'Invalid cityCodes: must be an array' },
-          { status: 400 }
-        );
+
+      // 유효성 검증 4: cityCodes는 배열이며, 각 요소는 문자열
+      if (body.cityCodes !== undefined) {
+        if (!Array.isArray(body.cityCodes)) {
+          return NextResponse.json(
+            { error: 'Invalid cityCodes: must be an array' },
+            { status: 400 }
+          );
+        }
+        if (!body.cityCodes.every((code: any) => typeof code === 'string')) {
+          return NextResponse.json(
+            { error: 'Invalid cityCodes: all elements must be strings' },
+            { status: 400 }
+          );
+        }
       }
 
       requestedFilters = body;

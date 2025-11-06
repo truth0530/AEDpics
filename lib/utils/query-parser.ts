@@ -62,17 +62,29 @@ export function parseQueryParams(searchParams: URLSearchParams): ParsedFilters {
   }
 
   // 지역 코드 (기본 검증만 - 권한 검증은 API에서)
-  const regionValues = searchParams.getAll('region')
+  // 'region' 파라미터 (레거시) 또는 'regionCodes' 파라미터 (현재) 모두 지원
+  // 둘 다 있으면 합치되, 중복 제거
+  const regionValuesLegacy = searchParams.getAll('region')
     .filter(region => region && region.length <= 10);
-  if (regionValues.length > 0) {
-    parsed.regionCodes = regionValues;
+  const regionValuesCurrent = searchParams.getAll('regionCodes')
+    .filter(region => region && region.length <= 10);
+
+  const combinedRegionValues = Array.from(new Set([...regionValuesLegacy, ...regionValuesCurrent]));
+  if (combinedRegionValues.length > 0) {
+    parsed.regionCodes = combinedRegionValues;
   }
 
   // 시군구 코드 (기본 검증만 - 권한 검증은 API에서)
-  const cityValues = searchParams.getAll('city')
+  // 'city' 파라미터 (레거시) 또는 'cityCodes' 파라미터 (현재) 모두 지원
+  // 둘 다 있으면 합치되, 중복 제거
+  const cityValuesLegacy = searchParams.getAll('city')
     .filter(city => city && city.length <= 10);
-  if (cityValues.length > 0) {
-    parsed.cityCodes = cityValues;
+  const cityValuesCurrent = searchParams.getAll('cityCodes')
+    .filter(city => city && city.length <= 10);
+
+  const combinedCityValues = Array.from(new Set([...cityValuesLegacy, ...cityValuesCurrent]));
+  if (combinedCityValues.length > 0) {
+    parsed.cityCodes = combinedCityValues;
   }
 
   // 분류 1, 2, 3 필터
