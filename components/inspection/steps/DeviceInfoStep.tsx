@@ -424,10 +424,13 @@ export function DeviceInfoStep() {
                       </svg>
                       <span>{formattedCurrentValue || '정보 없음'}</span>
                     </div>
-                    {/* 일치 확인했지만 만료 상태면 조치계획 필수 */}
+                    {/* 일치 확인했지만 만료 상태면 조치계획 필수 (언제든 변경 가능) */}
                     {currentIsExpired && formattedCurrentValue && (
                       <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                        <div className="text-xs text-red-400 font-medium">유효기간 경과 - 조치계획</div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-red-400 font-medium">유효기간 경과 - 조치계획</div>
+                          <div className="text-[10px] text-gray-500">변경 가능</div>
+                        </div>
                         <select
                           value={actionPlan}
                           onChange={(e) => {
@@ -460,12 +463,49 @@ export function DeviceInfoStep() {
                 )}
 
                 {isEdited && (
-                  <div className="w-full rounded-lg px-3 py-2 bg-yellow-600/10 border border-yellow-600/50 text-sm text-yellow-300 flex items-center gap-2">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                    <span>{formattedCurrentValue || '정보 없음'} (수정됨)</span>
-                  </div>
+                  <>
+                    <div className="w-full rounded-lg px-3 py-2 bg-yellow-600/10 border border-yellow-600/50 text-sm text-yellow-300 flex items-center gap-2">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      </svg>
+                      <span>{formattedCurrentValue || '정보 없음'} (수정됨)</span>
+                    </div>
+                    {/* 수정됨 상태에서도 수정사유 변경 가능 */}
+                    {!currentIsExpired && formattedCurrentValue && originalIsExpired && (
+                      <div className="space-y-2 pl-3 border-l-2 border-blue-500/50">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-blue-400 font-medium">수정사유</div>
+                          <div className="text-[10px] text-gray-500">변경 가능</div>
+                        </div>
+                        <select
+                          value={modificationReason}
+                          onChange={(e) => {
+                            handleChange('battery_modification_reason', e.target.value);
+                            if (e.target.value !== '기타') {
+                              handleChange('battery_action_custom_reason', '');
+                            }
+                          }}
+                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                        >
+                          <option value="">수정사유 선택</option>
+                          <option value="교체완료 다음 점검시 반영예정">교체완료 다음 점검시 반영예정</option>
+                          <option value="구매신청서 확인, 다음 점검시 반영예정">구매신청서 확인, 다음 점검시 반영예정</option>
+                          <option value="이상없음 확인, 다음 점검시 반영안내">이상없음 확인, 다음 점검시 반영안내</option>
+                          <option value="기타">기타</option>
+                        </select>
+
+                        {modificationReason === '기타' && (
+                          <input
+                            type="text"
+                            value={actionCustomReason}
+                            onChange={(e) => handleChange('battery_action_custom_reason', e.target.value)}
+                            placeholder="기타 수정사유를 입력하세요"
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {isEditMode && (
@@ -830,11 +870,14 @@ export function DeviceInfoStep() {
                         </svg>
                         <span>{formattedCurrentValue || '정보 없음'}</span>
                       </div>
-                      {/* 일치 확인했지만 만료 상태면 조치계획 필수 */}
+                      {/* 일치 확인했지만 만료 상태면 조치계획 필수 (언제든 변경 가능) */}
                       {currentIsExpired && formattedCurrentValue && (
                         <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                          <div className="text-xs text-red-400 font-medium">
-                            {field.key === 'manufacturing_date' ? '제조일 10년 경과 - 조치계획' : '유효기간 경과 - 조치계획'}
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs text-red-400 font-medium">
+                              {field.key === 'manufacturing_date' ? '제조일 10년 경과 - 조치계획' : '유효기간 경과 - 조치계획'}
+                            </div>
+                            <div className="text-[10px] text-gray-500">변경 가능</div>
                           </div>
                           <select
                             value={actionPlan}
@@ -868,12 +911,49 @@ export function DeviceInfoStep() {
                   )}
 
                   {isEdited && (
-                    <div className="w-full rounded-lg px-3 py-2 bg-yellow-600/10 border border-yellow-600/50 text-sm text-yellow-300 flex items-center gap-2">
-                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                      </svg>
-                      <span>{formattedCurrentValue || '정보 없음'} (수정됨)</span>
-                    </div>
+                    <>
+                      <div className="w-full rounded-lg px-3 py-2 bg-yellow-600/10 border border-yellow-600/50 text-sm text-yellow-300 flex items-center gap-2">
+                        <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                        <span>{formattedCurrentValue || '정보 없음'} (수정됨)</span>
+                      </div>
+                      {/* 수정됨 상태에서도 수정사유 변경 가능 */}
+                      {!currentIsExpired && formattedCurrentValue && originalIsExpired && (
+                        <div className="space-y-2 pl-3 border-l-2 border-blue-500/50">
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs text-blue-400 font-medium">수정사유</div>
+                            <div className="text-[10px] text-gray-500">변경 가능</div>
+                          </div>
+                          <select
+                            value={modificationReason}
+                            onChange={(e) => {
+                              handleChange(modificationReasonKey, e.target.value);
+                              if (e.target.value !== '기타') {
+                                handleChange(actionCustomReasonKey, '');
+                              }
+                            }}
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          >
+                            <option value="">수정사유 선택</option>
+                            <option value="교체완료 다음 점검시 반영예정">교체완료 다음 점검시 반영예정</option>
+                            <option value="구매신청서 확인, 다음 점검시 반영예정">구매신청서 확인, 다음 점검시 반영예정</option>
+                            <option value="이상없음 확인, 다음 점검시 반영안내">이상없음 확인, 다음 점검시 반영안내</option>
+                            <option value="기타">기타</option>
+                          </select>
+
+                          {modificationReason === '기타' && (
+                            <input
+                              type="text"
+                              value={actionCustomReason}
+                              onChange={(e) => handleChange(actionCustomReasonKey, e.target.value)}
+                              placeholder="기타 수정사유를 입력하세요"
+                              className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-blue-500/50 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {isEditMode && (

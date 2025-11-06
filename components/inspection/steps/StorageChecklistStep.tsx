@@ -5,6 +5,7 @@ import { useInspectionSessionStore } from '@/lib/state/inspection-session-store'
 interface StorageData {
   storage_type?: string;
   checklist_items?: Record<string, boolean | string>;
+  improvement_notes?: Record<string, string>;  // 개선필요 선택 시 상세 내용
   signage_checklist?: Record<string, boolean>;
   signage_selected?: string[];
   [key: string]: any;
@@ -52,7 +53,8 @@ const CHECKLIST_ITEMS = [
     options: [
       { value: 'needs_improvement', label: '개선필요' },
       { value: 'booklet', label: '책자 비치' },
-      { value: 'poster', label: '포스터형태' }
+      { value: 'poster', label: '포스터형태' },
+      { value: 'other', label: '기타' }
     ]
   },
   {
@@ -80,6 +82,7 @@ export function StorageChecklistStep() {
 
   const storage: StorageData = stepData.storage || {};
   const checklist = storage.checklist_items || {};
+  const improvementNotes = storage.improvement_notes || {};
   const signageChecklist = storage.signage_checklist || {};
 
   // ✅ 기본값을 설정하지 않음 - 사용자가 명시적으로 선택해야 함
@@ -94,11 +97,28 @@ export function StorageChecklistStep() {
   };
 
   const handleChecklistChange = (itemId: string, status: boolean | string) => {
+    // 개선필요가 아닌 다른 옵션 선택 시 해당 항목의 개선 노트 삭제
+    const newImprovementNotes = { ...improvementNotes };
+    if (status !== 'needs_improvement' && newImprovementNotes[itemId]) {
+      delete newImprovementNotes[itemId];
+    }
+
     updateStepData('storage', {
       ...storage,
       checklist_items: {
         ...checklist,
         [itemId]: status,
+      },
+      improvement_notes: newImprovementNotes,
+    });
+  };
+
+  const handleImprovementNoteChange = (itemId: string, note: string) => {
+    updateStepData('storage', {
+      ...storage,
+      improvement_notes: {
+        ...improvementNotes,
+        [itemId]: note,
       },
     });
   };
@@ -209,6 +229,18 @@ export function StorageChecklistStep() {
                       );
                     })}
                   </div>
+                  {/* 개선필요 선택 시 상세 내용 입력 필드 표시 */}
+                  {status === 'needs_improvement' && (
+                    <div className="mt-2">
+                      <textarea
+                        value={improvementNotes[item.id] || ''}
+                        onChange={(e) => handleImprovementNoteChange(item.id, e.target.value)}
+                        placeholder="개선이 필요한 구체적인 내용을 입력해주세요..."
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-600 bg-gray-800/50 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                        rows={2}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
