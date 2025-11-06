@@ -36,9 +36,32 @@ interface AdminFullViewProps {
 function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfile; pageType?: 'inspection' | 'schedule' }) {
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed' | 'drafts'>('list');
   const [filterCollapsed, setFilterCollapsed] = useState(false);
+  const [filterMode, setFilterModeState] = useState<'address' | 'jurisdiction'>('address');
   const { data, isLoading, setFilters } = useAEDData();
   const router = useRouter();
   const { showSuccess, showError } = useToast();
+
+  // filterMode를 localStorage에서 복원하고 변경 시 저장
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // 저장된 mode 복원 (local_admin일 때만 유효)
+      if (user?.role === 'local_admin') {
+        const savedMode = localStorage.getItem('inspectionFilterMode') as 'address' | 'jurisdiction' | null;
+        if (savedMode === 'address' || savedMode === 'jurisdiction') {
+          setFilterModeState(savedMode);
+        }
+      }
+    }
+  }, [user?.role]);
+
+  // filterMode 변경 시 localStorage에 저장
+  const setFilterMode = (mode: 'address' | 'jurisdiction') => {
+    setFilterModeState(mode);
+    if (typeof window !== 'undefined' && user?.role === 'local_admin') {
+      localStorage.setItem('inspectionFilterMode', mode);
+      console.log('[AdminFullView] filterMode changed:', mode);
+    }
+  };
 
   // ✅ 프로필 prop을 통해 직접 전달받음
   useEffect(() => {
@@ -47,9 +70,11 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         userId: user.id,
         userEmail: user.email,
         userName: user.fullName || user.email,
+        userRole: user.role,
+        filterMode: user.role === 'local_admin' ? filterMode : 'N/A (not local_admin)',
       });
     }
-  }, [user]);
+  }, [user, filterMode]);
 
   // 점검 세션 상태 관리
   const [inspectionSessions, setInspectionSessions] = useState<Map<string, InspectionSession>>(new Map());
@@ -106,7 +131,9 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   useEffect(() => {
     async function loadInspectionHistory() {
       if (viewMode === 'completed') {
-        const history = await getInspectionHistory(undefined, 720); // 최근 30일
+        // local_admin이면 filterMode 적용, 아니면 기본값 'address' 사용
+        const mode = user?.role === 'local_admin' ? filterMode : 'address';
+        const history = await getInspectionHistory(undefined, 720, mode); // 최근 30일
         setInspectionHistoryList(history);
       } else if (viewMode === 'drafts') {
         const drafts = await getDraftSessions();
@@ -115,7 +142,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     }
 
     loadInspectionHistory();
-  }, [viewMode]);
+  }, [viewMode, filterMode, user?.role]);
 
   // AdminFullView 레벨에서 mapRegionChanged 이벤트 리스닝
   useEffect(() => {
@@ -234,7 +261,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   // 점검 이력 보기 핸들러
   const handleViewInspectionHistory = async (equipmentSerial: string) => {
     try {
-      const history = await getInspectionHistory(equipmentSerial, 24);
+      const mode = user?.role === 'local_admin' ? filterMode : 'address';
+      const history = await getInspectionHistory(equipmentSerial, 24, mode);
       if (history && history.length > 0) {
         // 가장 최근 점검 이력 선택
         setSelectedInspection(history[0]);
@@ -295,7 +323,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         const completed = await getCompletedInspections(24);
         setCompletedInspections(completed);
         // 점검 이력 목록도 재로드
-        const history = await getInspectionHistory(undefined, 720);
+        const mode = user?.role === 'local_admin' ? filterMode : 'address';
+        const history = await getInspectionHistory(undefined, 720, mode);
         setInspectionHistoryList(history);
       } else {
         showError(result.error || '점검 이력 삭제 실패');
@@ -549,6 +578,32 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           </button>
         </div>
         <div className="flex items-center gap-3 px-4">
+          {/* 점검이력 탭일 때 local_admin을 위한 모드 선택 버튼 */}
+          {viewMode === 'completed' && user?.role === 'local_admin' && (
+            <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-gray-800 rounded border border-gray-700">
+              <span className="text-gray-300">조회 기준:</span>
+              <button
+                onClick={() => setFilterMode('address')}
+                className={`px-2 py-1 rounded text-xs transition-colors ${
+                  filterMode === 'address'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                주소
+              </button>
+              <button
+                onClick={() => setFilterMode('jurisdiction')}
+                className={`px-2 py-1 rounded text-xs transition-colors ${
+                  filterMode === 'jurisdiction'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                관할보건소
+              </button>
+            </div>
+          )}
           {viewMode === 'completed' && (
             <button
               onClick={handleExcelDownload}
