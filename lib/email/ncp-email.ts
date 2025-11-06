@@ -87,6 +87,16 @@ function calculateDelay(attempt: number, options: Required<RetryOptions>): numbe
 }
 
 /**
+ * 이메일 주소 정규화
+ * NCP 서비스 일관성 문제 해결을 위한 워크어라운드
+ * - 공백 제거 (trim)
+ * - 소문자 변환 (toLowerCase)
+ */
+function normalizeEmailAddress(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
  * NCP Cloud Outbound Mailer API 호출
  */
 async function sendEmailRequest(
@@ -97,11 +107,27 @@ async function sendEmailRequest(
   const timestamp = getTimestamp();
   const signature = makeSignature(config.accessKey, config.accessSecret, timestamp);
 
+  // 수신자 이메일 주소 정규화
+  const normalizedRecipients = emailData.recipients.map(recipient => ({
+    ...recipient,
+    address: normalizeEmailAddress(recipient.address)
+  }));
+
+  // 발신자 이메일도 정규화
+  const normalizedSenderAddress = normalizeEmailAddress(config.senderAddress);
+
   const requestBody: NCPEmailData = {
-    senderAddress: config.senderAddress,
+    senderAddress: normalizedSenderAddress,
     ...(config.senderName && { senderName: config.senderName }),
-    ...emailData
+    ...emailData,
+    recipients: normalizedRecipients
   };
+
+  logger.info('NCPEmail:Request', 'Sending email with normalized addresses', {
+    sender: normalizedSenderAddress,
+    recipients: normalizedRecipients.map(r => r.address),
+    originalRecipients: emailData.recipients.map(r => r.address)
+  });
 
   const response = await fetch(endpoint, {
     method: 'POST',

@@ -167,6 +167,8 @@ export function MapView({
 
     // Step 2: 목록 필터 적용
     if (listFilter !== 'all') {
+      const beforeFilterCount = filtered.length;
+
       filtered = filtered.filter(location => {
         const serial = location.equipment_serial;
 
@@ -177,8 +179,9 @@ export function MapView({
           // 추가된 목록: 스케줄에 있는 장비
           return scheduledEquipment.has(serial);
         } else if (listFilter === 'target') {
-          // 점검대상목록: 스케줄에 있지만 아직 점검 진행 중이 아닌 장비
-          return scheduledEquipment.has(serial) && !inspectionSessions.has(serial);
+          // 점검대상목록: 스케줄에 있고 아직 완료되지 않은 장비
+          // 점검 진행 중인 장비도 포함 (점검 완료 전까지는 점검대상)
+          return scheduledEquipment.has(serial) && !inspectionCompleted.has(serial);
         } else if (listFilter === 'inProgress') {
           // 점검진행목록: 현재 점검 진행 중인 장비
           return inspectionSessions.has(serial);
@@ -186,6 +189,18 @@ export function MapView({
 
         return true;
       });
+
+      // 디버깅: 필터 적용 전후 개수 로깅
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[MapView] Filter Applied:', {
+          filter: listFilter,
+          beforeCount: beforeFilterCount,
+          afterCount: filtered.length,
+          scheduledCount: scheduledEquipment.size,
+          sessionCount: inspectionSessions.size,
+          completedCount: inspectionCompleted.size
+        });
+      }
     }
 
     return filtered;

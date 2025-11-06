@@ -898,14 +898,31 @@ export function DataTable({
     };
   }, [data, scheduledEquipment]);
 
-  const devices = useMemo(() => {
+  // ✅ 성능 최적화: 메모이제이션 2단계로 분리
+  // Step 1: 일정/점검 필터링만 수행 (data와 scheduleFilter 의존)
+  const filteredBySchedule = useMemo(() => {
     const rawDevices = data || [];
 
     // ✅ 성능 최적화: API가 이미 distance_km을 계산하므로 클라이언트 중복 계산 제거
     // 거리 계산은 API 레벨에서 처리됨 (route.ts:711)
 
-    // 서브 필터 적용
-    if (scheduleFilter === 'unscheduled') {
+    if (scheduleFilter === 'scheduled') {
+      // scheduled 필터는 scheduledEquipment에만 의존
+      return { devices: rawDevices, filterType: 'scheduled' as const };
+    } else if (scheduleFilter === 'unscheduled') {
+      // unscheduled 필터는 추가 필터링 필요
+      return { devices: rawDevices, filterType: 'unscheduled' as const };
+    } else {
+      // 'all' - 모든 장비 표시
+      return { devices: rawDevices, filterType: 'all' as const };
+    }
+  }, [data, scheduleFilter]);
+
+  // Step 2: 점검 상태 필터링 (30초마다 업데이트되는 상태에 의존)
+  const devices = useMemo(() => {
+    const { devices: rawDevices, filterType } = filteredBySchedule;
+
+    if (filterType === 'unscheduled') {
       // 추가할목록: 일정 추가되지 않았고, 점검 세션이 없고, 점검 완료되지 않은 장비만 표시
       return rawDevices.filter(device => {
         const serial = device.equipment_serial;
@@ -916,13 +933,13 @@ export function DataTable({
         // 일정 추가, 점검 중, 점검 완료 모두 제외
         return !isScheduled && !hasSession && !isCompleted;
       });
-    } else if (scheduleFilter === 'scheduled') {
+    } else if (filterType === 'scheduled') {
       return rawDevices.filter(device => scheduledEquipment.has(device.equipment_serial));
     } else {
       // 'all' - 모든 장비 표시
       return rawDevices;
     }
-  }, [data, scheduleFilter, scheduledEquipment, inspectionSessions, inspectionCompleted]);
+  }, [filteredBySchedule, scheduledEquipment, inspectionSessions, inspectionCompleted]);
 
   const deviceMap = useMemo(() => {
     const map = new Map<string, AEDDevice>();

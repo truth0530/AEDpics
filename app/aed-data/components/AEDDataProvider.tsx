@@ -248,6 +248,8 @@ export function AEDDataProvider({ children, initialFilters, userProfile, viewMod
     gcTime: 1000 * 60 * 60, // 1시간 (구 cacheTime)
     refetchOnWindowFocus: false, // 매일 교체이므로 불필요
     // refetchOnMount는 기본값(true) 사용 - staleTime이 지나지 않으면 재조회 안 함
+    // ✅ includeSchedule=true일 때 30초마다 자동 갱신 (inspectionSessions, inspectionCompleted와 동기화)
+    refetchInterval: includeSchedule ? 30000 : false
   });
 
   const response = queryResult.data;
