@@ -34,6 +34,19 @@ const GUGUN_MAP: Record<string, string[]> = {
   '제주': ['제주시', '서귀포시'],
 };
 
+// city_code를 실제 gugun 이름으로 변환
+const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
+  // 제주도
+  'jeju': '제주시',
+  'seogwipo': '서귀포시',
+  // 필요한 다른 지역 추가
+};
+
+function mapCityCodeToGugun(cityCode: string | undefined): string {
+  if (!cityCode) return '구군';
+  return CITY_CODE_TO_GUGUN_MAP[cityCode] || cityCode;
+}
+
 export function RegionFilter({ user, onChange }: RegionFilterProps) {
   // 사용자 권한에 따라 초기값 설정
   const canChangeSidoRole =
@@ -50,7 +63,8 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   const isHealthCenterStaff = user.role === 'local_admin';
 
   const userCityCode = (user.organization as any)?.city_code;
-  const userCity = userCityCode || '구군';
+  // ✅ city_code를 실제 gugun 이름으로 변환 (예: "seogwipo" → "서귀포시")
+  const userCity = mapCityCodeToGugun(userCityCode);
 
   // regional_emergency_center_admin는 자신의 관할 지역을 기본값으로 설정
   // ministry_admin, emergency_center_admin, master는 '시도' (전체)를 기본값으로 설정
