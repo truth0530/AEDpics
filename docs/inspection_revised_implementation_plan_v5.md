@@ -103,8 +103,18 @@ const hasPermission = canEditInspection(
 );
 ```
 
+**검증 결과** (2025-11-06):
+- 실제 운영 데이터: 14/28 (50%) null 발생률
+- 1% 임계값 훨씬 초과 → **반드시 사용자 안내 메시지 필요**
+
 **결정**: **옵션 A 권장** (명확성 + 보안)
-- null이면 400 Bad Request 반환
+- null이면 400 Bad Request 반환 (필수)
+- 사용자 친화적 메시지 제공 (50% 발생 대비)
+```json
+{
+  "error": "점검 기록은 존재하나 장비 정보가 삭제된 상태입니다. 장비 정보가 복구될 때까지 이 기록은 수정할 수 없습니다."
+}
+```
 - 지역 데이터 없는 inspection은 수정 불가 정책
 
 ---
@@ -259,6 +269,10 @@ if (!roleAllowed) {
 
 ### 1-Stage: Export 엔드포인트 (3-4시간)
 
+**Phase 1 완료** (2025-11-06):
+- SQL 실행: 9명의 local_admin의 can_export_data flag를 false → true 업데이트
+- 결과: 10/10 local_admin이 can_export_data=true 상태
+
 #### 1.1 권한 검증 (명확화)
 
 ```typescript
@@ -267,12 +281,12 @@ const profile = await prisma.user_profiles.findUnique({
   where: { id: session.user.id },
   select: {
     role: true,
-    can_export_data: true,        // ← 플래그 확인
+    can_export_data: true,        // ← 플래그 확인 (Phase 1 완료)
     organizations: { select: { region_code: true, city_code: true } }
   }
 });
 
-// 체크 1: can_export_data 플래그
+// 체크 1: can_export_data 플래그 (Phase 1으로 모든 admin이 true 상태)
 if (!profile?.can_export_data) {
   return NextResponse.json(
     { error: '데이터 다운로드 권한이 없습니다' },
@@ -280,7 +294,7 @@ if (!profile?.can_export_data) {
   );
 }
 
-// 체크 2: 역할 기반 확인
+// 체크 2: 역할 기반 확인 (이중 검증)
 const exportableRoles = ['master', 'emergency_center_admin', 'regional_admin', 'local_admin'];
 if (!exportableRoles.includes(profile.role)) {
   return NextResponse.json(
@@ -320,9 +334,13 @@ if (!inspection) {
 }
 
 // ← 추가: aed_data null 처리 (옵션 A)
+// 검증 결과: 50% null 발생률 대비 사용자 친화적 메시지 필수
 if (!inspection.aed_data) {
   return NextResponse.json(
-    { error: '연관된 장비 데이터를 찾을 수 없습니다' },
+    {
+      error: '점검 기록은 존재하나 장비 정보가 삭제된 상태입니다. 장비 정보가 복구될 때까지 이 기록은 수정할 수 없습니다.',
+      code: 'AED_DATA_NOT_FOUND'
+    },
     { status: 400 }
   );
 }
@@ -330,27 +348,38 @@ if (!inspection.aed_data) {
 
 #### 2.2 권한 검증 재구현
 
+**검증 결과 (2025-11-06)**: local_admin 10명 모두 city_code(시군구) 단위 관할 확정
+
 ```typescript
-// profile 확대 로드
+import { canEditInspection, checkInspectionPermission } from '@/lib/inspections/permissions';
+import { CITY_CODE_TO_GUGUN_MAP } from '@/lib/constants/regions';
+
+// profile 확대 로드 - city_code도 필수 로드
 const profile = await prisma.user_profiles.findUnique({
   where: { id: session.user.id },
   select: {
     role: true,
     organizations: {
       select: {
-        region_code: true  // ← 단수형 organizations 사용
+        city_code: true,     // ← 시군구 코드 (검증 결과 필수)
+        region_code: true    // ← 시도 코드 (참고용)
       }
     }
   }
 });
 
-// 기존 함수 호출 (위치 인자)
+// 지역 비교: city_code(시군구) 단위 비교 필수
+// city_code를 gugun(한글)으로 매핑
+const userGugun = CITY_CODE_TO_GUGUN_MAP[profile?.organizations?.city_code]
+  || profile?.organizations?.city_code;
+
+// ✅ 올바른 비교: gugun('서귀포시') vs gugun('서귀포시')
 const hasPermission = canEditInspection(
   profile.role,
   session.user.id,
   inspection.inspector_id,
-  profile.organizations?.region_code,  // ← 단수형 + nullable
-  inspection.aed_data.sido              // ← null 아님 보장
+  userGugun,                   // ← '서귀포시' (CITY_CODE_TO_GUGUN_MAP으로 매핑)
+  inspection.aed_data.gugun    // ← '서귀포시' (aed_data의 gugun)
 );
 
 if (!hasPermission) {
@@ -358,8 +387,8 @@ if (!hasPermission) {
     profile.role,
     session.user.id,
     inspection.inspector_id,
-    profile.organizations?.region_code,
-    inspection.aed_data.sido
+    userGugun,
+    inspection.aed_data.gugun
   );
   return NextResponse.json(
     { error: permissionDetail.reason },
@@ -367,6 +396,12 @@ if (!hasPermission) {
   );
 }
 ```
+
+**변경 사항 요약**:
+1. profile 쿼리: city_code 추가 로드 (시도/시군구 비교 구분)
+2. CITY_CODE_TO_GUGUN_MAP import 추가
+3. userGugun 매핑: city_code → gugun 변환
+4. canEditInspection 호출: region_code(시도) 대신 gugun(시군구) 전달
 
 #### 2.3 필드명 수정 (snake_case로 통일)
 
@@ -417,8 +452,9 @@ describe("PATCH /api/inspections/[id] - v5.0 최종", () => {
     // → 400 Bad Request
   });
 
-  test("profile.organizations로 지역 확인", async () => {
-    // profile.organizations.region_code로 권한 검증
+  test("city_code로 지역 확인 (시군구 단위)", async () => {
+    // 검증 결과: local_admin은 시군구(city_code) 단위 관할
+    // profile.organizations.city_code → gugun 매핑 → 권한 검증
     // → 정상 작동 확인
   });
 
@@ -451,17 +487,21 @@ describe("PATCH /api/inspections/[id] - v5.0 최종", () => {
 ## 최종 체크리스트
 
 ### 1-Stage (Export)
-- [ ] can_export_data 플래그 확인
-- [ ] 역할 기반 검증
+- [x] can_export_data 플래그 업데이트 (Phase 1 완료: 9/10 update)
+- [x] 역할 기반 검증 (이중 검증: flag + role)
 - [ ] enforceFilterPolicy 적용
 - [ ] 감사 로그
+- [ ] /api/inspections/export 엔드포인트 구현
 
 ### 2-Stage (PATCH)
-- [ ] aed_data 포함 + null 처리
-- [ ] profile.organizations 접근 (단수형)
-- [ ] canEditInspection 위치 인자 호출
+- [ ] aed_data 포함 (gugun 필드 필수)
+- [ ] aed_data null 처리 (사용자 친화적 메시지)
+- [ ] profile.organizations 접근 (단수형, city_code 추가)
+- [ ] CITY_CODE_TO_GUGUN_MAP import & 매핑 적용 (검증 결과: 시군구 단위)
+- [ ] canEditInspection 호출: city_code→gugun 매핑값 + aed_data.gugun
 - [ ] allowedFields를 snake_case로 변경
 - [ ] fieldMapping 제거 또는 비활성화
+- [ ] updated_at 필드명 (snake_case)
 
 ### 배포 전
 - [ ] TypeScript 컴파일 통과

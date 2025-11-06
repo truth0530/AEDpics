@@ -229,6 +229,73 @@ export function getRegionFullLabel(code: string): string {
 }
 
 /**
+ * ⭐ City Code (시군구) → Gugun (한글 시군구명) 매핑
+ *
+ * organizations.city_code (영문) → aed_data.gugun (한글) 변환
+ * local_admin 권한 검증에 사용
+ *
+ * @example
+ * mapCityCodeToGugun('seogwipo')  // '서귀포시'
+ * mapCityCodeToGugun('jung')      // '중구'
+ * mapCityCodeToGugun('unknown')   // null (매핑 실패 시 null 반환)
+ * mapCityCodeToGugun(null)        // null
+ *
+ * @param cityCode - organizations.city_code (예: 'seogwipo', 'jung')
+ * @returns aed_data.gugun 형식의 한글 시군구명, 또는 매핑 실패 시 null
+ */
+export const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
+  // 제주도 (JEJ)
+  'jeju': '제주시',
+  'seogwipo': '서귀포시',
+
+  // 대구광역시 (DAE)
+  'jung': '중구',
+  'dalseo': '달서구',
+  'buk': '북구',
+  'suseong': '수성구',
+  'seo': '서구',
+
+  // 인천광역시 (INC)
+  'namdong': '남동구',
+  'ganghwa': '강화군',
+  'gyeyang': '계양구',
+  'michuhol': '미추홀구',
+  'bupyeong': '부평구',
+  'yeonsu': '연수구',
+  'ongjin': '옹진군',
+  'jung_yeongjong': '영종',
+
+  // 경남 (GYN)
+  'gimhae': '김해시',
+
+  // 충청북도 (CHB)
+  'goesan': '괴산군',
+  'danyang': '단양군',
+  'boeun': '보은군',
+  'yeongdong': '영동군',
+  'okcheon': '옥천군',
+  'eumseong': '음성군',
+  'jecheon': '제천시',
+  'jeungpyeong': '증평군',
+  'jincheon': '진천군',
+  'cheongju': '청주시',
+  'chungju': '충주시',
+
+  // 세종특별자치시 (SEJ)
+  'seju': '세종특별자치시',
+};
+
+/**
+ * City Code를 Gugun으로 매핑하는 함수
+ * @param cityCode - organizations.city_code
+ * @returns 매핑된 gugun, 또는 매핑 실패 시 null
+ */
+export function mapCityCodeToGugun(cityCode: string | null | undefined): string | null {
+  if (!cityCode) return null;
+  return CITY_CODE_TO_GUGUN_MAP[cityCode] || null;
+}
+
+/**
  * Supabase RPC 호출용으로 지역 코드를 한글 라벨 배열로 변환
  */
 export function mapRegionCodesToDbLabels(codes?: string[] | null): string[] | null {
