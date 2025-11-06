@@ -108,6 +108,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
       if (regionCode) {
         // 시도 코드 매핑 (예: DAE -> 대구광역시)
         // 검증 결과 (2025-11-07): 실제 데이터베이스의 region_code 값과 일치하도록 수정
+        // 주의: KR (보건복지부/중앙)은 필터를 적용하지 않음 (전국 권한이므로 else if에서 이미 처리)
         const sidoMap: Record<string, string> = {
           'SEO': '서울특별시',      // 수정: SEL -> SEO (중앙응급의료센터 코드)
           'BUS': '부산광역시',
@@ -125,13 +126,13 @@ export const GET = apiHandler(async (request: NextRequest) => {
           'JEN': '전라남도',
           'GYB': '경상북도',
           'GYN': '경상남도',
-          'JEJ': '제주특별자치도',
-          'CBN': '충청북도',         // 추가: 청주시 보건소 (충청북도 소속)
-          'KR': '전국'              // 추가: 보건복지부 (전국 권한)
+          'JEJ': '제주특별자치도'
         };
 
+        // KR (보건복지부)는 전국 권한이므로 필터를 적용하지 않음
+        // CBN은 청주시 조직명이지만 실제 sido는 충청북도(CHB)이므로 맵에 포함하지 않음
         const sido = sidoMap[regionCode];
-        if (sido) {
+        if (sido && regionCode !== 'KR') {
           aedFilter.sido = sido;
         }
 
@@ -211,12 +212,29 @@ export const GET = apiHandler(async (request: NextRequest) => {
       let dataSource = 'aedpics';  // 기본값
 
       // e-gen 동기화 데이터 판단 (향후 구현을 위한 인프라)
-      if (inspection.original_data &&
-          typeof inspection.original_data === 'object' &&
-          (inspection.original_data.source === 'egen' ||
-           inspection.original_data.from_egen === true ||
-           inspection.original_data.e_gen_inspection_date !== undefined)) {
-        dataSource = 'egen';
+      // NOTE: original_data는 JSON 객체, 문자열, null 중 하나일 수 있음
+      try {
+        let originalData = inspection.original_data;
+
+        // 문자열인 경우 JSON 파싱 (DB에 문자열로 저장된 JSON 데이터 처리)
+        if (typeof originalData === 'string' && originalData.trim().length > 0) {
+          originalData = JSON.parse(originalData);
+        }
+
+        // 파싱 후 객체인지 확인하고 e-gen 메타데이터 검사
+        if (originalData && typeof originalData === 'object') {
+          if (originalData.source === 'egen' ||
+              originalData.from_egen === true ||
+              originalData.e_gen_inspection_date !== undefined) {
+            dataSource = 'egen';
+          }
+        }
+      } catch (parseError) {
+        // JSON 파싱 실패 시 로깅하되, 기본값 'aedpics' 유지
+        logger.warn('InspectionHistory:GET', 'Failed to parse original_data', {
+          inspectionId: inspection.id,
+          error: parseError instanceof Error ? parseError.message : 'Unknown error'
+        });
       }
 
       return {
