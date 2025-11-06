@@ -51,11 +51,14 @@ const ROLE_PERMISSIONS: Record<string, string> = {
  */
 export async function sendApprovalEmail(
   userEmail: string,
-  userName: string,
+  userName: string | null,
   role: user_role,
   organizationName: string,
   approvedAt: Date
 ) {
+  // userName이 null이거나 빈 문자열일 경우 기본값 사용
+  const safeUserName = userName?.trim() || '사용자';
+
   const roleKorean = ROLE_KOREAN[role] || role;
   const rolePermissions = ROLE_PERMISSIONS[role] || '역할에 대한 설명이 없습니다.';
 
@@ -71,7 +74,7 @@ export async function sendApprovalEmail(
       <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
         <h1 style="color: #0066cc; margin-bottom: 20px; font-size: 24px;">계정이 승인되었습니다</h1>
 
-        <p style="font-size: 16px; margin-bottom: 20px;">안녕하세요 <strong>${userName}</strong>님,</p>
+        <p style="font-size: 16px; margin-bottom: 20px;">안녕하세요 <strong>${safeUserName}</strong>님,</p>
 
         <p style="font-size: 16px; margin-bottom: 30px;">
           AED 관리 시스템 가입 신청이 승인되었습니다.<br>
@@ -157,7 +160,7 @@ export async function sendApprovalEmail(
     await sendSimpleEmail(
       NCP_CONFIG,
       userEmail,
-      userName,
+      safeUserName,  // null 방지를 위해 안전한 이름 사용
       '[AED관리시스템] 계정이 승인되었습니다',
       htmlBody
     );

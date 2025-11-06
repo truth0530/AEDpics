@@ -24,9 +24,12 @@ const NCP_CONFIG = {
  */
 export async function sendRejectionEmail(
   userEmail: string,
-  userName: string,
+  userName: string | null,
   reason: string
 ) {
+  // userName이 null이거나 빈 문자열일 경우 기본값 사용
+  const safeUserName = userName?.trim() || '사용자';
+
   const htmlBody = `
     <!DOCTYPE html>
     <html lang="ko">
@@ -39,7 +42,7 @@ export async function sendRejectionEmail(
       <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
         <h1 style="color: #d9534f; margin-bottom: 20px; font-size: 24px;">가입 신청이 반려되었습니다</h1>
 
-        <p style="font-size: 16px; margin-bottom: 20px;">안녕하세요 <strong>${userName}</strong>님,</p>
+        <p style="font-size: 16px; margin-bottom: 20px;">안녕하세요 <strong>${safeUserName}</strong>님,</p>
 
         <p style="font-size: 16px; margin-bottom: 30px;">
           AED 관리 시스템 가입 신청이 반려되었습니다.
@@ -97,7 +100,7 @@ export async function sendRejectionEmail(
     await sendSimpleEmail(
       NCP_CONFIG,
       userEmail,
-      userName,
+      safeUserName,  // null 방지를 위해 안전한 이름 사용
       '[AED관리시스템] 가입 신청이 반려되었습니다',
       htmlBody
     );

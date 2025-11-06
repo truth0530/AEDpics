@@ -18,10 +18,10 @@ import { logger } from '@/lib/logger';
 const DOMAIN_SENDER_MAPPING: Record<string, string[]> = {
   // 네이버 계열
   'naver.com': ['noreply@nmc.or.kr', 'noreply@aed.pics'],
-  'hanmail.net': ['noreply@nmc.or.kr', 'noreply@aed.pics'],
 
-  // 다음/카카오 계열
+  // 다음/카카오 계열 (한메일 포함)
   'daum.net': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
+  'hanmail.net': ['noreply@aed.pics', 'noreply@nmc.or.kr'],  // hanmail은 다음 계열
   'kakao.com': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
 
   // 구글 계열
