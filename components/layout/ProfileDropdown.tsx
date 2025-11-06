@@ -35,7 +35,12 @@ export function ProfileDropdown({ user, pendingApprovalCount }: ProfileDropdownP
   }, []);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/auth/signin' });
+    // redirect: false로 설정하여 NextAuth의 기본 signout 페이지를 거치지 않도록 함
+    await signOut({
+      redirect: false
+    });
+    // 수동으로 로그인 페이지로 리다이렉트
+    window.location.href = '/auth/signin';
   };
 
   const getInitials = (name: string) => {

@@ -97,13 +97,15 @@ export function InspectionSummaryStep() {
   const formatKSTTime = (isoString: string) => {
     try {
       const date = new Date(isoString);
-      const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-      const year = kstDate.getFullYear();
-      const month = String(kstDate.getMonth() + 1).padStart(2, '0');
-      const day = String(kstDate.getDate()).padStart(2, '0');
-      const hours = String(kstDate.getHours()).padStart(2, '0');
-      const minutes = String(kstDate.getMinutes()).padStart(2, '0');
-      return `${year}년 ${month}월 ${day}일 ${hours}:${minutes}`;
+      return date.toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(/\. /g, '년 ').replace(/\. /g, '월 ').replace(/\./g, '일');
     } catch {
       return isoString;
     }
@@ -112,11 +114,12 @@ export function InspectionSummaryStep() {
   const formatDate = (isoString: string) => {
     try {
       const date = new Date(isoString);
-      const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-      const year = kstDate.getFullYear();
-      const month = String(kstDate.getMonth() + 1).padStart(2, '0');
-      const day = String(kstDate.getDate()).padStart(2, '0');
-      return `${year}.${month}.${day}`;
+      return date.toLocaleDateString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\. /g, '.').replace(/\.$/, '');
     } catch {
       return isoString;
     }
@@ -752,71 +755,74 @@ export function InspectionSummaryStep() {
               다음 각 호의 어느 하나에 해당하는 자에게는 과태료를 부과한다.
             </div>
 
-            {/* 위반 사항이 있는 경우만 표 표시 */}
-            {(storageChecklistSummary.issues.some(item => item.label === '최근 점검이력') ||
-              storageChecklistSummary.matched.every(item => item.label !== '안내표지') ||
-              basicInfoSummary.modified.length > 0) && (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', color: '#d1d5db', marginTop: '6px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#374151', borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
-                    <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>위반 행위</th>
-                    <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>근거법조문</th>
-                    <th colSpan={3} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>과태료 금액</th>
-                  </tr>
-                  <tr style={{ backgroundColor: '#4b5563', borderBottom: '1px solid #6b7280' }}>
-                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>1차 위반</th>
-                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>2차 위반</th>
-                    <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>3차 위반</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* 변경신고 미이행 */}
-                  {basicInfoSummary.modified.length > 0 && (
-                    <tr style={{ borderBottom: '1px solid #6b7280' }}>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
-                        법 제47조의2제2항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 설치 신고 또는 변경신고를 하지 않은 경우
-                      </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
-                        법 제62조<br/>제1항 제3호의 4
-                      </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
-                      <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>150만원</td>
-                    </tr>
-                  )}
+            {/* 과태료 표 - 항상 4개 항목 모두 표시 */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', color: '#d1d5db', marginTop: '6px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#374151', borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
+                  <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>위반 행위</th>
+                  <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>근거법조문</th>
+                  <th colSpan={3} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>과태료 금액</th>
+                </tr>
+                <tr style={{ backgroundColor: '#4b5563', borderBottom: '1px solid #6b7280' }}>
+                  <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>1차 위반</th>
+                  <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>2차 위반</th>
+                  <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>3차 위반</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* 응급장비 미설치 */}
+                <tr style={{ borderBottom: '1px solid #6b7280' }}>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
+                    법 제47조의2제1항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비를 갖추지 아니한 경우
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
+                    법 제62조<br/>제1항 제3호의 3
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>150만원</td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>225만원</td>
+                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>300만원</td>
+                </tr>
 
-                  {/* 점검 결과 통보 미이행 */}
-                  {storageChecklistSummary.issues.some(item => item.label === '최근 점검이력') && (
-                    <tr style={{ borderBottom: '1px solid #6b7280' }}>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
-                        법 제47조의2제3항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 점검 결과를 통보하지 않은 경우
-                      </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
-                        법 제62조<br/>제1항 제3호의 5
-                      </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>75만원</td>
-                      <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
-                    </tr>
-                  )}
+                {/* 변경신고 미이행 */}
+                <tr style={{ borderBottom: '1px solid #6b7280' }}>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
+                    법 제47조의2제2항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 설치 신고 또는 변경신고를 하지 않은 경우
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
+                    법 제62조<br/>제1항 제3호의 4
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
+                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>150만원</td>
+                </tr>
 
-                  {/* 안내표지판 미부착 */}
-                  {storageChecklistSummary.matched.every(item => item.label !== '안내표지') && (
-                    <tr style={{ borderBottom: '2px solid #4b5563' }}>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
-                        법 제47조의2제4항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비 사용에 관한 안내표지판을 부착하지 않은 경우
-                      </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
-                        법 제62조<br/>제2항
-                      </td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>30만원</td>
-                      <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
-                      <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>70만원</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
+                {/* 점검 결과 통보 미이행 */}
+                <tr style={{ borderBottom: '1px solid #6b7280' }}>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
+                    법 제47조의2제3항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 점검 결과를 통보하지 않은 경우
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
+                    법 제62조<br/>제1항 제3호의 5
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>75만원</td>
+                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
+                </tr>
+
+                {/* 안내표지판 미부착 */}
+                <tr style={{ borderBottom: '2px solid #4b5563' }}>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
+                    법 제47조의2제4항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비 사용에 관한 안내표지판을 부착하지 않은 경우
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
+                    법 제62조<br/>제2항
+                  </td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>30만원</td>
+                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
+                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>70만원</td>
+                </tr>
+              </tbody>
+            </table>
             <div style={{ fontSize: '7px', color: '#9ca3af', marginTop: '4px', textAlign: 'right' }}>
               응급의료에 관한 법률 시행령 [별표 2] 과태료의 부과기준
             </div>
