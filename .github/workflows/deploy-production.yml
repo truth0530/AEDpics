@@ -70,19 +70,70 @@ jobs:
           set -e  # Exit on any error
           cd /var/www/aedpics
 
-          echo "=== Phase 0: Disk space cleanup ==="
-          echo "Checking disk usage before cleanup..."
+          echo "=== Phase 0: Pre-deployment Disk Space Monitoring ==="
+
+          # Function to get disk usage percentage
+          get_disk_usage() {
+            df / | awk 'NR==2 {print $5}' | sed 's/%//'
+          }
+
+          echo "Checking disk usage BEFORE cleanup..."
+          DISK_BEFORE=$(get_disk_usage)
           df -h | grep -E '/$|Filesystem'
+          echo "Disk usage: ${DISK_BEFORE}%"
+          echo ""
 
-          echo "Cleaning build caches..."
-          rm -rf .next/cache
-          rm -rf .next.backup
+          echo "Running aggressive disk space cleanup..."
 
-          echo "Cleaning PM2 logs..."
-          pm2 flush || true
+          echo "1. Cleaning build caches..."
+          rm -rf .next/cache .next.backup 2>/dev/null || true
 
-          echo "Checking disk usage after cleanup..."
+          echo "2. Cleaning npm cache..."
+          npm cache clean --force 2>/dev/null || true
+
+          echo "3. Cleaning PM2 logs..."
+          pm2 flush 2>/dev/null || true
+
+          echo "4. Cleaning old log files..."
+          find /var/log -type f -mtime +30 -delete 2>/dev/null || true
+
+          echo ""
+          echo "Checking disk usage AFTER cleanup..."
+          DISK_AFTER=$(get_disk_usage)
           df -h | grep -E '/$|Filesystem'
+          echo "Disk usage: ${DISK_AFTER}%"
+          echo ""
+
+          # Critical check: fail if disk usage > 90% after cleanup
+          if [ ${DISK_AFTER} -gt 90 ]; then
+            echo "ERROR: Disk usage is ${DISK_AFTER}% (critical level > 90%)"
+            echo "Attempting more aggressive cleanup..."
+
+            # Delete backup if exists
+            if [ -d ".next.backup" ]; then
+              echo "Deleting .next.backup (could free ~500MB)..."
+              rm -rf .next.backup
+            fi
+
+            DISK_CRITICAL=$(get_disk_usage)
+            df -h | grep -E '/$|Filesystem'
+            echo "Disk usage after aggressive cleanup: ${DISK_CRITICAL}%"
+
+            if [ ${DISK_CRITICAL} -gt 85 ]; then
+              echo "FATAL: Disk usage still critical (${DISK_CRITICAL}%). Deployment aborted."
+              echo "Recommend running: gh workflow run aggressive-cleanup.yml"
+              exit 1
+            fi
+          fi
+
+          # Warning if disk usage > 80%
+          if [ ${DISK_AFTER} -gt 80 ]; then
+            echo "WARNING: Disk usage is ${DISK_AFTER}% (warning level > 80%)"
+            echo "Consider running aggressive-cleanup.yml workflow if deployments continue to fail"
+          else
+            echo "OK: Disk usage is ${DISK_AFTER}% (acceptable < 80%)"
+          fi
+          echo ""
 
           echo "=== Phase 1: Backup current version ==="
           if [ -d ".next" ]; then

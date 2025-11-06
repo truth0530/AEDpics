@@ -14,7 +14,15 @@
 - [supabase/README.md](../supabase/README.md) - 데이터베이스 통합 관리
 - [../reference/QUICK_START_GUIDE.md](../reference/QUICK_START_GUIDE.md) - 빠른 시작 가이드
 
-## 현재 완성도 (2025-10-08 기준)
+## 현재 완성도 (2025-11-07 기준)
+
+### Phase 2 완료 공지
+**주소 vs 관할보건소 기준 점검 이력 조회 모드 토글이 프로덕션에 배포되었습니다.**
+- 상세 내용: [PHASE2_COMPLETION_SUMMARY.md](PHASE2_COMPLETION_SUMMARY.md) 참조
+- 구현: Frontend (UI) + Backend (API) + 자동화 검증 완료
+- 프로덕션 상태: 정상 작동 중 (2025-11-07)
+- 일일 모니터링: verify-mode-logging-daily.yml (매일 09:00 UTC)
+- 사용자 문서: [docs/guides/MODE_TOGGLE_USAGE_GUIDE.md](../guides/MODE_TOGGLE_USAGE_GUIDE.md)
 
 ### ⚠️ 중요 공지: 기술 부채 상황
 **Vercel 배포 문제 해결을 위해 임시로 코드 품질 검증을 비활성화했습니다.**

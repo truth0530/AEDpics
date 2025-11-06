@@ -118,6 +118,9 @@ docs/
 
 ### 3. 실무 가이드
 
+**점검 관리**:
+- [guides/MODE_TOGGLE_USAGE_GUIDE.md](./guides/MODE_TOGGLE_USAGE_GUIDE.md) - 점검 이력 조회 모드 (주소 vs 관할 기준)
+
 **성능 최적화**:
 - [PERFORMANCE_OPTIMIZATION.md](./guides/PERFORMANCE_OPTIMIZATION.md) - 종합 가이드
 - [IMAGE_OPTIMIZATION_STRATEGY.md](./guides/IMAGE_OPTIMIZATION_STRATEGY.md) - 이미지 최적화
