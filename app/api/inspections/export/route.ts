@@ -99,27 +99,79 @@ export const POST = apiHandler(async (request: NextRequest) => {
       );
     }
 
-    // === Step 6: Filter 파싱 (Body 또는 Query String) ===
+    // === Step 6: Filter 파싱 (Body 또는 Query String) + 유효성 검증 ===
     // POST body에서 필터 읽기 시도, 없으면 쿼리스트링 사용
-    let requestedFilters;
+    let requestedFilters: any;
+    let filterSource: 'body' | 'query' = 'body';
+
     try {
       const body = await request.json();
+
+      // 유효성 검증 1: 객체 여부 확인 (null, 배열, 문자열 등 제외)
+      if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+        return NextResponse.json(
+          { error: 'Invalid request body: must be a JSON object' },
+          { status: 400 }
+        );
+      }
+
+      // 유효성 검증 2: limit은 non-negative integer
+      if (body.limit !== undefined) {
+        if (typeof body.limit !== 'number' || !Number.isInteger(body.limit)) {
+          return NextResponse.json(
+            { error: 'Invalid limit: must be an integer' },
+            { status: 400 }
+          );
+        }
+        if (body.limit < 0) {
+          return NextResponse.json(
+            { error: 'Invalid limit: must be non-negative' },
+            { status: 400 }
+          );
+        }
+      }
+
+      // 유효성 검증 3: regionCodes, cityCodes는 배열
+      if (body.regionCodes !== undefined && !Array.isArray(body.regionCodes)) {
+        return NextResponse.json(
+          { error: 'Invalid regionCodes: must be an array' },
+          { status: 400 }
+        );
+      }
+      if (body.cityCodes !== undefined && !Array.isArray(body.cityCodes)) {
+        return NextResponse.json(
+          { error: 'Invalid cityCodes: must be an array' },
+          { status: 400 }
+        );
+      }
+
       requestedFilters = body;
+      filterSource = 'body';
 
       logger.debug('Export:Request', 'Filters from POST body', {
+        source: 'body',
         regionCodes: requestedFilters.regionCodes,
         cityCodes: requestedFilters.cityCodes,
         limit: requestedFilters.limit
       });
-    } catch {
+    } catch (error) {
       // JSON body 파싱 실패 시 쿼리스트링 사용
-      requestedFilters = parseQueryParams(request.nextUrl.searchParams);
+      if (error instanceof SyntaxError) {
+        // JSON 파싱 오류일 때만 fallback
+        requestedFilters = parseQueryParams(request.nextUrl.searchParams);
+        filterSource = 'query';
 
-      logger.debug('Export:Request', 'Filters from query string', {
-        regionCodes: requestedFilters.regionCodes,
-        cityCodes: requestedFilters.cityCodes,
-        limit: requestedFilters.limit
-      });
+        logger.debug('Export:Request', 'Filters from query string (JSON parse failed)', {
+          source: 'query',
+          regionCodes: requestedFilters.regionCodes,
+          cityCodes: requestedFilters.cityCodes,
+          limit: requestedFilters.limit,
+          parseError: error.message
+        });
+      } else {
+        // 다른 종류의 오류는 re-throw
+        throw error;
+      }
     }
 
     // === Step 7: City_code 정규화 + 검증 ===
@@ -133,6 +185,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
         if (mapped === null && code) {
           logger.warn('Export:CityCodeMapping', 'City code mapping failed - not in CITY_CODE_TO_GUGUN_MAP', {
             originalCode: code,
+            source: filterSource,  // ← 'body' 또는 'query'로 출처 추적
             userId: session.user.id,
             note: 'City code removed from filter'
           });
