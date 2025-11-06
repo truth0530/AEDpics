@@ -250,6 +250,51 @@ export async function getInspectionHistory(equipmentSerial?: string, hoursAgo: n
 }
 
 /**
+ * 임시저장된 점검 세션 조회
+ */
+export async function getDraftSessions(): Promise<any[]> {
+  try {
+    const response = await fetch('/api/inspections/drafts');
+
+    if (!response.ok) {
+      console.error('[getDraftSessions] HTTP error:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.drafts || [];
+  } catch (error) {
+    console.error('[getDraftSessions] Error:', error);
+    return [];
+  }
+}
+
+/**
+ * 임시저장된 점검 세션 삭제
+ */
+export async function deleteDraftSession(sessionId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/inspections/drafts', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sessionId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.error || 'Failed to delete draft' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[deleteDraftSession] Error:', error);
+    return { success: false, error: 'Network error' };
+  }
+}
+
+/**
  * 점검 이력 상세 조회
  */
 export async function getInspectionDetail(inspectionId: string): Promise<any | null> {

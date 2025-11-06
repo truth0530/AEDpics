@@ -16,6 +16,8 @@ import {
   getInspectionHistory,
   updateInspectionRecord,
   deleteInspectionRecord,
+  getDraftSessions,
+  deleteDraftSession,
   type InspectionSession,
   type InspectionHistory
 } from '@/lib/inspections/session-utils';
@@ -32,7 +34,7 @@ interface AdminFullViewProps {
 }
 
 function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfile; pageType?: 'inspection' | 'schedule' }) {
-  const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed' | 'drafts'>('list');
   const [filterCollapsed, setFilterCollapsed] = useState(false);
   const { data, isLoading, setFilters } = useAEDData();
   const router = useRouter();
@@ -65,6 +67,16 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   // 점검 이력 목록 (엑셀 다운로드용)
   const [inspectionHistoryList, setInspectionHistoryList] = useState<InspectionHistory[]>([]);
 
+  // 임시저장된 세션 목록
+  const [draftSessions, setDraftSessions] = useState<any[]>([]);
+
+  // 점검시작/점검불가 선택 모달
+  const [showInspectionChoiceModal, setShowInspectionChoiceModal] = useState(false);
+  const [selectedDeviceForInspection, setSelectedDeviceForInspection] = useState<any>(null);
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [unavailableReason, setUnavailableReason] = useState('');
+  const [unavailableNote, setUnavailableNote] = useState('');
+
   // 🔴 Phase B: 현재 모달이 표시 중인 장비의 inspection_status
   const [currentSessionInspectionStatus, setCurrentSessionInspectionStatus] = useState<
     'pending' | 'in_progress' | 'completed' | 'cancelled' | 'unavailable' | undefined
@@ -96,6 +108,9 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
       if (viewMode === 'completed') {
         const history = await getInspectionHistory(undefined, 720); // 최근 30일
         setInspectionHistoryList(history);
+      } else if (viewMode === 'drafts') {
+        const drafts = await getDraftSessions();
+        setDraftSessions(drafts);
       }
     }
 
@@ -512,6 +527,26 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               <span>점검이력</span>
             </div>
           </button>
+          <button
+            onClick={() => setViewMode('drafts')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              viewMode === 'drafts'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
+              </svg>
+              <span>임시저장</span>
+              {draftSessions.length > 0 && (
+                <span className="bg-yellow-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {draftSessions.length}
+                </span>
+              )}
+            </div>
+          </button>
         </div>
         <div className="flex items-center gap-3 px-4">
           {viewMode === 'completed' && (
@@ -531,8 +566,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         </div>
       </div>
 
-      {/* Filter Bar - 목록/점검완료 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
-      {(viewMode === 'list' || viewMode === 'completed') && (
+      {/* Filter Bar - 목록/점검완료/임시저장 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
+      {(viewMode === 'list' || viewMode === 'completed' || viewMode === 'drafts') && (
         <>
           {/* 현장점검 페이지에서는 필터바 항상 표시, 일정관리에서는 토글 가능 */}
           {(pageType === 'inspection' || !filterCollapsed) && <InspectionFilterBar />}
@@ -612,8 +647,9 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                 // ✅ 진행중인 세션이 있으면 (본인 or 타인) 모달 표시
                 handleInspectionInProgress(serial);
               } else {
-                // ✅ 진행중인 세션 없으면 새 세션 시작
-                router.push(`/inspection/${encodeURIComponent(serial)}`);
+                // ✅ 점검시작/점검불가 선택 모달 표시
+                setSelectedDeviceForInspection(device);
+                setShowInspectionChoiceModal(true);
               }
             }}
           />
@@ -637,6 +673,59 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
             currentViewMode={viewMode}
             pageType="inspection"
           />
+        ) : viewMode === 'drafts' ? (
+          // 임시저장 탭: 임시저장된 점검 세션 표시
+          <div className="p-4">
+            {draftSessions.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <p className="text-sm">임시저장된 점검이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {draftSessions.map((draft) => (
+                  <div key={draft.id} className="bg-gray-800 rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-gray-200">
+                          {draft.equipment_serial}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(draft.created_at).toLocaleString('ko-KR')}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {draft.current_step}단계 진행중
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          // TODO: 점검 재개 기능 구현
+                          console.log('Resume draft:', draft.id);
+                        }}
+                        className="px-3 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                      >
+                        이어하기
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const result = await deleteDraftSession(draft.id);
+                          if (result.success) {
+                            // 목록 새로고침
+                            const drafts = await getDraftSessions();
+                            setDraftSessions(drafts);
+                          }
+                        }}
+                        className="px-3 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="flex-1 overflow-hidden">
             <MapView
@@ -736,6 +825,195 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           equipmentSerial={inspectionToDelete.equipment_serial}
           onConfirm={handleConfirmDelete}
         />
+      )}
+
+      {/* 점검 시작 선택 모달 */}
+      {showInspectionChoiceModal && selectedDeviceForInspection && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-white mb-2">점검 작업 선택</h2>
+            <p className="text-sm text-gray-400 mb-6">
+              {selectedDeviceForInspection.equipment_serial}
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  const serial = selectedDeviceForInspection.equipment_serial || '';
+                  router.push(`/inspection/${encodeURIComponent(serial)}`);
+                  setShowInspectionChoiceModal(false);
+                  setSelectedDeviceForInspection(null);
+                }}
+                className="w-full p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-medium">점검 시작</span>
+                </div>
+                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowInspectionChoiceModal(false);
+                  setShowUnavailableModal(true);
+                }}
+                className="w-full p-4 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-12.728 12.728m0-12.728l12.728 12.728" />
+                  </svg>
+                  <span className="font-medium">점검불가로 처리</span>
+                </div>
+                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowInspectionChoiceModal(false);
+                setSelectedDeviceForInspection(null);
+              }}
+              className="w-full mt-4 p-3 text-gray-400 hover:text-gray-300 transition-colors text-sm"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 점검불가 사유 입력 모달 */}
+      {showUnavailableModal && selectedDeviceForInspection && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-white mb-2">점검불가 사유 선택</h2>
+            <p className="text-sm text-gray-400 mb-6">
+              {selectedDeviceForInspection.equipment_serial}
+            </p>
+
+            <div className="space-y-3">
+              <label className="block">
+                <input
+                  type="radio"
+                  name="unavailable-reason"
+                  value="disposed"
+                  onChange={(e) => setUnavailableReason(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-gray-200">폐기됨</span>
+              </label>
+              <label className="block">
+                <input
+                  type="radio"
+                  name="unavailable-reason"
+                  value="broken"
+                  onChange={(e) => setUnavailableReason(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-gray-200">고장</span>
+              </label>
+              <label className="block">
+                <input
+                  type="radio"
+                  name="unavailable-reason"
+                  value="lost"
+                  onChange={(e) => setUnavailableReason(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-gray-200">분실</span>
+              </label>
+              <label className="block">
+                <input
+                  type="radio"
+                  name="unavailable-reason"
+                  value="other"
+                  onChange={(e) => setUnavailableReason(e.target.value)}
+                  className="mr-2"
+                />
+                <span className="text-gray-200">기타</span>
+              </label>
+
+              {unavailableReason === 'other' && (
+                <textarea
+                  className="w-full p-3 bg-gray-800 text-gray-200 rounded-lg border border-gray-700 focus:border-blue-500 outline-none"
+                  placeholder="상세 사유를 입력하세요"
+                  value={unavailableNote}
+                  onChange={(e) => setUnavailableNote(e.target.value)}
+                  rows={3}
+                />
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={async () => {
+                  if (!unavailableReason) {
+                    showError('점검불가 사유를 선택해주세요.');
+                    return;
+                  }
+                  if (unavailableReason === 'other' && !unavailableNote.trim()) {
+                    showError('기타 사유를 입력해주세요.');
+                    return;
+                  }
+
+                  try {
+                    const response = await fetch('/api/inspections/mark-unavailable', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        equipment_serial: selectedDeviceForInspection.equipment_serial,
+                        reason: unavailableReason,
+                        note: unavailableNote
+                      })
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('점검불가 처리에 실패했습니다.');
+                    }
+
+                    showSuccess('점검불가로 처리되었습니다.');
+                    setShowUnavailableModal(false);
+                    setSelectedDeviceForInspection(null);
+                    setUnavailableReason('');
+                    setUnavailableNote('');
+                    // 데이터 새로고침
+                    const [sessions, completed, unavailable] = await Promise.all([
+                      getActiveInspectionSessions(),
+                      getCompletedInspections(24),
+                      getUnavailableAssignments(720),
+                    ]);
+                    setInspectionSessions(sessions);
+                    setCompletedInspections(completed);
+                    setUnavailableAssignments(unavailable);
+                  } catch (error) {
+                    showError('점검불가 처리 중 오류가 발생했습니다.');
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                확인
+              </button>
+              <button
+                onClick={() => {
+                  setShowUnavailableModal(false);
+                  setUnavailableReason('');
+                  setUnavailableNote('');
+                  setSelectedDeviceForInspection(null);
+                }}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
