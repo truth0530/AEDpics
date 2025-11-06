@@ -13,13 +13,16 @@ export default function InspectionPreviewPage() {
   const formatKSTTime = (isoString: string) => {
     try {
       const date = new Date(isoString);
-      const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-      const year = kstDate.getFullYear();
-      const month = String(kstDate.getMonth() + 1).padStart(2, '0');
-      const day = String(kstDate.getDate()).padStart(2, '0');
-      const hours = String(kstDate.getHours()).padStart(2, '0');
-      const minutes = String(kstDate.getMinutes()).padStart(2, '0');
-      return `${year}년 ${month}월 ${day}일 ${hours}:${minutes}`;
+      // toLocaleString을 사용하여 정확한 한국 시간대 변환
+      return date.toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(/\. /g, '년 ').replace(/\. /g, '월 ').replace(/\./g, '일');
     } catch {
       return isoString;
     }
@@ -28,11 +31,13 @@ export default function InspectionPreviewPage() {
   const formatDate = (isoString: string) => {
     try {
       const date = new Date(isoString);
-      const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-      const year = kstDate.getFullYear();
-      const month = String(kstDate.getMonth() + 1).padStart(2, '0');
-      const day = String(kstDate.getDate()).padStart(2, '0');
-      return `${year}.${month}.${day}`;
+      // toLocaleDateString을 사용하여 정확한 한국 날짜 변환
+      return date.toLocaleDateString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\. /g, '.').replace(/\.$/, '');
     } catch {
       return isoString;
     }

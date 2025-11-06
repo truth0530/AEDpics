@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { user_role as UserRole } from '@prisma/client';
 import { Search, User, CheckCircle, XCircle, AlertCircle, Shield, Building2, Edit } from 'lucide-react';
@@ -95,6 +96,7 @@ export default function AdminUsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
 
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   // 현재 로그인한 사용자 정보 조회
@@ -168,6 +170,8 @@ export default function AdminUsersPage() {
       setShowApproveModal(false);
       setShowEditModal(false);
       setSelectedUser(null);
+      // 페이지 전체 리프레시하여 서버 컴포넌트 재렌더링 (배지 업데이트)
+      router.refresh();
     },
     onError: (error: Error) => {
       alert(`승인 실패: ${error.message}`);
@@ -195,6 +199,8 @@ export default function AdminUsersPage() {
       setShowRejectModal(false);
       setSelectedUser(null);
       setRejectReason('');
+      // 페이지 전체 리프레시하여 서버 컴포넌트 재렌더링 (배지 업데이트)
+      router.refresh();
     },
     onError: (error: Error) => {
       alert(`거부 실패: ${error.message}`);

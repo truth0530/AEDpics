@@ -5,11 +5,13 @@ import { Search } from 'lucide-react';
 import { useAEDData } from '@/app/aed-data/components/AEDDataProvider';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { REGION_LABELS } from '@/lib/constants/filter-labels';
 
 export function InspectionFilterBar() {
   const { setFilters } = useAEDData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isMobileLayout, setIsMobileLayout] = useState(false);
+  const [regionFilter, setRegionFilter] = useState<{ sido?: string; gugun?: string }>({});
 
   useEffect(() => {
     const updateLayoutFlags = () => {
@@ -22,12 +24,68 @@ export function InspectionFilterBar() {
     return () => window.removeEventListener('resize', updateLayoutFlags);
   }, []);
 
+  // 헤더의 RegionFilter에서 발송하는 이벤트 수신
+  useEffect(() => {
+    const handleRegionSelected = (e: CustomEvent) => {
+      const { sido, gugun } = e.detail;
+      console.log('[InspectionFilterBar] Region selected from header:', { sido, gugun });
+
+      setRegionFilter({ sido, gugun });
+
+      // sessionStorage에도 저장 (페이지 새로고침 시 유지)
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem('selectedSido', sido);
+        window.sessionStorage.setItem('selectedGugun', gugun);
+      }
+    };
+
+    window.addEventListener('regionSelected', handleRegionSelected as EventListener);
+
+    // 초기값 로드
+    if (typeof window !== 'undefined') {
+      const storedSido = window.sessionStorage.getItem('selectedSido');
+      const storedGugun = window.sessionStorage.getItem('selectedGugun');
+      if (storedSido || storedGugun) {
+        setRegionFilter({ sido: storedSido || undefined, gugun: storedGugun || undefined });
+      }
+    }
+
+    return () => {
+      window.removeEventListener('regionSelected', handleRegionSelected as EventListener);
+    };
+  }, []);
+
   // 검색 필터 적용
   const handleApply = useCallback(() => {
+    // 지역 필터 변환
+    let regionCodes: string[] | undefined;
+    let cityCodes: string[] | undefined;
+
+    if (regionFilter.sido && regionFilter.sido !== '시도') {
+      // 시도 라벨을 코드로 변환
+      const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === regionFilter.sido)?.[0];
+      if (regionCode) {
+        regionCodes = [regionFilter.sido]; // API는 라벨을 받음
+      }
+    }
+
+    if (regionFilter.gugun && regionFilter.gugun !== '구군') {
+      cityCodes = [regionFilter.gugun];
+    }
+
+    console.log('[InspectionFilterBar] Applying filters:', {
+      search: searchTerm,
+      regionCodes,
+      cityCodes,
+      regionFilter
+    });
+
     setFilters({
       search: searchTerm.trim() || undefined,
-    });
-  }, [searchTerm, setFilters]);
+      regionCodes,
+      cityCodes,
+    } as any);
+  }, [searchTerm, regionFilter, setFilters]);
 
   // Enter 키로 검색
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
