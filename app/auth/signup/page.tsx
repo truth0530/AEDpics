@@ -1396,7 +1396,7 @@ export default function ImprovedSignUpPage() {
                 { region: '광주', phone: '062-233-1339' },
                 { region: '대전', phone: '042-223-5101' },
                 { region: '울산', phone: '052-229-3666' },
-                { region: '세종', phone: '044-300-5725' },
+                { region: '세종', phone: '044-715-5471' },
                 { region: '경기', phone: '031-8008-5641' },
                 { region: '강원', phone: '033-748-4911' },
                 { region: '충북', phone: '043-266-6124' },

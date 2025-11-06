@@ -14,7 +14,7 @@ const emergencyCenters = [
   { region: '광주', center: '광주 응급의료지원센터', phone: '062-233-1339' },
   { region: '대전', center: '대전 응급의료지원센터', phone: '042-223-5101' },
   { region: '울산', center: '울산 응급의료지원센터', phone: '052-229-3666' },
-  { region: '세종', center: '세종 응급의료지원센터', phone: '044-300-5725' },
+  { region: '세종', center: '세종 응급의료지원센터', phone: '044-715-5471' },
   { region: '경기', center: '경기 응급의료지원센터', phone: '031-8008-5641' },
   { region: '강원', center: '강원 응급의료지원센터', phone: '033-748-4911' },
   { region: '충북', center: '충북 응급의료지원센터', phone: '043-266-6124' },
