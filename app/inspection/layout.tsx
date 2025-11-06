@@ -83,7 +83,7 @@ export default function InspectionLayout({
           <span className="text-gray-400">
             권한: {userRole === 'master' ? '마스터 관리자' :
                   userRole === 'emergency_center_admin' ? '중앙응급의료센터' :
-                  userRole === 'regional_emergency_center_admin' ? '지역응급의료센터' :
+                  userRole === 'regional_emergency_center_admin' ? '응급의료지원센터' :
                   userRole === 'regional_admin' ? '시도 관리자' : '보건소 담당자'}
           </span>
         </div>

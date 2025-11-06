@@ -50,6 +50,10 @@ export const GET = apiHandler(async (request: NextRequest) => {
   const where: any = {
     inspection_date: {
       gte: cutoffDate
+    },
+    // 완료된 점검만 표시 (pending 제외)
+    overall_status: {
+      in: ['pass', 'fail', 'normal', 'needs_improvement', 'malfunction']
     }
   };
 
@@ -84,7 +88,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
         'DAJ': '대전광역시',
         'ULS': '울산광역시',
         'SEJ': '세종특별자치시',
-        'GYE': '경기도',
+        'GYG': '경기도',
         'GAN': '강원도',
         'CHB': '충청북도',
         'CHN': '충청남도',

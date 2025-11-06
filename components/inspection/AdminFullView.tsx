@@ -592,8 +592,9 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               const equipmentSerial = device.equipment_serial || '';
               const hasActiveSession = inspectionSessions.has(equipmentSerial);
               const isCompleted = completedInspections.has(equipmentSerial);
-              // 목록 탭: 점검 시작 전인 장비만
-              return !hasActiveSession && !isCompleted;
+              const isUnavailable = unavailableAssignments.has(equipmentSerial);
+              // 목록 탭: 점검 시작 전인 장비만 (점검불가 제외)
+              return !hasActiveSession && !isCompleted && !isUnavailable;
             }}
             showInspectionStatus={false}
             inspectionSessions={inspectionSessions}

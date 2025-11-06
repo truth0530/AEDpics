@@ -51,18 +51,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 해당 장비에 대한 할당 레코드 조회 (본인이 할당한 것만)
+    // 사용자 프로필 조회 (같은 조직 확인용)
+    const userProfile = await prisma.user_profiles.findUnique({
+      where: { id: session.user.id },
+      select: { organization_id: true }
+    });
+
+    // 해당 장비에 대한 할당 레코드 조회 (같은 조직 내에서 확인)
     try {
-      const existingAssignment = await prisma.inspection_assignments.findFirst({
-        where: {
-          equipment_serial: equipment_serial,
-          assigned_by: session.user.id,
-          OR: [
-            { status: 'pending' },
-            { status: 'in_progress' }
-          ]
-        }
-      });
+      let existingAssignment;
+
+      if (userProfile?.organization_id) {
+        // 같은 조직의 사용자들이 만든 할당 확인
+        const orgUsers = await prisma.user_profiles.findMany({
+          where: { organization_id: userProfile.organization_id },
+          select: { id: true }
+        });
+        const orgUserIds = orgUsers.map(u => u.id);
+
+        existingAssignment = await prisma.inspection_assignments.findFirst({
+          where: {
+            equipment_serial: equipment_serial,
+            assigned_by: { in: orgUserIds },
+            OR: [
+              { status: 'pending' },
+              { status: 'in_progress' }
+            ]
+          }
+        });
+      } else {
+        // 조직이 없는 경우 본인 것만 확인
+        existingAssignment = await prisma.inspection_assignments.findFirst({
+          where: {
+            equipment_serial: equipment_serial,
+            assigned_by: session.user.id,
+            OR: [
+              { status: 'pending' },
+              { status: 'in_progress' }
+            ]
+          }
+        });
+      }
 
       if (!existingAssignment) {
         // 새 할당 레코드 생성
@@ -166,15 +195,41 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // 사용자 프로필 조회 (같은 조직 확인용)
+    const userProfile = await prisma.user_profiles.findUnique({
+      where: { id: session.user.id },
+      select: { organization_id: true }
+    });
+
     // 점검불가 상태인 할당 레코드 조회
     try {
-      const assignment = await prisma.inspection_assignments.findFirst({
-        where: {
-          equipment_serial: equipment_serial,
-          assigned_by: session.user.id,
-          status: 'unavailable'
-        }
-      });
+      let assignment;
+
+      if (userProfile?.organization_id) {
+        // 같은 조직의 사용자들이 만든 할당 확인
+        const orgUsers = await prisma.user_profiles.findMany({
+          where: { organization_id: userProfile.organization_id },
+          select: { id: true }
+        });
+        const orgUserIds = orgUsers.map(u => u.id);
+
+        assignment = await prisma.inspection_assignments.findFirst({
+          where: {
+            equipment_serial: equipment_serial,
+            assigned_by: { in: orgUserIds },
+            status: 'unavailable'
+          }
+        });
+      } else {
+        // 조직이 없는 경우 본인 것만 확인
+        assignment = await prisma.inspection_assignments.findFirst({
+          where: {
+            equipment_serial: equipment_serial,
+            assigned_by: session.user.id,
+            status: 'unavailable'
+          }
+        });
+      }
 
       if (!assignment) {
         return NextResponse.json(

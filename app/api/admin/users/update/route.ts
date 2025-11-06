@@ -175,7 +175,7 @@ export async function PATCH(request: NextRequest) {
       const roleLabels: Record<string, string> = {
         'master': '최고 관리자',
         'emergency_center_admin': '중앙응급의료센터 관리자',
-        'local_emergency_center_admin': '지역응급의료센터 관리자',
+        'regional_emergency_center_admin': '응급의료지원센터 관리자',
         'local_admin': '보건소 담당자',
         'health_center_admin': '보건소 관리자'
       };
