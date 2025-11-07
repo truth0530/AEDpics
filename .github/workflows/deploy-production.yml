@@ -84,6 +84,23 @@ jobs:
         MASTER_EMAIL: ${{ secrets.MASTER_EMAIL }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
+    - name: Debug - Check .next directory
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Listing contents:"
+        ls -lah | head -20
+        echo ""
+        echo "Check .next existence:"
+        if [ -d ".next" ]; then
+          echo "✅ .next directory exists"
+          du -sh .next
+          ls -la .next | head -10
+        else
+          echo "❌ .next directory NOT found"
+          echo "Searching for .next in workspace:"
+          find . -name ".next" -type d 2>/dev/null || echo "No .next found"
+        fi
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
