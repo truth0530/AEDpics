@@ -197,16 +197,23 @@ export async function sendNCPEmail(
  *
  * DMARC 정책 준수:
  * - @nmc.or.kr 수신자 → noreply@nmc.or.kr (도메인 일치)
- * - 기타 도메인 → noreply@aed.pics (SPF/DKIM 설정됨)
+ * - 기타 도메인 → noreply@nmc.or.kr (2025-11-07: @aed.pics DMARC 미설정으로 일시 비활성화)
+ *
+ * TODO: @aed.pics DMARC 설정 완료 후 아래 주석 해제
+ * if (domain === 'nmc.or.kr') return 'noreply@nmc.or.kr';
+ * return 'noreply@aed.pics';
+ *
+ * 참고: app/api/admin/notify-new-signup/route.ts의 selectNotificationSender와 동기화
  */
 function selectSenderEmail(recipientEmail: string): string {
-  const domain = recipientEmail.split('@')[1]?.toLowerCase();
+  // 현재: 모든 도메인에 noreply@nmc.or.kr 사용
+  // 이유: @aed.pics는 DMARC 설정이 완료될 때까지 대기
+  return 'noreply@nmc.or.kr';
 
-  if (domain === 'nmc.or.kr') {
-    return 'noreply@nmc.or.kr';
-  }
-
-  return 'noreply@aed.pics';
+  // 이하는 @aed.pics DMARC 설정 완료 후 활성화
+  // const domain = recipientEmail.split('@')[1]?.toLowerCase();
+  // if (domain === 'nmc.or.kr') return 'noreply@nmc.or.kr';
+  // return 'noreply@aed.pics';
 }
 
 /**
