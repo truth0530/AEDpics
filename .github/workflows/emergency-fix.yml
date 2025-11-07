@@ -72,7 +72,6 @@ jobs:
 
           echo "Step 7.5: Fix database enum type"
           cat > /tmp/fix-enum.sql << 'SQLEOF'
--- Create enum if not exists
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'session_status' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'aedpics')) THEN

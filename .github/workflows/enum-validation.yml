@@ -174,9 +174,9 @@ jobs:
             const body = `
 ## Enum Synchronization Validation Failed
 
-**Commit**: [${{ github.event.workflow_run.head_commit.id }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_commit.id }})
+**Commit**: [${{ github.event.workflow_run.head_sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }})
 
-**Author**: ${{ github.event.workflow_run.head_branch }}
+**Branch**: ${{ github.event.workflow_run.head_branch }}
 
 ### Issue
 Enum definitions in Prisma schema and TypeScript types are out of sync.
