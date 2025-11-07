@@ -460,6 +460,51 @@ export async function GET(request: NextRequest) {
     // === Step 2: 권한 범위 계산 (v5.2: equipment-centric pattern) ===
     const accessScope = resolveAccessScope(userProfile as any);
 
+    // === Step 3: Equipment 접근 권한 검증 및 접근 가능한 equipment 목록 조회 ===
+    // Master와 상위 관리자는 모든 할당 조회 가능, 그 외는 접근 가능한 equipment만 조회
+    let accessibleEquipmentSerials: string[] | null = null;
+
+    if (
+      userProfile.role !== 'master' &&
+      userProfile.role !== 'emergency_center_admin' &&
+      userProfile.role !== 'regional_emergency_center_admin'
+    ) {
+      const equipmentFilter = buildEquipmentFilter(accessScope, 'address');
+
+      if (Object.keys(equipmentFilter).length > 0) {
+        const accessibleEquipment = await prisma.aed_data.findMany({
+          where: equipmentFilter,
+          select: { equipment_serial: true }
+        });
+
+        accessibleEquipmentSerials = accessibleEquipment.map(e => e.equipment_serial);
+
+        // 접근 가능한 equipment이 없으면 빈 결과 반환
+        if (accessibleEquipmentSerials.length === 0) {
+          logger.info('InspectionAssignments:GET', 'No accessible equipment found for user', {
+            userId: session.user.id,
+            role: userProfile.role,
+            regionCodes: accessScope.allowedRegionCodes,
+            cityCodes: accessScope.allowedCityCodes
+          });
+
+          return NextResponse.json({
+            success: true,
+            data: [],
+            stats: {
+              total: 0,
+              pending: 0,
+              in_progress: 0,
+              completed: 0,
+              cancelled: 0,
+              overdue: 0,
+              today: 0
+            }
+          });
+        }
+      }
+    }
+
     // 쿼리 파라미터
     const searchParams = request.nextUrl.searchParams;
     const assignedTo = searchParams.get('assignedTo');
@@ -467,8 +512,29 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const equipmentSerial = searchParams.get('equipmentSerial');
 
-    // === Step 3: 쿼리 조건 구성 ===
+    // === Step 4: 쿼리 조건 구성 ===
     const where: any = {};
+
+    // Equipment 접근 권한 검증
+    if (equipmentSerial) {
+      // 단일 equipment 조회 시 접근 권한 확인
+      if (accessibleEquipmentSerials && !accessibleEquipmentSerials.includes(equipmentSerial)) {
+        logger.warn('InspectionAssignments:GET', 'Equipment access denied', {
+          userId: session.user.id,
+          role: userProfile.role,
+          equipmentSerial
+        });
+
+        return NextResponse.json(
+          { error: 'You do not have permission to view assignments for this equipment' },
+          { status: 403 }
+        );
+      }
+      where.equipment_serial = equipmentSerial;
+    } else if (accessibleEquipmentSerials) {
+      // 다중 equipment 필터링
+      where.equipment_serial = { in: accessibleEquipmentSerials };
+    }
 
     if (assignedTo) {
       where.assigned_to = assignedTo;
@@ -482,26 +548,7 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
-    if (equipmentSerial) {
-      where.equipment_serial = equipmentSerial;
-    }
-
-    // === Step 4: Equipment 접근 범위 필터링 (v5.2: equipment-centric pattern) ===
-    // Master와 상위 관리자는 모든 할당 조회 가능, 그 외는 접근 가능한 equipment만 조회
-    if (
-      userProfile.role !== 'master' &&
-      userProfile.role !== 'emergency_center_admin' &&
-      userProfile.role !== 'regional_emergency_center_admin'
-    ) {
-      const equipmentFilter = buildEquipmentFilter(accessScope, 'address');
-      if (Object.keys(equipmentFilter).length > 0) {
-        where.aed_data = equipmentFilter;
-      }
-    }
-
     // === Step 5: 데이터 조회 ===
-    // Note: aed_data relationship not explicitly defined in Prisma schema
-    // To access aed_data, fetch separately using equipment_serial FK if needed
     const data = await prisma.inspection_assignments.findMany({
       where,
       include: {
@@ -542,11 +589,16 @@ export async function GET(request: NextRequest) {
       userId: session.user.id,
       role: userProfile.role,
       recordCount: data.length,
+      appliedEquipmentFilter: accessibleEquipmentSerials !== null ? accessibleEquipmentSerials.length : 'none',
       filters: {
         assignedTo: assignedTo || undefined,
         assignedBy: assignedBy || undefined,
         status: status || undefined,
         equipmentSerial: equipmentSerial || undefined
+      },
+      accessScope: {
+        regionCodes: accessScope.allowedRegionCodes,
+        cityCodes: accessScope.allowedCityCodes
       },
       timestamp: new Date().toISOString()
     });
