@@ -17,8 +17,8 @@ jobs:
 
       - name: Run daily regression check
         env:
-          DB_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_REGRESSION_CHECK }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           DB_HOST: pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com
           DB_USER: aedpics_admin
           DB_NAME: aedpics_production
