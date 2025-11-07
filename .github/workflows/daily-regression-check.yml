@@ -1,0 +1,73 @@
+name: Daily Regression Check
+
+on:
+  schedule:
+    # Run daily at 08:00 KST (23:00 UTC previous day)
+    - cron: '0 23 * * *'  # UTC time (KST is UTC+9)
+  workflow_dispatch:
+
+jobs:
+  regression-check:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run daily regression check
+        env:
+          DB_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_REGRESSION_CHECK }}
+          DB_HOST: pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com
+          DB_USER: aedpics_admin
+          DB_NAME: aedpics_production
+        run: |
+          # Install PostgreSQL client
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+          # Make script executable
+          chmod +x scripts/monitoring/daily-regression-check.sh
+
+          # Run regression check
+          scripts/monitoring/daily-regression-check.sh
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: regression-check-report-${{ github.run_number }}
+          path: /tmp/regression_check_*.log
+          retention-days: 30
+
+      - name: Create issue if critical found
+        if: failure()
+        uses: actions/create-issue@v2
+        with:
+          title: 'Critical Issue: Daily Regression Check Failed'
+          body: |
+            Daily regression check failed. Please investigate immediately.
+
+            **Details**:
+            - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - Date: ${{ github.event.schedule }}
+
+            **Possible Issues**:
+            - User update operations failing (Prisma field naming)
+            - Inspection completion operations failing (error handling)
+            - Database connectivity issues
+            - Application health issues
+
+            **Action Items**:
+            1. Check PM2 logs: `pm2 logs --err`
+            2. Verify database connection
+            3. Check recent code changes
+            4. Review Fix #1 (completeSession logging)
+            5. Review Fix #2 (user update field naming)
+
+            **Reference Documents**:
+            - [PM2 Log Samples](docs/QA/PM2_LOG_SAMPLES.md)
+            - [Deployment Summary](docs/QA/DEPLOYMENT_SUMMARY_2025-11-07.md)
+            - [QA Test Plan](docs/QA/POST_DEPLOYMENT_QA_2025-11-07.md)
+          labels: critical,regression,monitoring

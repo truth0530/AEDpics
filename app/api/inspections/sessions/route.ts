@@ -613,6 +613,17 @@ export const PATCH = async (request: NextRequest) => {
         const basicInfo = finalData.basicInfo as any || {};
         const deviceInfo = finalData.deviceInfo as any || {};
         const storage = finalData.storage as any || {};
+        const documentation = finalData.documentation as any || {};
+
+        // 필수 배열 필드 추출 (Prisma String[] 타입 요구)
+        const validation = finalData.validation as any || {};
+        const issuesFound = Array.isArray(validation.issues)
+          ? (validation.issues as string[])
+          : [];
+
+        const photos = Array.isArray(documentation.photos)
+          ? (documentation.photos as string[])
+          : [];
 
         // 2-1. aed_data FK 조회 (필터링을 위해 필수)
         let aedDataId: any;
@@ -639,7 +650,9 @@ export const PATCH = async (request: NextRequest) => {
           battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' : (deviceInfo.battery_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
           pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' : (deviceInfo.pad_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
           overall_status: (finalData.overallStatus as any) || 'pass',
-          notes: payload.notes,
+          notes: payload.notes ?? null,
+          issues_found: issuesFound,  // Prisma String[] 필수 필드
+          photos: photos,              // Prisma String[] 필수 필드
           original_data: session.device_info || {},  // 원본 장비 데이터 저장
           inspected_data: {
             basicInfo: basicInfo,
