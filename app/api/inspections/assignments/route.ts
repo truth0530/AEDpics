@@ -2,6 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { resolveAccessScope } from '@/lib/auth/access-control';
+import { canAccessEquipment, buildEquipmentFilter } from '@/lib/auth/equipment-access';
 
 import { prisma } from '@/lib/prisma';
 // 대량 일정추가 핸들러
@@ -26,16 +28,28 @@ async function handleBulkAssignment(
     // 사용자 프로필 조회
     const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true, organization_id: true }
+      select: {
+        id: true,
+        role: true,
+        organization_id: true,
+        region_code: true
+      }
     });
 
     if (!userProfile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // 권한 확인
+    // 권한 범위 계산 (v5.2: equipment-centric pattern)
+    const accessScope = resolveAccessScope(userProfile as any);
+
+    // 권한 확인: 할당 권한이 있는 역할인지 검증
     const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'ministry_admin', 'regional_admin', 'local_admin'];
     if (!allowedRoles.includes(userProfile.role)) {
+      logger.warn('InspectionAssignments:Bulk', 'Assignment permission denied (insufficient role)', {
+        userId: session.user.id,
+        role: userProfile.role
+      });
       return NextResponse.json({ error: '일정추가 권한이 없습니다.' }, { status: 403 });
     }
 
@@ -187,15 +201,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 사용자 프로필 조회
+    // 사용자 프로필 조회 (v5.2: equipment-centric pattern)
     const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true, organization_id: true }
+      select: {
+        id: true,
+        role: true,
+        organization_id: true,
+        region_code: true,
+        region: true,
+        district: true
+      }
     });
 
     if (!userProfile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
+
+    // === 권한 범위 계산 (v5.2: equipment-centric pattern) ===
+    const accessScope = resolveAccessScope(userProfile as any);
 
     // 권한 확인 (보건소 담당자 이상만 가능)
     const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'ministry_admin', 'regional_admin', 'local_admin'];
@@ -258,12 +282,15 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      // 2. AED 장비 존재 확인
+      // 2. AED 장비 존재 확인 (equipment access 검증용 필드 포함)
       prisma.aed_data.findUnique({
         where: { equipment_serial: equipmentSerial },
         select: {
           equipment_serial: true,
-          installation_institution: true
+          installation_institution: true,
+          sido: true,
+          gugun: true,
+          jurisdiction_health_center: true
         }
       })
     ]);
@@ -290,6 +317,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // === Equipment 접근 권한 검증 (v5.2: equipment-centric pattern) ===
+    const canAccess = canAccessEquipment(
+      {
+        equipment_serial: aedDevice.equipment_serial,
+        sido: aedDevice.sido || null,
+        gugun: aedDevice.gugun || null,
+        jurisdiction_health_center: aedDevice.jurisdiction_health_center || null
+      },
+      accessScope,
+      'address'
+    );
+
+    if (!canAccess) {
+      logger.warn('InspectionAssignments:POST', 'Equipment access denied', {
+        userId: session.user.id,
+        role: userProfile.role,
+        equipmentSerial: aedDevice.equipment_serial,
+        equipmentSido: aedDevice.sido,
+        equipmentGugun: aedDevice.gugun
+      });
+
+      return NextResponse.json(
+        { error: 'You do not have permission to assign this equipment' },
+        { status: 403 }
+      );
+    }
+
     // 일정추가 생성
     try {
       const assignment = await prisma.inspection_assignments.create({
@@ -312,6 +366,18 @@ export async function POST(request: NextRequest) {
             select: { id: true, full_name: true, role: true }
           }
         }
+      });
+
+      // 감사 로그 기록 (v5.2: equipment-centric pattern)
+      logger.info('InspectionAssignments:POST', 'Assignment created successfully', {
+        userId: session.user.id,
+        role: userProfile.role,
+        assignmentId: assignment.id,
+        equipmentSerial: equipmentSerial,
+        assignedTo: finalAssignedTo,
+        equipmentSido: aedDevice.sido,
+        equipmentGugun: aedDevice.gugun,
+        timestamp: new Date().toISOString()
       });
 
       return NextResponse.json({
@@ -366,7 +432,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/inspections/assignments - 할당 목록 조회
+// GET /api/inspections/assignments - 할당 목록 조회 (v5.2: Equipment-Centric Access Control)
 export async function GET(request: NextRequest) {
   try {
     // 인증 확인
@@ -375,6 +441,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // === Step 1: 사용자 프로필 조회 ===
+    const userProfile = await prisma.user_profiles.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        role: true,
+        region_code: true,
+        region: true,
+        district: true
+      }
+    });
+
+    if (!userProfile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    // === Step 2: 권한 범위 계산 (v5.2: equipment-centric pattern) ===
+    const accessScope = resolveAccessScope(userProfile as any);
+
     // 쿼리 파라미터
     const searchParams = request.nextUrl.searchParams;
     const assignedTo = searchParams.get('assignedTo');
@@ -382,7 +467,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const equipmentSerial = searchParams.get('equipmentSerial');
 
-    // 쿼리 조건 구성
+    // === Step 3: 쿼리 조건 구성 ===
     const where: any = {};
 
     if (assignedTo) {
@@ -401,6 +486,22 @@ export async function GET(request: NextRequest) {
       where.equipment_serial = equipmentSerial;
     }
 
+    // === Step 4: Equipment 접근 범위 필터링 (v5.2: equipment-centric pattern) ===
+    // Master와 상위 관리자는 모든 할당 조회 가능, 그 외는 접근 가능한 equipment만 조회
+    if (
+      userProfile.role !== 'master' &&
+      userProfile.role !== 'emergency_center_admin' &&
+      userProfile.role !== 'regional_emergency_center_admin'
+    ) {
+      const equipmentFilter = buildEquipmentFilter(accessScope, 'address');
+      if (Object.keys(equipmentFilter).length > 0) {
+        where.aed_data = equipmentFilter;
+      }
+    }
+
+    // === Step 5: 데이터 조회 ===
+    // Note: aed_data relationship not explicitly defined in Prisma schema
+    // To access aed_data, fetch separately using equipment_serial FK if needed
     const data = await prisma.inspection_assignments.findMany({
       where,
       include: {
@@ -417,7 +518,7 @@ export async function GET(request: NextRequest) {
       ]
     });
 
-    // 통계 계산
+    // === Step 6: 통계 계산 ===
     const stats = {
       total: data.length,
       pending: data.filter(a => a.status === 'pending').length,
@@ -436,6 +537,20 @@ export async function GET(request: NextRequest) {
       }).length
     };
 
+    // === Step 7: 감사 로그 기록 (v5.2: equipment-centric pattern) ===
+    logger.info('InspectionAssignments:GET', 'Assignment list retrieved successfully', {
+      userId: session.user.id,
+      role: userProfile.role,
+      recordCount: data.length,
+      filters: {
+        assignedTo: assignedTo || undefined,
+        assignedBy: assignedBy || undefined,
+        status: status || undefined,
+        equipmentSerial: equipmentSerial || undefined
+      },
+      timestamp: new Date().toISOString()
+    });
+
     return NextResponse.json({
       success: true,
       data,
@@ -453,7 +568,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/inspections/assignments?id={id} - 일정 상태 변경
+// PATCH /api/inspections/assignments?id={id} - 일정 상태 변경 (v5.2: Equipment-Centric Access Control)
 export async function PATCH(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -478,13 +593,32 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 인증 확인
+    // === Step 1: 인증 확인 ===
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 할당 조회
+    // === Step 2: 사용자 프로필 조회 (v5.2: equipment-centric pattern) ===
+    const userProfile = await prisma.user_profiles.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        role: true,
+        region_code: true
+      }
+    });
+
+    if (!userProfile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    // === Step 3: 권한 범위 계산 (v5.2: equipment-centric pattern) ===
+    const accessScope = resolveAccessScope(userProfile as any);
+
+    // === Step 4: 할당 조회 (equipment access 검증용 필드 포함) ===
+    // Note: aed_data relationship not explicitly defined in Prisma schema
+    // Need to fetch aed_data separately using equipment_serial FK
     const assignment = await prisma.inspection_assignments.findUnique({
       where: { id: assignmentId },
       select: {
@@ -503,7 +637,48 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 상태 변경 규칙 검증
+    // === Step 5: Equipment 접근 권한 검증 (v5.2: equipment-centric pattern) ===
+    // Fetch aed_data separately using equipment_serial FK
+    const aedData = await prisma.aed_data.findUnique({
+      where: { equipment_serial: assignment.equipment_serial },
+      select: {
+        equipment_serial: true,
+        sido: true,
+        gugun: true,
+        jurisdiction_health_center: true
+      }
+    });
+
+    if (aedData) {
+      const canAccess = canAccessEquipment(
+        {
+          equipment_serial: aedData.equipment_serial,
+          sido: aedData.sido || null,
+          gugun: aedData.gugun || null,
+          jurisdiction_health_center: aedData.jurisdiction_health_center || null
+        },
+        accessScope,
+        'address'
+      );
+
+      if (!canAccess) {
+        logger.warn('InspectionAssignments:PATCH', 'Equipment access denied', {
+          userId: session.user.id,
+          role: userProfile.role,
+          assignmentId,
+          equipmentSerial: assignment.equipment_serial,
+          equipmentSido: aedData.sido,
+          equipmentGugun: aedData.gugun
+        });
+
+        return NextResponse.json(
+          { error: 'You do not have permission to modify this assignment' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // === Step 6: 상태 변경 규칙 검증 ===
     const currentStatus = assignment.status;
 
     // 완료된 일정은 변경 불가
@@ -582,6 +757,17 @@ export async function PATCH(request: NextRequest) {
       }
     });
 
+    // === Step 7: 감사 로그 기록 (v5.2: equipment-centric pattern) ===
+    logger.info('InspectionAssignments:PATCH', 'Assignment status updated successfully', {
+      userId: session.user.id,
+      role: userProfile.role,
+      assignmentId,
+      equipmentSerial: assignment.equipment_serial,
+      oldStatus: currentStatus,
+      newStatus: newStatus,
+      timestamp: new Date().toISOString()
+    });
+
     // 상태별 메시지
     const statusMessages: Record<string, string> = {
       'in_progress': '점검이 시작되었습니다.',
@@ -626,10 +812,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // 사용자 프로필 조회 (감사 로그용)
+    const userProfile = await prisma.user_profiles.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
     // 할당 조회 (권한 확인용)
     const assignment = await prisma.inspection_assignments.findUnique({
       where: { id: assignmentId },
-      select: { assigned_by: true, status: true }
+      select: { assigned_by: true, status: true, equipment_serial: true }
     });
 
     if (!assignment) {
@@ -663,6 +855,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // === 감사 로그 기록 (v5.2: equipment-centric pattern) ===
+    // 삭제 전 equipment 정보 기록
+    const aedData = await prisma.aed_data.findUnique({
+      where: { equipment_serial: assignment.equipment_serial },
+      select: { sido: true, gugun: true }
+    });
+
     // 삭제 (취소 상태로 변경)
     try {
       await prisma.inspection_assignments.update({
@@ -671,6 +870,17 @@ export async function DELETE(request: NextRequest) {
           status: 'cancelled',
           cancelled_at: new Date()
         }
+      });
+
+      // 감사 로그 기록
+      logger.info('InspectionAssignments:DELETE', 'Assignment cancelled successfully', {
+        userId: session.user.id,
+        role: userProfile?.role || 'unknown',
+        assignmentId,
+        equipmentSerial: assignment.equipment_serial,
+        equipmentSido: aedData?.sido,
+        equipmentGugun: aedData?.gugun,
+        timestamp: new Date().toISOString()
       });
 
       return NextResponse.json({
