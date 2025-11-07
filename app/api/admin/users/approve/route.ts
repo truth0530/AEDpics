@@ -297,8 +297,10 @@ export async function POST(request: NextRequest) {
       logger.info('API:approve', 'Email changed', { from: targetUser.email, to: email });
     }
 
-    // 승인 이메일 발송
+    // 승인 이메일 발송 (NCP Cloud Outbound Mailer 사용)
     try {
+      const { sendSmartEmail } = await import('@/lib/email/ncp-email');
+
       const roleNames: Record<string, string> = {
         'master': 'Master 관리자',
         'emergency_center_admin': '중앙응급의료센터 관리자',
@@ -309,51 +311,56 @@ export async function POST(request: NextRequest) {
         'temporary_inspector': '임시 점검원'
       };
 
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: 'noreply@aed.pics',
-          to: targetUser.email,
-          subject: '[AED 시스템] 회원가입이 승인되었습니다',
-          html: `
-            <h2>AED 점검 시스템 가입 승인 안내</h2>
+      const ncpConfig = {
+        accessKey: env.NCP_ACCESS_KEY,
+        accessSecret: env.NCP_ACCESS_SECRET,
+        senderAddress: env.NCP_SENDER_EMAIL || 'noreply@nmc.or.kr'
+      };
 
-            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #2e7d32;">✅ 회원가입이 승인되었습니다!</h3>
-              <p style="color: #333; line-height: 1.6;">
-                축하합니다! AED 점검 시스템에 성공적으로 가입하셨습니다.
-              </p>
-            </div>
+      const htmlBody = `
+        <h2>AED 점검 시스템 가입 승인 안내</h2>
 
-            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h4>당신의 계정 정보</h4>
-              <ul style="line-height: 1.8;">
-                <li><strong>역할:</strong> ${roleNames[finalRole] || finalRole}</li>
-                ${finalRegionCode ? `<li><strong>지역:</strong> ${finalRegionCode}</li>` : ''}
-                ${organizationName ? `<li><strong>소속:</strong> ${organizationName}</li>` : organizationId ? `<li><strong>소속:</strong> 등록됨</li>` : ''}
-              </ul>
-            </div>
+        <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #2e7d32;">회원가입이 승인되었습니다!</h3>
+          <p style="color: #333; line-height: 1.6;">
+            축하합니다! AED 점검 시스템에 성공적으로 가입하셨습니다.
+          </p>
+        </div>
 
-            <div style="margin-top: 30px; text-align: center;">
-              <a href="${env.NEXT_PUBLIC_SITE_URL}/auth/signin"
-                 style="background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                로그인하기
-              </a>
-            </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h4>당신의 계정 정보</h4>
+          <ul style="line-height: 1.8;">
+            <li><strong>역할:</strong> ${roleNames[finalRole] || finalRole}</li>
+            ${finalRegionCode ? `<li><strong>지역:</strong> ${finalRegionCode}</li>` : ''}
+            ${organizationName ? `<li><strong>소속:</strong> ${organizationName}</li>` : organizationId ? `<li><strong>소속:</strong> 등록됨</li>` : ''}
+          </ul>
+        </div>
 
-            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="${env.NEXT_PUBLIC_SITE_URL}/auth/signin"
+             style="background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            로그인하기
+          </a>
+        </div>
 
-            <p style="color: #666; font-size: 12px;">
-              문의사항: truth0530@nmc.or.kr<br>
-              이 이메일은 AED 점검 시스템에서 자동으로 발송되었습니다.
-            </p>
-          `
-        })
-      });
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+
+        <p style="color: #666; font-size: 12px;">
+          문의사항: truth0530@nmc.or.kr<br>
+          이 이메일은 AED 점검 시스템에서 자동으로 발송되었습니다.
+        </p>
+      `;
+
+      await sendSmartEmail(
+        ncpConfig,
+        targetUser.email,
+        targetUser.email.split('@')[0],
+        '[AED 시스템] 회원가입이 승인되었습니다',
+        htmlBody,
+        { maxRetries: 3, initialDelay: 1000 }
+      );
+
+      logger.info('API:approve', 'Approval email sent successfully via NCP Mailer');
     } catch (emailError) {
       logger.error('API:approve', 'Approval email send error', emailError instanceof Error ? emailError : { emailError });
       // 이메일 발송 실패해도 승인은 완료
@@ -528,53 +535,60 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 거부 이메일 발송
+    // 거부 이메일 발송 (NCP Cloud Outbound Mailer 사용)
     try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: 'noreply@aed.pics',
-          to: targetUser.email,
-          subject: '[AED 시스템] 회원가입 검토 결과 안내',
-          html: `
-            <h2>AED 점검 시스템 가입 검토 결과</h2>
+      const { sendSmartEmail } = await import('@/lib/email/ncp-email');
 
-            <div style="background: #ffebee; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #c62828;">회원가입이 거부되었습니다</h3>
-              <p style="color: #333; line-height: 1.6;">
-                죄송합니다. 귀하의 회원가입 신청이 승인되지 않았습니다.
-              </p>
-            </div>
+      const ncpConfig = {
+        accessKey: env.NCP_ACCESS_KEY,
+        accessSecret: env.NCP_ACCESS_SECRET,
+        senderAddress: env.NCP_SENDER_EMAIL || 'noreply@nmc.or.kr'
+      };
 
-            ${rejectReason ? `
-            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h4>거부 사유</h4>
-              <p style="color: #666; line-height: 1.6;">${rejectReason}</p>
-            </div>
-            ` : ''}
+      const htmlBody = `
+        <h2>AED 점검 시스템 가입 검토 결과</h2>
 
-            <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h4>다시 신청하려면?</h4>
-              <ul style="line-height: 1.8; color: #666;">
-                <li>공공기관 이메일(@korea.kr, @nmc.or.kr)로 재가입을 권장합니다</li>
-                <li>소속기관 확인 후 정확한 정보로 가입해주세요</li>
-                <li>문의사항은 아래 연락처로 문의해주세요</li>
-              </ul>
-            </div>
+        <div style="background: #ffebee; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #c62828;">회원가입이 거부되었습니다</h3>
+          <p style="color: #333; line-height: 1.6;">
+            죄송합니다. 귀하의 회원가입 신청이 승인되지 않았습니다.
+          </p>
+        </div>
 
-            <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+        ${rejectReason ? `
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h4>거부 사유</h4>
+          <p style="color: #666; line-height: 1.6;">${rejectReason}</p>
+        </div>
+        ` : ''}
 
-            <p style="color: #666; font-size: 12px;">
-              문의사항: truth0530@nmc.or.kr<br>
-              이 이메일은 AED 점검 시스템에서 자동으로 발송되었습니다.
-            </p>
-          `
-        })
-      });
+        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h4>다시 신청하려면?</h4>
+          <ul style="line-height: 1.8; color: #666;">
+            <li>공공기관 이메일(@korea.kr, @nmc.or.kr)로 재가입을 권장합니다</li>
+            <li>소속기관 확인 후 정확한 정보로 가입해주세요</li>
+            <li>문의사항은 아래 연락처로 문의해주세요</li>
+          </ul>
+        </div>
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+
+        <p style="color: #666; font-size: 12px;">
+          문의사항: truth0530@nmc.or.kr<br>
+          이 이메일은 AED 점검 시스템에서 자동으로 발송되었습니다.
+        </p>
+      `;
+
+      await sendSmartEmail(
+        ncpConfig,
+        targetUser.email,
+        targetUser.email.split('@')[0],
+        '[AED 시스템] 회원가입 검토 결과 안내',
+        htmlBody,
+        { maxRetries: 3, initialDelay: 1000 }
+      );
+
+      logger.info('API:reject', 'Rejection email sent successfully via NCP Mailer');
     } catch (emailError) {
       logger.error('API:reject', 'Rejection email send error', emailError instanceof Error ? emailError : { emailError });
       // 이메일 발송 실패해도 거부는 완료
