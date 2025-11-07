@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows: [ "Build and Test" ]
     types: [ completed ]
+    branches: [ main ]
 
 concurrency:
   group: enum-validation
@@ -14,6 +15,7 @@ jobs:
   pre_check:
     name: Pre-condition Validation
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
     outputs:
       proceed: ${{ steps.check.outputs.proceed }}
     steps:
