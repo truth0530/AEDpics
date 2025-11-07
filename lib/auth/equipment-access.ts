@@ -14,12 +14,21 @@ import { logger } from '@/lib/logger';
 /**
  * Access scope from resolveAccessScope() in access-control.ts
  * Defines the region/city boundaries for a user
+ *
+ * Note: This interface is for better IDE support and documentation.
+ * In practice, use UserAccessScope from access-control.ts which has:
+ * - allowedRegionCodes: string[] | null
+ * - allowedCityCodes: string[] | null
+ * - permissions: RolePermissions
+ * - userId: string
  */
 export interface AccessScope {
-  userRole: UserRole;
-  regionCodes: string[] | null;      // null = 전국, [] = 제한 없음, ['SEO', 'DAE'] = 특정 지역
-  cityCodes: string[] | null;        // null = 전체 시군구, [] = 제한 없음, ['종로구', '중구'] = 특정 시군구
-  jurisdictionCodes?: string[] | null; // 관할보건소 기준 (선택)
+  userRole?: UserRole;
+  regionCodes?: string[] | null;      // null = 전국, [] = 제한 없음, ['SEO', 'DAE'] = 특정 지역
+  cityCodes?: string[] | null;        // null = 전체 시군구, [] = 제한 없음, ['종로구', '중구'] = 특정 시군구
+  allowedRegionCodes?: string[] | null;  // UserAccessScope field name
+  allowedCityCodes?: string[] | null;    // UserAccessScope field name
+  jurisdictionCodes?: string[] | null;   // 관할보건소 기준 (선택)
 }
 
 /**
@@ -40,7 +49,7 @@ export interface EquipmentFilter {
  * - regional_admin: 소속 시도만 (WHERE sido IN (...))
  * - local_admin: 소속 시도 AND 시군구 (WHERE sido = ? AND gugun = ?)
  *
- * @param scope AccessScope from resolveAccessScope()
+ * @param scope AccessScope from resolveAccessScope() (UserAccessScope compatible)
  * @param basis 'address' (sido/gugun) or 'jurisdiction' (jurisdiction_health_center)
  * @returns Prisma-compatible where clause
  */
@@ -48,24 +57,18 @@ export function buildEquipmentFilter(
   scope: AccessScope,
   basis: 'address' | 'jurisdiction' = 'address'
 ): EquipmentFilter {
-  // Master admin: no restriction
-  if (
-    scope.userRole === 'master' ||
-    scope.userRole === 'emergency_center_admin' ||
-    scope.userRole === 'regional_emergency_center_admin' ||
-    scope.regionCodes === null
-  ) {
-    return {};
-  }
+  // Get region/city codes from either field name (regionCodes or allowedRegionCodes)
+  const regionCodes = scope.regionCodes ?? scope.allowedRegionCodes;
+  const cityCodes = scope.cityCodes ?? scope.allowedCityCodes;
 
-  // Temporary inspector: no equipment filter (should be handled at higher level)
-  if (scope.userRole === 'temporary_inspector') {
+  // Master admin: no restriction
+  if (regionCodes === null) {
     return {};
   }
 
   // Address-based filtering (sido/gugun)
   if (basis === 'address') {
-    return buildAddressBasedFilter(scope);
+    return buildAddressBasedFilter({ ...scope, regionCodes, cityCodes });
   }
 
   // Jurisdiction-based filtering (jurisdiction_health_center)
@@ -74,7 +77,7 @@ export function buildEquipmentFilter(
   }
 
   // Fallback: address-based if jurisdiction not available
-  return buildAddressBasedFilter(scope);
+  return buildAddressBasedFilter({ ...scope, regionCodes, cityCodes });
 }
 
 /**
@@ -240,18 +243,21 @@ function canAccessByJurisdiction(
  * @returns List of region names (e.g., ['경기도', '서울특별시']) or null if no restriction
  */
 export function getAccessibleRegions(scope: AccessScope): string[] | null {
+  // Get region codes from either field name
+  const regionCodes = scope.regionCodes ?? scope.allowedRegionCodes;
+
   // No restriction (master admin or null regionCodes)
-  if (scope.regionCodes === null) {
+  if (regionCodes === null) {
     return null;
   }
 
   // Empty array: no access
-  if (scope.regionCodes.length === 0) {
+  if (regionCodes.length === 0) {
     return [];
   }
 
   // Convert region codes to normalized names
-  const regions = scope.regionCodes
+  const regions = regionCodes
     .map(code => getNormalizedRegionLabel(code))
     .filter((name): name is string => name !== null && name !== undefined);
 
@@ -265,18 +271,21 @@ export function getAccessibleRegions(scope: AccessScope): string[] | null {
  * @returns List of city names (e.g., ['종로구', '중구']) or null if no restriction
  */
 export function getAccessibleCities(scope: AccessScope): string[] | null {
+  // Get city codes from either field name
+  const cityCodes = scope.cityCodes ?? scope.allowedCityCodes;
+
   // No restriction
-  if (scope.cityCodes === null) {
+  if (cityCodes === null) {
     return null;
   }
 
   // Empty array: no access
-  if (scope.cityCodes.length === 0) {
+  if (cityCodes.length === 0) {
     return [];
   }
 
   // cityCodes are already normalized (Korean names)
-  return scope.cityCodes;
+  return cityCodes;
 }
 
 /**
