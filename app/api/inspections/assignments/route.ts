@@ -890,15 +890,25 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 사용자 프로필 조회 (감사 로그용)
+    // === Step 2: 사용자 프로필 조회 (v5.2: equipment-centric pattern) ===
     const userProfile = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
-      select: { role: true }
+      select: {
+        id: true,
+        role: true,
+        region_code: true,
+        region: true,
+        district: true
+      }
     });
+
+    if (!userProfile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
 
     // === Step 2.5: Temporary Inspector 역할 게이트 ===
     // temporary_inspector는 /api/inspections/assigned-devices 엔드포인트 전용
-    if (userProfile?.role === 'temporary_inspector') {
+    if (userProfile.role === 'temporary_inspector') {
       logger.warn('InspectionAssignments:DELETE', 'temporary_inspector role not allowed', {
         userId: session.user.id
       });
@@ -909,10 +919,18 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 할당 조회 (권한 확인용)
+    // === Step 3: 권한 범위 계산 (v5.2: equipment-centric pattern) ===
+    const accessScope = resolveAccessScope(userProfile as any);
+
+    // === Step 4: 할당 조회 (equipment access 검증용 필드 포함) ===
     const assignment = await prisma.inspection_assignments.findUnique({
       where: { id: assignmentId },
-      select: { assigned_by: true, status: true, equipment_serial: true }
+      select: {
+        id: true,
+        assigned_by: true,
+        status: true,
+        equipment_serial: true
+      }
     });
 
     if (!assignment) {
@@ -922,16 +940,66 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 본인이 생성한 할당만 삭제 가능
+    // === Step 5: Equipment 접근 권한 검증 (v5.2: equipment-centric pattern) ===
+    // Fetch aed_data separately using equipment_serial FK
+    const aedData = await prisma.aed_data.findUnique({
+      where: { equipment_serial: assignment.equipment_serial },
+      select: {
+        equipment_serial: true,
+        sido: true,
+        gugun: true,
+        jurisdiction_health_center: true
+      }
+    });
+
+    if (aedData) {
+      const canAccess = canAccessEquipment(
+        {
+          equipment_serial: aedData.equipment_serial,
+          sido: aedData.sido || null,
+          gugun: aedData.gugun || null,
+          jurisdiction_health_center: aedData.jurisdiction_health_center || null
+        },
+        accessScope,
+        'address'
+      );
+
+      if (!canAccess) {
+        logger.warn('InspectionAssignments:DELETE', 'Equipment access denied', {
+          userId: session.user.id,
+          role: userProfile.role,
+          assignmentId,
+          equipmentSerial: assignment.equipment_serial,
+          equipmentSido: aedData.sido,
+          equipmentGugun: aedData.gugun
+        });
+
+        return NextResponse.json(
+          { error: 'You do not have permission to delete this assignment' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // === Step 6: 본인이 생성한 할당만 삭제 가능 ===
     if (assignment.assigned_by !== session.user.id) {
+      logger.warn('InspectionAssignments:DELETE', 'Deletion permission denied (not creator)', {
+        userId: session.user.id,
+        assignmentId,
+        assignedBy: assignment.assigned_by
+      });
+
       return NextResponse.json(
         { error: '삭제 권한이 없습니다.' },
         { status: 403 }
       );
     }
 
+    // === Step 7: 상태 검증 ===
+    const currentStatus = assignment.status;
+
     // 완료된 할당은 삭제 불가
-    if (assignment.status === 'completed') {
+    if (currentStatus === 'completed') {
       return NextResponse.json(
         { error: '완료된 할당은 삭제할 수 없습니다.' },
         { status: 400 }
@@ -939,43 +1007,46 @@ export async function DELETE(request: NextRequest) {
     }
 
     // pending 상태만 취소 가능
-    if (assignment.status !== 'pending') {
+    if (currentStatus !== 'pending') {
       return NextResponse.json(
         { error: 'pending 상태의 일정만 취소할 수 있습니다.' },
         { status: 400 }
       );
     }
 
-    // === 감사 로그 기록 (v5.2: equipment-centric pattern) ===
-    // 삭제 전 equipment 정보 기록
-    const aedData = await prisma.aed_data.findUnique({
-      where: { equipment_serial: assignment.equipment_serial },
-      select: { sido: true, gugun: true }
-    });
-
-    // 삭제 (취소 상태로 변경)
+    // === Step 8: 할당 취소 (상태 변경) ===
     try {
-      await prisma.inspection_assignments.update({
+      const cancelledAssignment = await prisma.inspection_assignments.update({
         where: { id: assignmentId },
         data: {
           status: 'cancelled',
           cancelled_at: new Date()
+        },
+        include: {
+          user_profiles_inspection_assignments_assigned_toTouser_profiles: {
+            select: { id: true, full_name: true, role: true }
+          },
+          user_profiles_inspection_assignments_assigned_byTouser_profiles: {
+            select: { id: true, full_name: true, role: true }
+          }
         }
       });
 
-      // 감사 로그 기록
+      // === Step 9: 감사 로그 기록 (v5.2: equipment-centric pattern) ===
       logger.info('InspectionAssignments:DELETE', 'Assignment cancelled successfully', {
         userId: session.user.id,
-        role: userProfile?.role || 'unknown',
+        role: userProfile.role,
         assignmentId,
         equipmentSerial: assignment.equipment_serial,
         equipmentSido: aedData?.sido,
         equipmentGugun: aedData?.gugun,
+        equipmentJurisdiction: aedData?.jurisdiction_health_center,
         timestamp: new Date().toISOString()
       });
 
       return NextResponse.json({
         success: true,
+        data: cancelledAssignment,
         message: '일정이 취소되었습니다.'
       });
     } catch (deleteError) {
