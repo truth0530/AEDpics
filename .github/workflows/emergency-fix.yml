@@ -71,34 +71,32 @@ jobs:
           npm install
 
           echo "Step 7.5: Fix database enum type"
-          cat > /tmp/fix-enum.sql << 'SQLEOF'
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'session_status' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'aedpics')) THEN
-        CREATE TYPE "aedpics"."session_status" AS ENUM ('active', 'in_progress', 'completed', 'cancelled', 'paused');
-        RAISE NOTICE 'Created session_status enum';
-    ELSE
-        RAISE NOTICE 'session_status enum already exists';
-    END IF;
-END $$;
-
--- Convert column type
-DO $$
-DECLARE
-    v_column_type TEXT;
-BEGIN
-    SELECT data_type INTO v_column_type
-    FROM information_schema.columns
-    WHERE table_schema = 'aedpics' AND table_name = 'inspection_sessions' AND column_name = 'status';
-
-    IF v_column_type IN ('character varying', 'text') THEN
-        ALTER TABLE "aedpics"."inspection_sessions" ALTER COLUMN "status" TYPE "aedpics"."session_status" USING "status"::text::"aedpics"."session_status";
-        RAISE NOTICE 'Converted column to enum';
-    ELSE
-        RAISE NOTICE 'Column is already enum type: %', v_column_type;
-    END IF;
-END $$;
-SQLEOF
+          printf '%s\n' "DO \$\$" > /tmp/fix-enum.sql
+          printf '%s\n' "BEGIN" >> /tmp/fix-enum.sql
+          printf '%s\n' "    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'session_status' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'aedpics')) THEN" >> /tmp/fix-enum.sql
+          printf '%s\n' "        CREATE TYPE \"aedpics\".\"session_status\" AS ENUM ('active', 'in_progress', 'completed', 'cancelled', 'paused');" >> /tmp/fix-enum.sql
+          printf '%s\n' "        RAISE NOTICE 'Created session_status enum';" >> /tmp/fix-enum.sql
+          printf '%s\n' "    ELSE" >> /tmp/fix-enum.sql
+          printf '%s\n' "        RAISE NOTICE 'session_status enum already exists';" >> /tmp/fix-enum.sql
+          printf '%s\n' "    END IF;" >> /tmp/fix-enum.sql
+          printf '%s\n' "END \$\$;" >> /tmp/fix-enum.sql
+          printf '%s\n' "" >> /tmp/fix-enum.sql
+          printf '%s\n' "-- Convert column type" >> /tmp/fix-enum.sql
+          printf '%s\n' "DO \$\$" >> /tmp/fix-enum.sql
+          printf '%s\n' "DECLARE" >> /tmp/fix-enum.sql
+          printf '%s\n' "    v_column_type TEXT;" >> /tmp/fix-enum.sql
+          printf '%s\n' "BEGIN" >> /tmp/fix-enum.sql
+          printf '%s\n' "    SELECT data_type INTO v_column_type" >> /tmp/fix-enum.sql
+          printf '%s\n' "    FROM information_schema.columns" >> /tmp/fix-enum.sql
+          printf '%s\n' "    WHERE table_schema = 'aedpics' AND table_name = 'inspection_sessions' AND column_name = 'status';" >> /tmp/fix-enum.sql
+          printf '%s\n' "" >> /tmp/fix-enum.sql
+          printf '%s\n' "    IF v_column_type IN ('character varying', 'text') THEN" >> /tmp/fix-enum.sql
+          printf '%s\n' "        ALTER TABLE \"aedpics\".\"inspection_sessions\" ALTER COLUMN \"status\" TYPE \"aedpics\".\"session_status\" USING \"status\"::text::\"aedpics\".\"session_status\";" >> /tmp/fix-enum.sql
+          printf '%s\n' "        RAISE NOTICE 'Converted column to enum';" >> /tmp/fix-enum.sql
+          printf '%s\n' "    ELSE" >> /tmp/fix-enum.sql
+          printf '%s\n' "        RAISE NOTICE 'Column is already enum type: %', v_column_type;" >> /tmp/fix-enum.sql
+          printf '%s\n' "    END IF;" >> /tmp/fix-enum.sql
+          printf '%s\n' "END \$\$;" >> /tmp/fix-enum.sql
 
           # Extract database credentials from DATABASE_URL
           DB_USER=$(echo "$DATABASE_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
