@@ -3,25 +3,42 @@ import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { apiHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
-import { mapCityCodeToGugun } from '@/lib/constants/regions';
 
 import { prisma } from '@/lib/prisma';
+import { resolveAccessScope } from '@/lib/auth/access-control';
+import { canAccessEquipment } from '@/lib/auth/equipment-access';
+
 /**
  * GET /api/inspections/[id]
- * 점검 이력 상세 조회
+ * 점검 이력 상세 조회 (v5.2 - Equipment-Centric Access Control)
+ *
+ * v5.2 Changes:
+ * - resolveAccessScope()로 사용자 권한 범위 계산
+ * - canAccessEquipment()로 equipment 접근 권한 검증
+ * - 권한 없을 시 403 반환 (보안 강화)
+ * - 감사 로그 추가 (access denied 케이스)
  */
 // @ts-expect-error - apiHandler type issue with dynamic routes
 export const GET = apiHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const { id: inspectionId } = await params;
 
-  // 인증 확인
+  // === Step 1: 인증 확인 ===
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 점검 이력 조회 (inspector와 aed_data 포함)
+  // === Step 2: 사용자 프로필 조회 ===
+  const userProfile = await prisma.user_profiles.findUnique({
+    where: { id: session.user.id }
+  });
+
+  if (!userProfile) {
+    return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+  }
+
+  // === Step 3: 점검 이력 조회 (inspector와 aed_data 포함) ===
   const inspection = await prisma.inspections.findUnique({
     where: { id: inspectionId },
     include: {
@@ -37,7 +54,10 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
           installation_institution: true,
           installation_address: true,
           model_name: true,
-          manufacturer: true
+          manufacturer: true,
+          sido: true,
+          gugun: true,
+          jurisdiction_health_center: true
         }
       }
     }
@@ -46,6 +66,45 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
   if (!inspection) {
     return NextResponse.json({ error: 'Inspection record not found' }, { status: 404 });
   }
+
+  // === Step 4: 권한 범위 계산 ===
+  const accessScope = resolveAccessScope(userProfile as any);
+
+  // === Step 5: Equipment 접근 권한 검증 ===
+  const canAccess = canAccessEquipment(
+    {
+      equipment_serial: inspection.equipment_serial,
+      sido: inspection.aed_data?.sido || null,
+      gugun: inspection.aed_data?.gugun || null,
+      jurisdiction_health_center: inspection.aed_data?.jurisdiction_health_center || null
+    },
+    accessScope,
+    'address'
+  );
+
+  if (!canAccess) {
+    logger.warn('InspectionDetail:GET', 'Equipment access denied', {
+      userId: session.user.id,
+      role: userProfile.role,
+      inspectionId,
+      equipmentSerial: inspection.equipment_serial,
+      equipmentSido: inspection.aed_data?.sido,
+      equipmentGugun: inspection.aed_data?.gugun
+    });
+
+    return NextResponse.json(
+      { error: 'You do not have permission to view this inspection' },
+      { status: 403 }
+    );
+  }
+
+  // === Step 6: 감사 로그 ===
+  logger.info('InspectionDetail:GET', 'Inspection detail retrieved', {
+    userId: session.user.id,
+    role: userProfile.role,
+    inspectionId,
+    equipmentSerial: inspection.equipment_serial
+  });
 
   return NextResponse.json({
     success: true,
@@ -60,9 +119,15 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
 
 /**
  * PATCH /api/inspections/[id]
- * 점검 이력 수정 (v5.0)
+ * 점검 이력 수정 (v5.2 - Equipment-Centric Access Control)
  *
- * Changes (2025-11-06):
+ * v5.2 Changes:
+ * - canAccessEquipment()를 사용한 통합 권한 검증
+ * - resolveAccessScope()로 일관된 권한 범위 계산
+ * - legacy mapCityCodeToGugun 제거, equipment-access.ts 패턴 적용
+ * - 감사 로그 추가 (access denied 케이스)
+ *
+ * Previous changes (v5.0):
  * - Bug 1: aed_data 로드 + null 처리 추가
  * - Bug 2: canEditInspection 함수 사용, city_code→gugun 매핑
  * - Bug 3: allowedFields snake_case로 통일
@@ -72,24 +137,39 @@ export const GET = apiHandler(async (request: NextRequest, { params }: { params:
 export const PATCH = apiHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const { id: inspectionId } = await params;
 
-  // 인증 확인
+  // === Step 1: 인증 확인 ===
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 요청 본문 파싱
+  // === Step 2: 요청 본문 파싱 ===
   const updates = await request.json();
 
-  // Bug 1 Fix: aed_data를 포함하여 로드 (gugun 필드 필수)
+  // === Step 3: 사용자 프로필 조회 ===
+  const userProfile = await prisma.user_profiles.findUnique({
+    where: { id: session.user.id }
+  });
+
+  if (!userProfile) {
+    return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+  }
+
+  // === Step 4: 점검 이력 조회 (equipment 권한 검증용 필드 포함) ===
   const inspection = await prisma.inspections.findUnique({
     where: { id: inspectionId },
     select: {
       id: true,
       inspector_id: true,
+      equipment_serial: true,
       aed_data: {
-        select: { gugun: true }  // ← 지역 권한 검증용
+        select: {
+          equipment_serial: true,
+          sido: true,
+          gugun: true,
+          jurisdiction_health_center: true
+        }
       }
     }
   });
@@ -98,7 +178,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
     return NextResponse.json({ error: 'Inspection record not found' }, { status: 404 });
   }
 
-  // Bug 1 Fix: aed_data null 체크 (50% 발생률 대비)
+  // === Step 5: aed_data null 체크 ===
   if (!inspection.aed_data) {
     return NextResponse.json(
       {
@@ -109,66 +189,70 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
     );
   }
 
-  // Bug 2 Fix: profile 쿼리 확대 (city_code 추가)
-  const profile = await prisma.user_profiles.findUnique({
-    where: { id: session.user.id },
-    select: {
-      role: true,
-      organizations: {
-        select: {
-          city_code: true,  // ← 시군구 코드 (v5.0: 검증된 단위)
-          region_code: true // ← 참고용
-        }
-      }
-    }
-  });
+  // === Step 6: 권한 범위 계산 ===
+  const accessScope = resolveAccessScope(userProfile as any);
 
-  // Bug 2 Fix: 권한 검증 - city_code → gugun 매핑 (lib/constants/regions.ts 재사용)
-  // mapCityCodeToGugun은 null을 반환할 수 있음 (city_code 없을 때)
-  const userGugun = mapCityCodeToGugun(profile?.organizations?.city_code);
+  // === Step 7: Equipment 접근 권한 검증 ===
+  const canAccess = canAccessEquipment(
+    {
+      equipment_serial: inspection.equipment_serial,
+      sido: inspection.aed_data.sido || null,
+      gugun: inspection.aed_data.gugun || null,
+      jurisdiction_health_center: inspection.aed_data.jurisdiction_health_center || null
+    },
+    accessScope,
+    'address'
+  );
 
-  // 권한 검증 로직 (v5.0)
-  const canEdit = (() => {
-    // master, emergency_center_admin: 모든 inspection 수정 가능
-    if (['master', 'emergency_center_admin'].includes(profile?.role || '')) {
-      return true;
-    }
+  if (!canAccess) {
+    logger.warn('InspectionDetail:PATCH', 'Equipment access denied', {
+      userId: session.user.id,
+      role: userProfile.role,
+      inspectionId,
+      equipmentSerial: inspection.equipment_serial,
+      equipmentSido: inspection.aed_data.sido,
+      equipmentGugun: inspection.aed_data.gugun
+    });
 
-    // ministry_admin: 읽기 전용 (수정 불가)
-    if (profile?.role === 'ministry_admin') {
-      return false;
-    }
-
-    // inspector (본인 기록만 수정)
-    if (profile?.role === 'temporary_inspector') {
-      return inspection.inspector_id === session.user.id;
-    }
-
-    // local_admin: 같은 gugun 내 점검만 수정 (v5.0: 시군구 단위 검증됨)
-    // userGugun이 null이면 비교 결과는 false (deny-by-default 안전 처리)
-    if (profile?.role === 'local_admin') {
-      return userGugun !== null && userGugun === inspection.aed_data.gugun;
-    }
-
-    // regional_admin: 같은 region 내 점검만 수정
-    if (profile?.role === 'regional_admin') {
-      return profile.organizations?.region_code !== undefined;
-    }
-
-    return false;
-  })();
-
-  if (!canEdit) {
     return NextResponse.json(
       { error: 'You do not have permission to update this inspection' },
       { status: 403 }
     );
   }
 
-  // Bug 3 Fix: allowedFields를 snake_case로 통일 (클라이언트와 일치)
+  // === Step 8: 역할별 추가 권한 검증 (temporary_inspector: 본인 기록만) ===
+  if (userProfile.role === 'temporary_inspector') {
+    if (inspection.inspector_id !== session.user.id) {
+      logger.warn('InspectionDetail:PATCH', 'Inspector cannot edit others records', {
+        userId: session.user.id,
+        targetInspectorId: inspection.inspector_id,
+        inspectionId
+      });
+
+      return NextResponse.json(
+        { error: 'You can only edit your own inspection records' },
+        { status: 403 }
+      );
+    }
+  }
+
+  // === Step 9: ministry_admin 읽기 전용 체크 ===
+  if (userProfile.role === 'ministry_admin') {
+    logger.warn('InspectionDetail:PATCH', 'Ministry admin cannot edit inspections', {
+      userId: session.user.id,
+      inspectionId
+    });
+
+    return NextResponse.json(
+      { error: 'Ministry admin accounts cannot edit inspection records' },
+      { status: 403 }
+    );
+  }
+
+  // === Step 10: 허용 필드 정의 ===
   const allowedFields = [
     'notes',
-    'visual_status',        // ← snake_case (InspectionHistory와 일치)
+    'visual_status',
     'battery_status',
     'pad_status',
     'operation_status',
@@ -176,23 +260,30 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
     'issues_found',
   ];
 
-  // Bug 4 Fix: updated_at (snake_case) + fieldMapping 제거
+  // === Step 11: 업데이트 데이터 구성 ===
   const updateData: any = {
-    updated_at: new Date(),  // ← snake_case
+    updated_at: new Date(),
   };
 
-  // 클라이언트에서 snake_case로 전송된 필드를 그대로 저장
   Object.keys(updates).forEach((field) => {
     if (allowedFields.includes(field)) {
-      updateData[field] = updates[field];  // ← 변환 없이 그대로 저장
+      updateData[field] = updates[field];
     }
   });
 
-  // 업데이트 실행
+  // === Step 12: 업데이트 실행 ===
   try {
     const updatedInspection = await prisma.inspections.update({
       where: { id: inspectionId },
       data: updateData
+    });
+
+    logger.info('InspectionDetail:PATCH', 'Inspection updated successfully', {
+      userId: session.user.id,
+      role: userProfile.role,
+      inspectionId,
+      equipmentSerial: inspection.equipment_serial,
+      fieldsUpdated: Object.keys(updateData).length
     });
 
     return NextResponse.json({
@@ -201,7 +292,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
       inspection: updatedInspection,
     });
   } catch (updateError) {
-    logger.error('InspectionUpdate:PATCH', 'Update inspection error',
+    logger.error('InspectionDetail:PATCH', 'Update inspection error',
       updateError instanceof Error ? updateError : { updateError }
     );
     return NextResponse.json({ error: 'Failed to update inspection record' }, { status: 500 });
