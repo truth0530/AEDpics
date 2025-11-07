@@ -1,0 +1,34 @@
+name: Test Daily Regression Check (Simple)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run daily regression check
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DB_HOST: pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com
+          DB_USER: aedpics_admin
+          DB_NAME: aedpics_production
+        run: |
+          chmod +x scripts/monitoring/daily-regression-check.sh
+          scripts/monitoring/daily-regression-check.sh
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-check-report-${{ github.run_id }}
+          path: /tmp/regression_check_*.log
+          retention-days: 7
