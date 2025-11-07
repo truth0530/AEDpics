@@ -535,7 +535,17 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
         // city_code를 실제 gugun 이름으로 변환 (예: "seogwipo" → "서귀포시")
         // AED 데이터는 gugun 필드에 한글 이름을 저장하고 있음
         const mappedGugun = mapCityCodeToGugun(cityCode);
-        allowedCityCodes = mappedGugun ? [mappedGugun] : [cityCode];
+        if (!mappedGugun) {
+          // Mapping failure: 유효하지 않은 city_code 또는 매핑 오류
+          // 사용자에게 제한적 접근 권한 부여하지 않음 (region-level로 fallback)
+          logger.warn('AccessControl:resolveAccessScope', 'City code mapping failed, falling back to region-level access', {
+            cityCode,
+            userId: userProfile.id,
+            email: userProfile.email,
+            organizationId: userProfile.organization?.id
+          });
+        }
+        allowedCityCodes = mappedGugun ? [mappedGugun] : null; // Fixed: null on mapping failure, not original cityCode
       } else {
         // city_code가 없으면 시도 레벨로만 제한 (시군구 제한 없음)
         // 향후 데이터 마이그레이션으로 모든 보건소에 city_code 추가 권장

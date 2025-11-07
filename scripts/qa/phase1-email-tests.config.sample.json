@@ -1,0 +1,43 @@
+{
+  "baseUrl": "https://aed.pics",
+  "admin": {
+    "email": "truth0530@nmc.or.kr",
+    "password": "YOUR_MASTER_PASSWORD_HERE"
+  },
+  "scenarios": [
+    {
+      "label": "NMC 도메인 사용자 승인 (TC-01)",
+      "type": "approve",
+      "request": {
+        "userId": "REPLACE_WITH_PENDING_USER_ID_1",
+        "approvedRoles": ["regional_emergency_center_admin"],
+        "organizationId": "REPLACE_WITH_ORG_ID",
+        "organizationName": "대구응급의료지원센터",
+        "regionCode": "DAE",
+        "fullName": "테스트 사용자 (NMC)",
+        "phone": "010-1234-5678"
+      }
+    },
+    {
+      "label": "외부 도메인 사용자 승인 (TC-02)",
+      "type": "approve",
+      "request": {
+        "userId": "REPLACE_WITH_PENDING_USER_ID_2",
+        "approvedRoles": ["local_admin"],
+        "organizationId": "REPLACE_WITH_HEALTH_CENTER_ID",
+        "organizationName": "제주시 보건소",
+        "regionCode": "JEJ",
+        "fullName": "테스트 사용자 (External)",
+        "phone": "010-9876-5432"
+      }
+    },
+    {
+      "label": "외부 사용자 거부 (TC-03)",
+      "type": "reject",
+      "request": {
+        "userId": "REPLACE_WITH_REJECTION_TARGET_ID",
+        "rejectReason": "테스트: 서류 미비"
+      }
+    }
+  ]
+}

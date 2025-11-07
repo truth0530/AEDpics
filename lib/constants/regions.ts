@@ -453,3 +453,117 @@ export function getRegionSortOrder(regionLabel: string): number {
   const index = REGIONS.findIndex(r => r.label === regionLabel);
   return index >= 0 ? index : 999;
 }
+
+/**
+ * ⭐ AED 데이터 정규화: e-gen 원본 데이터의 모든 지역명 변형을 표준 형태로 변환
+ *
+ * e-gen에서 오는 실제 데이터는 다음과 같은 변형들이 섞여 있습니다:
+ * - 정식명: "경기도", "충청남도", "서울특별시"
+ * - 약어: "경기", "충남", "서울"
+ * - 비표준: "경기도청", "경 기" (공백 포함), "경기,경기도" 등
+ *
+ * 이 함수는 모든 변형을 정규화된 값으로 변환하여
+ * 대시보드 GROUP BY와 권한 검증에서 일관된 결과를 제공합니다.
+ *
+ * @example
+ * normalizeAedDataRegion("경기도")      // "경기도"
+ * normalizeAedDataRegion("경기")        // "경기도"
+ * normalizeAedDataRegion("경기도청")    // "경기도"
+ * normalizeAedDataRegion("경 기")       // "경기도"
+ * normalizeAedDataRegion("서울")        // "서울특별시"
+ * normalizeAedDataRegion("충남")        // "충청남도"
+ *
+ * @param rawRegionValue - aed_data.sido의 원본값 또는 사용자 입력값
+ * @returns 정규화된 지역명 (또는 매핑 실패 시 원본값)
+ * @description 적용 위치: 대시보드 쿼리, API 필터링, 권한 검증
+ */
+export function normalizeAedDataRegion(rawRegionValue: string | null | undefined): string {
+  if (!rawRegionValue) {
+    return '';
+  }
+
+  let normalized = rawRegionValue.trim();
+
+  // 1. 공백 제거 (예: "경 기" → "경기")
+  normalized = normalized.replace(/\s+/g, '');
+
+  // 2. 접미사 제거 (예: "경기도청" → "경기도", "충남청" → "충남")
+  normalized = normalized.replace(/청$/g, '');
+
+  // 3. 정규화: 약어를 정식명칭으로 변환
+  const abbreviationToFullName: Record<string, string> = {
+    '경기': '경기도',
+    '강원': '강원도',
+    '충북': '충청북도',
+    '충남': '충청남도',
+    '전북': '전라북도',
+    '전남': '전라남도',
+    '경북': '경상북도',
+    '경남': '경상남도',
+    '제주': '제주도',
+    '서울': '서울특별시',
+    '부산': '부산광역시',
+    '대구': '대구광역시',
+    '인천': '인천광역시',
+    '광주': '광주광역시',
+    '대전': '대전광역시',
+    '울산': '울산광역시',
+    '세종': '세종특별자치시',
+  };
+
+  // 약어 매핑 확인
+  if (abbreviationToFullName[normalized]) {
+    return abbreviationToFullName[normalized];
+  }
+
+  // 4. 이미 정식명칭이면 그대로 반환
+  // (예: "경기도", "서울특별시", "제주특별자치도")
+  if (REGION_LONG_LABELS[normalized]) {
+    return normalized;
+  }
+
+  // 5. 직접 코드 매핑을 통해 정식명칭 찾기
+  // 예를 들어 "경기도"의 코드는 'GYE'이고,
+  // REGION_FULL_NAMES에서 'GYE' → "경기도"를 찾음
+  const code = REGION_LONG_LABELS[normalized] || REGION_LABEL_TO_CODE[normalized];
+  if (code) {
+    const fullName = REGION_FULL_NAMES.find(r => r.code === code)?.label;
+    if (fullName) {
+      return fullName;
+    }
+  }
+
+  // 6. 그 외는 원본 반환
+  return rawRegionValue;
+}
+
+/**
+ * ⭐ 대시보드/API 쿼리에서 사용할 정규화 함수 (SQL/Prisma용)
+ *
+ * 대시보드 쿼리에서 GROUP BY할 때 정규화된 값을 사용합니다.
+ * Prisma에서는 readOnlyAfter() 후 normalizeAedDataRegion을 적용합니다.
+ * Raw SQL 쿼리에서는 PostgreSQL CASE WHEN으로 처리하거나
+ * 어플리케이션 레이어에서 정규화합니다.
+ *
+ * @example
+ * // Prisma 사용 (권장)
+ * const data = await prisma.aed_data.findMany();
+ * const normalized = data.map(d => ({
+ *   ...d,
+ *   sido: normalizeAedDataRegion(d.sido)
+ * }));
+ *
+ * // Raw SQL (복잡한 집계인 경우)
+ * const results = await prisma.$queryRaw`
+ *   SELECT
+ *     normalizeAedDataRegion(sido) as normalized_sido,
+ *     COUNT(*) as count
+ *   FROM aed_data
+ *   GROUP BY normalizeAedDataRegion(sido)
+ * `
+ */
+export function getNormalizedRegionLabel(regionCode: string): string {
+  // 코드를 정식명칭으로 변환
+  const fullName = REGION_FULL_NAMES.find(r => r.code === regionCode)?.label;
+  return fullName || REGION_CODE_TO_LABEL[regionCode] || regionCode;
+}

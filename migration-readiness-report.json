@@ -1,0 +1,66 @@
+{
+  "generated_at": "2025-11-07T07:22:29.067Z",
+  "environment": "development",
+  "overall_status": "ISSUES_FOUND",
+  "validations": [
+    {
+      "table": "inspection_schedule_entries",
+      "total_records": 2,
+      "valid_records": 2,
+      "issues": {},
+      "ready_for_fk": true,
+      "details": []
+    },
+    {
+      "table": "inspection_assignments",
+      "total_records": 127,
+      "valid_records": 127,
+      "issues": {},
+      "ready_for_fk": true,
+      "details": []
+    },
+    {
+      "table": "normalization_test",
+      "total_records": 4,
+      "valid_records": 4,
+      "issues": {},
+      "ready_for_fk": true,
+      "details": [
+        "Normalization test: 4/4 passed"
+      ]
+    },
+    {
+      "table": "region_code_test",
+      "total_records": 4,
+      "valid_records": 0,
+      "issues": {
+        "region_not_found": 4
+      },
+      "ready_for_fk": false,
+      "details": [
+        "Region code mapping: 0/4 verified in aed_data"
+      ]
+    },
+    {
+      "table": "existing_fk_test",
+      "total_records": 2,
+      "valid_records": 2,
+      "issues": {},
+      "ready_for_fk": true,
+      "details": [
+        "Existing FK checks: 2/2 checked"
+      ]
+    }
+  ],
+  "summary": {
+    "total_tables": 5,
+    "tables_ready": 4,
+    "tables_with_issues": 1,
+    "total_issues": 4,
+    "recommendations": [
+      "Address issues before proceeding with Phase 1.",
+      "Review migration-readiness-report.json for details.",
+      "ISSUES: Plan remediation strategy."
+    ]
+  }
+}

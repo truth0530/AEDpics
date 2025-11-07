@@ -1,0 +1,40 @@
+{
+  "baseUrl": "https://aed.pics",
+  "admin": {
+    "email": "truth0530@nmc.or.kr",
+    "password": "Dlsxm*0537"
+  },
+  "scenarios": [
+    {
+      "label": "TC-01: NMC 도메인 승인 - nemcdg@nmc.or.kr (noreply@nmc.or.kr 확인)",
+      "type": "approve",
+      "request": {
+        "userId": "81744fcf-8edb-4bcb-9783-11e8e594c6a3",
+        "organizationId": "900fd704-4a7d-45c4-9f64-cab0706dd12a",
+        "organizationName": "대구응급의료지원센터"
+      },
+      "expectedStatus": 200
+    },
+    {
+      "label": "TC-02: 외부 도메인 승인 - truth0530@kakao.com (noreply@aed.pics 확인)",
+      "type": "approve",
+      "request": {
+        "userId": "d8029cbb-69a5-45d0-831d-c2fb3e820609",
+        "organizationId": "09864456-cb2a-41a9-a23f-5462c3d01e80",
+        "organizationName": "대구광역시 중구 보건소"
+      },
+      "expectedStatus": 200
+    },
+    {
+      "label": "TC-03: 사용자 거부 - shout530@naver.com (거부 이메일 발송 확인)",
+      "type": "reject",
+      "request": {
+        "userId": "bf8469d3-ed64-4c67-b3d0-9c5e33c18acc",
+        "organizationId": "09864456-cb2a-41a9-a23f-5462c3d01e80",
+        "organizationName": "대구광역시 중구 보건소",
+        "rejectionReason": "Phase 1 테스트를 위한 거부"
+      },
+      "expectedStatus": 200
+    }
+  ]
+}
