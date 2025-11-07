@@ -84,41 +84,16 @@ jobs:
         MASTER_EMAIL: ${{ secrets.MASTER_EMAIL }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
-    - name: Debug - Check .next directory
+    - name: Validate build output
       run: |
-        echo "Current directory: $(pwd)"
-        echo "Listing contents:"
-        ls -lah | head -20
-        echo ""
-        echo "Check .next existence:"
+        echo "Checking build results..."
         if [ -d ".next" ]; then
-          echo "✅ .next directory exists"
+          echo "✅ .next directory created successfully"
           du -sh .next
-          ls -la .next | head -10
         else
-          echo "❌ .next directory NOT found"
-          echo "Searching for .next in workspace:"
-          find . -name ".next" -type d 2>/dev/null || echo "No .next found"
+          echo "⚠️  .next directory not created in GitHub Actions"
+          echo "   (Will be built on server)"
         fi
-
-    - name: Archive .next for transfer
-      run: |
-        echo "Creating tar archive of .next directory..."
-        if [ -d ".next" ]; then
-          tar -czf /tmp/nextjs-build.tar.gz -C . .next
-          echo "✅ Archive created: $(du -sh /tmp/nextjs-build.tar.gz | cut -f1)"
-        else
-          echo "❌ ERROR: .next directory not found!"
-          exit 1
-        fi
-
-    - name: Upload build artifacts (GitHub Actions)
-      uses: actions/upload-artifact@v4
-      with:
-        name: nextjs-build
-        path: /tmp/nextjs-build.tar.gz
-        retention-days: 1
-      continue-on-error: true
 
   # Phase 3: Database migrations
   migrate:
@@ -171,39 +146,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: nextjs-build
-        path: ./artifacts
-      continue-on-error: true
-
-    - name: Extract build archive and prepare for transfer
+    - name: Verify checkout
       run: |
-        if [ -f "./artifacts/nextjs-build.tar.gz" ]; then
-          echo "Extracting tar archive..."
-          tar -xzf ./artifacts/nextjs-build.tar.gz
-          ls -la .next | head -10
-          echo "Archive extracted successfully"
-        else
-          echo "WARNING: nextjs-build.tar.gz not found in artifacts, will rebuild on server"
-        fi
-
-        # Create tar archive for SCP transfer
-        if [ -d ".next" ]; then
-          tar -czf next-build.tar.gz -C . .next
-          echo "Created tar archive for SCP transfer"
-        fi
-
-    - name: Upload build artifact to server
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.NCP_HOST }}
-        username: ${{ secrets.NCP_USERNAME }}
-        key: ${{ secrets.NCP_SSH_KEY }}
-        port: ${{ secrets.NCP_SSH_PORT }}
-        source: next-build.tar.gz
-        target: /var/www/aedpics
+        echo "Preparing for server-side build deployment..."
+        git status
 
     - name: Deploy to NCP Server
       uses: appleboy/ssh-action@v1.0.0
@@ -270,25 +216,12 @@ jobs:
           fi
           echo ""
 
-          echo "Extracting uploaded build artifact..."
-          if [ -f "next-build.tar.gz" ]; then
-            rm -rf .next.build
-            mkdir -p .next.build
-            tar -xzf next-build.tar.gz -C .next.build
-            rm -f next-build.tar.gz
-            echo "Build artifact extracted to .next.build"
-          else
-            echo "ERROR: Uploaded build artifact (next-build.tar.gz) not found."
-            exit 1
-          fi
-          echo ""
-
           echo "=== Phase 1: Backup current version ==="
           if [ -d ".next" ]; then
             echo "Backing up current build..."
             rm -rf .next.backup
             mkdir -p .next.backup
-            rsync -a --exclude='cache' .next/ .next.backup/
+            rsync -a --exclude='cache' .next/ .next.backup/ 2>/dev/null || true
             echo "Backup created"
           fi
 
@@ -317,18 +250,24 @@ jobs:
           git reset --hard origin/main
 
           echo "Installing dependencies..."
-          npm install
+          npm ci --production
 
           echo "Generating Prisma client..."
           npx prisma generate
 
-          echo "Applying new build artifacts..."
-          if [ ! -d ".next.build" ]; then
-            echo "ERROR: .next.build directory not found after extraction!"
+          echo "Building Next.js application on server..."
+          NODE_ENV=production npm run build
+
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Build failed on server!"
+            if [ -d ".next.backup" ]; then
+              echo "Restoring backup..."
+              rm -rf .next
+              mv .next.backup .next
+            fi
             exit 1
           fi
-          rm -rf .next
-          mv .next.build .next
+          echo "Build completed successfully"
 
           echo "=== Phase 3: Deploy built files ==="
           echo "Cleaning PWA cache files..."
