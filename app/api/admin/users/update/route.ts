@@ -122,14 +122,14 @@ export async function PATCH(request: NextRequest) {
     // 사용자 프로필 업데이트
     try {
       const prismaUpdateData: any = {
-        updatedAt: new Date()
+        updated_at: new Date()
       };
 
       if (role) prismaUpdateData.role = role;
-      if (organizationId !== undefined) prismaUpdateData.organizationId = organizationId || null;
-      if (organizationName !== undefined) prismaUpdateData.organizationName = organizationName;
-      if (regionCode !== undefined) prismaUpdateData.regionCode = regionCode || null;
-      if (fullName !== undefined) prismaUpdateData.fullName = fullName;
+      if (organizationId !== undefined) prismaUpdateData.organization_id = organizationId || null;
+      if (organizationName !== undefined) prismaUpdateData.organization_name = organizationName;
+      if (regionCode !== undefined) prismaUpdateData.region_code = regionCode || null;
+      if (fullName !== undefined) prismaUpdateData.full_name = fullName;
       if (email !== undefined) prismaUpdateData.email = email;
       if (encryptedPhone) prismaUpdateData.phone = encryptedPhone;
 
