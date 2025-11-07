@@ -5,12 +5,42 @@ on:
     branches: [ main ]
     tags:
       - 'v*'
-  workflow_dispatch:  # 수동 실행 가능
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  # Phase 1: Code checks (lint, TypeScript)
+  checks:
+    name: Code Checks
     runs-on: ubuntu-latest
-    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Run TypeScript check
+      run: npm run tsc || true
+
+  # Phase 2: Build Next.js application
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: checks
 
     steps:
     - name: Checkout code
@@ -40,10 +70,8 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    - name: Run tests and build
+    - name: Build Next.js application
       run: |
-        npm run tsc || true
-        npm run lint
         NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}" \
         NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}" \
         npm run build
@@ -58,6 +86,70 @@ jobs:
         MASTER_EMAIL: ${{ secrets.MASTER_EMAIL }}
         ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nextjs-build
+        path: .next
+        retention-days: 1
+
+  # Phase 3: Database migrations
+  migrate:
+    name: Database Migrations
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Prisma CLI
+      run: npm install -D prisma
+
+    - name: Check and apply migrations
+      run: |
+        if [ -d "prisma/migrations" ] && [ "$(ls -A prisma/migrations)" ]; then
+          echo "Checking migration status..."
+          if npx prisma migrate status 2>&1 | grep -q "Database schema is up to date"; then
+            echo "Database schema is already up to date"
+          elif npx prisma migrate status 2>&1 | grep -q "following migrations have not yet been applied"; then
+            echo "Applying pending migrations..."
+            if npx prisma migrate deploy --skip-seed; then
+              echo "Migrations applied successfully"
+            else
+              echo "WARNING: Migration deploy failed, continuing deployment..."
+            fi
+          fi
+        else
+          echo "No migrations to apply"
+        fi
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      continue-on-error: true
+
+  # Phase 4: Production deployment
+  deploy:
+    name: Deploy to NCP
+    runs-on: ubuntu-latest
+    needs: [ build, migrate ]
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: nextjs-build
+        path: .next
+
     - name: Deploy to NCP Server
       uses: appleboy/ssh-action@v1.0.0
       with:
@@ -67,12 +159,11 @@ jobs:
         port: ${{ secrets.NCP_SSH_PORT }}
         envs: DATABASE_URL,NEXTAUTH_URL,NEXTAUTH_SECRET,JWT_SECRET,NEXT_PUBLIC_KAKAO_MAP_APP_KEY,NEXT_PUBLIC_SITE_URL,RESEND_API_KEY,MASTER_EMAIL,ENCRYPTION_KEY,NCP_ACCESS_KEY,NCP_ACCESS_SECRET,NCP_SENDER_EMAIL,NCP_OBJECT_STORAGE_REGION,NCP_OBJECT_STORAGE_ENDPOINT,NCP_OBJECT_STORAGE_ACCESS_KEY,NCP_OBJECT_STORAGE_SECRET_KEY,NCP_OBJECT_STORAGE_BUCKET
         script: |
-          set -e  # Exit on any error
+          set -e
           cd /var/www/aedpics
 
           echo "=== Phase 0: Pre-deployment Disk Space Monitoring ==="
 
-          # Function to get disk usage percentage
           get_disk_usage() {
             df / | awk 'NR==2 {print $5}' | sed 's/%//'
           }
@@ -84,7 +175,6 @@ jobs:
           echo ""
 
           echo "Running aggressive disk space cleanup..."
-
           echo "1. Cleaning build caches..."
           rm -rf .next/cache .next.backup 2>/dev/null || true
 
@@ -104,46 +194,34 @@ jobs:
           echo "Disk usage: ${DISK_AFTER}%"
           echo ""
 
-          # Critical check: fail if disk usage > 90% after cleanup
           if [ ${DISK_AFTER} -gt 90 ]; then
             echo "ERROR: Disk usage is ${DISK_AFTER}% (critical level > 90%)"
-            echo "Attempting more aggressive cleanup..."
-
-            # Delete backup if exists
             if [ -d ".next.backup" ]; then
-              echo "Deleting .next.backup (could free ~500MB)..."
+              echo "Deleting .next.backup..."
               rm -rf .next.backup
             fi
 
             DISK_CRITICAL=$(get_disk_usage)
-            df -h | grep -E '/$|Filesystem'
-            echo "Disk usage after aggressive cleanup: ${DISK_CRITICAL}%"
-
             if [ ${DISK_CRITICAL} -gt 85 ]; then
-              echo "FATAL: Disk usage still critical (${DISK_CRITICAL}%). Deployment aborted."
-              echo "Recommend running: gh workflow run aggressive-cleanup.yml"
+              echo "FATAL: Disk usage still critical. Deployment aborted."
               exit 1
             fi
           fi
 
-          # Warning if disk usage > 80%
           if [ ${DISK_AFTER} -gt 80 ]; then
-            echo "WARNING: Disk usage is ${DISK_AFTER}% (warning level > 80%)"
-            echo "Consider running aggressive-cleanup.yml workflow if deployments continue to fail"
+            echo "WARNING: Disk usage is ${DISK_AFTER}%"
           else
-            echo "OK: Disk usage is ${DISK_AFTER}% (acceptable < 80%)"
+            echo "OK: Disk usage is ${DISK_AFTER}%"
           fi
           echo ""
 
           echo "=== Phase 1: Backup current version ==="
           if [ -d ".next" ]; then
-            echo "Backing up current build (excluding cache)..."
+            echo "Backing up current build..."
             rm -rf .next.backup
             mkdir -p .next.backup
             rsync -a --exclude='cache' .next/ .next.backup/
-            echo "Backup created: .next.backup (cache excluded)"
-          else
-            echo "No existing build to backup (first deployment)"
+            echo "Backup created"
           fi
 
           echo "=== Phase 2: Update code and dependencies ==="
@@ -170,109 +248,44 @@ jobs:
           git fetch origin
           git reset --hard origin/main
 
-          echo "Cleaning node_modules..."
-          rm -rf node_modules package-lock.json
-
           echo "Installing dependencies..."
           npm install
 
           echo "Generating Prisma client..."
           npx prisma generate
 
-          echo "=== Phase 2.5: Check and apply migrations (if exists) ==="
-          echo "Checking if migrations folder exists..."
-          if [ -d "prisma/migrations" ] && [ "$(ls -A prisma/migrations)" ]; then
-            echo "Migrations folder found. Checking migration status..."
-
-            # Check if migrations can be applied without error
-            if npx prisma migrate status 2>&1 | grep -q "Database schema is up to date"; then
-              echo "Database schema is already up to date. No migrations needed."
-            elif npx prisma migrate status 2>&1 | grep -q "following migrations have not yet been applied"; then
-              echo "Found pending migrations. Attempting to apply..."
-              if npx prisma migrate deploy --skip-seed; then
-                echo "Migrations applied successfully!"
-              else
-                echo "WARNING: Migration deploy failed. This might be expected if migrations were manually applied."
-                echo "Checking if this is a known issue..."
-
-                # Check for specific known errors
-                if npx prisma migrate status 2>&1 | grep -q "already exists"; then
-                  echo "Migrations seem to be already applied manually. Continuing deployment..."
-                else
-                  echo "Unknown migration error. Please check manually."
-                  echo "For now, continuing deployment to avoid blocking..."
-                fi
-              fi
-            else
-              echo "WARNING: Unable to determine migration status. Continuing deployment..."
-            fi
-          else
-            echo "No migrations folder found or it's empty. Skipping migration step."
-          fi
-
-          echo "=== Phase 3: Build new version ==="
+          echo "=== Phase 3: Deploy built files ==="
           echo "Cleaning PWA cache files..."
           rm -rf public/sw.js public/sw.js.map public/workbox-*.js public/workbox-*.js.map
-          rm -rf public/swe-worker-*.js public/swe-worker-*.js.map
 
-          echo "Exporting environment variables for build..."
-          export NEXT_PUBLIC_KAKAO_MAP_APP_KEY="$NEXT_PUBLIC_KAKAO_MAP_APP_KEY"
-          export NEXT_PUBLIC_SITE_URL="$NEXT_PUBLIC_SITE_URL"
-
-          echo "Building application with timestamp..."
-          export BUILD_TIMESTAMP=$(date +%s)
-
-          if npm run build; then
-            echo "Build successful!"
-          else
-            echo "Build failed! Rolling back..."
-            if [ -d ".next.backup" ]; then
-              rm -rf .next
-              mv .next.backup .next
-              echo "Rollback complete. Deployment aborted."
-            fi
-            exit 1
-          fi
-
-          echo "=== Phase 4: Validate build artifacts ==="
+          echo "Validating build artifacts..."
           if [ ! -d ".next" ]; then
             echo "ERROR: .next directory not found!"
-            if [ -d ".next.backup" ]; then
-              mv .next.backup .next
-            fi
             exit 1
           fi
 
           if [ ! -d ".next/server" ] || [ ! -d ".next/static" ]; then
             echo "ERROR: Build incomplete! Missing server or static directory."
-            rm -rf .next
-            if [ -d ".next.backup" ]; then
-              mv .next.backup .next
-            fi
             exit 1
           fi
 
           echo "Build validation passed!"
-          echo "Creating cache bust files..."
+          export BUILD_TIMESTAMP=$(date +%s)
           echo "$BUILD_TIMESTAMP" > .next/BUILD_ID
           echo "$BUILD_TIMESTAMP" > public/build-timestamp.txt
 
-          echo "=== Phase 5: Zero-Downtime deployment with PM2 ==="
+          echo "=== Phase 4: Zero-Downtime deployment with PM2 ==="
           if pm2 describe aedpics > /dev/null 2>&1; then
             echo "App is running. Performing zero-downtime reload..."
             if pm2 reload ecosystem.config.cjs --update-env; then
               echo "PM2 reload successful!"
-
-              echo "Waiting for application to stabilize (15 seconds)..."
               sleep 15
 
               if pm2 describe aedpics | grep -q "online"; then
                 echo "Application is online and stable!"
                 rm -rf .next.backup
-                echo "Backup removed."
               else
                 echo "ERROR: Application failed to start after reload!"
-                echo "Rolling back to previous version..."
                 rm -rf .next
                 mv .next.backup .next
                 pm2 reload ecosystem.config.cjs --update-env
@@ -280,7 +293,6 @@ jobs:
               fi
             else
               echo "ERROR: PM2 reload failed!"
-              echo "Rolling back to previous version..."
               rm -rf .next
               if [ -d ".next.backup" ]; then
                 mv .next.backup .next
@@ -291,7 +303,6 @@ jobs:
           else
             echo "App is not running. Starting for the first time..."
             pm2 start ecosystem.config.cjs --update-env
-            echo "Waiting for application to start (15 seconds)..."
             sleep 15
 
             if pm2 describe aedpics | grep -q "online"; then
@@ -304,7 +315,7 @@ jobs:
 
           pm2 save --force
 
-          echo "=== Phase 6: Cache cleanup ==="
+          echo "=== Phase 5: Cache cleanup ==="
           echo "Clearing Nginx cache..."
           rm -rf /var/cache/nginx/* || true
 
