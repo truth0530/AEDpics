@@ -101,12 +101,24 @@ jobs:
           find . -name ".next" -type d 2>/dev/null || echo "No .next found"
         fi
 
-    - name: Upload build artifacts
+    - name: Archive .next for transfer
+      run: |
+        echo "Creating tar archive of .next directory..."
+        if [ -d ".next" ]; then
+          tar -czf /tmp/nextjs-build.tar.gz -C . .next
+          echo "✅ Archive created: $(du -sh /tmp/nextjs-build.tar.gz | cut -f1)"
+        else
+          echo "❌ ERROR: .next directory not found!"
+          exit 1
+        fi
+
+    - name: Upload build artifacts (GitHub Actions)
       uses: actions/upload-artifact@v4
       with:
         name: nextjs-build
-        path: .next
+        path: /tmp/nextjs-build.tar.gz
         retention-days: 1
+      continue-on-error: true
 
   # Phase 3: Database migrations
   migrate:
@@ -163,10 +175,25 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: nextjs-build
-        path: .next
+        path: ./artifacts
+      continue-on-error: true
 
-    - name: Archive build artifact for transfer
-      run: tar -czf next-build.tar.gz -C .next .
+    - name: Extract build archive and prepare for transfer
+      run: |
+        if [ -f "./artifacts/nextjs-build.tar.gz" ]; then
+          echo "Extracting tar archive..."
+          tar -xzf ./artifacts/nextjs-build.tar.gz
+          ls -la .next | head -10
+          echo "Archive extracted successfully"
+        else
+          echo "WARNING: nextjs-build.tar.gz not found in artifacts, will rebuild on server"
+        fi
+
+        # Create tar archive for SCP transfer
+        if [ -d ".next" ]; then
+          tar -czf next-build.tar.gz -C . .next
+          echo "Created tar archive for SCP transfer"
+        fi
 
     - name: Upload build artifact to server
       uses: appleboy/scp-action@v0.1.7
