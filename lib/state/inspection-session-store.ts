@@ -413,20 +413,60 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       payload.finalizeData = transformedData;
     }
 
-    const response = await fetch(API_ENDPOINT, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    set({ isLoading: true, error: undefined });
 
-    const { session: updatedSession } = await parseResponse<{ session: InspectionSession }>(response);
+    try {
+      logger.info('InspectionSession:completeSession', 'Completing inspection', {
+        sessionId: session.id,
+        equipmentSerial: session.equipment_serial,
+        currentStep,
+      });
 
-    set({
-      session: updatedSession,
-      currentStep: updatedSession.current_step ?? currentStep,
-      stepData: (updatedSession.step_data as Record<string, unknown> | null) ?? stepData,
-      pendingChanges: [],
-    });
+      const response = await fetch(API_ENDPOINT, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('InspectionSession:completeSession', 'API error response', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText.substring(0, 200),
+        });
+        throw new Error(`API 오류 (${response.status}): ${errorText.substring(0, 200)}`);
+      }
+
+      const { session: updatedSession } = await parseResponse<{ session: InspectionSession }>(response);
+
+      logger.info('InspectionSession:completeSession', 'Inspection completed successfully', {
+        sessionId: updatedSession.id,
+        equipmentSerial: updatedSession.equipment_serial,
+        status: updatedSession.status,
+      });
+
+      set({
+        session: updatedSession,
+        currentStep: updatedSession.current_step ?? currentStep,
+        stepData: (updatedSession.step_data as Record<string, unknown> | null) ?? stepData,
+        pendingChanges: [],
+        isLoading: false,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '점검을 완료하지 못했습니다.';
+      logger.error('InspectionSession:completeSession', 'Failed to complete inspection', {
+        sessionId: session.id,
+        equipmentSerial: session.equipment_serial,
+        error: errorMessage,
+      });
+
+      set({
+        isLoading: false,
+        error: errorMessage,
+      });
+      throw error;
+    }
   },
 
   async cancelSession(reason) {
