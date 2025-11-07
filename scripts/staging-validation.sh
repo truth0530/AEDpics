@@ -98,12 +98,9 @@ print_info "로그인 시도: $MASTER_EMAIL"
 
 LOGIN_RESPONSE=$(curl -s -c "$COOKIES_FILE" \
     -X POST "$BASE_URL/api/auth/signin/credentials" \
-    -H "Content-Type: application/json" \
-    -d "{
-        \"email\": \"$MASTER_EMAIL\",
-        \"password\": \"$MASTER_PASSWORD\",
-        \"callbackUrl\": \"$BASE_URL\"
-    }" \
+    --data-urlencode "email=$MASTER_EMAIL" \
+    --data-urlencode "password=$MASTER_PASSWORD" \
+    --data-urlencode "callbackUrl=$BASE_URL" \
     -w "\n%{http_code}")
 
 HTTP_CODE=$(echo "$LOGIN_RESPONSE" | tail -1)
