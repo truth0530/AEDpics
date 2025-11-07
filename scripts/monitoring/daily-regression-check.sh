@@ -191,16 +191,17 @@ check_user_updates() {
 check_inspection_completions() {
   log_header "Check 2: Inspection Completion Operations (Last 24 Hours)"
 
-  # Count inspection completions in last 24 hours
+  # Count inspection records created in last 24 hours (indicates completions)
   local query="
   SELECT
-    COUNT(*) as total_completions,
-    COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_status,
-    MIN(updated_at) as oldest_completion,
-    MAX(updated_at) as newest_completion
+    COUNT(*) as total_created,
+    COUNT(CASE WHEN overall_status IS NOT NULL THEN 1 END) as with_overall_status,
+    COUNT(CASE WHEN overall_status = 'pass' THEN 1 END) as passed,
+    COUNT(CASE WHEN overall_status = 'fail' THEN 1 END) as failed,
+    MIN(created_at) as oldest_inspection,
+    MAX(created_at) as newest_inspection
   FROM ${DB_SCHEMA}.inspections
-  WHERE status = 'completed'
-    AND updated_at >= NOW() - INTERVAL '24 hours';
+  WHERE created_at >= NOW() - INTERVAL '24 hours';
   "
 
   echo "SQL Query:"
@@ -212,18 +213,18 @@ check_inspection_completions() {
   echo "$RESULT"
 
   TOTAL_COMPLETIONS=$(echo "$RESULT" | tail -2 | head -1 | awk '{print $1}')
-  COMPLETED_STATUS=$(echo "$RESULT" | tail -2 | head -1 | awk '{print $3}')
+  WITH_OVERALL=$(echo "$RESULT" | tail -2 | head -1 | awk '{print $3}')
 
   echo ""
   echo "Summary:"
-  echo "  Total completions: $TOTAL_COMPLETIONS"
-  echo "  With 'completed' status: $COMPLETED_STATUS"
+  echo "  Total inspections created: $TOTAL_COMPLETIONS"
+  echo "  With overall_status: $WITH_OVERALL"
   echo ""
 
   if [ "$TOTAL_COMPLETIONS" -gt 0 ]; then
     log_success "Inspection completions detected"
 
-    # Check for any incomplete/hung inspections with recent updates
+    # Check for any inspection sessions that are stuck
     local hung_query="
     SELECT
       id,
@@ -231,24 +232,24 @@ check_inspection_completions() {
       status,
       updated_at,
       EXTRACT(EPOCH FROM (NOW() - updated_at)) as seconds_since_update
-    FROM ${DB_SCHEMA}.inspections
-    WHERE status IN ('in_progress', 'pending')
+    FROM ${DB_SCHEMA}.inspection_sessions
+    WHERE status = 'active'
       AND updated_at >= NOW() - INTERVAL '1 hour'
     LIMIT 5;
     "
 
-    echo "Checking for potentially hung inspections (updated in last 1 hour):"
+    echo "Checking for potentially hung inspection sessions (updated in last 1 hour):"
     HUNG_RESULT=$(run_sql_query "$hung_query")
     echo "$HUNG_RESULT"
 
-    HUNG_COUNT=$(echo "$HUNG_RESULT" | grep -c "in_progress\|pending" || true)
+    HUNG_COUNT=$(echo "$HUNG_RESULT" | grep -c "active" || true)
     if [ "$HUNG_COUNT" -gt 0 ]; then
-      log_warning "Found $HUNG_COUNT potentially incomplete inspections"
+      log_warning "Found $HUNG_COUNT potentially active inspection sessions"
     else
-      log_success "No stuck inspections detected"
+      log_success "No stuck inspection sessions detected"
     fi
   else
-    log_warning "No inspection completions in last 24 hours (may be normal)"
+    log_warning "No inspection records created in last 24 hours (may be normal)"
   fi
 
   echo ""
