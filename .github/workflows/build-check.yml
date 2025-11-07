@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+# Concurrency: 동일 브랜치에서 이전 빌드 자동 취소 (무중단 배포 위한 순차 실행)
+concurrency:
+  group: build-test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ESLint 검사 (병렬 실행)
   lint:

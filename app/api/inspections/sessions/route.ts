@@ -35,6 +35,27 @@ interface UpdateSessionPayload {
   finalizeData?: Record<string, unknown>;
 }
 
+function removeUndefinedValues<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map(item => removeUndefinedValues(item))
+      .filter(item => item !== undefined) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {
+      if (val === undefined) {
+        return;
+      }
+      result[key] = removeUndefinedValues(val);
+    });
+    return result as T;
+  }
+
+  return value;
+}
+
 async function requireAuthWithRole() {
   const session = await getServerSession(authOptions);
 
@@ -585,12 +606,13 @@ export const PATCH = async (request: NextRequest) => {
 
   if (payload.status === 'completed' || payload.finalizeData) {
     const finalData = mergeStepData(mergedStepData, payload.finalizeData);
+    const sanitizedFinalData = removeUndefinedValues(finalData);
 
     // 점검 완료 데이터 검증
     logger.info('InspectionSession:POST-complete', 'finalData structure', {
-      keys: Object.keys(finalData),
-      basicInfoKeys: finalData.basicInfo ? Object.keys(finalData.basicInfo) : 'N/A',
-      deviceInfoKeys: finalData.device_info ? Object.keys(finalData.device_info) : 'N/A',
+      keys: Object.keys(sanitizedFinalData),
+      basicInfoKeys: sanitizedFinalData.basicInfo ? Object.keys(sanitizedFinalData.basicInfo) : 'N/A',
+      deviceInfoKeys: sanitizedFinalData.device_info ? Object.keys(sanitizedFinalData.device_info) : 'N/A',
     });
 
     // RPC 대신 Prisma 트랜잭션으로 완료 처리
@@ -604,19 +626,19 @@ export const PATCH = async (request: NextRequest) => {
           data: {
             status: 'completed',
             completed_at: new Date(),
-            step_data: finalData as any,
+            step_data: sanitizedFinalData as any,
             updated_at: new Date()
           }
         });
 
         // 2. inspection 레코드 생성 (finalData에서 추출)
-        const basicInfo = finalData.basicInfo as any || {};
-        const deviceInfo = finalData.deviceInfo as any || {};
-        const storage = finalData.storage as any || {};
-        const documentation = finalData.documentation as any || {};
+        const basicInfo = sanitizedFinalData.basicInfo as any || {};
+        const deviceInfo = sanitizedFinalData.deviceInfo as any || {};
+        const storage = sanitizedFinalData.storage as any || {};
+        const documentation = sanitizedFinalData.documentation as any || {};
 
         // 필수 배열 필드 추출 (Prisma String[] 타입 요구)
-        const validation = finalData.validation as any || {};
+        const validation = sanitizedFinalData.validation as any || {};
         const issuesFound = Array.isArray(validation.issues)
           ? (validation.issues as string[])
           : [];
@@ -649,12 +671,13 @@ export const PATCH = async (request: NextRequest) => {
           inspection_type: 'monthly',
           battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' : (deviceInfo.battery_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
           pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' : (deviceInfo.pad_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked'),
-          overall_status: (finalData.overallStatus as any) || 'pass',
+          overall_status: (sanitizedFinalData.overallStatus as any) || 'pass',
           notes: payload.notes ?? null,
           issues_found: issuesFound,  // Prisma String[] 필수 필드
           photos: photos,              // Prisma String[] 필수 필드
           original_data: session.device_info || {},  // 원본 장비 데이터 저장
-          inspected_data: {
+          // 🔥 CRITICAL FIX: inspected_data 내부의 nested undefined 값도 제거 필수
+          inspected_data: removeUndefinedValues({
             basicInfo: basicInfo,
             deviceInfo: deviceInfo,
             storage: storage,
@@ -664,7 +687,7 @@ export const PATCH = async (request: NextRequest) => {
             confirmedSerialNumber: deviceInfo.serial_number,
             batteryExpiryChecked: deviceInfo.battery_expiry_date,
             padExpiryChecked: deviceInfo.pad_expiry_date
-          }
+          })
         };
 
         // 🔑 중요: aed_data FK 설정 (조회 필터링용)
@@ -713,9 +736,9 @@ export const PATCH = async (request: NextRequest) => {
 
       // 필드 비교 분석 (비동기로 실행하여 응답 속도에 영향 없도록)
       if (createdInspectionId && session.equipment_serial) {
-        const basicInfo = finalData.basicInfo as any || {};
-        const deviceInfo = finalData.deviceInfo as any || {};
-        const supplies = finalData.supplies as any || {};
+        const basicInfo = sanitizedFinalData.basicInfo as any || {};
+        const deviceInfo = sanitizedFinalData.deviceInfo as any || {};
+        const supplies = sanitizedFinalData.supplies as any || {};
 
         analyzeInspectionFields(
           createdInspectionId,

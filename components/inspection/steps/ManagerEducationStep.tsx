@@ -41,13 +41,16 @@ export function ManagerEducationStep() {
             <button
               type="button"
               onClick={() => {
-                updateStepData('managerEducation', {
+                // 선택 변경 시 관련 필드 초기화 (명시적 undefined 대신 필드 생략)
+                const updated = {
                   ...(managerEducation as Record<string, unknown>),
-                  education_status: 'manager_education',
-                  not_completed_reason: undefined,
-                  not_completed_other_text: undefined,
-                  education_other_text: undefined
-                });
+                  education_status: 'manager_education'
+                } as Record<string, unknown>;
+                // 불필요한 필드 제거
+                delete updated.not_completed_reason;
+                delete updated.not_completed_other_text;
+                delete updated.education_other_text;
+                updateStepData('managerEducation', updated);
               }}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
                 managerEducation.education_status === 'manager_education'
@@ -61,13 +64,14 @@ export function ManagerEducationStep() {
             <button
               type="button"
               onClick={() => {
-                updateStepData('managerEducation', {
+                const updated = {
                   ...(managerEducation as Record<string, unknown>),
-                  education_status: 'legal_mandatory_education',
-                  not_completed_reason: undefined,
-                  not_completed_other_text: undefined,
-                  education_other_text: undefined
-                });
+                  education_status: 'legal_mandatory_education'
+                } as Record<string, unknown>;
+                delete updated.not_completed_reason;
+                delete updated.not_completed_other_text;
+                delete updated.education_other_text;
+                updateStepData('managerEducation', updated);
               }}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
                 managerEducation.education_status === 'legal_mandatory_education'
@@ -81,11 +85,12 @@ export function ManagerEducationStep() {
             <button
               type="button"
               onClick={() => {
-                updateStepData('managerEducation', {
+                const updated = {
                   ...(managerEducation as Record<string, unknown>),
-                  education_status: 'not_completed',
-                  education_other_text: undefined
-                });
+                  education_status: 'not_completed'
+                } as Record<string, unknown>;
+                delete updated.education_other_text;
+                updateStepData('managerEducation', updated);
               }}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
                 managerEducation.education_status === 'not_completed'
@@ -99,12 +104,13 @@ export function ManagerEducationStep() {
             <button
               type="button"
               onClick={() => {
-                updateStepData('managerEducation', {
+                const updated = {
                   ...(managerEducation as Record<string, unknown>),
-                  education_status: 'other',
-                  not_completed_reason: undefined,
-                  not_completed_other_text: undefined
-                });
+                  education_status: 'other'
+                } as Record<string, unknown>;
+                delete updated.not_completed_reason;
+                delete updated.not_completed_other_text;
+                updateStepData('managerEducation', updated);
               }}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
                 managerEducation.education_status === 'other'

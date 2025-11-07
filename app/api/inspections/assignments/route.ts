@@ -31,6 +31,7 @@ async function handleBulkAssignment(
       select: {
         id: true,
         role: true,
+        email: true,
         organization_id: true,
         region_code: true
       }
@@ -207,6 +208,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         role: true,
+        email: true,
         organization_id: true,
         region_code: true,
         region: true,

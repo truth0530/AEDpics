@@ -245,7 +245,7 @@ WHERE created_at >= '2025-10-09';
 ## 📞 문의 및 지원
 
 ### 개발팀
-- **이메일**: shout530@naver.com
+- **이메일**: truth0530@nmc.or.kr
 - **GitHub**: [truth0530/AED_check2025](https://github.com/truth0530/AED_check2025)
 
 ### 버그 리포트
