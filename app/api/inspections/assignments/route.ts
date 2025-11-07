@@ -33,7 +33,9 @@ async function handleBulkAssignment(
         role: true,
         email: true,
         organization_id: true,
-        region_code: true
+        region_code: true,
+        region: true,
+        district: true
       }
     });
 
