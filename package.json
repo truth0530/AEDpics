@@ -39,7 +39,7 @@
     "test:storage": "npx tsx scripts/test/test-ncp-storage.ts",
     "bucket:create": "npx tsx scripts/test/test-bucket-create.ts",
     "check:inspection-field": "node scripts/check-inspection-field.cjs",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.0",
