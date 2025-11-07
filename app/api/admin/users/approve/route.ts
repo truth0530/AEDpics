@@ -9,8 +9,46 @@ import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 
 import { prisma } from '@/lib/prisma';
+
+/**
+ * NCP Mailer 필수 환경 변수 검증
+ */
+function validateNCPEmailConfig(): { valid: boolean; error?: string } {
+  if (!env.NCP_ACCESS_KEY || !env.NCP_ACCESS_KEY.trim()) {
+    return {
+      valid: false,
+      error: 'NCP_ACCESS_KEY environment variable is not configured'
+    };
+  }
+
+  if (!env.NCP_ACCESS_SECRET || !env.NCP_ACCESS_SECRET.trim()) {
+    return {
+      valid: false,
+      error: 'NCP_ACCESS_SECRET environment variable is not configured'
+    };
+  }
+
+  return { valid: true };
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // 이메일 발송 환경 변수 검증
+    const ncpValidation = validateNCPEmailConfig();
+    if (!ncpValidation.valid) {
+      logger.error('API:approve', 'NCP email configuration validation failed', {
+        error: ncpValidation.error
+      });
+
+      return NextResponse.json(
+        {
+          error: '서버 설정 오류입니다. 관리자에게 문의하세요.',
+          code: 'NCP_CONFIG_ERROR'
+        },
+        { status: 500 }
+      );
+    }
+
     logger.info('API:approve', 'Approval process started');
 
     // 현재 사용자 확인
@@ -454,6 +492,22 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // 이메일 발송 환경 변수 검증
+    const ncpValidation = validateNCPEmailConfig();
+    if (!ncpValidation.valid) {
+      logger.error('API:reject', 'NCP email configuration validation failed', {
+        error: ncpValidation.error
+      });
+
+      return NextResponse.json(
+        {
+          error: '서버 설정 오류입니다. 관리자에게 문의하세요.',
+          code: 'NCP_CONFIG_ERROR'
+        },
+        { status: 500 }
+      );
+    }
+
     // 현재 사용자 확인
     const session = await getServerSession(authOptions);
 
