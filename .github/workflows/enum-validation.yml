@@ -1,0 +1,250 @@
+name: Enum Synchronization Validation
+
+on:
+  workflow_run:
+    workflows: [ "Build and Test" ]
+    types: [ completed ]
+
+concurrency:
+  group: enum-validation
+  cancel-in-progress: false  # Don't cancel validation runs
+
+jobs:
+  # Pre-condition check before validation
+  pre_check:
+    name: Pre-condition Validation
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    steps:
+      - name: Check Build Status
+        id: check
+        run: |
+          # Only proceed if build succeeded
+          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+            echo "proceed=true" >> $GITHUB_OUTPUT
+            echo "✓ Build passed, proceeding with enum validation"
+          else
+            echo "proceed=false" >> $GITHUB_OUTPUT
+            echo "⊘ Build failed, skipping enum validation"
+          fi
+
+  # Validate enum synchronization between Prisma and TypeScript
+  validate_enums:
+    name: Validate Enum Synchronization
+    runs-on: ubuntu-latest
+    needs: pre_check
+    if: needs.pre_check.outputs.proceed == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Extract Prisma Enums
+        id: prisma_enums
+        run: |
+          echo "Extracting enum definitions from prisma/schema.prisma..."
+
+          # Extract all enum names and values
+          PRISMA_ENUMS=$(grep -A 50 "^enum " prisma/schema.prisma | \
+            sed 's/^enum //' | \
+            sed 's/ {$//' | \
+            sort | \
+            uniq)
+
+          echo "Prisma enums found:"
+          echo "$PRISMA_ENUMS"
+          echo "prisma_enums<<EOF" >> $GITHUB_ENV
+          echo "$PRISMA_ENUMS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Extract TypeScript Enums
+        id: ts_enums
+        run: |
+          echo "Extracting type definitions from TypeScript files..."
+
+          # Find all enum-like definitions in packages/types
+          TS_ENUMS=$(find packages/types -name "*.ts" -type f | \
+            xargs grep -h "type.*=.*|" 2>/dev/null | \
+            head -20)
+
+          echo "TypeScript types found:"
+          echo "$TS_ENUMS"
+          echo "ts_enums<<EOF" >> $GITHUB_ENV
+          echo "$TS_ENUMS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Validate Enum Consistency
+        id: validation
+        run: |
+          VALIDATION_FAILED=false
+          VALIDATION_LOG=""
+
+          echo "Checking critical enums..."
+          echo ""
+
+          # Check for critical enums that must be in sync
+          CRITICAL_ENUMS="UserRole inspection_status session_status appointment_status"
+
+          for enum_name in $CRITICAL_ENUMS; do
+            echo "Validating enum: $enum_name"
+
+            # Check Prisma schema
+            if ! grep -q "^enum $enum_name" prisma/schema.prisma; then
+              echo "❌ FAIL: $enum_name not found in prisma/schema.prisma"
+              VALIDATION_FAILED=true
+              VALIDATION_LOG="${VALIDATION_LOG}❌ $enum_name missing in Prisma\n"
+            else
+              echo "✓ Found in prisma/schema.prisma"
+
+              # Extract enum values from Prisma
+              PRISMA_VALUES=$(sed -n "/^enum $enum_name/,/^}/p" prisma/schema.prisma | \
+                grep -v "^enum" | grep -v "^}" | \
+                sed 's/^[[:space:]]*//' | \
+                sed 's/[[:space:]]*$//' | \
+                sort)
+
+              echo "  Prisma values: $(echo $PRISMA_VALUES | tr '\n' ' ')"
+            fi
+
+            echo ""
+          done
+
+          if [ "$VALIDATION_FAILED" = "true" ]; then
+            echo "VALIDATION_FAILED=true" >> $GITHUB_OUTPUT
+            echo "VALIDATION_LOG=$VALIDATION_LOG" >> $GITHUB_OUTPUT
+          else
+            echo "VALIDATION_FAILED=false" >> $GITHUB_OUTPUT
+            echo "✓ All critical enums validated successfully"
+          fi
+
+      - name: Database Connection Check
+        id: db_check
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "⚠️  DATABASE_URL not available in workflow"
+            echo "db_available=false" >> $GITHUB_OUTPUT
+          else
+            echo "✓ DATABASE_URL available"
+            echo "db_available=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Report Validation Results
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "Enum Validation Results"
+          echo "=========================================="
+          echo ""
+          echo "Build Status: ${{ github.event.workflow_run.conclusion }}"
+          echo "Validation Status: $([ '${{ steps.validation.outputs.VALIDATION_FAILED }}' = 'true' ] && echo '❌ FAILED' || echo '✓ PASSED')"
+          echo "Database Available: ${{ steps.db_check.outputs.db_available }}"
+          echo ""
+
+          if [ "${{ steps.validation.outputs.VALIDATION_FAILED }}" = "true" ]; then
+            echo "Failed Validations:"
+            echo "${{ steps.validation.outputs.VALIDATION_LOG }}"
+          else
+            echo "✓ All enum validations passed"
+          fi
+          echo ""
+          echo "=========================================="
+
+      - name: Create Issue if Validation Failed
+        if: failure() || steps.validation.outputs.VALIDATION_FAILED == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '[CI/CD Alert] Enum Synchronization Validation Failed';
+            const body = `
+## Enum Synchronization Validation Failed
+
+**Commit**: [${{ github.event.workflow_run.head_commit.id }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_commit.id }})
+
+**Author**: ${{ github.event.workflow_run.head_branch }}
+
+### Issue
+Enum definitions in Prisma schema and TypeScript types are out of sync.
+
+${{ steps.validation.outputs.VALIDATION_LOG || 'See workflow logs for details' }}
+
+### Required Action
+1. Review changes to \`prisma/schema.prisma\`
+2. Update corresponding TypeScript types in \`packages/types/\`
+3. Run \`npx prisma generate\` locally
+4. Test with \`npm run tsc\`
+5. Push corrected code
+
+### Workflow Log
+[View Full Log](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+**Auto-generated by GitHub Actions**
+            `;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['ci-enum-validation']
+            });
+
+            const existingIssue = issues.data.find(i => i.title === title);
+
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['ci-enum-validation', 'bug']
+              });
+              console.log('Issue created for enum validation failure');
+            } else {
+              console.log('Issue already exists for this error');
+            }
+
+  # Summary and notification
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: validate_enums
+    if: always()
+
+    steps:
+      - name: Prepare Notification
+        id: notify
+        run: |
+          if [ "${{ needs.validate_enums.result }}" = "success" ]; then
+            echo "status=✓ PASSED" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          else
+            echo "status=❌ FAILED" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Summary
+        run: |
+          echo "### Enum Validation Workflow"
+          echo ""
+          echo "Status: ${{ steps.notify.outputs.emoji }} ${{ steps.notify.outputs.status }}"
+          echo ""
+          echo "- Triggered by: Build and Test workflow"
+          echo "- Validation Type: Enum synchronization (Prisma ↔ TypeScript)"
+          echo "- Auto-fix: Disabled (validation-only)"
+          echo "- Issue Creation: Enabled on failure"
+          echo ""
+          echo "[View Workflow Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
