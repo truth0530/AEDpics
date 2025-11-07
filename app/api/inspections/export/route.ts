@@ -6,22 +6,28 @@ import { logger } from '@/lib/logger';
 import { parseQueryParams } from '@/lib/utils/query-parser';
 import { resolveAccessScope } from '@/lib/auth/access-control';
 import { enforceFilterPolicy } from '@/lib/aed/filter-policy';
-import { mapCityCodeToGugun } from '@/lib/constants/regions';
+import { mapCityCodeToGugun, getNormalizedRegionLabel } from '@/lib/constants/regions';
 import { maskSensitiveData } from '@/lib/data/masking';
+import { buildEquipmentFilter } from '@/lib/auth/equipment-access';
 import { prisma } from '@/lib/prisma';
 import * as XLSX from 'xlsx';
 
 /**
  * POST /api/inspections/export
- * 점검 이력 데이터 Excel 다운로드
+ * 점검 이력 데이터 Excel 다운로드 (v5.3 - Equipment-Centric Pattern)
  *
- * v5.0 구현 사항:
+ * v5.3 Changes (Equipment-Centric Architecture):
+ * - buildEquipmentFilter 통합 (equipment-access.ts pattern)
+ * - WHERE clause 구성 표준화 (aed_data FK 기반 필터링)
+ * - 감사 로그 강화 (applied equipment filter 추적)
+ *
+ * v5.0 Implementation:
  * - Layer 1: can_export_data 플래그 검증
  * - Layer 2: Role-based 권한 검증
- * - Layer 3: maxResultLimit 강제 (lib/auth/access-control.ts 참고)
+ * - Layer 3: maxResultLimit 강제
  * - City_code → gugun 매핑 with 검증
- * - enforceFilterPolicy 적용
- * - 데이터 마스킹 (lib/data/masking.ts 참고)
+ * - enforceFilterPolicy 적용 (복잡한 필터 정책)
+ * - 데이터 마스킹 (lib/data/masking.ts)
  * - SheetJS (xlsx) 사용
  */
 export const POST = apiHandler(async (request: NextRequest) => {
@@ -255,35 +261,22 @@ export const POST = apiHandler(async (request: NextRequest) => {
       accessScope.permissions.maxResultLimit
     );
 
-    // Build WHERE clause from filters
-    const whereClause: any = {
-      AND: []
-    };
+    // Build equipment filter from validated filters (v5.3: equipment-centric pattern)
+    // buildEquipmentFilter converts validated region/city codes to Prisma WHERE clause
+    const equipmentFilter = buildEquipmentFilter({
+      regionCodes: filterResult.filters.regionCodes,
+      cityCodes: filterResult.filters.cityCodes,
+      userRole: userProfile.role
+    }, 'address');
 
-    // Region filter (sido)
-    if (filterResult.filters.regionCodes && filterResult.filters.regionCodes.length > 0) {
-      whereClause.AND.push({
-        aed_data: {
-          sido: {
-            in: filterResult.filters.regionCodes
-          }
-        }
-      });
-    }
-
-    // City filter (gugun)
-    if (filterResult.filters.cityCodes && filterResult.filters.cityCodes.length > 0) {
-      whereClause.AND.push({
-        aed_data: {
-          gugun: {
-            in: filterResult.filters.cityCodes
-          }
-        }
-      });
+    // Build WHERE clause for aed_data FK relationship
+    const whereClause: any = {};
+    if (Object.keys(equipmentFilter).length > 0) {
+      whereClause.aed_data = equipmentFilter;
     }
 
     let inspections = await prisma.inspections.findMany({
-      where: whereClause.AND.length > 0 ? whereClause : undefined,
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
         aed_data: true,
         user_profiles: {
