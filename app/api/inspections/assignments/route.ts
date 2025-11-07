@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
           scheduled_date: scheduledDate ? new Date(scheduledDate) : null,
           scheduled_time: scheduledTime ? new Date(`1970-01-01T${scheduledTime}`) : null,
           priority_level: priorityLevel,
-          notes: notes,
+          notes: notes || null,
           status: 'pending'
         },
         include: {
