@@ -460,6 +460,19 @@ export async function GET(request: NextRequest) {
     // === Step 2: 권한 범위 계산 (v5.2: equipment-centric pattern) ===
     const accessScope = resolveAccessScope(userProfile as any);
 
+    // === Step 2.5: Temporary Inspector 역할 게이트 ===
+    // temporary_inspector는 /api/inspections/assigned-devices 엔드포인트 전용
+    if (userProfile.role === 'temporary_inspector') {
+      logger.warn('InspectionAssignments:GET', 'temporary_inspector role not allowed', {
+        userId: session.user.id
+      });
+
+      return NextResponse.json(
+        { error: 'Use /api/inspections/assigned-devices endpoint instead' },
+        { status: 403 }
+      );
+    }
+
     // === Step 3: Equipment 접근 권한 검증 및 접근 가능한 equipment 목록 조회 ===
     // Master와 상위 관리자는 모든 할당 조회 가능, 그 외는 접근 가능한 equipment만 조회
     let accessibleEquipmentSerials: string[] | null = null;
@@ -668,6 +681,19 @@ export async function PATCH(request: NextRequest) {
     // === Step 3: 권한 범위 계산 (v5.2: equipment-centric pattern) ===
     const accessScope = resolveAccessScope(userProfile as any);
 
+    // === Step 3.5: Temporary Inspector 역할 게이트 ===
+    // temporary_inspector는 /api/inspections/assigned-devices 엔드포인트 전용
+    if (userProfile.role === 'temporary_inspector') {
+      logger.warn('InspectionAssignments:PATCH', 'temporary_inspector role not allowed', {
+        userId: session.user.id
+      });
+
+      return NextResponse.json(
+        { error: 'Use /api/inspections/assigned-devices endpoint instead' },
+        { status: 403 }
+      );
+    }
+
     // === Step 4: 할당 조회 (equipment access 검증용 필드 포함) ===
     // Note: aed_data relationship not explicitly defined in Prisma schema
     // Need to fetch aed_data separately using equipment_serial FK
@@ -869,6 +895,19 @@ export async function DELETE(request: NextRequest) {
       where: { id: session.user.id },
       select: { role: true }
     });
+
+    // === Step 2.5: Temporary Inspector 역할 게이트 ===
+    // temporary_inspector는 /api/inspections/assigned-devices 엔드포인트 전용
+    if (userProfile?.role === 'temporary_inspector') {
+      logger.warn('InspectionAssignments:DELETE', 'temporary_inspector role not allowed', {
+        userId: session.user.id
+      });
+
+      return NextResponse.json(
+        { error: 'Use /api/inspections/assigned-devices endpoint instead' },
+        { status: 403 }
+      );
+    }
 
     // 할당 조회 (권한 확인용)
     const assignment = await prisma.inspection_assignments.findUnique({

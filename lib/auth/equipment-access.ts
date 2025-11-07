@@ -24,8 +24,8 @@ import { logger } from '@/lib/logger';
  */
 export interface AccessScope {
   userRole?: UserRole;
-  regionCodes?: string[] | null;      // null = 전국, [] = 제한 없음, ['SEO', 'DAE'] = 특정 지역
-  cityCodes?: string[] | null;        // null = 전체 시군구, [] = 제한 없음, ['종로구', '중구'] = 특정 시군구
+  regionCodes?: string[] | null;      // null = 전국, [] = 접근차단, ['SEO', 'DAE'] = 특정 지역
+  cityCodes?: string[] | null;        // null = 전체 시군구, [] = 접근차단, ['종로구', '중구'] = 특정 시군구
   allowedRegionCodes?: string[] | null;  // UserAccessScope field name
   allowedCityCodes?: string[] | null;    // UserAccessScope field name
   jurisdictionCodes?: string[] | null;   // 관할보건소 기준 (선택)
