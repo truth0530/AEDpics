@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
+import { REGION_CODE_TO_DB_LABELS } from '@/lib/constants/regions';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -105,35 +106,14 @@ export const GET = apiHandler(async (request: NextRequest) => {
       });
     } else {
       // 주소 기준 필터링 (기본값): 물리적 위치가 해당 시도/시군구인 AED
-      if (regionCode) {
-        // 시도 코드 매핑 (예: DAE -> 대구광역시)
-        // 검증 결과 (2025-11-07): 실제 데이터베이스의 region_code 값과 일치하도록 수정
-        // 주의: KR (보건복지부/중앙)은 필터를 적용하지 않음 (전국 권한이므로 else if에서 이미 처리)
-        const sidoMap: Record<string, string> = {
-          'SEO': '서울특별시',      // 수정: SEL -> SEO (중앙응급의료센터 코드)
-          'BUS': '부산광역시',
-          'DAE': '대구광역시',
-          'INC': '인천광역시',
-          'GWA': '광주광역시',
-          'DAJ': '대전광역시',
-          'ULS': '울산광역시',
-          'SEJ': '세종특별자치시',
-          'GYE': '경기도',           // 수정: GYG -> GYE (경기도 정확한 코드)
-          'GAN': '강원도',
-          'CHB': '충청북도',
-          'CHN': '충청남도',
-          'JEB': '전라북도',
-          'JEN': '전라남도',
-          'GYB': '경상북도',
-          'GYN': '경상남도',
-          'JEJ': '제주특별자치도'
-        };
-
-        // KR (보건복지부)는 전국 권한이므로 필터를 적용하지 않음
-        // CBN은 청주시 조직명이지만 실제 sido는 충청북도(CHB)이므로 맵에 포함하지 않음
-        const sido = sidoMap[regionCode];
-        if (sido && regionCode !== 'KR') {
-          aedFilter.sido = sido;
+      if (regionCode && regionCode !== 'KR') {
+        // 중앙 관리 시스템에서 지역명 조회
+        // REGION_CODE_TO_DB_LABELS는 각 지역코드에 대한 모든 유효한 데이터베이스 라벨을 포함
+        // 예: 'DAE': ['대구광역시', '대구'] - 데이터베이스가 어떤 형식으로 저장했든 모두 매칭됨
+        const validSidoLabels = REGION_CODE_TO_DB_LABELS[regionCode];
+        if (validSidoLabels && validSidoLabels.length > 0) {
+          // OR 필터를 사용하여 유효한 형식 중 하나와 일치하는 AED를 모두 조회
+          aedFilter.sido = { in: validSidoLabels };
         }
 
         // 시군구 필터링
