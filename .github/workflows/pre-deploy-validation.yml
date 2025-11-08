@@ -66,17 +66,20 @@ jobs:
           for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
             echo "Checking for pattern: $pattern"
 
-            # lib/constants/regions.ts와 seed/tutorial 파일은 제외
-            if grep -r "$pattern" \
-              --include="*.ts" \
-              --include="*.tsx" \
-              --exclude-dir=node_modules \
-              --exclude-dir=.next \
-              --exclude-dir=dist \
-              --exclude="regions.ts" \
-              app/ components/ lib/ 2>/dev/null | \
-              grep -v -E "(seed-organizations|tutorial-guide)"; then
+            # lib/constants/regions.ts, seed-organizations, tutorial-guide 제외
+            MATCHES=$(find app/ components/ lib/ \
+              -name "*.ts" -o -name "*.tsx" \
+              | grep -v node_modules \
+              | grep -v ".next" \
+              | grep -v dist \
+              | grep -v regions.ts \
+              | grep -v seed-organizations \
+              | grep -v tutorial-guide \
+              | xargs grep -l "$pattern" 2>/dev/null)
 
+            if [ ! -z "$MATCHES" ]; then
+              echo "Found matches:"
+              echo "$MATCHES"
               echo "::warning::Found hardcoded mapping: $pattern"
               FOUND_ISSUES=true
             fi
