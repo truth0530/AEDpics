@@ -54,7 +54,19 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
       if (!assignmentResponse.ok) {
         const assignmentError = await assignmentResponse.json().catch(() => ({}));
         console.error('[QuickInspectPanel] Assignment failed:', assignmentError);
-        // 할당 실패는 경고만 하고 계속 진행 (이미 할당되어 있을 수 있음)
+
+        // 할당 실패 시 명확한 오류 메시지 표시하고 중단
+        if (assignmentError.error) {
+          if (assignmentError.error.includes('permission')) {
+            throw new Error('이 장비에 대한 접근 권한이 없습니다. 관리자에게 문의하세요.');
+          } else if (assignmentError.error.includes('not found')) {
+            throw new Error('장비를 찾을 수 없습니다.');
+          } else {
+            throw new Error(assignmentError.error);
+          }
+        }
+        // 할당 실패하면 세션 생성도 시도하지 않음
+        throw new Error('장비 할당에 실패했습니다. 관리자에게 문의하세요.');
       } else {
         const assignmentData = await assignmentResponse.json().catch(() => ({}));
         if (assignmentData.alreadyAssigned) {

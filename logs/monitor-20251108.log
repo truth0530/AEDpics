@@ -1,0 +1,362 @@
+
+> monitor:inspection-system
+> npx tsx scripts/monitor-inspection-system.ts
+
+[dotenv@17.2.2] injecting env (0) from .env.local -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+
+[36m========================================[0m
+[36m     점검 시스템 모니터링 보고서[0m
+[36m     2025. 11. 8. 오후 3:15:50[0m
+[36m========================================[0m
+
+[34m📊 시스템 통계[0m
+[37m----------------------------------------[0m
+  전체 사용자: 46명
+  활성 사용자: 45명
+  임시점검원: 8명
+  AED 장비: 81,464대
+  전체 할당: 132건
+  대기중 할당: 28건
+  완료된 점검: 34건
+
+[34m👤 임시점검원 상태 점검[0m
+[37m----------------------------------------[0m
+  ⚠️ [33m안은규(경산보건소) (mentalchange@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m이광성중구 (shout530@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m김시하 (aeri6@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m이경진(네이버) (vkarmav@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m유미경 (db931210@gmail.com): 할당된 장비 없음[0m
+  ⚠️ [33m반서윤 (nmcxom@gmail.com): 할당된 장비 없음[0m
+  ⚠️ [33m이광성중구점검2 (truth0530@kakao.com): 할당된 장비 없음[0m
+  ⚠️ [33m김강수 (fall0788@naver.com): 할당된 장비 없음[0m
+
+[34m👥 팀 멤버 상태 점검[0m
+[37m----------------------------------------[0m
+  ⚠️ [33m대구광역시 수성구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 서구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m인천광역시 남동구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 북구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 중구 보건소: 활성 사용자 4명, 팀 멤버 0명[0m
+  ⚠️ [33m부산광역시 북구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 달서구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m충청북도 충주시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m충청남도 계룡시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m경산시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m김해시 보건소: 활성 사용자 2명, 팀 멤버 0명[0m
+  ⚠️ [33m서귀포시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m제주시 보건소: 활성 사용자 2명, 팀 멤버 0명[0m
+
+[34m📦 레거시 데이터 점검[0m
+[37m----------------------------------------[0m
+  ⚠️ [33m최근 3개월 점검 중 11건이 assignment 테이블에 없습니다[0m
+
+[34m🗺️ 지역 권한 일관성 점검[0m
+[37m----------------------------------------[0m
+[31m❌ 모니터링 중 오류 발생:[0m PrismaClientValidationError: 
+Invalid `prisma.user_profiles.findMany()` invocation in
+/Users/kwangsunglee/Projects/AEDpics/scripts/monitor-inspection-system.ts:199:56
+
+  196 console.log(`\n${colors.blue}🗺️ 지역 권한 일관성 점검${colors.reset}`);
+  197 console.log(`${colors.white}----------------------------------------${colors.reset}`);
+  198 
+→ 199 const usersWithRegion = await prisma.user_profiles.findMany({
+        where: {
+          is_active: true,
+          role: {
+            in: [
+              "local_admin",
+              "temporary_inspector"
+            ]
+          }
+        },
+        select: {
+          id: true,
+          full_name: true,
+          region: true,
+          district: true,
+          region_code: true,
+          city_code: true,
+          ~~~~~~~~~
+          organizations: {
+            select: {
+              name: true,
+              region_code: true,
+              city_code: true
+            }
+          },
+      ?   email?: true,
+      ?   phone?: true,
+      ?   organization_id?: true,
+      ?   role?: true,
+      ?   is_active?: true,
+      ?   approved_by?: true,
+      ?   approved_at?: true,
+      ?   organization_name?: true,
+      ?   remarks?: true,
+      ?   department?: true,
+      ?   position?: true,
+      ?   can_approve_users?: true,
+      ?   can_manage_devices?: true,
+      ?   can_view_reports?: true,
+      ?   can_export_data?: true,
+      ?   last_login_at?: true,
+      ?   account_locked?: true,
+      ?   lock_reason?: true,
+      ?   created_at?: true,
+      ?   updated_at?: true,
+      ?   password_hash?: true,
+      ?   employee_id?: true,
+      ?   permission_scope?: true,
+      ?   approval_notes?: true,
+      ?   rejected_reason?: true,
+      ?   rejection_count?: true,
+      ?   login_count?: true,
+      ?   password_changed_at?: true,
+      ?   must_change_password?: true,
+      ?   email_notifications?: true,
+      ?   sms_notifications?: true,
+      ?   notification_email?: true,
+      ?   notification_phone?: true,
+      ?   account_type?: true,
+      ?   assigned_devices?: true,
+      ?   accounts?: true,
+      ?   audit_logs?: true,
+      ?   inspection_assignments_inspection_assignments_assigned_byTouser_profiles?: true,
+      ?   inspection_assignments_inspection_assignments_assigned_toTouser_profiles?: true,
+      ?   inspection_schedule_entries?: true,
+      ?   inspection_schedules?: true,
+      ?   inspection_sessions?: true,
+      ?   inspections?: true,
+      ?   login_history?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_confirmed_by_2024Touser_profiles?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_confirmed_by_2025Touser_profiles?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_modified_by_2024Touser_profiles?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_modified_by_2025Touser_profiles?: true,
+      ?   notifications_notifications_recipient_idTouser_profiles?: true,
+      ?   notifications_notifications_sender_idTouser_profiles?: true,
+      ?   sessions?: true,
+      ?   target_list_devices_target_list_devices_matched_byTouser_profiles?: true,
+      ?   target_list_devices_target_list_devices_verified_byTouser_profiles?: true,
+      ?   task_assignments?: true,
+      ?   team_activity_logs?: true,
+      ?   team_members_team_members_added_byTouser_profiles?: true,
+      ?   team_members_team_members_user_profile_idTouser_profiles?: true,
+      ?   team_permissions?: true,
+      ?   user_profiles?: true,
+      ?   other_user_profiles?: true,
+      ?   approval_notifications_sent?: true,
+      ?   approval_notifications_received?: true,
+      ?   notification_settings?: true,
+      ?   push_subscriptions?: true,
+      ?   organization_change_requests_as_user?: true,
+      ?   organization_change_requests_as_reviewer?: true,
+      ?   _count?: true
+        }
+      })
+
+Unknown field `city_code` for select statement on model `user_profiles`. Available options are marked with ?.
+    at throwValidationException (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+    at ei.handleRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async monitorInspectionSystem (/Users/kwangsunglee/Projects/AEDpics/scripts/monitor-inspection-system.ts:199:29) {
+  clientVersion: '6.18.0'
+}
+PrismaClientValidationError: 
+Invalid `prisma.user_profiles.findMany()` invocation in
+/Users/kwangsunglee/Projects/AEDpics/scripts/monitor-inspection-system.ts:199:56
+
+  196 console.log(`\n${colors.blue}🗺️ 지역 권한 일관성 점검${colors.reset}`);
+  197 console.log(`${colors.white}----------------------------------------${colors.reset}`);
+  198 
+→ 199 const usersWithRegion = await prisma.user_profiles.findMany({
+        where: {
+          is_active: true,
+          role: {
+            in: [
+              "local_admin",
+              "temporary_inspector"
+            ]
+          }
+        },
+        select: {
+          id: true,
+          full_name: true,
+          region: true,
+          district: true,
+          region_code: true,
+          city_code: true,
+          ~~~~~~~~~
+          organizations: {
+            select: {
+              name: true,
+              region_code: true,
+              city_code: true
+            }
+          },
+      ?   email?: true,
+      ?   phone?: true,
+      ?   organization_id?: true,
+      ?   role?: true,
+      ?   is_active?: true,
+      ?   approved_by?: true,
+      ?   approved_at?: true,
+      ?   organization_name?: true,
+      ?   remarks?: true,
+      ?   department?: true,
+      ?   position?: true,
+      ?   can_approve_users?: true,
+      ?   can_manage_devices?: true,
+      ?   can_view_reports?: true,
+      ?   can_export_data?: true,
+      ?   last_login_at?: true,
+      ?   account_locked?: true,
+      ?   lock_reason?: true,
+      ?   created_at?: true,
+      ?   updated_at?: true,
+      ?   password_hash?: true,
+      ?   employee_id?: true,
+      ?   permission_scope?: true,
+      ?   approval_notes?: true,
+      ?   rejected_reason?: true,
+      ?   rejection_count?: true,
+      ?   login_count?: true,
+      ?   password_changed_at?: true,
+      ?   must_change_password?: true,
+      ?   email_notifications?: true,
+      ?   sms_notifications?: true,
+      ?   notification_email?: true,
+      ?   notification_phone?: true,
+      ?   account_type?: true,
+      ?   assigned_devices?: true,
+      ?   accounts?: true,
+      ?   audit_logs?: true,
+      ?   inspection_assignments_inspection_assignments_assigned_byTouser_profiles?: true,
+      ?   inspection_assignments_inspection_assignments_assigned_toTouser_profiles?: true,
+      ?   inspection_schedule_entries?: true,
+      ?   inspection_schedules?: true,
+      ?   inspection_sessions?: true,
+      ?   inspections?: true,
+      ?   login_history?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_confirmed_by_2024Touser_profiles?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_confirmed_by_2025Touser_profiles?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_modified_by_2024Touser_profiles?: true,
+      ?   management_number_group_mapping_management_number_group_mapping_modified_by_2025Touser_profiles?: true,
+      ?   notifications_notifications_recipient_idTouser_profiles?: true,
+      ?   notifications_notifications_sender_idTouser_profiles?: true,
+      ?   sessions?: true,
+      ?   target_list_devices_target_list_devices_matched_byTouser_profiles?: true,
+      ?   target_list_devices_target_list_devices_verified_byTouser_profiles?: true,
+      ?   task_assignments?: true,
+      ?   team_activity_logs?: true,
+      ?   team_members_team_members_added_byTouser_profiles?: true,
+      ?   team_members_team_members_user_profile_idTouser_profiles?: true,
+      ?   team_permissions?: true,
+      ?   user_profiles?: true,
+      ?   other_user_profiles?: true,
+      ?   approval_notifications_sent?: true,
+      ?   approval_notifications_received?: true,
+      ?   notification_settings?: true,
+      ?   push_subscriptions?: true,
+      ?   organization_change_requests_as_user?: true,
+      ?   organization_change_requests_as_reviewer?: true,
+      ?   _count?: true
+        }
+      })
+
+Unknown field `city_code` for select statement on model `user_profiles`. Available options are marked with ?.
+    at throwValidationException (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+    at ei.handleRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async monitorInspectionSystem (/Users/kwangsunglee/Projects/AEDpics/scripts/monitor-inspection-system.ts:199:29) {
+  clientVersion: '6.18.0'
+}
+
+> monitor:inspection-system
+> npx tsx scripts/monitor-inspection-system.ts
+
+[dotenv@17.2.2] injecting env (0) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[36m========================================[0m
+[36m     점검 시스템 모니터링 보고서[0m
+[36m     2025. 11. 8. 오후 3:17:16[0m
+[36m========================================[0m
+
+[34m📊 시스템 통계[0m
+[37m----------------------------------------[0m
+  전체 사용자: 46명
+  활성 사용자: 45명
+  임시점검원: 8명
+  AED 장비: 81,464대
+  전체 할당: 132건
+  대기중 할당: 28건
+  완료된 점검: 34건
+
+[34m👤 임시점검원 상태 점검[0m
+[37m----------------------------------------[0m
+  ⚠️ [33m안은규(경산보건소) (mentalchange@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m이광성중구 (shout530@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m김시하 (aeri6@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m이경진(네이버) (vkarmav@naver.com): 할당된 장비 없음[0m
+  ⚠️ [33m유미경 (db931210@gmail.com): 할당된 장비 없음[0m
+  ⚠️ [33m반서윤 (nmcxom@gmail.com): 할당된 장비 없음[0m
+  ⚠️ [33m이광성중구점검2 (truth0530@kakao.com): 할당된 장비 없음[0m
+  ⚠️ [33m김강수 (fall0788@naver.com): 할당된 장비 없음[0m
+
+[34m👥 팀 멤버 상태 점검[0m
+[37m----------------------------------------[0m
+  ⚠️ [33m대구광역시 수성구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 서구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m인천광역시 남동구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 북구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 중구 보건소: 활성 사용자 4명, 팀 멤버 0명[0m
+  ⚠️ [33m부산광역시 북구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m대구광역시 달서구 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m충청북도 충주시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m충청남도 계룡시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m경산시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m김해시 보건소: 활성 사용자 2명, 팀 멤버 0명[0m
+  ⚠️ [33m서귀포시 보건소: 활성 사용자 1명, 팀 멤버 0명[0m
+  ⚠️ [33m제주시 보건소: 활성 사용자 2명, 팀 멤버 0명[0m
+
+[34m📦 레거시 데이터 점검[0m
+[37m----------------------------------------[0m
+  ⚠️ [33m최근 3개월 점검 중 11건이 assignment 테이블에 없습니다[0m
+
+[34m🗺️ 지역 권한 일관성 점검[0m
+[37m----------------------------------------[0m
+
+[34m⚠️ 최근 문제 패턴[0m
+[37m----------------------------------------[0m
+  ⚠️ [33m최근 24시간 내 1건의 중복 할당 발생[0m
+
+[34m📋 문제점 요약 및 권고사항[0m
+[37m========================================[0m
+
+[31m🚨 치명적 문제 (1건)[0m
+  • [임시점검원] 8명의 임시점검원이 장비를 할당받지 못했습니다
+    → 해결: [36mnpm run emergency:assign-inspectors[0m
+
+[33m⚠️ 경고 사항 (3건)[0m
+  • [팀 관리] 13개 조직의 팀 멤버가 비어있습니다
+    → 권장: [36mnpm run sync:team-members[0m
+  • [데이터 일관성] 11건의 점검이 assignment와 매칭되지 않습니다
+    → 권장: [36mnpm run migrate:legacy-inspections[0m
+  • [중복 데이터] 최근 24시간 내 1건의 중복 할당이 발생했습니다
+    → 권장: [36m409 에러 처리 로직 점검 필요[0m
+
+[34m🛠️ 사용 가능한 복구 명령어[0m
+[37m----------------------------------------[0m
+  • npm run emergency:assign-inspectors  - 임시점검원 긴급 장비 할당
+  • npm run sync:team-members            - 팀 멤버 동기화
+  • npm run migrate:legacy-inspections   - 레거시 점검 데이터 마이그레이션
+  • npm run normalize:region-codes       - 지역 코드 정규화
+  • npm run monitor:inspection-system    - 이 모니터링 보고서 재실행
+
+[36m========================================[0m
+[36m          모니터링 완료[0m
+[36m========================================[0m
+

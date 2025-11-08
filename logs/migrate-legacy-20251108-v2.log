@@ -1,0 +1,19 @@
+
+> migrate:legacy-inspections
+> npx tsx scripts/migrate-legacy-inspections.ts
+
+[dotenv@17.2.2] injecting env (0) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+🔄 레거시 점검 데이터 마이그레이션 시작...
+
+📊 마이그레이션 대상: 34개 점검 기록
+
+
+📊 마이그레이션 결과:
+   ✅ 생성: 14개
+   ⏭️ 건너뜀 (중복): 20개
+   ❌ 실패: 0개
+   📋 전체: 34개
+
+📈 전체 완료된 할당: 32개
+
+✅ 마이그레이션 완료

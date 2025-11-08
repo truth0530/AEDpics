@@ -42,6 +42,15 @@
     "fix:city-codes": "npx tsx scripts/fix-invalid-city-codes.ts",
     "fix:region-codes": "npx tsx scripts/fix-region-code-mismatch.ts -- --fix",
     "check:region-codes": "npx tsx scripts/fix-region-code-mismatch.ts",
+    "emergency:assign-inspectors": "npx tsx scripts/emergency-assign-inspectors.ts",
+    "sync:team-members": "npx tsx scripts/sync-team-members.ts",
+    "monitor:inspection-system": "npx tsx scripts/monitor-inspection-system.ts",
+    "migrate:legacy-inspections": "npx tsx scripts/migrate-legacy-inspections.ts",
+    "normalize:region-codes": "npx tsx scripts/normalize-region-codes.ts",
+    "backfill:district": "npx tsx scripts/backfill-district.ts",
+    "fix:orphan-inspectors": "npx tsx scripts/fix-orphan-inspectors.ts",
+    "fix:incomplete-inspections": "npx tsx scripts/fix-incomplete-inspections.ts",
+    "check:legacy-data": "npx tsx scripts/check-legacy-data.ts",
     "prepare": "husky || true"
   },
   "dependencies": {

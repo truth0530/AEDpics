@@ -93,7 +93,6 @@ export default function AdminUsersPage() {
   const [orgSearchResults, setOrgSearchResults] = useState<any[]>([]);
   const [rejectReason, setRejectReason] = useState('');
   const [showApproveModal, setShowApproveModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
 
   const router = useRouter();
@@ -168,7 +167,6 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       setShowApproveModal(false);
-      setShowEditModal(false);
       setSelectedUser(null);
       // 페이지 전체 리프레시하여 서버 컴포넌트 재렌더링 (배지 업데이트)
       router.refresh();
@@ -218,15 +216,6 @@ export default function AdminUsersPage() {
     setShowApproveModal(true);
   };
 
-  const handleEdit = (user: UserProfile) => {
-    setSelectedUser(user);
-    setApprovalRole(user.role);
-    setApprovalRegionCode(user.region_code || '');
-    setApprovalOrgId(user.organization_id || '');
-    setOrgSearchQuery(user.organizations?.name || '');
-    setOrgSearchResults([]);
-    setShowEditModal(true);
-  };
 
   const handleReject = (user: UserProfile) => {
     setSelectedUser(user);
@@ -455,7 +444,7 @@ export default function AdminUsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleEdit(user)}
+                              onClick={() => router.push(`/admin/users/edit/${user.id}`)}
                               className="h-7 px-2 text-xs border-gray-700 text-gray-300 hover:bg-gray-800"
                             >
                               <Edit className="w-3 h-3 mr-1" />
@@ -494,18 +483,15 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* 승인/수정 모달 */}
-      <Dialog open={showApproveModal || showEditModal} onOpenChange={(open) => {
-        setShowApproveModal(open);
-        setShowEditModal(open);
-      }}>
+      {/* 승인 모달 */}
+      <Dialog open={showApproveModal} onOpenChange={setShowApproveModal}>
         <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg">
-              {showApproveModal ? '사용자 승인' : '사용자 정보 수정'}
+              사용자 승인
             </DialogTitle>
             <DialogDescription className="text-gray-400 text-sm">
-              역할과 소속 정보를 확인하고 {showApproveModal ? '승인' : '수정'}합니다
+              역할과 소속 정보를 확인하고 승인합니다
             </DialogDescription>
           </DialogHeader>
 
@@ -620,10 +606,7 @@ export default function AdminUsersPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                setShowApproveModal(false);
-                setShowEditModal(false);
-              }}
+              onClick={() => setShowApproveModal(false)}
               disabled={approveMutation.isPending}
               className="h-8 text-xs border-gray-700 text-gray-300 hover:bg-gray-800"
             >
@@ -636,7 +619,7 @@ export default function AdminUsersPage() {
               className="h-8 text-xs bg-green-600 hover:bg-green-700"
             >
               <CheckCircle className="w-3 h-3 mr-1" />
-              {approveMutation.isPending ? '처리 중...' : (showApproveModal ? '승인' : '수정')}
+              {approveMutation.isPending ? '처리 중...' : '승인'}
             </Button>
           </DialogFooter>
         </DialogContent>

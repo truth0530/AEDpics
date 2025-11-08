@@ -127,12 +127,37 @@ export default function ImprovedSignUpPage() {
       return;
     }
 
-    // 이메일 도메인별 조직 필터링 함수 사용
-    const emailToUse = verifiedEmail || email;
-    if (emailToUse) {
-      const organizations = getOrganizationsByEmailDomain(emailToUse, formData.region);
-      setDynamicOrganizations(organizations);
-    }
+    const fetchOrganizations = async () => {
+      const emailToUse = verifiedEmail || email;
+      if (!emailToUse) return;
+
+      const domain = emailToUse.split('@')[1];
+
+      // 임시 점검원(일반 이메일)인 경우 local_admin이 있는 조직만 가져오기
+      if (domain !== 'korea.kr' && domain !== 'nmc.or.kr') {
+        try {
+          const response = await fetch(`/api/organizations/with-admin?region=${encodeURIComponent(formData.region)}`);
+          if (response.ok) {
+            const data = await response.json();
+            const orgNames = data.organizations.map((org: any) =>
+              org.adminCount > 0 ? org.name : `${org.name} ⚠️ (담당자 없음)`
+            );
+            setDynamicOrganizations(orgNames);
+          }
+        } catch (error) {
+          console.error('Failed to fetch organizations with admin:', error);
+          // 폴백으로 기존 방식 사용
+          const organizations = getOrganizationsByEmailDomain(emailToUse, formData.region);
+          setDynamicOrganizations(organizations);
+        }
+      } else {
+        // korea.kr 또는 nmc.or.kr은 기존 방식 유지
+        const organizations = getOrganizationsByEmailDomain(emailToUse, formData.region);
+        setDynamicOrganizations(organizations);
+      }
+    };
+
+    fetchOrganizations();
   }, [formData.region, verifiedEmail, email]);
 
   // 실시간 이메일 중복 체크
@@ -1106,6 +1131,27 @@ export default function ImprovedSignUpPage() {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     소속기관 <span className="text-red-400">*</span>
                   </label>
+
+                  {/* 임시 점검원 경고 메시지 */}
+                  {(() => {
+                    const emailDomain = (verifiedEmail || email).split('@')[1];
+                    if (emailDomain !== 'korea.kr' && emailDomain !== 'nmc.or.kr' && formData.region) {
+                      return (
+                        <div className="mb-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                          <p className="text-yellow-400 text-xs font-medium mb-1">
+                            ⚠️ 임시 점검원 소속 제한 안내
+                          </p>
+                          <ul className="text-gray-400 text-xs space-y-0.5">
+                            <li>• 담당자(local_admin)가 있는 보건소만 선택 가능</li>
+                            <li>• 담당자가 없으면 장비 할당이 불가능합니다</li>
+                            <li>• 목록에 원하는 보건소가 없다면 해당 보건소에 담당자 등록을 요청하세요</li>
+                          </ul>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   <OrganizationAutocomplete
                     value={formData.organizationName || ''}
                     onChange={(value) => setFormData({ ...formData, organizationName: value })}

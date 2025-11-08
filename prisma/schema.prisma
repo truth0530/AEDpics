@@ -274,15 +274,22 @@ model inspections {
   original_data                Json?
   registered_data              Json?
   inspected_data               Json?
+  approval_status              inspection_approval_status?    @default(submitted)
+  approved_by_id               String?                        @db.Uuid
+  approved_at                  DateTime?                      @db.Timestamptz(6)
+  rejection_reason             String?
   created_at                   DateTime?                      @default(now()) @db.Timestamptz(6)
   updated_at                   DateTime?                      @default(now()) @updatedAt @db.Timestamptz(6)
   completed_at                 DateTime?                      @db.Timestamptz(6)
   aed_data                     aed_data?                      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
   user_profiles                user_profiles?                 @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
+  approved_by                  user_profiles?                 @relation("InspectionApprovedBy", fields: [approved_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_approved_by_id_fkey")
   inspection_field_comparisons inspection_field_comparisons[]
 
   @@index([equipment_serial], map: "idx_inspections_equipment_serial")
   @@index([inspector_id], map: "idx_inspections_inspector_id")
+  @@index([approval_status], map: "idx_inspections_approval_status")
+  @@index([approved_by_id], map: "idx_inspections_approved_by_id")
 }
 
 model inspection_field_comparisons {
@@ -680,6 +687,7 @@ model user_profiles {
   inspection_schedules                                                                             inspection_schedules[]
   inspection_sessions                                                                              inspection_sessions[]
   inspections                                                                                      inspections[]                     @relation("InspectionToInspector")
+  inspections_approved_by                                                                          inspections[]                     @relation("InspectionApprovedBy")
   login_history                                                                                    login_history[]
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2024Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2024Touser_profiles")
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2025Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2025Touser_profiles")
@@ -788,6 +796,13 @@ enum indicator_status {
   blinking
   off
   not_checked
+}
+
+enum inspection_approval_status {
+  submitted
+  pending
+  approved
+  rejected
 }
 
 enum inspection_type {

@@ -103,10 +103,66 @@ export async function POST(request: NextRequest) {
     // 지역 정보 자동 완성
     const autocompletedInfo = autocompleteRegionInfo(organizationInfo)
 
-    // 8. 비밀번호 해싱 (bcrypt, salt rounds 10)
+    // 8. 임시점검원 조직 검증 (local_admin이 있는지 확인)
+    const emailDomain = email.split('@')[1];
+    const isTemporaryInspector = emailDomain !== 'korea.kr' && emailDomain !== 'nmc.or.kr';
+
+    if (isTemporaryInspector && profileData.organizationId) {
+      // 해당 조직에 local_admin이 있는지 확인
+      const organization = await prisma.organizations.findFirst({
+        where: {
+          id: profileData.organizationId
+        },
+        include: {
+          user_profiles: {
+            where: {
+              role: 'local_admin',
+              is_active: true
+            }
+          }
+        }
+      });
+
+      if (!organization) {
+        return NextResponse.json(
+          { success: false, error: '선택한 조직을 찾을 수 없습니다' },
+          { status: 400 }
+        );
+      }
+
+      if (organization.user_profiles.length === 0) {
+        // 관리자에게 알림 발송
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/notify-orphan-inspector`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              inspectorEmail: email,
+              inspectorName: profileData.fullName || profileData.full_name,
+              organizationName: organization.name,
+              region: profileData.region,
+              issue: '담당자(local_admin)가 없는 조직에 가입 시도'
+            })
+          });
+        } catch (notifyError) {
+          console.error('관리자 알림 실패:', notifyError);
+          // 알림 실패해도 가입 거부는 계속 진행
+        }
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: '선택한 조직에 담당자(local_admin)가 없습니다. 담당자가 있는 조직을 선택하거나 해당 조직에 담당자 등록을 요청하세요.'
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 9. 비밀번호 해싱 (bcrypt, salt rounds 10)
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // 9. 사용자 프로필 생성
+    // 10. 사용자 프로필 생성
     const user = await prisma.user_profiles.create({
       data: {
         id: randomUUID(),

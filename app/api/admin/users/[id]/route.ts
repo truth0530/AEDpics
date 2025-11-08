@@ -1,49 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
-import { requireAuthWithProfile, isErrorResponse } from '@/lib/auth/session-helpers';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { syncUserToTeam } from '@/lib/auth/team-sync';
 
-/**
- * GET /api/admin/users/[id]
- * 단일 사용자 조회 (관리자용)
- */
+// GET: 특정 사용자 정보 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Next.js 15: params는 Promise
-    const { id } = await params;
-
-    // 인증 및 프로필 조회
-    const authResult = await requireAuthWithProfile();
-
-    if (isErrorResponse(authResult)) {
-      return authResult;
+    // 세션 확인
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { profile: userProfile } = authResult;
+    // 관리자 권한 확인
+    const currentUser = await prisma.user_profiles.findUnique({
+      where: { email: session.user.email }
+    });
 
-    // 권한 확인 (LIST_USERS 또는 APPROVE_USERS 권한 필요)
-    if (!checkPermission(userProfile.role, 'LIST_USERS') &&
-        !checkPermission(userProfile.role, 'APPROVE_USERS')) {
+    if (!currentUser || !['master', 'regional_admin', 'local_admin'].includes(currentUser.role)) {
       return NextResponse.json(
-        { error: getPermissionError('LIST_USERS') },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
 
     // 사용자 조회
     const user = await prisma.user_profiles.findUnique({
-      where: { id },
+      where: { id: params.id },
       include: {
         organizations: {
           select: {
             id: true,
             name: true,
-            type: true,
             region_code: true,
-            city_code: true,
+            city_code: true
           }
         }
       }
@@ -51,16 +48,14 @@ export async function GET(
 
     if (!user) {
       return NextResponse.json(
-        { error: '사용자를 찾을 수 없습니다.' },
+        { error: 'User not found' },
         { status: 404 }
       );
     }
 
-    // 응답 반환
-    return NextResponse.json(user);
-
+    return NextResponse.json({ user });
   } catch (error) {
-    console.error(`[GET /api/admin/users/[id]] Error:`, error);
+    console.error('Failed to fetch user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -68,91 +63,114 @@ export async function GET(
   }
 }
 
-/**
- * PATCH /api/admin/users/[id]
- * 사용자 정보 수정 (관리자용)
- */
+// PATCH: 사용자 정보 수정
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Next.js 15: params는 Promise
-    const { id } = await params;
-
-    // 인증 및 프로필 조회
-    const authResult = await requireAuthWithProfile();
-
-    if (isErrorResponse(authResult)) {
-      return authResult;
+    // 세션 확인
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { profile: userProfile } = authResult;
+    // 관리자 권한 확인
+    const currentUser = await prisma.user_profiles.findUnique({
+      where: { email: session.user.email }
+    });
 
-    // 권한 확인 (사용자 승인 권한이 있어야 정보 수정 가능)
-    if (!checkPermission(userProfile.role, 'APPROVE_USERS')) {
+    if (!currentUser || !['master', 'regional_admin', 'local_admin'].includes(currentUser.role)) {
       return NextResponse.json(
-        { error: getPermissionError('APPROVE_USERS') },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
 
     // 요청 데이터 파싱
-    const body = await request.json();
-    const { role, region_code, organization_id, ...otherFields } = body;
+    const updateData = await request.json();
+    const {
+      role,
+      region,
+      district,
+      region_code,
+      organization_id,
+      organization_name,
+      is_active
+    } = updateData;
 
-    // 기존 사용자 조회
-    const existingUser = await prisma.user_profiles.findUnique({
-      where: { id }
-    });
-
-    if (!existingUser) {
-      return NextResponse.json(
-        { error: '사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
-    }
-
-    // 업데이트할 데이터 구성
-    const updateData: any = { ...otherFields };
-
-    if (role !== undefined) {
-      updateData.role = role;
-    }
-
-    if (region_code !== undefined) {
-      updateData.region_code = region_code;
-    }
-
-    if (organization_id !== undefined) {
-      updateData.organization_id = organization_id;
-    }
-
-    // 사용자 정보 업데이트
+    // 사용자 업데이트
     const updatedUser = await prisma.user_profiles.update({
-      where: { id },
-      data: updateData,
-      include: {
-        organizations: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            region_code: true,
-            city_code: true,
-          }
-        }
+      where: { id: params.id },
+      data: {
+        role,
+        region,
+        district,
+        region_code,
+        organization_id: organization_id || null,
+        organization_name: organization_name || null,
+        is_active,
+        updated_at: new Date()
       }
     });
 
-    // 응답 반환
-    return NextResponse.json({
-      message: '사용자 정보가 업데이트되었습니다.',
-      user: updatedUser
-    });
+    // team_members 동기화
+    if (organization_id) {
+      try {
+        await syncUserToTeam(
+          updatedUser.id,
+          organization_id,
+          updatedUser.email,
+          updatedUser.full_name,
+          role === 'temporary_inspector' ? 'temporary' : 'permanent',
+          currentUser.id
+        );
+      } catch (syncError) {
+        console.error('Team sync error:', syncError);
+        // 동기화 실패해도 업데이트는 성공으로 처리
+      }
+    }
 
+    // 임시점검원이고 조직이 변경된 경우 기존 할당 정리
+    if (role === 'temporary_inspector' && organization_id) {
+      // 기존 pending 할당 제거
+      await prisma.inspection_assignments.updateMany({
+        where: {
+          assigned_to: params.id,
+          status: 'pending'
+        },
+        data: {
+          status: 'cancelled',
+          notes: '조직 변경으로 인한 자동 취소',
+          updated_at: new Date()
+        }
+      });
+
+      // local_admin 확인
+      const hasAdmin = await prisma.user_profiles.findFirst({
+        where: {
+          organization_id,
+          role: 'local_admin',
+          is_active: true
+        }
+      });
+
+      if (!hasAdmin) {
+        // local_admin이 없으면 알림 생성 (나중에 처리)
+        console.log(`Warning: Organization ${organization_id} has no local_admin for temporary inspector ${params.id}`);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: updatedUser,
+      message: '사용자 정보가 성공적으로 업데이트되었습니다'
+    });
   } catch (error) {
-    console.error(`[PATCH /api/admin/users/[id]] Error:`, error);
+    console.error('Failed to update user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -160,68 +178,61 @@ export async function PATCH(
   }
 }
 
-/**
- * DELETE /api/admin/users/[id]
- * 사용자 삭제 (관리자용)
- */
+// DELETE: 사용자 삭제 (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Next.js 15: params는 Promise
-    const { id } = await params;
-
-    // 인증 및 프로필 조회
-    const authResult = await requireAuthWithProfile();
-
-    if (isErrorResponse(authResult)) {
-      return authResult;
+    // 세션 확인
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const { profile: userProfile } = authResult;
+    // 관리자 권한 확인 (master만 삭제 가능)
+    const currentUser = await prisma.user_profiles.findUnique({
+      where: { email: session.user.email }
+    });
 
-    // 권한 확인 (master만 삭제 가능)
-    if (userProfile.role !== 'master') {
+    if (!currentUser || currentUser.role !== 'master') {
       return NextResponse.json(
-        { error: '사용자 삭제 권한이 없습니다. Master 권한이 필요합니다.' },
+        { error: 'Only master admin can delete users' },
         { status: 403 }
       );
     }
 
-    // 자기 자신은 삭제 불가
-    if (id === userProfile.id) {
-      return NextResponse.json(
-        { error: '자기 자신을 삭제할 수 없습니다.' },
-        { status: 400 }
-      );
-    }
-
-    // 사용자 존재 확인
-    const existingUser = await prisma.user_profiles.findUnique({
-      where: { id }
+    // 소프트 삭제 (비활성화)
+    await prisma.user_profiles.update({
+      where: { id: params.id },
+      data: {
+        is_active: false,
+        updated_at: new Date()
+      }
     });
 
-    if (!existingUser) {
-      return NextResponse.json(
-        { error: '사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
-    }
-
-    // 사용자 삭제
-    await prisma.user_profiles.delete({
-      where: { id }
+    // 관련 할당 취소
+    await prisma.inspection_assignments.updateMany({
+      where: {
+        assigned_to: params.id,
+        status: { in: ['pending', 'in_progress'] }
+      },
+      data: {
+        status: 'cancelled',
+        notes: '사용자 계정 비활성화로 인한 취소',
+        updated_at: new Date()
+      }
     });
 
-    // 응답 반환
     return NextResponse.json({
-      message: '사용자가 삭제되었습니다.',
-      deletedUserId: id
+      success: true,
+      message: '사용자가 비활성화되었습니다'
     });
-
   } catch (error) {
-    console.error(`[DELETE /api/admin/users/[id]] Error:`, error);
+    console.error('Failed to delete user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

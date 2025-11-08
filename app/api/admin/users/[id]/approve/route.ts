@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import { sendApprovalEmail } from '@/lib/email/approval-email';
 import { logger } from '@/lib/logger';
 import { validateDomainForRole } from '@/lib/auth/access-control';
+import { syncUserToTeam } from '@/lib/auth/team-sync';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -168,7 +169,23 @@ export async function POST(
       }
     });
 
-    // 9. 승인 이메일 발송
+    // 9. team_members 테이블에 자동 추가
+    try {
+      const teamRole = role === 'local_admin' ? 'leader' : 'member';
+      await syncUserToTeam(updatedUser.id, updatedUser.organization_id, teamRole);
+      logger.info('AdminUsersApprove:POST', 'User added to team_members', {
+        userId: updatedUser.id,
+        organizationId: updatedUser.organization_id,
+        teamRole
+      });
+    } catch (teamSyncError) {
+      // team_members 동기화 실패해도 승인은 유지
+      logger.error('AdminUsersApprove:POST', 'Team sync failed',
+        teamSyncError instanceof Error ? teamSyncError : { teamSyncError }
+      );
+    }
+
+    // 10. 승인 이메일 발송
     try {
       await sendApprovalEmail(
         updatedUser.email,

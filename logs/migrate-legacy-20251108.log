@@ -1,0 +1,117 @@
+
+> migrate:legacy-inspections
+> npx tsx scripts/migrate-legacy-inspections.ts
+
+[dotenv@17.2.2] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+🔄 레거시 점검 데이터 마이그레이션 시작...
+
+❌ 마이그레이션 중 오류 발생: PrismaClientValidationError: 
+Invalid `prisma.inspections.findMany()` invocation in
+/Users/kwangsunglee/Projects/AEDpics/scripts/migrate-legacy-inspections.ts:26:56
+
+  23 const sixMonthsAgo = new Date();
+  24 sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  25 
+→ 26 const legacyInspections = await prisma.inspections.findMany({
+       where: {
+         inspection_date: {
+           gte: new Date("2025-05-08T06:19:47.281Z")
+         }
+       },
+       select: {
+         id: true,
+         equipment_serial: true,
+         inspector_id: true,
+         inspection_date: true,
+         completed_at: true,
+         created_by: true,
+         ~~~~~~~~~~
+     ?   aed_data_id?: true,
+     ?   inspection_type?: true,
+     ?   visual_status?: true,
+     ?   battery_status?: true,
+     ?   pad_status?: true,
+     ?   operation_status?: true,
+     ?   overall_status?: true,
+     ?   notes?: true,
+     ?   issues_found?: true,
+     ?   photos?: true,
+     ?   inspection_latitude?: true,
+     ?   inspection_longitude?: true,
+     ?   issues?: true,
+     ?   original_data?: true,
+     ?   registered_data?: true,
+     ?   inspected_data?: true,
+     ?   created_at?: true,
+     ?   updated_at?: true,
+     ?   aed_data?: true,
+     ?   user_profiles?: true,
+     ?   inspection_field_comparisons?: true,
+     ?   _count?: true
+       }
+     })
+
+Unknown field `created_by` for select statement on model `inspections`. Available options are marked with ?.
+    at throwValidationException (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+    at ei.handleRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async migrateLegacyInspections (/Users/kwangsunglee/Projects/AEDpics/scripts/migrate-legacy-inspections.ts:26:31) {
+  clientVersion: '6.18.0'
+}
+💥 예상치 못한 오류: PrismaClientValidationError: 
+Invalid `prisma.inspections.findMany()` invocation in
+/Users/kwangsunglee/Projects/AEDpics/scripts/migrate-legacy-inspections.ts:26:56
+
+  23 const sixMonthsAgo = new Date();
+  24 sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  25 
+→ 26 const legacyInspections = await prisma.inspections.findMany({
+       where: {
+         inspection_date: {
+           gte: new Date("2025-05-08T06:19:47.281Z")
+         }
+       },
+       select: {
+         id: true,
+         equipment_serial: true,
+         inspector_id: true,
+         inspection_date: true,
+         completed_at: true,
+         created_by: true,
+         ~~~~~~~~~~
+     ?   aed_data_id?: true,
+     ?   inspection_type?: true,
+     ?   visual_status?: true,
+     ?   battery_status?: true,
+     ?   pad_status?: true,
+     ?   operation_status?: true,
+     ?   overall_status?: true,
+     ?   notes?: true,
+     ?   issues_found?: true,
+     ?   photos?: true,
+     ?   inspection_latitude?: true,
+     ?   inspection_longitude?: true,
+     ?   issues?: true,
+     ?   original_data?: true,
+     ?   registered_data?: true,
+     ?   inspected_data?: true,
+     ?   created_at?: true,
+     ?   updated_at?: true,
+     ?   aed_data?: true,
+     ?   user_profiles?: true,
+     ?   inspection_field_comparisons?: true,
+     ?   _count?: true
+       }
+     })
+
+Unknown field `created_by` for select statement on model `inspections`. Available options are marked with ?.
+    at throwValidationException (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+    at ei.handleRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async migrateLegacyInspections (/Users/kwangsunglee/Projects/AEDpics/scripts/migrate-legacy-inspections.ts:26:31) {
+  clientVersion: '6.18.0'
+}

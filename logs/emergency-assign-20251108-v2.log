@@ -1,0 +1,61 @@
+
+> emergency:assign-inspectors
+> npx tsx scripts/emergency-assign-inspectors.ts
+
+[dotenv@17.2.2] injecting env (0) from .env.local -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+🚀 임시점검원 장비 할당 시작...
+
+📋 활성 임시점검원: 8명
+
+
+👤 처리 중: 안은규(경산보건소) (mentalchange@naver.com)
+   조직: 경산시 보건소
+   지역: 경상북도 null
+   ⚠️ 보건소 담당자를 찾을 수 없습니다.
+
+👤 처리 중: 이광성중구 (shout530@naver.com)
+   조직: 대구광역시 중구 보건소
+   지역: 대구광역시 null
+   📍 발견된 AED 장비: 0개
+   ✅ 0개 장비 할당 완료
+   ✅ 팀원으로 등록 완료
+
+👤 처리 중: 김시하 (aeri6@naver.com)
+   조직: 충청북도 충주시 보건소
+   지역: 충청북도 null
+   ⚠️ 보건소 담당자를 찾을 수 없습니다.
+
+👤 처리 중: 이경진(네이버) (vkarmav@naver.com)
+   조직: 중앙응급의료센터
+   지역: 제주특별자치도 null
+   📍 발견된 AED 장비: 0개
+   ✅ 0개 장비 할당 완료
+   ✅ 팀원으로 등록 완료
+
+👤 처리 중: 유미경 (db931210@gmail.com)
+   조직: 충청남도 계룡시 보건소
+   지역: 충청남도 null
+   ⚠️ 보건소 담당자를 찾을 수 없습니다.
+
+👤 처리 중: 반서윤 (nmcxom@gmail.com)
+   조직: 김해시 보건소
+   지역: 경상남도 null
+   📍 발견된 AED 장비: 0개
+   ✅ 0개 장비 할당 완료
+   ✅ 팀원으로 등록 완료
+
+👤 처리 중: 이광성중구점검2 (truth0530@kakao.com)
+   조직: 대구광역시 중구 보건소
+   지역: 대구광역시 null
+   📍 발견된 AED 장비: 0개
+   ✅ 0개 장비 할당 완료
+   ✅ 팀원으로 등록 완료
+
+👤 처리 중: 김강수 (fall0788@naver.com)
+   조직: 부산광역시 북구 보건소
+   지역: 부산광역시 null
+   ⚠️ 보건소 담당자를 찾을 수 없습니다.
+
+✨ 모든 임시점검원 처리 완료!
+
+📊 전체 대기중인 할당: 28개

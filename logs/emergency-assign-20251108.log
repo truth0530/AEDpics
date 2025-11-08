@@ -1,0 +1,56 @@
+
+> emergency:assign-inspectors
+> npx tsx scripts/emergency-assign-inspectors.ts
+
+[dotenv@17.2.2] injecting env (0) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+🚀 임시점검원 장비 할당 시작...
+
+📋 활성 임시점검원: 8명
+
+
+👤 처리 중: 안은규(경산보건소) (mentalchange@naver.com)
+   조직: 경산시 보건소
+   지역: 경상북도 null
+   ⚠️ 보건소 담당자를 찾을 수 없습니다.
+
+👤 처리 중: 이광성중구 (shout530@naver.com)
+   조직: 대구광역시 중구 보건소
+   지역: 대구광역시 null
+   📍 발견된 AED 장비: 0개
+   ✅ 0개 장비 할당 완료
+❌ 오류 발생: PrismaClientKnownRequestError: 
+Invalid `prisma.team_members.create()` invocation in
+/Users/kwangsunglee/Projects/AEDpics/scripts/emergency-assign-inspectors.ts:109:35
+
+  106 });
+  107 
+  108 if (!existingTeamMember) {
+→ 109   await prisma.team_members.create(
+Null constraint violation on the fields: (`id`)
+    at ei.handleRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async assignDevicesToTemporaryInspectors (/Users/kwangsunglee/Projects/AEDpics/scripts/emergency-assign-inspectors.ts:109:9) {
+  code: 'P2011',
+  meta: { modelName: 'team_members', constraint: [ 'id' ] },
+  clientVersion: '6.18.0'
+}
+PrismaClientKnownRequestError: 
+Invalid `prisma.team_members.create()` invocation in
+/Users/kwangsunglee/Projects/AEDpics/scripts/emergency-assign-inspectors.ts:109:35
+
+  106 });
+  107 
+  108 if (!existingTeamMember) {
+→ 109   await prisma.team_members.create(
+Null constraint violation on the fields: (`id`)
+    at ei.handleRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at ei.request (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at async a (/Users/kwangsunglee/Projects/AEDpics/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+    at async assignDevicesToTemporaryInspectors (/Users/kwangsunglee/Projects/AEDpics/scripts/emergency-assign-inspectors.ts:109:9) {
+  code: 'P2011',
+  meta: { modelName: 'team_members', constraint: [ 'id' ] },
+  clientVersion: '6.18.0'
+}
