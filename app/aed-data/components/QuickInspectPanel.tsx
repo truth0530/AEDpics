@@ -37,7 +37,7 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
         throw new Error('장비 식별 정보가 없습니다.');
       }
 
-      // Step 1: 먼저 장비를 자신에게 할당 (이미 할당되어 있으면 409 응답)
+      // Step 1: 먼저 장비를 자신에게 할당 (이미 할당되어 있으면 alreadyAssigned: true)
       const assignmentResponse = await fetch('/api/inspections/assignments', {
         method: 'POST',
         headers: {
@@ -51,11 +51,15 @@ export function QuickInspectPanel({ device, onClose, onRefetch }: QuickInspectPa
         }),
       });
 
-      // 409(Conflict)는 이미 할당되어 있다는 의미이므로 정상 진행
-      if (!assignmentResponse.ok && assignmentResponse.status !== 409) {
+      if (!assignmentResponse.ok) {
         const assignmentError = await assignmentResponse.json().catch(() => ({}));
         console.error('[QuickInspectPanel] Assignment failed:', assignmentError);
         // 할당 실패는 경고만 하고 계속 진행 (이미 할당되어 있을 수 있음)
+      } else {
+        const assignmentData = await assignmentResponse.json().catch(() => ({}));
+        if (assignmentData.alreadyAssigned) {
+          console.log('[QuickInspectPanel] Equipment already assigned, using existing assignment');
+        }
       }
 
       // Step 2: 점검 세션 시작

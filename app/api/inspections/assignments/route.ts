@@ -107,6 +107,21 @@ async function handleBulkAssignment(
     const newSerials = equipmentSerials.filter(s => !existingSerials.has(s));
 
     if (newSerials.length === 0) {
+      // 즉시점검의 경우 중복을 정상 케이스로 처리
+      if (params.assignmentType === 'immediate') {
+        return NextResponse.json({
+          success: true,
+          alreadyAssigned: true,
+          message: '모든 장비가 이미 할당되어 있습니다. 기존 할당을 사용합니다.',
+          stats: {
+            total: equipmentSerials.length,
+            created: 0,
+            skipped: equipmentSerials.length,
+            failed: 0
+          }
+        });
+      }
+
       return NextResponse.json({
         success: true,
         message: '모든 장비가 이미 할당되어 있습니다.',
@@ -303,6 +318,23 @@ export async function POST(request: NextRequest) {
 
     // 검증 로직
     if (existing) {
+      // 즉시점검(immediate)의 경우 중복 할당을 정상 케이스로 처리
+      if (assignmentType === 'immediate') {
+        logger.info('InspectionAssignments:POST', 'Immediate inspection already assigned', {
+          userId: session.user.id,
+          equipmentSerial: equipmentSerial,
+          existingId: existing.id
+        });
+
+        return NextResponse.json({
+          success: true,
+          alreadyAssigned: true,
+          data: existing,
+          message: '이미 할당된 장비입니다. 기존 할당을 사용합니다.'
+        });
+      }
+
+      // 다른 할당 타입은 기존대로 409 오류 반환
       return NextResponse.json(
         {
           error: '이미 할당된 장비입니다.',
@@ -411,6 +443,22 @@ export async function POST(request: NextRequest) {
             scheduled_date: true
           }
         });
+
+        // 즉시점검의 경우 중복을 정상 케이스로 처리
+        if (assignmentType === 'immediate' && existingAssignment) {
+          logger.info('InspectionAssignments:POST', 'Immediate inspection already assigned (P2002)', {
+            userId: session.user.id,
+            equipmentSerial: equipmentSerial,
+            existingId: existingAssignment.id
+          });
+
+          return NextResponse.json({
+            success: true,
+            alreadyAssigned: true,
+            data: existingAssignment,
+            message: '이미 할당된 장비입니다. 기존 할당을 사용합니다.'
+          });
+        }
 
         return NextResponse.json(
           {
