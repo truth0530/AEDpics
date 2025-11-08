@@ -137,9 +137,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
         }
 
         // 시군구 필터링
-        if (userProfile.organizations && userProfile.organizations[0]?.name) {
+        if (userProfile.organizations && userProfile.organizations.name) {
           // 조직명에서 시군구 추출 (예: "대구광역시 중구 보건소" -> "중구")
-          const nameParts = userProfile.organizations[0].name.split(' ');
+          const nameParts = userProfile.organizations.name.split(' ');
           // '구' 또는 '군'을 포함하는 첫 번째 단어 추출 ('시'는 제외 - 시도와 혼동 방지)
           const gugunIndex = nameParts.findIndex(part => part.includes('구') || part.includes('군'));
           if (gugunIndex >= 0) {
