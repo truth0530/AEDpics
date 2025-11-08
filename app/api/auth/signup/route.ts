@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 import { isAllowedEmailDomain } from '@/lib/auth/config'
 import { checkRateLimitWithMessage } from '@/lib/security/rate-limit-middleware'
+import { validateRegionInfo, autocompleteRegionInfo } from '@/lib/auth/region-validation'
 
 import { prisma } from '@/lib/prisma';
 
@@ -75,10 +76,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 7. 비밀번호 해싱 (bcrypt, salt rounds 10)
+    // 7. 지역 정보 검증 및 자동 완성
+    const organizationInfo = {
+      organizationName: profileData.organizationName || profileData.organization_name,
+      regionCode: profileData.regionCode || profileData.region_code,
+      cityCode: profileData.cityCode || profileData.city_code,
+      email: email
+    }
+
+    // 지역 정보 검증
+    const regionValidation = validateRegionInfo(organizationInfo)
+    if (!regionValidation.isValid && regionValidation.errors.length > 0) {
+      // 치명적인 오류만 거부 (경고는 통과)
+      const criticalErrors = regionValidation.errors.filter(
+        err => err.includes('유효하지 않은') || err.includes('속하지 않습니다')
+      )
+
+      if (criticalErrors.length > 0) {
+        return NextResponse.json(
+          { success: false, error: `지역 정보 오류: ${criticalErrors[0]}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 지역 정보 자동 완성
+    const autocompletedInfo = autocompleteRegionInfo(organizationInfo)
+
+    // 8. 비밀번호 해싱 (bcrypt, salt rounds 10)
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // 8. 사용자 프로필 생성
+    // 9. 사용자 프로필 생성
     const user = await prisma.user_profiles.create({
       data: {
         id: randomUUID(),
@@ -87,8 +115,8 @@ export async function POST(request: NextRequest) {
         full_name: profileData.fullName || profileData.full_name,
         phone: profileData.phone || null,
         region: profileData.region || null,
-        region_code: profileData.regionCode || profileData.region_code || null,
-        organization_name: profileData.organizationName || profileData.organization_name || null,
+        region_code: autocompletedInfo.regionCode || profileData.regionCode || profileData.region_code || null,
+        organization_name: autocompletedInfo.normalizedOrgName || profileData.organizationName || profileData.organization_name || null,
         organization_id: profileData.organizationId || profileData.organization_id || null,
         remarks: profileData.remarks || null,
         role: profileData.role || 'pending_approval',
@@ -98,7 +126,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 9. 로그인 히스토리 기록
+    // 10. 로그인 히스토리 기록
     await prisma.login_history.create({
       data: {
         id: randomUUID(),

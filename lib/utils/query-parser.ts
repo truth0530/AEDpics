@@ -9,6 +9,39 @@ import {
 import { QueryCriteria } from '@/lib/constants/query-criteria';
 import { logger } from '@/lib/logger';
 
+const PLACEHOLDER_FILTER_VALUES = new Set([
+  '',
+  '전체',
+  '시도',
+  '구군',
+  'all',
+  'ALL',
+  'All',
+  '선택',
+  '선택안함',
+  'none',
+  'None'
+]);
+
+function normalizeFilterValue(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed || PLACEHOLDER_FILTER_VALUES.has(trimmed)) {
+    return null;
+  }
+  return trimmed;
+}
+
+function filterMeaningfulValues(values: string[]): string[] {
+  const normalized = values
+    .map(value => normalizeFilterValue(value))
+    .filter((value): value is string => Boolean(value));
+
+  return Array.from(new Set(normalized));
+}
+
 export interface ParsedFilters {
   battery_expiry_date?: ExpiryFilter;
   patch_expiry_date?: ExpiryFilter;
@@ -69,7 +102,7 @@ export function parseQueryParams(searchParams: URLSearchParams): ParsedFilters {
   const regionValuesCurrent = searchParams.getAll('regionCodes')
     .filter(region => region && region.length <= 10);
 
-  const combinedRegionValues = Array.from(new Set([...regionValuesLegacy, ...regionValuesCurrent]));
+  const combinedRegionValues = filterMeaningfulValues([...regionValuesLegacy, ...regionValuesCurrent]);
   if (combinedRegionValues.length > 0) {
     parsed.regionCodes = combinedRegionValues;
   }
@@ -82,7 +115,7 @@ export function parseQueryParams(searchParams: URLSearchParams): ParsedFilters {
   const cityValuesCurrent = searchParams.getAll('cityCodes')
     .filter(city => city && city.length <= 10);
 
-  const combinedCityValues = Array.from(new Set([...cityValuesLegacy, ...cityValuesCurrent]));
+  const combinedCityValues = filterMeaningfulValues([...cityValuesLegacy, ...cityValuesCurrent]);
   if (combinedCityValues.length > 0) {
     parsed.cityCodes = combinedCityValues;
   }

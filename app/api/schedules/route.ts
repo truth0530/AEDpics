@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
         region_code: true,
         region: true,
         district: true,
-        email: true
+        email: true,
+        organization_name: true
       }
     });
 
@@ -248,7 +249,8 @@ export async function GET(request: NextRequest) {
         region_code: true,
         region: true,
         district: true,
-        email: true
+        email: true,
+        organization_name: true
       }
     });
 
@@ -279,12 +281,14 @@ export async function GET(request: NextRequest) {
     // === Step 6: Equipment FK 기반 필터링 ===
     // Master admin: 제한 없음
     // Regional/Local admin: 권한 범위 내 equipment만 조회
+    const searchParams = request.nextUrl.searchParams;
+    const criteria = searchParams.get('criteria') || 'address';
     const whereClause: any = {};
 
     if (accessScope.allowedRegionCodes !== null) {
       // Master admin이 아닌 경우 equipment 필터링 필요
       const { buildEquipmentFilter } = await import('@/lib/auth/equipment-access');
-      const equipmentFilter = buildEquipmentFilter(accessScope, 'address');
+      const equipmentFilter = buildEquipmentFilter(accessScope, criteria as 'address' | 'jurisdiction');
 
       if (Object.keys(equipmentFilter).length > 0) {
         whereClause.aed_data = equipmentFilter;
@@ -386,7 +390,8 @@ export async function PATCH(request: NextRequest) {
         region_code: true,
         region: true,
         district: true,
-        email: true
+        email: true,
+        organization_name: true
       }
     });
 
@@ -575,7 +580,8 @@ export async function DELETE(request: NextRequest) {
         region_code: true,
         region: true,
         district: true,
-        email: true
+        email: true,
+        organization_name: true
       }
     });
 

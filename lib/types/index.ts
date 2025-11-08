@@ -44,6 +44,7 @@ export interface UserProfile {
   fullName: string;
   phone?: string;
   organizationId?: string;
+  organization_name?: string | null;
   organization?: Organization;
   region?: string;  // 한글 지역명 (예: "서울특별시")
   region_code?: string;  // 지역 코드 (예: "SEO")

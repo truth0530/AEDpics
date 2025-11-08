@@ -28,6 +28,7 @@
 ### 레퍼런스
 - [docs/reference/architecture-overview.md](docs/reference/architecture-overview.md) - 시스템 아키텍처
 - [docs/reference/REGION_CODE_GUIDELINES.md](docs/reference/REGION_CODE_GUIDELINES.md) - 지역 코드 가이드라인
+- [docs/REGION_MANAGEMENT_RULES.md](docs/REGION_MANAGEMENT_RULES.md) - **지역명 관리 철칙 (필독)**
 - [docs/reference/SECURITY_GUIDELINES.md](docs/reference/SECURITY_GUIDELINES.md) - 보안 가이드라인
 - [docs/reference/aed-data-schema.md](docs/reference/aed-data-schema.md) - AED 데이터 스키마
 
@@ -111,6 +112,18 @@
 - 한 번에 하나의 작업만 수행
 - 이전 단계 완료 확인 후 다음 단계 진행
 - 건너뛰기나 병렬 작업 금지 (명시적 요청 제외)
+
+### 8. 지역명 통합 관리 철칙 (2025-11-08 추가)
+- **유일한 관리 파일**: `lib/constants/regions.ts`
+- 다른 파일에서 지역명/구군명/city_code 하드코딩 **절대 금지**
+- 새 스크립트나 컴포넌트 작성 시 반드시 import하여 사용
+- 위반 예시:
+  - `city_code: 'gimhae'` ❌
+  - `const GUGUN_MAP = { '서울': [...] }` ❌
+  - `if (sido === '서울')` ❌
+- 올바른 사용:
+  - `import { mapCityCodeToGugun } from '@/lib/constants/regions'` ✅
+- 자세한 규칙: [docs/REGION_MANAGEMENT_RULES.md](docs/REGION_MANAGEMENT_RULES.md) 참조
 
 ## 개발 패턴 및 핵심 교훈
 

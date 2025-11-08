@@ -33,6 +33,7 @@ async function handleBulkAssignment(
         role: true,
         email: true,
         organization_id: true,
+        organization_name: true,
         region_code: true,
         region: true,
         district: true
@@ -212,6 +213,7 @@ export async function POST(request: NextRequest) {
         role: true,
         email: true,
         organization_id: true,
+        organization_name: true,
         region_code: true,
         region: true,
         district: true
@@ -453,7 +455,8 @@ export async function GET(request: NextRequest) {
         role: true,
         region_code: true,
         region: true,
-        district: true
+        district: true,
+        organization_name: true
       }
     });
 
@@ -477,6 +480,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // 쿼리 파라미터 (criteria 포함) - 먼저 읽기
+    const searchParams = request.nextUrl.searchParams;
+    const criteria = searchParams.get('criteria') || 'address';
+
     // === Step 3: Equipment 접근 권한 검증 및 접근 가능한 equipment 목록 조회 ===
     // Master와 상위 관리자는 모든 할당 조회 가능, 그 외는 접근 가능한 equipment만 조회
     let accessibleEquipmentSerials: string[] | null = null;
@@ -486,7 +493,7 @@ export async function GET(request: NextRequest) {
       userProfile.role !== 'emergency_center_admin' &&
       userProfile.role !== 'regional_emergency_center_admin'
     ) {
-      const equipmentFilter = buildEquipmentFilter(accessScope, 'address');
+      const equipmentFilter = buildEquipmentFilter(accessScope, criteria as 'address' | 'jurisdiction');
 
       if (Object.keys(equipmentFilter).length > 0) {
         const accessibleEquipment = await prisma.aed_data.findMany({
@@ -522,8 +529,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 쿼리 파라미터
-    const searchParams = request.nextUrl.searchParams;
+    // 쿼리 파라미터 (나머지)
     const assignedTo = searchParams.get('assignedTo');
     const assignedBy = searchParams.get('assignedBy');
     const status = searchParams.get('status');
@@ -902,7 +908,8 @@ export async function DELETE(request: NextRequest) {
         role: true,
         region_code: true,
         region: true,
-        district: true
+        district: true,
+        organization_name: true
       }
     });
 

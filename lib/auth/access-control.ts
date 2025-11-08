@@ -4,8 +4,38 @@ import { UserRole, UserProfile } from '@/packages/types';
 // TODO: Supabase 클라이언트 임시 비활성화
 // import { createClient } // TODO: Supabase 클라이언트 임시 비활성화
 // from '@/lib/supabase/client';
-import { getRegionCode, mapCityCodeToGugun } from '@/lib/constants/regions';
+import { getRegionCode, mapCityCodeToGugun, extractRegionFromOrgName, normalizeJurisdictionName } from '@/lib/constants/regions';
 import { logger } from '@/lib/logger';
+
+function deriveOrganizationName(profile: UserProfile): string | null {
+  return profile.organization?.name || profile.organization_name || null;
+}
+
+function deriveJurisdictionCodes(profile: UserProfile): string[] | null {
+  const orgName = deriveOrganizationName(profile);
+  const normalized = normalizeJurisdictionName(orgName);
+  return normalized ? [normalized] : null;
+}
+
+function deriveCityFromProfile(profile: UserProfile): string | null {
+  const orgCityCode = profile.organization?.city_code;
+  if (orgCityCode) {
+    const mapped = mapCityCodeToGugun(orgCityCode);
+    if (mapped) {
+      return mapped;
+    }
+  }
+
+  const orgName = deriveOrganizationName(profile);
+  if (orgName) {
+    const extracted = extractRegionFromOrgName(orgName);
+    if (extracted?.gugun) {
+      return extracted.gugun;
+    }
+  }
+
+  return null;
+}
 
 /**
  * 도메인 기반 역할 허용 여부 검증
@@ -412,6 +442,7 @@ export interface UserAccessScope {
   permissions: RolePermissions;
   allowedRegionCodes: string[] | null;
   allowedCityCodes: string[] | null;
+  jurisdictionCodes: string[] | null;
   userId: string;
 }
 
@@ -482,6 +513,7 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
 
   let allowedRegionCodes: string[] | null = null;
   let allowedCityCodes: string[] | null = null;
+  let jurisdictionCodes: string[] | null = null;
   const normalizedRegionCode = (() => {
     if (userProfile.region_code) {
       return getRegionCode(userProfile.region_code);
@@ -507,6 +539,7 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
     // 전국 접근 가능: NULL로 제한 없음 표시
     allowedRegionCodes = null;
     allowedCityCodes = null;
+    jurisdictionCodes = null;
   } else {
     // 지역 제한 역할 (@korea.kr의 시청/도청, 보건소)
     if (!normalizedRegionCode) {
@@ -519,6 +552,7 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
           permissions,
           allowedRegionCodes,
           allowedCityCodes,
+          jurisdictionCodes: null,
           userId: userProfile.id,
         };
       }
@@ -528,32 +562,29 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
     // 소속 시도로 고정
     allowedRegionCodes = [normalizedRegionCode];
 
-    // local_admin(보건소): 시군구도 고정
+    // local_admin(보건소): 시군구 & 관할 보건소 고정
     if (userProfile.role === 'local_admin') {
-      const cityCode = userProfile.organization?.city_code;
-      if (cityCode) {
-        // city_code를 실제 gugun 이름으로 변환 (예: "seogwipo" → "서귀포시")
-        // AED 데이터는 gugun 필드에 한글 이름을 저장하고 있음
-        const mappedGugun = mapCityCodeToGugun(cityCode);
-        if (!mappedGugun) {
-          // Mapping failure: 유효하지 않은 city_code 또는 매핑 오류
-          // 사용자에게 제한적 접근 권한 부여하지 않음 (region-level로 fallback)
-          logger.warn('AccessControl:resolveAccessScope', 'City code mapping failed, falling back to region-level access', {
-            cityCode,
-            userId: userProfile.id,
-            email: userProfile.email,
-            organizationId: userProfile.organization?.id
-          });
-        }
-        allowedCityCodes = mappedGugun ? [mappedGugun] : null; // Fixed: null on mapping failure, not original cityCode
+      const mappedGugun = deriveCityFromProfile(userProfile);
+      if (mappedGugun) {
+        allowedCityCodes = [mappedGugun];
       } else {
-        // city_code가 없으면 시도 레벨로만 제한 (시군구 제한 없음)
-        // 향후 데이터 마이그레이션으로 모든 보건소에 city_code 추가 권장
-        logger.warn('AccessControl:resolveAccessScope', 'Local admin organization missing city_code, granting region-level access', {
+        logger.warn('AccessControl:resolveAccessScope', 'Local admin organization missing city info, granting region-level access', {
           userId: userProfile.id,
-          email: userProfile.email
+          email: userProfile.email,
+          organizationId: userProfile.organizationId
         });
-        allowedCityCodes = null; // 시도 내 모든 시군구 접근 가능
+        allowedCityCodes = null;
+      }
+
+      const derivedJurisdiction = deriveJurisdictionCodes(userProfile);
+      if (derivedJurisdiction) {
+        jurisdictionCodes = derivedJurisdiction;
+      } else {
+        logger.warn('AccessControl:resolveAccessScope', 'Local admin organization missing jurisdiction name, jurisdiction filters disabled', {
+          userId: userProfile.id,
+          email: userProfile.email,
+          organizationId: userProfile.organizationId
+        });
       }
     } else if (userProfile.role === 'regional_admin') {
       // regional_admin(시청/도청): 시군구 선택 가능 (NULL = 제한 없음)
@@ -565,6 +596,7 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
     permissions,
     allowedRegionCodes,
     allowedCityCodes,
+    jurisdictionCodes,
     userId: userProfile.id
   };
 }

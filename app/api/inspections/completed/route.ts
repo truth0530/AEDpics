@@ -41,10 +41,12 @@ export async function GET(request: NextRequest) {
     const accessScope = resolveAccessScope(userProfile as any);
 
     // === Step 4: Equipment 필터 생성 ===
-    const equipmentFilter = buildEquipmentFilter(accessScope, 'address');
+    const searchParams = request.nextUrl.searchParams;
+    const criteria = searchParams.get('criteria') || 'address';
+    const equipmentFilter = buildEquipmentFilter(accessScope, criteria as 'address' | 'jurisdiction');
 
     // === Step 5: hours 파라미터 파싱 (기본값: 24시간) ===
-    const hours = parseInt(request.nextUrl.searchParams.get('hours') || '24');
+    const hours = parseInt(searchParams.get('hours') || '24');
 
     // cutoff 날짜 계산
     const cutoffDate = new Date();

@@ -7,7 +7,8 @@ import { UserRole } from '@/packages/types';
 import {
   normalizeAedDataRegion,
   getNormalizedRegionLabel,
-  REGION_LONG_LABELS
+  REGION_LONG_LABELS,
+  REGION_CODE_TO_DB_LABELS
 } from '@/lib/constants/regions';
 import { logger } from '@/lib/logger';
 
@@ -61,9 +62,15 @@ export function buildEquipmentFilter(
   const regionCodes = scope.regionCodes ?? scope.allowedRegionCodes;
   const cityCodes = scope.cityCodes ?? scope.allowedCityCodes;
 
-  // Master admin: no restriction
+  // Master admin: no restriction (null means nationwide)
   if (regionCodes === null) {
     return {};
+  }
+
+  // Empty array = block all access
+  if (Array.isArray(regionCodes) && regionCodes.length === 0) {
+    // Return an impossible filter to block all results
+    return { sido: { in: [] } };
   }
 
   // Address-based filtering (sido/gugun)
@@ -89,15 +96,30 @@ function buildAddressBasedFilter(scope: AccessScope): EquipmentFilter {
 
   // Handle regionCodes
   if (scope.regionCodes && scope.regionCodes.length > 0) {
-    // Convert region codes to normalized region names
-    const normalizedRegions = scope.regionCodes
-      .map(code => getNormalizedRegionLabel(code))
-      .filter((name): name is string => name !== null && name !== undefined);
+    // Convert region codes to all possible region name variants (both long and short forms)
+    const allRegionVariants: string[] = [];
 
-    if (normalizedRegions.length === 1) {
-      filter.sido = normalizedRegions[0];
-    } else if (normalizedRegions.length > 1) {
-      filter.sido = { in: normalizedRegions };
+    for (const code of scope.regionCodes) {
+      // Get all variants from REGION_CODE_TO_DB_LABELS (e.g., ['경상남도', '경남'])
+      const variants = REGION_CODE_TO_DB_LABELS[code];
+      if (variants) {
+        allRegionVariants.push(...variants);
+      } else {
+        // Fallback to normalized label if not in mapping
+        const normalized = getNormalizedRegionLabel(code);
+        if (normalized) {
+          allRegionVariants.push(normalized);
+        }
+      }
+    }
+
+    // Filter out duplicates and invalid values
+    const uniqueRegions = [...new Set(allRegionVariants)].filter(Boolean);
+
+    if (uniqueRegions.length === 1) {
+      filter.sido = uniqueRegions[0];
+    } else if (uniqueRegions.length > 1) {
+      filter.sido = { in: uniqueRegions };
     }
   }
 

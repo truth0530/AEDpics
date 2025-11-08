@@ -39,6 +39,7 @@
     "test:storage": "npx tsx scripts/test/test-ncp-storage.ts",
     "bucket:create": "npx tsx scripts/test/test-bucket-create.ts",
     "check:inspection-field": "node scripts/check-inspection-field.cjs",
+    "fix:city-codes": "npx tsx scripts/fix-invalid-city-codes.ts",
     "prepare": "husky || true"
   },
   "dependencies": {

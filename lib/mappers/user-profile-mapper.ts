@@ -51,6 +51,7 @@ export function mapUserProfile(
     fullName: prismaProfile.full_name,
     phone: prismaProfile.phone ?? undefined,
     organizationId: prismaProfile.organization_id ?? undefined,
+    organization_name: prismaProfile.organization_name ?? undefined,
     organization: mapOrganization(prismaProfile.organizations),
     region: prismaProfile.region ?? undefined,
     region_code: prismaProfile.region_code ?? undefined,
