@@ -68,14 +68,14 @@ jobs:
 
             # lib/constants/regions.ts, seed-organizations, tutorial-guide 제외
             MATCHES=$(find app/ components/ lib/ \
-              -name "*.ts" -o -name "*.tsx" \
-              | grep -v node_modules \
-              | grep -v ".next" \
-              | grep -v dist \
-              | grep -v regions.ts \
-              | grep -v seed-organizations \
-              | grep -v tutorial-guide \
-              | xargs grep -l "$pattern" 2>/dev/null)
+              \( -name "*.ts" -o -name "*.tsx" \) \
+              -not -path "*node_modules*" \
+              -not -path "*/.next/*" \
+              -not -path "*/dist/*" \
+              -not -name "regions.ts" \
+              -not -path "*seed-organizations*" \
+              -not -path "*tutorial-guide*" \
+              -exec grep -l "$pattern" {} + 2>/dev/null)
 
             if [ ! -z "$MATCHES" ]; then
               echo "Found matches:"
