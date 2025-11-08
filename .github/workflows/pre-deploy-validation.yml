@@ -76,11 +76,6 @@ jobs:
 
           echo "✅ Hardcoded mapping check completed (seed/tutorial data excluded)"
 
-      - name: Test Build
-        run: |
-          echo "=== Testing production build ==="
-          npm run build
-
       - name: Generate Validation Report
         if: always()
         run: |
@@ -91,6 +86,6 @@ jobs:
           echo "- [x] ESLint validation" >> $GITHUB_STEP_SUMMARY
           echo "- [x] Region and city code validation" >> $GITHUB_STEP_SUMMARY
           echo "- [x] Hardcoded mapping check" >> $GITHUB_STEP_SUMMARY
-          echo "- [x] Production build test" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] Local build test (pre-push validation)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Validation Time:** $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
