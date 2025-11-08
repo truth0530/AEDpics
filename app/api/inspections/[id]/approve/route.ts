@@ -32,6 +32,8 @@ export async function PATCH(
     }
 
     // Get current inspection to verify status
+    // Note: First-come-first-served approach - if another admin has already approved this
+    // between when the user fetched the list and clicked approve, we'll get a 400 error here
     const inspection = await prisma.inspections.findUnique({
       where: { id: inspectionId }
     });
@@ -44,9 +46,14 @@ export async function PATCH(
     }
 
     // Can only approve submitted or pending inspections
+    // This enforces first-come-first-served: if status is already 'approved', 'rejected', etc.,
+    // it means another admin approved it first
     if (inspection.approval_status !== 'submitted' && inspection.approval_status !== 'pending') {
       return NextResponse.json(
-        { error: `Cannot approve inspection with status: ${inspection.approval_status}` },
+        {
+          error: `Cannot approve inspection - already ${inspection.approval_status} by another admin. This is first-come-first-served approval.`,
+          code: 'ALREADY_APPROVED'
+        },
         { status: 400 }
       );
     }

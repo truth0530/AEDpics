@@ -22,7 +22,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       count: pendingInspections.length,
-      inspections: pendingInspections
+      inspections: pendingInspections,
+      // First-come-first-served approval messaging
+      approvalPolicy: {
+        description: '점검 승인은 선착순입니다',
+        details: '먼저 승인 버튼을 클릭한 관리자의 승인이 처리됩니다. 승인된 점검은 다른 관리자의 승인 목록에서 제외됩니다.'
+      }
     });
 
   } catch (error) {

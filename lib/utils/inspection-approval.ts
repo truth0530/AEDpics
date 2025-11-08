@@ -84,6 +84,13 @@ export async function getApproverForInspection(organizationId: string) {
 /**
  * Get pending inspections that need approval for a user
  *
+ * First-Come-First-Served Approval Policy:
+ * - Inspection approval is on a first-come-first-served basis
+ * - The first admin to approve an inspection (by clicking the approve button) will successfully approve it
+ * - Once an inspection is approved, it will no longer appear in other admins' pending lists
+ * - For regional_admins: only inspections from organizations WITHOUT local_admin are shown
+ *   (local_admin takes priority when they register)
+ *
  * Returns inspections where:
  * - approval_status is 'submitted' or 'pending'
  * - User is eligible to approve based on their role and organization
