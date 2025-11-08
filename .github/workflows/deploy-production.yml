@@ -12,10 +12,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Phase 0: Pre-deployment validation (region/city codes)
+  validate:
+    name: Pre-deployment Validation
+    uses: ./.github/workflows/pre-deploy-validation.yml
+    secrets:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
   # Phase 1: Code checks (lint, TypeScript)
   checks:
     name: Code Checks
     runs-on: ubuntu-latest
+    needs: validate
 
     steps:
     - name: Checkout code

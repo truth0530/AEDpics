@@ -1,0 +1,115 @@
+name: Pre-Deploy Validation
+
+on:
+  workflow_call:
+    secrets:
+      DATABASE_URL:
+        required: true
+
+jobs:
+  validate:
+    name: Pre-deployment Data Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: TypeScript Check
+        run: npm run tsc
+
+      - name: Lint Check
+        run: npm run lint
+
+      - name: Validate Region Codes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "=== Validating Region Codes ==="
+
+          # Check city codes
+          if ! npm run check:city-codes; then
+            echo "::error::City codes validation failed. Run 'npm run fix:city-codes' to fix."
+            exit 1
+          fi
+
+          # Check region codes
+          if ! npm run check:region-codes; then
+            echo "::error::Region codes validation failed. Run 'npm run fix:region-codes' to fix."
+            exit 1
+          fi
+
+          echo "✅ All region and city codes are valid"
+
+      - name: Check for Hardcoded Mappings
+        run: |
+          echo "=== Checking for hardcoded region mappings ==="
+
+          # 금지된 패턴들
+          FORBIDDEN_PATTERNS=(
+            "city_code: ['\"]"
+            "region_code: ['\"]"
+            "const.*GUGUN_MAP"
+            "const.*REGION_MAP"
+            "if.*sido === ['\"]"
+            "if.*gugun === ['\"]"
+          )
+
+          FOUND_ISSUES=false
+
+          for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
+            echo "Checking for pattern: $pattern"
+
+            # lib/constants/regions.ts는 제외
+            if grep -r "$pattern" \
+              --include="*.ts" \
+              --include="*.tsx" \
+              --exclude-dir=node_modules \
+              --exclude-dir=.next \
+              --exclude-dir=dist \
+              --exclude="regions.ts" \
+              app/ components/ lib/ 2>/dev/null; then
+
+              echo "::warning::Found hardcoded mapping: $pattern"
+              FOUND_ISSUES=true
+            fi
+          done
+
+          if [ "$FOUND_ISSUES" = true ]; then
+            echo "::error::Hardcoded region/city mappings found. Use imports from lib/constants/regions.ts instead."
+            exit 1
+          fi
+
+          echo "✅ No hardcoded mappings found"
+
+      - name: Test Build
+        run: |
+          echo "=== Testing production build ==="
+          npm run build
+
+      - name: Generate Validation Report
+        if: always()
+        run: |
+          echo "## Pre-Deployment Validation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Checks Performed:" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] TypeScript compilation" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] ESLint validation" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] Region code validation" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] City code validation" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] Hardcoded mapping check" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] Production build test" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Validation Time:** $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

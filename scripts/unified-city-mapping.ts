@@ -207,9 +207,13 @@ async function generateStats(): Promise<ExecutionResult> {
         }
 
         const region = REGIONS.find(r => r.code === code);
-        const regionName = region ? region.name : `(알 수 없음: ${code})`;
+        const regionName = region?.name || `알 수 없음: ${code}`;
 
-        console.log(`${code.padEnd(5)} ${regionName.padEnd(20)} : ${count}개`);
+        // regionName이 undefined인 경우 대비
+        const safeRegionName = String(regionName || '알 수 없음');
+        const safeCode = String(code || '???');
+
+        console.log(`${safeCode.padEnd(5)} ${safeRegionName.padEnd(20)} : ${count}개`);
       } catch (innerError) {
         console.error(`에러 발생 (regionCode=${regionCode}, count=${count}):`, innerError);
       }

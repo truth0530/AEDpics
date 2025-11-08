@@ -10,6 +10,8 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { hasSystemAdminAccess } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
+import { mapGugunToCityCode } from '@/lib/constants/regions';
+import { validateAndNormalizeCityCode } from '@/lib/api/validation';
 
 import { prisma } from '@/lib/prisma';
 // 서울 보건소 데이터
@@ -112,14 +114,23 @@ export async function POST(request: NextRequest) {
     console.log(`📊 기존 organizations 데이터: ${existingCount}개`);
 
     // 데이터 삽입 (createMany 사용)
-    const organizationsToInsert = ALL_HEALTH_CENTERS.map(center => ({
-      id: randomUUID(),
-      name: center.name,
-      type: 'health_center',
-      region_code: center.region_code,
-      contact: center.contact_phone,
-      address: center.address,
-    }));
+    const organizationsToInsert = ALL_HEALTH_CENTERS.map(center => {
+      // city_code 정규화 (한글 구군명 → city_code)
+      const cityValidation = validateAndNormalizeCityCode(center.city_code);
+      const normalizedCityCode = cityValidation.isValid
+        ? cityValidation.normalizedCode
+        : mapGugunToCityCode(center.city_code) || center.city_code;
+
+      return {
+        id: randomUUID(),
+        name: center.name,
+        city_code: normalizedCityCode,  // 정규화된 city_code 추가
+        type: 'health_center',
+        region_code: center.region_code,
+        contact: center.contact_phone,
+        address: center.address,
+      };
+    });
 
     const result = await prisma.organizations.createMany({
       data: organizationsToInsert as any,

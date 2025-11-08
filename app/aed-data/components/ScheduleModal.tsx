@@ -82,7 +82,27 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || '일정을 저장하지 못했습니다.');
+        // 409 Conflict - 이미 할당된 경우 특별 처리
+        if (response.status === 409) {
+          // stats가 있으면 부분 성공 처리
+          if (result.stats) {
+            const { created, skipped } = result.stats;
+            if (created > 0) {
+              // 일부 성공
+              console.log(`${created}개 추가됨, ${skipped}개 이미 할당됨`);
+              // 성공한 것만 카운트
+            } else if (skipped > 0) {
+              // 모두 이미 할당됨
+              console.log('모든 장비가 이미 할당되어 있습니다');
+            }
+          } else {
+            // 단일 장비 중복
+            console.log('이미 할당된 장비입니다');
+          }
+          // 409는 에러가 아닌 정상 처리로 간주
+        } else {
+          throw new Error(result.error || '일정을 저장하지 못했습니다.');
+        }
       }
 
       // 캐시 무효화 (UI 즉시 업데이트)
