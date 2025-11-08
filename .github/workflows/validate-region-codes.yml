@@ -47,6 +47,12 @@ jobs:
       - name: Check Region and City Codes
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SITE_URL: https://aed.pics
+          NEXT_PUBLIC_KAKAO_MAP_APP_KEY: placeholder-key
+          NEXTAUTH_URL: https://aed.pics
+          NEXTAUTH_SECRET: placeholder-secret-12345
+          JWT_SECRET: placeholder-jwt-secret-12345
+          ENCRYPTION_KEY: placeholder-encryption-key-12345
         run: |
           echo "=== Checking Region and City Codes ==="
           npm run check:region-codes || EXIT_CODE=$?
@@ -59,6 +65,12 @@ jobs:
       - name: Run Unified Mapping Validation
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SITE_URL: https://aed.pics
+          NEXT_PUBLIC_KAKAO_MAP_APP_KEY: placeholder-key
+          NEXTAUTH_URL: https://aed.pics
+          NEXTAUTH_SECRET: placeholder-secret-12345
+          JWT_SECRET: placeholder-jwt-secret-12345
+          ENCRYPTION_KEY: placeholder-encryption-key-12345
         run: |
           echo "=== Running Unified Mapping Validation ==="
           npx tsx scripts/unified-city-mapping.ts validate || EXIT_CODE=$?
@@ -71,6 +83,12 @@ jobs:
       - name: Generate Statistics Report
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SITE_URL: https://aed.pics
+          NEXT_PUBLIC_KAKAO_MAP_APP_KEY: placeholder-key
+          NEXTAUTH_URL: https://aed.pics
+          NEXTAUTH_SECRET: placeholder-secret-12345
+          JWT_SECRET: placeholder-jwt-secret-12345
+          ENCRYPTION_KEY: placeholder-encryption-key-12345
         run: |
           echo "=== Generating Statistics Report ==="
           npx tsx scripts/unified-city-mapping.ts stats
@@ -79,6 +97,12 @@ jobs:
         if: github.event.inputs.fix == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SITE_URL: https://aed.pics
+          NEXT_PUBLIC_KAKAO_MAP_APP_KEY: placeholder-key
+          NEXTAUTH_URL: https://aed.pics
+          NEXTAUTH_SECRET: placeholder-secret-12345
+          JWT_SECRET: placeholder-jwt-secret-12345
+          ENCRYPTION_KEY: placeholder-encryption-key-12345
         run: |
           echo "=== Auto-fixing invalid codes ==="
           npm run fix:city-codes
