@@ -474,10 +474,27 @@ export function BasicInfoStep() {
     }
   };
 
-  // 수정 취소
+  // 수정 취소 - 원본 값으로 복원
   const handleCancelEdit = () => {
-    // ✅ 이미 'edited' 상태이면 보존 (사용자가 이미 수정을 확인함)
-    // 수정 모드에서 나가도 검증 상태는 유지됨
+    // 원본 데이터로 복원
+    const restoredInfo = { ...basicInfo };
+    FIELDS.forEach((field) => {
+      const originalValue = deviceInfo[field.dbKey] || '';
+      restoredInfo[field.key] = originalValue;
+    });
+
+    // 외부표출 필드도 복원
+    DEVICE_INFO_FIELDS.forEach((field) => {
+      const originalValue = deviceInfo[field.dbKey] || '';
+      restoredInfo[field.key] = originalValue;
+    });
+
+    // all_matched 상태도 원래대로 복원 (수정 전 상태로)
+    if (restoredInfo.all_matched === 'edited') {
+      delete restoredInfo.all_matched;
+    }
+
+    updateStepData('basicInfo', restoredInfo);
     setIsEditMode(false);
   };
 
@@ -544,9 +561,36 @@ export function BasicInfoStep() {
     setIsLocationEditMode(false);
   };
 
-  // 설치 주소/위치 수정 취소
+  // 설치 주소/위치 수정 취소 - 원본 값으로 복원
   const handleLocationCancelEdit = () => {
+    // 원본 데이터로 복원
+    const restoredInfo = { ...basicInfo };
+
+    // 주소와 설치위치 원본으로 복원
+    restoredInfo.address = deviceInfo.installation_address || '';
+    restoredInfo.installation_position = deviceInfo.installation_position || '';
+
+    // GPS 좌표도 원본으로 복원
+    restoredInfo.gps_latitude = initialLat;
+    restoredInfo.gps_longitude = initialLng;
+    setCurrentLat(initialLat);
+    setCurrentLng(initialLng);
+    setHasMovedMarker(false);
+
+    // location_matched 상태도 원래대로 복원
+    if (restoredInfo.location_matched === 'edited') {
+      delete restoredInfo.location_matched;
+    }
+
+    updateStepData('basicInfo', restoredInfo);
     setIsLocationEditMode(false);
+
+    // 지도 마커도 원본 위치로 이동
+    if (map && marker) {
+      const moveLatLng = new window.kakao.maps.LatLng(initialLat, initialLng);
+      marker.setPosition(moveLatLng);
+      map.setCenter(moveLatLng);
+    }
   };
 
   // 입력값 변경
@@ -764,7 +808,7 @@ export function BasicInfoStep() {
                   : basicInfo.all_matched === 'edited'
                   ? isBasicInfoMatching
                     ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                    : 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 cursor-default shadow-lg shadow-yellow-500/20'
+                    : 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
                   : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
               }`}
             >
@@ -1051,11 +1095,11 @@ export function BasicInfoStep() {
         )}
 
         {basicInfo.location_matched === 'edited' && !isLocationEditMode && (
-          <div className="mb-3 rounded-lg px-2.5 py-1.5 bg-yellow-600/10 border border-yellow-600/50 text-sm text-yellow-300 flex items-center gap-2">
+          <div className="mb-3 rounded-lg px-2.5 py-1.5 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
             <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            <span>수정됨</span>
+            <span>수정 완료</span>
           </div>
         )}
 
@@ -1080,7 +1124,7 @@ export function BasicInfoStep() {
                   : basicInfo.location_matched === 'edited'
                   ? isLocationMatching
                     ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                    : 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 cursor-default shadow-lg shadow-yellow-500/20'
+                    : 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
                   : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
               }`}
             >

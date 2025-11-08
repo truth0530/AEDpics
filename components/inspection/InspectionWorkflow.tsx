@@ -489,7 +489,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
    * @returns 변경사항 있으면 true
    */
   const checkStepHasChanges = (step: number): boolean => {
-    const currentStepKey = ['basicInfo', 'deviceInfo', 'storage', 'documentation'][step];
+    const currentStepKey = ['basicInfo', 'deviceInfo', 'storage', 'managerEducation', 'documentation'][step];
     const currentData = stepData[currentStepKey];
     const savedData = lastSavedStepData[currentStepKey];
 

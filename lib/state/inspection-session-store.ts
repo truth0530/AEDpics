@@ -338,6 +338,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
     const deviceInfo = (stepData.deviceInfo || {}) as Record<string, any>;
     const storage = (stepData.storage || {}) as Record<string, any>;
     const documentation = (stepData.documentation || {}) as Record<string, any>;
+    const managerEducation = (stepData.managerEducation || {}) as Record<string, any>;
 
     const transformedData = {
       // deviceInfo 매핑
@@ -389,6 +390,13 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       documentation: {
         notes: documentation.notes || '',
         photos: documentation.photos || [],
+      },
+      // managerEducation 매핑
+      managerEducation: {
+        education_status: managerEducation.education_status || '',
+        education_other_text: managerEducation.education_other_text || '',
+        not_completed_reason: managerEducation.not_completed_reason || '',
+        not_completed_other_text: managerEducation.not_completed_other_text || '',
       },
       // location 매핑
       location: {
