@@ -274,7 +274,7 @@ model inspections {
   original_data                Json?
   registered_data              Json?
   inspected_data               Json?
-  approval_status              inspection_approval_status?    @default(submitted)
+  approval_status              inspection_approval_status    @default(submitted)
   approved_by_id               String?                        @db.Uuid
   approved_at                  DateTime?                      @db.Timestamptz(6)
   rejection_reason             String?

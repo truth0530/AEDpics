@@ -171,12 +171,19 @@ export async function POST(
 
     // 9. team_members 테이블에 자동 추가
     try {
-      const teamRole = role === 'local_admin' ? 'leader' : 'member';
-      await syncUserToTeam(updatedUser.id, updatedUser.organization_id, teamRole);
+      const memberType = role === 'temporary_inspector' ? 'temporary' : 'permanent';
+      await syncUserToTeam(
+        updatedUser.id,
+        organizationId,
+        targetUser.email,
+        targetUser.full_name,
+        memberType,
+        adminProfile.id
+      );
       logger.info('AdminUsersApprove:POST', 'User added to team_members', {
         userId: updatedUser.id,
-        organizationId: updatedUser.organization_id,
-        teamRole
+        organizationId: organizationId,
+        memberType
       });
     } catch (teamSyncError) {
       // team_members 동기화 실패해도 승인은 유지

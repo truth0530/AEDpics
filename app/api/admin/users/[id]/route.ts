@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/prisma';
 import { syncUserToTeam } from '@/lib/auth/team-sync';
 
 // GET: 특정 사용자 정보 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // 세션 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -33,7 +34,7 @@ export async function GET(
 
     // 사용자 조회
     const user = await prisma.user_profiles.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         organizations: {
           select: {
@@ -66,9 +67,10 @@ export async function GET(
 // PATCH: 사용자 정보 수정
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // 세션 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -104,7 +106,7 @@ export async function PATCH(
 
     // 사용자 업데이트
     const updatedUser = await prisma.user_profiles.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         role,
         region,
@@ -139,7 +141,7 @@ export async function PATCH(
       // 기존 pending 할당 제거
       await prisma.inspection_assignments.updateMany({
         where: {
-          assigned_to: params.id,
+          assigned_to: id,
           status: 'pending'
         },
         data: {
@@ -160,7 +162,7 @@ export async function PATCH(
 
       if (!hasAdmin) {
         // local_admin이 없으면 알림 생성 (나중에 처리)
-        console.log(`Warning: Organization ${organization_id} has no local_admin for temporary inspector ${params.id}`);
+        console.log(`Warning: Organization ${organization_id} has no local_admin for temporary inspector ${id}`);
       }
     }
 
@@ -181,9 +183,10 @@ export async function PATCH(
 // DELETE: 사용자 삭제 (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // 세션 확인
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -207,7 +210,7 @@ export async function DELETE(
 
     // 소프트 삭제 (비활성화)
     await prisma.user_profiles.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         is_active: false,
         updated_at: new Date()
@@ -217,7 +220,7 @@ export async function DELETE(
     // 관련 할당 취소
     await prisma.inspection_assignments.updateMany({
       where: {
-        assigned_to: params.id,
+        assigned_to: id,
         status: { in: ['pending', 'in_progress'] }
       },
       data: {

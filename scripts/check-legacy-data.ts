@@ -7,8 +7,10 @@ import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-// 환경변수 로드
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+// 환경변수 로드 (DATABASE_URL이 이미 설정되면 .env.local 무시)
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+}
 
 const prisma = new PrismaClient();
 

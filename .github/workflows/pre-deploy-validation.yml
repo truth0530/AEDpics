@@ -37,17 +37,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          echo "=== Validating Region Codes ==="
+          echo "=== Validating Region and City Codes ==="
 
-          # Check city codes
-          if ! npm run check:city-codes; then
-            echo "::error::City codes validation failed. Run 'npm run fix:city-codes' to fix."
-            exit 1
-          fi
-
-          # Check region codes
+          # Check region codes (includes city code validation)
           if ! npm run check:region-codes; then
-            echo "::error::Region codes validation failed. Run 'npm run fix:region-codes' to fix."
+            echo "::error::Region/city codes validation failed. Run 'npm run fix:region-codes' to fix."
             exit 1
           fi
 
@@ -107,8 +101,7 @@ jobs:
           echo "### Checks Performed:" >> $GITHUB_STEP_SUMMARY
           echo "- [x] TypeScript compilation" >> $GITHUB_STEP_SUMMARY
           echo "- [x] ESLint validation" >> $GITHUB_STEP_SUMMARY
-          echo "- [x] Region code validation" >> $GITHUB_STEP_SUMMARY
-          echo "- [x] City code validation" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] Region and city code validation" >> $GITHUB_STEP_SUMMARY
           echo "- [x] Hardcoded mapping check" >> $GITHUB_STEP_SUMMARY
           echo "- [x] Production build test" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

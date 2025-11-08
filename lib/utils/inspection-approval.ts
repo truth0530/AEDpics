@@ -133,7 +133,7 @@ export async function getPendingInspectionsForUser(userId: string) {
     });
   }
 
-  // Regional admin can see inspections from their region
+  // Regional admin can see inspections from their region (only for orgs without local_admin)
   if (user.role === 'regional_admin') {
     return await prisma.inspections.findMany({
       where: {
@@ -142,7 +142,14 @@ export async function getPendingInspectionsForUser(userId: string) {
         },
         user_profiles: {
           organizations: {
-            region_code: user.region_code || undefined
+            region_code: user.region_code || undefined,
+            // Only show inspections from organizations WITHOUT local_admin
+            user_profiles: {
+              none: {
+                role: 'local_admin',
+                is_active: true
+              }
+            }
           }
         }
       },
