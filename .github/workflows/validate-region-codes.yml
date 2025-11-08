@@ -44,27 +44,15 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Check City Codes
+      - name: Check Region and City Codes
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          echo "=== Checking City Codes ==="
-          npm run check:city-codes || EXIT_CODE=$?
-
-          if [ "${EXIT_CODE:-0}" -ne 0 ]; then
-            echo "::warning::City codes validation failed"
-            exit 1
-          fi
-
-      - name: Check Region Codes
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          echo "=== Checking Region Codes ==="
+          echo "=== Checking Region and City Codes ==="
           npm run check:region-codes || EXIT_CODE=$?
 
           if [ "${EXIT_CODE:-0}" -ne 0 ]; then
-            echo "::warning::Region codes validation failed"
+            echo "::warning::Region/city codes validation failed"
             exit 1
           fi
 
@@ -97,39 +85,18 @@ jobs:
           npm run fix:region-codes
           npx tsx scripts/unified-city-mapping.ts fix
 
-      - name: Notify on Failure
+      - name: Report Validation Failure
         if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '⚠️ Region/City Code Validation Failed',
-              body: `## Validation Failed
-
-              The automated validation of region and city codes has failed.
-
-              **Workflow Run:** [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-              **Triggered by:** ${context.eventName}
-              **Branch:** ${context.ref}
-
-              ### Action Required
-              1. Review the workflow logs
-              2. Run \`npm run check:city-codes\` locally
-              3. Run \`npm run check:region-codes\` locally
-              4. Fix any invalid codes using the fix scripts
-
-              ### Fix Commands
-              \`\`\`bash
-              npm run fix:city-codes
-              npm run fix:region-codes
-              \`\`\`
-              `,
-              labels: ['bug', 'data-integrity', 'automated']
-            });
-
-            console.log(`Created issue #${issue.data.number}`);
+        run: |
+          echo "⚠️ Validation Failed"
+          echo "=================="
+          echo ""
+          echo "Please review the workflow logs above."
+          echo ""
+          echo "To fix locally, run:"
+          echo "  npm run check:region-codes"
+          echo "  npm run fix:city-codes"
+          echo "  npm run fix:region-codes"
 
   summary:
     name: Generate Summary Report
