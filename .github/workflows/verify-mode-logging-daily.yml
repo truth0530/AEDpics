@@ -27,6 +27,12 @@ jobs:
       run: npx tsx scripts/verify-mode-logging.ts
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXT_PUBLIC_SITE_URL: https://aed.pics
+        NEXT_PUBLIC_KAKAO_MAP_APP_KEY: placeholder-key
+        NEXTAUTH_URL: https://aed.pics
+        NEXTAUTH_SECRET: placeholder-secret-for-testing-12345
+        JWT_SECRET: placeholder-jwt-secret-for-testing-12345
+        ENCRYPTION_KEY: placeholder-encryption-key-for-testing-12345
 
     - name: Check for anomalies in logs
       run: |
@@ -36,12 +42,6 @@ jobs:
 
     - name: Notify on failure
       if: failure()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '⚠️ Mode logging verification failed. Check production logs.'
-          })
+      run: |
+        echo "⚠️ Mode logging verification failed"
+        echo "Check workflow logs for details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
