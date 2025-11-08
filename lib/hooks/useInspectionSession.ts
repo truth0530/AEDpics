@@ -16,7 +16,13 @@ async function fetchInspectionSession(sessionId: string): Promise<InspectionSess
     throw new Error(typeof payload?.error === 'string' ? payload.error : '세션을 조회하지 못했습니다.');
   }
 
-  return payload.session as InspectionSession;
+  const session = (payload.session ?? payload.sessions?.[0]) as InspectionSession | undefined;
+
+  if (!session) {
+    throw new Error('세션 데이터를 찾을 수 없습니다.');
+  }
+
+  return session;
 }
 
 async function fetchInspectionSessions(status?: string) {

@@ -173,7 +173,12 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
         method: 'GET',
       });
 
-      const { session } = await parseResponse<{ session: InspectionSession }>(response);
+      const payload = await parseResponse<{ session?: InspectionSession; sessions?: InspectionSession[] }>(response);
+      const session = payload.session ?? payload.sessions?.[0];
+
+      if (!session) {
+        throw new Error('세션 데이터를 찾을 수 없습니다.');
+      }
 
       const loadedStepData = (session.step_data as Record<string, unknown> | null) ?? {};
 
