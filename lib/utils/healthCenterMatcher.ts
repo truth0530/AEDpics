@@ -3,6 +3,56 @@
  * 인트라넷 데이터와 회원가입 폼의 보건소 명칭을 일치시키기 위한 정규화 함수
  */
 
+import { getRegionNamePatterns } from '@/lib/constants/regions';
+
+/**
+ * ⭐ 보건소 명칭을 정규화 (Phase 1 개선)
+ *
+ * 지역명 prefix를 모두 제거하여 순수 구군명만 추출합니다.
+ * 정식 지역명('서울특별시')과 단축명('서울') 모두 제거합니다.
+ *
+ * @example
+ * normalizeHealthCenterName('서울 강남구 보건소')
+ * // → '강남구 보건소'
+ *
+ * normalizeHealthCenterName('서울특별시 강남구 보건소')
+ * // → '강남구 보건소'
+ *
+ * normalizeHealthCenterName('도봉구 보건소')
+ * // → '도봉구 보건소' (✅ '도'가 잘못 제거되지 않음)
+ *
+ * @param name - 원본 보건소 명칭
+ * @returns 정규화된 명칭 (지역명 제거)
+ */
+export function normalizeHealthCenterName(name: string): string {
+  if (!name) return '';
+
+  let result = name.trim();
+
+  // 1. 정식 지역명 제거
+  const patterns = getRegionNamePatterns();
+  for (const fullName of patterns.fullNames) {
+    const regex = new RegExp(`^${fullName}\\s*`);
+    result = result.replace(regex, '');
+  }
+
+  // 2. 짧은 지역명도 제거 (✅ 중요: 이전 누락)
+  for (const shortName of patterns.shortNames) {
+    const regex = new RegExp(`^${shortName}\\s*`);
+    result = result.replace(regex, '');
+  }
+
+  // 3. Suffix 제거 (경계 조건으로 '도' 오인 방지)
+  // (?=\s|$)는 공백 또는 문자열 끝을 의미 → '도봉구'의 '도'는 제거되지 않음
+  const suffixPattern = /(?:특별시|광역시|특별자치시|특별자치도|도)(?=\s|$)/g;
+  result = result.replace(suffixPattern, '');
+
+  // 4. 공백 정리
+  result = result.replace(/\s+/g, ' ').trim();
+
+  return result;
+}
+
 export class HealthCenterMatcher {
   /**
    * 보건소 명칭을 정규화하여 매칭 키 생성

@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server';
-import { REGIONS, getHealthCentersByRegion } from '@/lib/data/health-centers-master';
+import { getAvailableRegions, getAvailableCenters } from '@/lib/data/health-centers-master';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const region = searchParams.get('region');
 
-    // 하드코딩된 마스터 데이터 사용
+    // 중앙관리 시스템 데이터 사용 (동적 생성)
     if (region) {
-      const centers = getHealthCentersByRegion(region);
+      const centers = getAvailableCenters(region);
       return NextResponse.json({
         centers: centers,
         total: centers.length - 1, // '기타' 제외
-        source: 'master' // 데이터 소스 표시
+        source: 'factory' // 데이터 소스: 중앙관리 팩토리
       });
     }
 
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       centers: ['기타 (직접 입력)'],
       total: 0,
-      source: 'master'
+      source: 'factory'
     });
 
   } catch (error) {
@@ -32,14 +32,15 @@ export async function GET(request: Request) {
   }
 }
 
-// 모든 시도 목록 가져오기
+// 모든 지역 목록 가져오기
 export async function POST() {
   try {
-    // 하드코딩된 마스터 데이터 사용
+    // 중앙관리 시스템에서 동적으로 가져오기
+    const regions = getAvailableRegions();
     return NextResponse.json({
-      regions: REGIONS,
-      total: REGIONS.length,
-      source: 'master' // 데이터 소스 표시
+      regions: regions,
+      total: regions.length,
+      source: 'factory' // 데이터 소스: 중앙관리 팩토리
     });
 
   } catch (error) {

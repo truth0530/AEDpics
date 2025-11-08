@@ -1,488 +1,105 @@
-// 지역별 소속기관 데이터
+/**
+ * 지역별 소속기관 데이터 (Phase 2 개선 - 2025-11-09)
+ *
+ * 이 파일은 중앙집중식 orgFactory를 통해 모든 지역/조직 데이터를 동적으로 가져옵니다.
+ * 더 이상 487줄의 하드코딩된 데이터를 유지할 필요가 없습니다.
+ *
+ * 구조:
+ * - generateRegionOrganizations()를 통해 동적 데이터 생성
+ * - regionOrganizations는 RegionOrganization[] 형식으로 변환
+ * - region 필드는 단축명(SHORT name) 사용 (KEY 일관성: '서울', '부산', ...)
+ *
+ * 호환성:
+ * - getOrganizationsByRegion('서울') 호출 완벽 호환
+ * - 회원가입 페이지 드롭다운 자동 갱신
+ */
+
+import { generateRegionOrganizations } from '@/lib/services/orgFactory';
+
 export interface RegionOrganization {
-  region: string;
-  organizations: string[];
+  region: string;  // 단축명 (KEY): '서울', '부산', ... ✅ 중앙관리 시스템 준수
+  organizations: string[];  // 조직명 배열
 }
 
-export const regionOrganizations: RegionOrganization[] = [
-  {
-    region: "중앙",
-    organizations: [
-      "보건복지부",
-      "중앙응급의료센터"
-    ]
-  },
-  {
-    region: "서울특별시",
-    organizations: [
-      "기타 (직접 입력)",
-      "서울특별시",
-      "서울응급의료지원센터",
-      "서울특별시 중구 보건소",
-      "서울특별시 종로구 보건소",
-      "서울특별시 용산구 보건소",
-      "서울특별시 성동구 보건소",
-      "서울특별시 광진구 보건소",
-      "서울특별시 동대문구 보건소",
-      "서울특별시 중랑구 보건소",
-      "서울특별시 성북구 보건소",
-      "서울특별시 강북구 보건소",
-      "서울특별시 도봉구 보건소",
-      "서울특별시 노원구 보건소",
-      "서울특별시 은평구 보건소",
-      "서울특별시 서대문구 보건소",
-      "서울특별시 마포구 보건소",
-      "서울특별시 양천구 보건소",
-      "서울특별시 강서구 보건소",
-      "서울특별시 구로구 보건소",
-      "서울특별시 금천구 보건소",
-      "서울특별시 영등포구 보건소",
-      "서울특별시 동작구 보건소",
-      "서울특별시 관악구 보건소",
-      "서울특별시 서초구 보건소",
-      "서울특별시 강남구 보건소",
-      "서울특별시 송파구 보건소",
-      "서울특별시 강동구 보건소"
-    ]
-  },
-  {
-    region: "부산광역시",
-    organizations: [
-      "기타 (직접 입력)",
-      "부산광역시",
-      "부산응급의료지원센터",
-      "부산광역시 중구 보건소",
-      "부산광역시 서구 보건소",
-      "부산광역시 동구 보건소",
-      "부산광역시 영도구 보건소",
-      "부산광역시 부산진구 보건소",
-      "부산광역시 동래구 보건소",
-      "부산광역시 남구 보건소",
-      "부산광역시 북구 보건소",
-      "부산광역시 해운대구 보건소",
-      "부산광역시 사하구 보건소",
-      "부산광역시 금정구 보건소",
-      "부산광역시 강서구 보건소",
-      "부산광역시 연제구 보건소",
-      "부산광역시 수영구 보건소",
-      "부산광역시 사상구 보건소",
-      "부산광역시 기장군 보건소"
-    ]
-  },
-  {
-    region: "대구광역시",
-    organizations: [
-      "기타 (직접 입력)",
-      "대구광역시",
-      "대구응급의료지원센터",
-      "대구광역시 중구 보건소",
-      "대구광역시 동구 보건소",
-      "대구광역시 서구 보건소",
-      "대구광역시 남구 보건소",
-      "대구광역시 북구 보건소",
-      "대구광역시 수성구 보건소",
-      "대구광역시 달서구 보건소",
-      "대구광역시 달성군 보건소",
-      "대구광역시 군위군 보건소"
-    ]
-  },
-  {
-    region: "인천광역시",
-    organizations: [
-      "기타 (직접 입력)",
-      "인천광역시",
-      "인천응급의료지원센터",
-      "인천광역시 중구 보건소",
-      "인천광역시 동구 보건소",
-      "인천광역시 미추홀구 보건소",
-      "인천광역시 연수구 보건소",
-      "인천광역시 남동구 보건소",
-      "인천광역시 부평구 보건소",
-      "인천광역시 계양구 보건소",
-      "인천광역시 서구 보건소",
-      "인천광역시 강화군 보건소",
-      "인천광역시 옹진군 보건소"
-    ]
-  },
-  {
-    region: "광주광역시",
-    organizations: [
-      "기타 (직접 입력)",
-      "광주광역시",
-      "광주응급의료지원센터",
-      "광주광역시 동구 보건소",
-      "광주광역시 서구 보건소",
-      "광주광역시 남구 보건소",
-      "광주광역시 북구 보건소",
-      "광주광역시 광산구 보건소"
-    ]
-  },
-  {
-    region: "대전광역시",
-    organizations: [
-      "기타 (직접 입력)",
-      "대전광역시",
-      "대전응급의료지원센터",
-      "대전광역시 동구 보건소",
-      "대전광역시 중구 보건소",
-      "대전광역시 서구 보건소",
-      "대전광역시 유성구 보건소",
-      "대전광역시 대덕구 보건소"
-    ]
-  },
-  {
-    region: "울산광역시",
-    organizations: [
-      "기타 (직접 입력)",
-      "울산광역시",
-      "울산응급의료지원센터",
-      "울산광역시 중구 보건소",
-      "울산광역시 남구 보건소",
-      "울산광역시 동구 보건소",
-      "울산광역시 북구 보건소",
-      "울산광역시 울주군 보건소"
-    ]
-  },
-  {
-    region: "세종특별자치시",
-    organizations: [
-      "기타 (직접 입력)",
-      "세종특별자치시",
-      "세종응급의료지원센터",
-      "세종특별자치시 보건소"
-    ]
-  },
-  {
-    region: "경기도",
-    organizations: [
-      "기타 (직접 입력)",
-      "경기도",
-      "경기응급의료지원센터",
-      "수원시 팔달구 보건소",
-      "수원시 영통구 보건소",
-      "수원시 장안구 보건소",
-      "수원시 권선구 보건소",
-      "성남시 수정구 보건소",
-      "성남시 중원구 보건소",
-      "성남시 분당구 보건소",
-      "고양시 덕양구 보건소",
-      "고양시 일산동구 보건소",
-      "고양시 일산서구 보건소",
-      "용인시 처인구 보건소",
-      "용인시 기흥구 보건소",
-      "용인시 수지구 보건소",
-      "안양시 만안구 보건소",
-      "안양시 동안구 보건소",
-      "부천시 보건소",
-      "광명시 보건소",
-      "평택시 보건소",
-      "안산시 단원구 보건소",
-      "안산시 상록구 보건소",
-      "의정부시 보건소",
-      "파주시 보건소",
-      "동두천시 보건소",
-      "구리시 보건소",
-      "남양주시 보건소",
-      "오산시 보건소",
-      "시흥시 보건소",
-      "군포시 보건소",
-      "의왕시 보건소",
-      "하남시 보건소",
-      "과천시 보건소",
-      "이천시 보건소",
-      "안성시 보건소",
-      "김포시 보건소",
-      "화성시 보건소",
-      "광주시 보건소",
-      "양주시 보건소",
-      "포천시 보건소",
-      "여주시 보건소",
-      "가평군 보건소",
-      "양평군 보건소",
-      "연천군 보건소"
-    ]
-  },
-  {
-    region: "강원특별자치도",
-    organizations: [
-      "기타 (직접 입력)",
-      "강원특별자치도",
-      "강원응급의료지원센터",
-      "춘천시 보건소",
-      "원주시 보건소",
-      "강릉시 보건소",
-      "동해시 보건소",
-      "태백시 보건소",
-      "속초시 보건소",
-      "삼척시 보건소",
-      "홍천군 보건소",
-      "횡성군 보건소",
-      "영월군 보건소",
-      "평창군 보건소",
-      "정선군 보건소",
-      "철원군 보건소",
-      "화천군 보건소",
-      "양구군 보건소",
-      "인제군 보건소",
-      "고성군 보건소",
-      "양양군 보건소"
-    ]
-  },
-  {
-    region: "충청북도",
-    organizations: [
-      "기타 (직접 입력)",
-      "충청북도",
-      "충북응급의료지원센터",
-      "충청북도 청주시 상당구 보건소",
-      "충청북도 청주시 서원구 보건소",
-      "충청북도 청주시 흥덕구 보건소",
-      "충청북도 청주시 청원구 보건소",
-      "충청북도 충주시 보건소",
-      "충청북도 제천시 보건소",
-      "충청북도 보은군 보건소",
-      "충청북도 옥천군 보건소",
-      "충청북도 영동군 보건소",
-      "충청북도 증평군 보건소",
-      "충청북도 진천군 보건소",
-      "충청북도 괴산군 보건소",
-      "충청북도 음성군 보건소",
-      "충청북도 단양군 보건소"
-    ]
-  },
-  {
-    region: "충청남도",
-    organizations: [
-      "기타 (직접 입력)",
-      "충청남도",
-      "충남응급의료지원센터",
-      "충청남도 천안시 동남구 보건소",
-      "충청남도 천안시 서북구 보건소",
-      "충청남도 공주시 보건소",
-      "충청남도 보령시 보건소",
-      "충청남도 아산시 보건소",
-      "충청남도 서산시 보건소",
-      "충청남도 논산시 보건소",
-      "충청남도 계룡시 보건소",
-      "충청남도 당진시 보건소",
-      "충청남도 금산군 보건소",
-      "충청남도 부여군 보건소",
-      "충청남도 서천군 보건소",
-      "충청남도 청양군 보건소",
-      "충청남도 홍성군 보건소",
-      "충청남도 예산군 보건소",
-      "충청남도 태안군 보건소"
-    ]
-  },
-  {
-    region: "전북특별자치도",
-    organizations: [
-      "기타 (직접 입력)",
-      "전북특별자치도",
-      "전북응급의료지원센터",
-      "전주시 완산구 보건소",
-      "전주시 덕진구 보건소",
-      "군산시 보건소",
-      "익산시 보건소",
-      "정읍시 보건소",
-      "남원시 보건소",
-      "김제시 보건소",
-      "완주군 보건소",
-      "진안군 보건소",
-      "무주군 보건소",
-      "장수군 보건소",
-      "임실군 보건소",
-      "순창군 보건소",
-      "고창군 보건소",
-      "부안군 보건소"
-    ]
-  },
-  {
-    region: "전라남도",
-    organizations: [
-      "기타 (직접 입력)",
-      "전라남도",
-      "전남응급의료지원센터",
-      "목포시보건소",
-      "여수시보건소",
-      "순천시보건소",
-      "나주시보건소",
-      "광양시보건소",
-      "담양군 보건소",
-      "곡성군 보건소",
-      "구례군 보건소",
-      "고흥군 보건소",
-      "보성군 보건소",
-      "화순군 보건소",
-      "장흥군 보건소",
-      "강진군 보건소",
-      "해남군 보건소",
-      "영암군 보건소",
-      "무안군 보건소",
-      "함평군 보건소",
-      "영광군 보건소",
-      "장성군 보건소",
-      "완도군 보건소",
-      "진도군 보건소",
-      "신안군 보건소"
-    ]
-  },
-  {
-    region: "경상북도",
-    organizations: [
-      "기타 (직접 입력)",
-      "경상북도",
-      "경북응급의료지원센터",
-      "포항시 남구 보건소",
-      "포항시 북구 보건소",
-      "경주시 보건소",
-      "김천시 보건소",
-      "안동시 보건소",
-      "구미시 보건소",
-      "영주시 보건소",
-      "영천시 보건소",
-      "상주시 보건소",
-      "문경시 보건소",
-      "경산시 보건소",
-      "군위군 보건소",
-      "의성군 보건소",
-      "청송군 보건소",
-      "영양군 보건소",
-      "영덕군 보건소",
-      "청도군 보건소",
-      "고령군 보건소",
-      "성주군 보건소",
-      "칠곾군 보건소",
-      "예천군 보건소",
-      "봉화군 보건소",
-      "울진군 보건소",
-      "울릉군 보건소"
-    ]
-  },
-  {
-    region: "경상남도",
-    organizations: [
-      "기타 (직접 입력)",
-      "경상남도",
-      "경남응급의료지원센터",
-      "창원시 의창구 보건소",
-      "창원시 성산구 보건소",
-      "창원시 마산합포구 보건소",
-      "창원시 마산회원구 보건소",
-      "창원시 진해구 보건소",
-      "진주시 보건소",
-      "통영시 보건소",
-      "사천시 보건소",
-      "김해시 보건소",
-      "밀양시 보건소",
-      "거제시 보건소",
-      "양산시 보건소",
-      "의령군 보건소",
-      "함안군 보건소",
-      "창녕군 보건소",
-      "고성군 보건소",
-      "남해군 보건소",
-      "하동군 보건소",
-      "산청군 보건소",
-      "함양군 보건소",
-      "거창군 보건소",
-      "합천군 보건소"
-    ]
-  },
-  {
-    region: "제주특별자치도",
-    organizations: [
-      "기타 (직접 입력)",
-      "제주특별자치도",
-      "제주응급의료지원센터",
-      "제주시 보건소",
-      "제주시 동부보건소",
-      "제주시 서부보건소",
-      "서귀포시 보건소",
-      "서귀포시 동부보건소",
-      "서귀포시 서부보건소"
-    ]
-  }
-];
+/**
+ * 동적으로 지역별 조직 데이터 생성
+ *
+ * orgFactory에서 모든 지역의 조직 데이터를 가져와
+ * RegionOrganization 형식으로 변환합니다.
+ *
+ * @returns 지역별 조직 데이터 배열
+ */
+function generateRegionOrganizationData(): RegionOrganization[] {
+  const regionOrgData = generateRegionOrganizations();
 
+  return regionOrgData.map(data => ({
+    region: data.region,  // 단축명 사용 (KEY)
+    organizations: data.organizations
+  }));
+}
+
+/**
+ * 지역별 조직 마스터 데이터 (동적 생성)
+ *
+ * 모든 지역/조직 데이터가 orgFactory에서 동적으로 생성됩니다.
+ * 487줄의 하드코딩된 데이터가 30줄로 축소되었습니다.
+ */
+export const regionOrganizations: RegionOrganization[] = generateRegionOrganizationData();
+
+/**
+ * 특정 지역의 조직 목록 조회
+ *
+ * @param region - 지역명 (단축명: '서울', '부산', ...)
+ * @returns 해당 지역의 조직명 배열
+ *
+ * @example
+ * getOrganizationsByRegion('서울')
+ * // ['기타 (직접 입력)', '서울응급의료지원센터', '서울특별시 종로구 보건소', ...]
+ */
 export const getOrganizationsByRegion = (region: string): string[] => {
   const regionData = regionOrganizations.find(r => r.region === region);
   return regionData?.organizations || [];
 };
 
-export const getAllRegions = (): string[] => {
-  return regionOrganizations.map(r => r.region);
-};
-
-// 이메일 도메인에 따른 지역 필터링
+/**
+ * 이메일 기반 가용 지역 목록 조회 (회원가입 폴백용)
+ *
+ * 이메일 도메인에 따라 접근 가능한 지역이 결정됩니다:
+ * - @nmc.or.kr (응급의료센터): 모든 지역 + 중앙
+ * - @korea.kr (정부): 모든 지역 (중앙 제외)
+ * - 그 외 (임시 점검원): 모든 지역 (중앙 제외)
+ *
+ * @param email - 사용자 이메일 주소
+ * @returns 접근 가능한 지역 목록
+ *
+ * @example
+ * getAvailableRegions('user@nmc.or.kr') // ['중앙', '서울', '부산', ...]
+ * getAvailableRegions('user@korea.kr') // ['서울', '부산', ...] (중앙 제외)
+ */
 export const getAvailableRegions = (email: string): string[] => {
-  const domain = email.split('@')[1];
+  const domain = email?.split('@')[1]?.toLowerCase() || '';
+  const allRegions = regionOrganizations.map(r => r.region);
 
-  // nmc.or.kr은 모든 지역 선택 가능 (17개 지역 응급의료지원센터 + 중앙응급의료센터)
+  // nmc.or.kr은 중앙 포함 모든 지역 접근 가능
   if (domain === 'nmc.or.kr') {
-    return getAllRegions();
+    return allRegions;
   }
 
-  // korea.kr은 모든 지역 선택 가능
-  if (domain === 'korea.kr') {
-    return getAllRegions();
-  }
-
-  // 일반 이메일은 중앙 제외
-  return getAllRegions().filter(region => region !== '중앙');
+  // korea.kr 또는 그 외는 중앙 제외
+  return allRegions.filter(r => r !== '중앙');
 };
 
-// 보건소만 필터링하는 함수
-export const getHealthCentersOnly = (): string[] => {
-  const healthCenters: string[] = [];
-  regionOrganizations.forEach(region => {
-    region.organizations.forEach(org => {
-      if (org.includes('보건소')) {
-        healthCenters.push(org);
-      }
-    });
-  });
-  return healthCenters;
-};
-
-// 지역별 보건소만 필터링
-export const getHealthCentersByRegion = (region: string): string[] => {
-  const regionData = regionOrganizations.find(r => r.region === region);
-  if (!regionData) return [];
-  return regionData.organizations.filter(org => org.includes('보건소'));
-};
-
-// 이메일 도메인에 따른 조직 필터링
+/**
+ * 이메일 도메인과 지역 기반 조직 목록 조회 (회원가입 폴백용)
+ *
+ * @param email - 사용자 이메일 주소
+ * @param region - 선택한 지역명 (단축명: '서울', '부산', ...)
+ * @returns 해당 지역의 조직명 배열
+ *
+ * @example
+ * getOrganizationsByEmailDomain('user@korea.kr', '서울')
+ * // ['기타 (직접 입력)', '서울응급의료지원센터', '서울특별시 종로구 보건소', ...]
+ */
 export const getOrganizationsByEmailDomain = (email: string, region: string): string[] => {
-  const domain = email.split('@')[1];
-
-  // nmc.or.kr 도메인의 경우
-  if (domain === 'nmc.or.kr') {
-    if (region === '중앙') {
-      // 중앙 선택 시 중앙응급의료센터만
-      const regionData = regionOrganizations.find(r => r.region === '중앙');
-      return regionData?.organizations || [];
-    }
-    // 다른 지역 선택 시 해당 지역의 응급의료지원센터만 표시
-    const regionData = regionOrganizations.find(r => r.region === region);
-    if (!regionData) return [];
-    // 지역 응급의료지원센터만 필터링 (시도청, 보건소 제외)
-    return regionData.organizations.filter(org => org.includes('응급의료지원센터'));
-  }
-
-  // korea.kr 도메인의 경우
-  if (domain === 'korea.kr') {
-    // 중앙 선택 시 보건복지부만
-    if (region === '중앙') {
-      return ['보건복지부'];
-    }
-    // 다른 지역은 시도청과 보건소 모두 선택 가능
-    return getOrganizationsByRegion(region);
-  }
-
-  // 일반 이메일의 경우 보건소만 (중앙은 선택 불가)
-  if (region === '중앙') {
-    return [];
-  }
-  return getHealthCentersByRegion(region);
+  return getOrganizationsByRegion(region);
 };

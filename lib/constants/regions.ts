@@ -902,3 +902,86 @@ export function getNormalizedRegionLabel(regionCode: string): string {
   const fullName = REGION_FULL_NAMES.find(r => r.code === regionCode)?.label;
   return fullName || REGION_CODE_TO_LABEL[regionCode] || regionCode;
 }
+
+// ============================================================================
+// Phase 0: Factory 생성 지원용 헬퍼 함수들 (2025-11-09 추가)
+// ============================================================================
+
+/**
+ * ⭐ 정식 지역명 조회
+ *
+ * @example
+ * getFullRegionName('SEO')  // '서울특별시'
+ * getFullRegionName('DAE')  // '대구광역시'
+ * getFullRegionName('KR')   // '중앙'
+ *
+ * @description
+ * 지역 코드(regionCode)를 정식 지역명으로 변환합니다.
+ * Factory에서 fullRegionName 필드를 채울 때 사용됩니다.
+ */
+export function getFullRegionName(regionCode: string): string {
+  return REGION_CODE_TO_FULL_LABEL[regionCode] || REGION_CODE_TO_LABEL[regionCode] || regionCode;
+}
+
+/**
+ * ⭐ 응급의료지원센터 명칭 생성
+ *
+ * @example
+ * getEmergencyCenterName('SEO')  // '서울응급의료지원센터'
+ * getEmergencyCenterName('BUS')  // '부산응급의료지원센터'
+ * getEmergencyCenterName('KR')   // '중앙응급의료지원센터'
+ *
+ * @description
+ * 지역 코드를 기반으로 응급의료지원센터 조직명을 생성합니다.
+ * Factory에서 organizations 배열에 추가할 때 사용됩니다.
+ */
+export function getEmergencyCenterName(regionCode: string): string {
+  const shortLabel = REGION_CODE_TO_LABEL[regionCode] || regionCode;
+  return `${shortLabel}응급의료지원센터`;
+}
+
+/**
+ * ⭐ 보건소 명칭 생성
+ *
+ * @example
+ * generateHealthCenterName('SEO', '강남구')  // '서울특별시 강남구 보건소'
+ * generateHealthCenterName('DAE', '중구')    // '대구광역시 중구 보건소'
+ * generateHealthCenterName('SEJ', '세종시')  // '세종특별자치시 세종시 보건소'
+ *
+ * @description
+ * 지역 코드와 구군명으로 보건소 조직명을 생성합니다.
+ * Factory에서 organizations 배열에 추가할 때 사용됩니다.
+ *
+ * 형식: `${정식지역명} ${구군명} 보건소`
+ */
+export function generateHealthCenterName(regionCode: string, gugun: string): string {
+  const fullName = getFullRegionName(regionCode);
+  return `${fullName} ${gugun} 보건소`;
+}
+
+/**
+ * ⭐ 지역명 패턴 객체 가져오기 (healthCenterMatcher 정규화용)
+ *
+ * @returns { fullNames: string[], shortNames: string[] }
+ *
+ * @example
+ * const patterns = getRegionNamePatterns();
+ * patterns.fullNames   // ['서울특별시', '부산광역시', ...]
+ * patterns.shortNames  // ['서울', '부산', ...]
+ *
+ * @description
+ * healthCenterMatcher.ts의 normalizeHealthCenterName()에서
+ * 지역명 prefix를 제거할 때 정규식 생성 목적으로 사용합니다.
+ *
+ * 짧은 이름과 정식명칭 모두를 포함하여
+ * '서울 강남구 보건소'과 '서울특별시 강남구 보건소' 둘 다 정규화됩니다.
+ */
+export function getRegionNamePatterns(): { fullNames: string[]; shortNames: string[] } {
+  const fullNames = REGION_FULL_NAMES.map(r => r.label);
+  const shortNames = Object.values(REGION_CODE_TO_LABEL);
+
+  return {
+    fullNames,
+    shortNames
+  };
+}

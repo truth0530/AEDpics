@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { normalizeToDaily, calculateChartMaxValue, type HourlyRawData } from '@/lib/utils/chartDataProcessor';
+import { generateRegionOrganizations } from '@/lib/services/orgFactory';
 
 interface DashboardData {
   title: string;
@@ -144,29 +145,48 @@ export function AEDDashboard({ dashboardData, allDevices, sidoList, gugunMap, us
 
   // 필터링된 데이터 계산
   const filteredData = useMemo(() => {
-    // 더미 데이터 - 17개 시도 (완료율에 차이를 둠: 40%~95%)
-    const dummySidoData = [
-      { region: '서울', mandatory: 3500, nonMandatory: 2100, completedMandatory: 3150, completedNonMandatory: 1890, urgent: 45 },  // 90%, 90%
-      { region: '부산', mandatory: 1800, nonMandatory: 1200, completedMandatory: 1530, completedNonMandatory: 1020, urgent: 28 },  // 85%, 85%
-      { region: '대구', mandatory: 1200, nonMandatory: 800, completedMandatory: 960, completedNonMandatory: 640, urgent: 18 },    // 80%, 80%
-      { region: '인천', mandatory: 1500, nonMandatory: 950, completedMandatory: 1200, completedNonMandatory: 713, urgent: 22 },   // 80%, 75%
-      { region: '광주', mandatory: 850, nonMandatory: 600, completedMandatory: 638, completedNonMandatory: 420, urgent: 15 },     // 75%, 70%
-      { region: '대전', mandatory: 900, nonMandatory: 650, completedMandatory: 675, completedNonMandatory: 423, urgent: 16 },     // 75%, 65%
-      { region: '울산', mandatory: 650, nonMandatory: 450, completedMandatory: 455, completedNonMandatory: 270, urgent: 12 },     // 70%, 60%
-      { region: '세종', mandatory: 300, nonMandatory: 200, completedMandatory: 285, completedNonMandatory: 190, urgent: 5 },      // 95%, 95%
-      { region: '경기', mandatory: 5200, nonMandatory: 3400, completedMandatory: 4420, completedNonMandatory: 2890, urgent: 72 }, // 85%, 85%
-      { region: '강원', mandatory: 800, nonMandatory: 550, completedMandatory: 520, completedNonMandatory: 330, urgent: 14 },     // 65%, 60%
-      { region: '충북', mandatory: 700, nonMandatory: 480, completedMandatory: 455, completedNonMandatory: 288, urgent: 13 },     // 65%, 60%
-      { region: '충남', mandatory: 950, nonMandatory: 650, completedMandatory: 570, completedNonMandatory: 325, urgent: 17 },     // 60%, 50%
-      { region: '전북', mandatory: 850, nonMandatory: 580, completedMandatory: 510, completedNonMandatory: 290, urgent: 15 },     // 60%, 50%
-      { region: '전남', mandatory: 900, nonMandatory: 620, completedMandatory: 495, completedNonMandatory: 248, urgent: 16 },     // 55%, 40%
-      { region: '경북', mandatory: 1100, nonMandatory: 750, completedMandatory: 605, completedNonMandatory: 375, urgent: 19 },    // 55%, 50%
-      { region: '경남', mandatory: 1600, nonMandatory: 1100, completedMandatory: 1120, completedNonMandatory: 660, urgent: 25 },  // 70%, 60%
-      { region: '제주', mandatory: 400, nonMandatory: 280, completedMandatory: 380, completedNonMandatory: 266, urgent: 8 },      // 95%, 95%
-    ];
+    // 동적으로 더미 데이터 생성 (중앙 제외 17개 시도)
+    const regionOrgData = generateRegionOrganizations();
+    const regionsData = regionOrgData.filter(data => data.regionCode !== 'KR');
 
-    // 더미 구군 데이터
-    const dummyGugunData: Record<string, any[]> = {
+    // 시도별 더미 데이터 생성
+    const dummySidoData = regionsData.map((data, index) => {
+      const completionRate = 40 + ((index * 7) % 56); // 40~95% 범위
+      const mandatory = 1000 + (index * 150);
+      const nonMandatory = 700 + (index * 100);
+
+      return {
+        region: data.region,
+        mandatory,
+        nonMandatory,
+        completedMandatory: Math.round(mandatory * (completionRate / 100)),
+        completedNonMandatory: Math.round(nonMandatory * (completionRate / 100)),
+        urgent: 10 + (index % 5),
+      };
+    });
+
+    // 동적으로 구군별 더미 데이터 생성
+    const dummyGugunData: Record<string, any[]> = {};
+    regionsData.forEach((data, regionIndex) => {
+      dummyGugunData[data.region] = data.guguns.map((gugun, gugunIndex) => {
+        const completionRate = 50 + ((regionIndex * 11 + gugunIndex * 3) % 46); // 50~95% 범위
+        const mandatory = 100 + (gugunIndex * 15);
+        const nonMandatory = 50 + (gugunIndex * 8);
+
+        return {
+          region: gugun,
+          mandatory,
+          nonMandatory,
+          completedMandatory: Math.round(mandatory * (completionRate / 100)),
+          completedNonMandatory: Math.round(nonMandatory * (completionRate / 100)),
+          urgent: 1 + (gugunIndex % 3),
+        };
+      });
+    });
+
+    // DEPRECATED: 하드코딩된 구군 데이터 (더 이상 사용되지 않음)
+    /*
+    const _OLD_dummyGugunData: Record<string, any[]> = {
       '서울': [
         { region: '종로구', mandatory: 180, nonMandatory: 110, completedMandatory: 171, completedNonMandatory: 105, urgent: 2 },   // 95%, 95%
         { region: '중구', mandatory: 150, nonMandatory: 90, completedMandatory: 135, completedNonMandatory: 81, urgent: 2 },       // 90%, 90%
@@ -342,6 +362,7 @@ export function AEDDashboard({ dashboardData, allDevices, sidoList, gugunMap, us
         { region: '서귀포시', mandatory: 145, nonMandatory: 95, completedMandatory: 131, completedNonMandatory: 86, urgent: 2 },  // 90%, 90%
       ],
     };
+    */
 
     let regionData: any[] = [];
 
