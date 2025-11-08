@@ -94,6 +94,14 @@ async function requireAuthWithRole() {
   return { profile, accessContext, userId: session.user.id };
 }
 
+const SESSION_STATUS_VALUES = ['active', 'paused', 'completed', 'cancelled'] as const;
+type SessionStatus = typeof SESSION_STATUS_VALUES[number];
+const DEFAULT_ACTIVE_STATUSES: SessionStatus[] = ['active', 'paused'];
+
+function isSessionStatus(value: string): value is SessionStatus {
+  return (SESSION_STATUS_VALUES as readonly string[]).includes(value);
+}
+
 // HTTP 메소드 핸들러들을 export로 변경
 export async function GET(request: NextRequest) {
   const auth = await requireAuthWithRole();
@@ -104,11 +112,53 @@ export async function GET(request: NextRequest) {
   const { userId } = auth;
 
   try {
-    // 활성 세션들 조회
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get('sessionId');
+    const statusParam = searchParams.get('status');
+
+    if (sessionId) {
+      const session = await prisma.inspection_sessions.findUnique({
+        where: { id: sessionId },
+      });
+
+      if (!session) {
+        return NextResponse.json(
+          { error: '세션을 찾을 수 없습니다.' },
+          { status: 404 }
+        );
+      }
+
+      if (session.inspector_id !== userId) {
+        return NextResponse.json(
+          { error: '권한이 없습니다.' },
+          { status: 403 }
+        );
+      }
+
+      return NextResponse.json({ session });
+    }
+
+    const normalizedStatuses = statusParam
+      ? statusParam
+          .split(',')
+          .map((value) => value.trim().toLowerCase())
+          .filter((value): value is SessionStatus => isSessionStatus(value))
+      : [];
+
+    const isAllStatusesRequested = statusParam?.toLowerCase() === 'all';
+    const statusFilter = isAllStatusesRequested
+      ? undefined
+      : normalizedStatuses.length > 0
+        ? normalizedStatuses
+        : undefined;
+
+    const statusesToQuery = statusFilter ?? (!statusParam ? DEFAULT_ACTIVE_STATUSES : undefined);
+
+    // 활성 세션들 조회 (필터 적용)
     const sessions = await prisma.inspection_sessions.findMany({
       where: {
         inspector_id: userId,
-        status: { in: ['active', 'paused'] }
+        ...(statusesToQuery ? { status: { in: statusesToQuery } } : {}),
       },
       orderBy: { updated_at: 'desc' }
     });
@@ -256,102 +306,164 @@ export async function PATCH(request: NextRequest) {
     if (payload.status === 'completed' && payload.finalizeData) {
       const { finalizeData } = payload;
 
+      // 데이터 검증 및 로깅
+      console.log('[PATCH Complete] Received finalizeData:', JSON.stringify({
+        hasDeviceInfo: !!finalizeData.deviceInfo,
+        hasBasicInfo: !!finalizeData.basicInfo,
+        hasStorage: !!finalizeData.storage,
+        deviceInfoKeys: finalizeData.deviceInfo ? Object.keys(finalizeData.deviceInfo) : [],
+        basicInfoKeys: finalizeData.basicInfo ? Object.keys(finalizeData.basicInfo) : [],
+        storageKeys: finalizeData.storage ? Object.keys(finalizeData.storage) : [],
+      }, null, 2));
+
       // 트랜잭션으로 처리
       const result = await prisma.$transaction(async (tx) => {
-        // 점검 데이터 생성
-        const deviceInfo = (finalizeData.deviceInfo || {}) as any;
-        const basicInfo = (finalizeData.basicInfo || {}) as any;
-        const storage = (finalizeData.storage || {}) as any;
+        try {
+          // 점검 데이터 생성
+          const deviceInfo = (finalizeData.deviceInfo || {}) as any;
+          const basicInfo = (finalizeData.basicInfo || {}) as any;
+          const storage = (finalizeData.storage || {}) as any;
 
-        // issues_found 배열 생성
-        const issuesFound: string[] = [];
-        if (!deviceInfo.all_matched) {
-          issuesFound.push('장비 정보 불일치');
-        }
-        if (!basicInfo.all_matched) {
-          issuesFound.push('기본 정보 불일치');
-        }
-        if (storage.checklist_items) {
-          Object.entries(storage.checklist_items).forEach(([key, value]) => {
-            if (value === 'bad' || value === 'needs_improvement') {
-              issuesFound.push(`보관함 ${key} 개선 필요`);
-            }
-          });
-        }
-
-        // 사진 배열 생성
-        const photos: string[] = [];
-        if (deviceInfo.serial_number_photo) photos.push(deviceInfo.serial_number_photo);
-        if (deviceInfo.battery_mfg_date_photo) photos.push(deviceInfo.battery_mfg_date_photo);
-        if (storage.storage_box_photo) photos.push(storage.storage_box_photo);
-
-        // aed_data FK 조회
-        const aedData = await tx.aed_data.findUnique({
-          where: { equipment_serial: session.equipment_serial },
-          select: { id: true }
-        });
-
-        // 점검 레코드 생성
-        const createData: any = {
-          equipment_serial: session.equipment_serial,
-          inspector_id: userId,
-          inspection_date: new Date(),
-          inspection_type: 'monthly',
-          battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' : 'replaced',
-          pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' : 'replaced',
-          overall_status: 'pass',
-          notes: payload.notes ?? null,
-          issues_found: issuesFound,
-          photos: photos,
-          original_data: session.device_info || {},
-          inspected_data: removeUndefinedValues({
-            basicInfo: basicInfo,
-            deviceInfo: deviceInfo,
-            storage: storage,
-            confirmedLocation: basicInfo.address,
-            confirmedManufacturer: deviceInfo.manufacturer,
-            confirmedModelName: deviceInfo.model_name,
-            confirmedSerialNumber: deviceInfo.serial_number,
-            batteryExpiryChecked: deviceInfo.battery_expiry_date,
-            padExpiryChecked: deviceInfo.pad_expiry_date
-          })
-        };
-
-        if (aedData) {
-          createData.aed_data = { connect: { id: aedData.id } };
-        }
-
-        const createdInspection = await tx.inspections.create({
-          data: createData
-        });
-
-        // 세션 완료 처리
-        const updatedSession = await tx.inspection_sessions.update({
-          where: { id: payload.sessionId },
-          data: {
-            status: 'completed',
-            completed_at: new Date(),
-            step_data: finalizeData as any,
-            field_changes: {} as any  // 임시로 빈 객체로 처리
+          // issues_found 배열 생성
+          const issuesFound: string[] = [];
+          if (!deviceInfo.all_matched) {
+            issuesFound.push('장비 정보 불일치');
           }
-        });
+          if (!basicInfo.all_matched) {
+            issuesFound.push('기본 정보 불일치');
+          }
+          if (storage.checklist_items) {
+            Object.entries(storage.checklist_items).forEach(([key, value]) => {
+              if (value === 'bad' || value === 'needs_improvement') {
+                issuesFound.push(`보관함 ${key} 개선 필요`);
+              }
+            });
+          }
 
-        // Assignment 완료 처리
-        if (session.equipment_serial) {
-          await tx.inspection_assignments.updateMany({
-            where: {
-              equipment_serial: session.equipment_serial,
-              assigned_to: userId,
-              status: 'in_progress'
-            },
+          // 사진 배열 생성
+          const photos: string[] = [];
+          if (deviceInfo.serial_number_photo) photos.push(deviceInfo.serial_number_photo);
+          if (deviceInfo.battery_mfg_date_photo) photos.push(deviceInfo.battery_mfg_date_photo);
+          if (storage.storage_box_photo) photos.push(storage.storage_box_photo);
+
+          // aed_data FK 조회
+          const aedData = await tx.aed_data.findUnique({
+            where: { equipment_serial: session.equipment_serial },
+            select: { id: true }
+          });
+
+          console.log('[PATCH Complete] aedData lookup result:', { found: !!aedData, id: aedData?.id });
+
+          // 점검 레코드 생성
+          const createData: any = {
+            equipment_serial: session.equipment_serial,
+            inspection_date: new Date(),
+            inspection_type: 'monthly',
+            battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' : 'replaced',
+            pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' : 'replaced',
+            overall_status: 'pass',
+            notes: payload.notes ?? null,
+            issues_found: issuesFound,
+            photos: photos,
+            original_data: session.device_info || {},
+            inspected_data: removeUndefinedValues({
+              basicInfo: basicInfo,
+              deviceInfo: deviceInfo,
+              storage: storage,
+              confirmedLocation: basicInfo.address,
+              confirmedManufacturer: deviceInfo.manufacturer,
+              confirmedModelName: deviceInfo.model_name,
+              confirmedSerialNumber: deviceInfo.serial_number,
+              batteryExpiryChecked: deviceInfo.battery_expiry_date,
+              padExpiryChecked: deviceInfo.pad_expiry_date
+            })
+          };
+
+          console.log('[PATCH Complete] createData prepared:', JSON.stringify({
+            keys: Object.keys(createData),
+            equipment_serial: createData.equipment_serial,
+            inspection_type: createData.inspection_type,
+            battery_status: createData.battery_status,
+            pad_status: createData.pad_status,
+            overall_status: createData.overall_status,
+            issuesCount: issuesFound.length,
+            photosCount: photos.length,
+            hasAedDataConnect: !!aedData,
+            inspectedDataKeys: Object.keys(createData.inspected_data)
+          }, null, 2));
+
+          // 관계(Relation)를 통한 필드 연결
+          createData.user_profiles = { connect: { id: userId } };
+          console.log('[PATCH Complete] inspector relation added via user_profiles:', userId);
+
+          if (aedData) {
+            createData.aed_data = { connect: { id: aedData.id } };
+            console.log('[PATCH Complete] aed_data connection added:', aedData.id);
+          }
+
+          console.log('[PATCH Complete] About to call tx.inspections.create()...');
+          const createdInspection = await tx.inspections.create({
+            data: createData
+          });
+          console.log('[PATCH Complete] Inspection created successfully:', { id: createdInspection.id, serial: createdInspection.equipment_serial });
+
+          // 세션 완료 처리
+          const updatedSession = await tx.inspection_sessions.update({
+            where: { id: payload.sessionId },
             data: {
               status: 'completed',
-              completed_at: new Date()
+              completed_at: new Date(),
+              step_data: finalizeData as any,
+              field_changes: {} as any  // 임시로 빈 객체로 처리
             }
           });
-        }
 
-        return { inspection: createdInspection, session: updatedSession };
+          // Assignment 완료 처리
+          if (session.equipment_serial) {
+            await tx.inspection_assignments.updateMany({
+              where: {
+                equipment_serial: session.equipment_serial,
+                assigned_to: userId,
+                status: 'in_progress'
+              },
+              data: {
+                status: 'completed',
+                completed_at: new Date()
+              }
+            });
+          }
+
+          return { inspection: createdInspection, session: updatedSession };
+        } catch (txError) {
+          logger.error('InspectionSession:PATCH[TxInside]', 'Transaction internal error', {
+            error: txError instanceof Error ? txError.message : String(txError),
+            code: (txError as any)?.code,
+            meta: (txError as any)?.meta,
+            cause: (txError as any)?.cause,
+            stack: txError instanceof Error ? txError.stack : undefined,
+          });
+          console.error('[PATCH Complete] Transaction error caught inside:', JSON.stringify({
+            message: txError instanceof Error ? txError.message : String(txError),
+            code: (txError as any)?.code,
+            meta: (txError as any)?.meta,
+            cause: (txError as any)?.cause,
+          }, null, 2));
+          throw txError;
+        }
+      }).catch(txError => {
+        logger.error('InspectionSession:PATCH[TxCatch]', 'Transaction error in catch block', {
+          error: txError instanceof Error ? txError.message : String(txError),
+          code: (txError as any)?.code,
+          meta: (txError as any)?.meta,
+          cause: (txError as any)?.cause,
+          stack: txError instanceof Error ? txError.stack : undefined,
+        });
+        console.error('[PATCH Complete] Transaction catch error:', JSON.stringify({
+          message: txError instanceof Error ? txError.message : String(txError),
+          code: (txError as any)?.code,
+          meta: (txError as any)?.meta,
+        }, null, 2));
+        throw txError;
       });
 
       return NextResponse.json({
@@ -374,9 +486,26 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ session: updatedSession });
   } catch (error) {
-    logger.error('InspectionSession:PATCH', 'Failed to update session', { error, userId });
+    // 에러 상세 정보 로깅
+    const errorDetails = {
+      userId,
+      message: error instanceof Error ? error.message : String(error),
+      code: (error as any)?.code,
+      meta: (error as any)?.meta,
+      stack: error instanceof Error ? error.stack : undefined,
+    };
+
+    console.error('[PATCH /api/inspections/sessions] Error Details:', JSON.stringify(errorDetails, null, 2));
+    logger.error('InspectionSession:PATCH', 'Failed to update session', errorDetails);
+
     return NextResponse.json(
-      { error: 'Failed to update session' },
+      {
+        error: 'Failed to update session',
+        details: {
+          code: (error as any)?.code,
+          message: error instanceof Error ? error.message : String(error),
+        }
+      },
       { status: 500 }
     );
   }
