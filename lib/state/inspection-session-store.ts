@@ -397,6 +397,7 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
         education_other_text: managerEducation.education_other_text || '',
         not_completed_reason: managerEducation.not_completed_reason || '',
         not_completed_other_text: managerEducation.not_completed_other_text || '',
+        message_to_mohw: managerEducation.message_to_mohw || '',
       },
       // location 매핑
       location: {

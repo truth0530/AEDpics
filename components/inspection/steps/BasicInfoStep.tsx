@@ -476,6 +476,9 @@ export function BasicInfoStep() {
 
   // 수정 취소 - 원본 값으로 복원
   const handleCancelEdit = () => {
+    // 편집 전 상태를 추적하기 위한 변수
+    const previousAllMatched = basicInfo.all_matched;
+
     // 원본 데이터로 복원
     const restoredInfo = { ...basicInfo };
     FIELDS.forEach((field) => {
@@ -489,9 +492,23 @@ export function BasicInfoStep() {
       restoredInfo[field.key] = originalValue;
     });
 
-    // all_matched 상태도 원래대로 복원 (수정 전 상태로)
-    if (restoredInfo.all_matched === 'edited') {
-      delete restoredInfo.all_matched;
+    // 복원한 값이 원본과 모두 일치하는지 확인
+    const isAllMatching = BASIC_INFO_FIELDS.every((field) => {
+      const originalValue = deviceInfo[field.dbKey] || '';
+      const currentValue = restoredInfo[field.key] || '';
+      if (!originalValue.trim() || !currentValue.trim()) {
+        return false;
+      }
+      return originalValue === currentValue;
+    });
+
+    // all_matched 상태 복원:
+    // - 복원 후 원본과 일치하면 이전 상태 유지 (true 또는 'edited')
+    // - 일치하지 않으면 false로 설정
+    if (isAllMatching && previousAllMatched) {
+      restoredInfo.all_matched = previousAllMatched;
+    } else {
+      restoredInfo.all_matched = false;
     }
 
     updateStepData('basicInfo', restoredInfo);
@@ -563,6 +580,9 @@ export function BasicInfoStep() {
 
   // 설치 주소/위치 수정 취소 - 원본 값으로 복원
   const handleLocationCancelEdit = () => {
+    // 편집 전 상태를 추적하기 위한 변수
+    const previousLocationMatched = basicInfo.location_matched;
+
     // 원본 데이터로 복원
     const restoredInfo = { ...basicInfo };
 
@@ -577,9 +597,22 @@ export function BasicInfoStep() {
     setCurrentLng(initialLng);
     setHasMovedMarker(false);
 
-    // location_matched 상태도 원래대로 복원
-    if (restoredInfo.location_matched === 'edited') {
-      delete restoredInfo.location_matched;
+    // 복원한 값이 원본과 일치하는지 확인
+    const originalAddress = deviceInfo.installation_address || '';
+    const originalPosition = deviceInfo.installation_position || '';
+    const isLocationMatching =
+      originalAddress.trim() && restoredInfo.address.trim() &&
+      originalPosition.trim() && restoredInfo.installation_position.trim() &&
+      restoredInfo.address === originalAddress &&
+      restoredInfo.installation_position === originalPosition;
+
+    // location_matched 상태 복원:
+    // - 복원 후 원본과 일치하면 이전 상태 유지 (true 또는 'edited')
+    // - 일치하지 않으면 false로 설정
+    if (isLocationMatching && previousLocationMatched) {
+      restoredInfo.location_matched = previousLocationMatched;
+    } else {
+      restoredInfo.location_matched = false;
     }
 
     updateStepData('basicInfo', restoredInfo);
