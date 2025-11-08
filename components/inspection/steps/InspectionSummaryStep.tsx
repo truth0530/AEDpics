@@ -302,7 +302,8 @@ export function InspectionSummaryStep() {
 
   // 3단계: 보관함 점검 분석
   const storageChecklistSummary = useMemo(() => {
-    const storage = stepData.storageChecklist || {};
+    // storage로 통일 (storageChecklist가 아님)
+    const storage = stepData.storage || {};
     const matched: SummaryItem[] = [];
     const issues: SummaryItem[] = [];
     const photos: string[] = [];
@@ -341,7 +342,7 @@ export function InspectionSummaryStep() {
     if (storage.signage_photo) photos.push('안내표지 사진');
 
     return { matched, issues, photos };
-  }, [stepData.storageChecklist]);
+  }, [stepData.storage]);
 
   // 전체 통계
   const totalStats = useMemo(() => {
