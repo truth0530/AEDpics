@@ -302,8 +302,6 @@ async function validateExistingForeignKeys(): Promise<ValidationResult> {
     details: []
   };
 
-  let passCount = 0;
-
   // Check inspection_schedules.aed_data_id FK
   const scheduleCount = await prisma.inspection_schedules.count();
   const schedulesWithAedData = await prisma.inspection_schedules.count({
