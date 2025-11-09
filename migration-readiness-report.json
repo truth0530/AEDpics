@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-07T07:22:29.067Z",
+  "generated_at": "2025-11-09T08:14:51.995Z",
   "environment": "development",
   "overall_status": "ISSUES_FOUND",
   "validations": [
@@ -13,8 +13,8 @@
     },
     {
       "table": "inspection_assignments",
-      "total_records": 127,
-      "valid_records": 127,
+      "total_records": 477,
+      "valid_records": 477,
       "issues": {},
       "ready_for_fk": true,
       "details": []

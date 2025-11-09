@@ -56,10 +56,15 @@ const MANDATORY_CATEGORY = '구비의무기관';
 /**
  * 날짜 범위 필터 헬퍼 함수 (한국 시간대 기준)
  */
-function getDateRangeForFilter(dateRange: 'today' | 'this_week' | 'this_month' | 'last_month'): {
-  startDate: Date;
-  endDate: Date;
+function getDateRangeForFilter(dateRange: 'all' | 'all' | 'today' | 'this_week' | 'this_month' | 'last_month'): {
+  startDate: Date | null;
+  endDate: Date | null;
 } {
+  // '전체'일 경우 date filter 없음
+  if (dateRange === 'all') {
+    return { startDate: null, endDate: null };
+  }
+
   // 한국 시간대(KST, UTC+9)로 현재 시간 계산
   const nowUTC = new Date();
   const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
@@ -719,7 +724,7 @@ export const getCachedDashboardData = cache(async (
       if (normalizedGugun && normalizedGugun !== '전체') {
         title = `${normalizedGugun} AED 점검 현황`;
       } else if (normalizedSido && normalizedSido !== '전체') {
-        title = `${normalizedSido} 구군 AED 점검 현황`;
+        title = `${normalizedSido} 전체 AED 점검 현황`;
       }
 
       return {
@@ -829,12 +834,12 @@ export const getCachedDashboardData = cache(async (
  */
 export const getCachedHourlyInspections = cache(async (
   userProfile: UserProfile,
-  dateRange?: 'today' | 'this_week' | 'this_month' | 'last_month',
+  dateRange?: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month',
   selectedSido?: string,
   selectedGugun?: string
 ): Promise<any[]> => {
   try {
-    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'today');
+    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'all');
 
     // 지역 필터링을 위한 조건 구성
     const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
@@ -863,12 +868,15 @@ export const getCachedHourlyInspections = cache(async (
     }
 
     // 2. 점검 데이터 조회 (지역 필터링 적용)
-    const whereClause: any = {
-      created_at: {
+    const whereClause: any = {};
+
+    // startDate/endDate가 null이 아닐 때만 created_at 필터 적용 ('all' 옵션일 때 null)
+    if (startDate !== null && endDate !== null) {
+      whereClause.created_at = {
         gte: startDate,
         lte: endDate
-      }
-    };
+      };
+    }
 
     if (equipmentSerials.length > 0) {
       whereClause.equipment_serial = { in: equipmentSerials };
@@ -913,12 +921,12 @@ export const getCachedHourlyInspections = cache(async (
  */
 export const getCachedDailyInspections = cache(async (
   userProfile: UserProfile,
-  dateRange?: 'today' | 'this_week' | 'this_month' | 'last_month',
+  dateRange?: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month',
   selectedSido?: string,
   selectedGugun?: string
 ): Promise<any[]> => {
   try {
-    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'today');
+    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'all');
 
     // 지역 필터링을 위한 조건 구성
     const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
@@ -947,12 +955,15 @@ export const getCachedDailyInspections = cache(async (
     }
 
     // 2. 점검 데이터 조회 (지역 필터링 적용)
-    const whereClause: any = {
-      created_at: {
+    const whereClause: any = {};
+
+    // startDate/endDate가 null이 아닐 때만 created_at 필터 적용 ('all' 옵션일 때 null)
+    if (startDate !== null && endDate !== null) {
+      whereClause.created_at = {
         gte: startDate,
         lte: endDate
-      }
-    };
+      };
+    }
 
     if (equipmentSerials.length > 0) {
       whereClause.equipment_serial = { in: equipmentSerials };
@@ -999,7 +1010,7 @@ export const getCachedDailyInspections = cache(async (
     logger.error('DashboardQueries:getCachedDailyInspections', 'Daily inspections query error', error instanceof Error ? error : { error });
 
     // 에러 시 빈 데이터 반환 (KST 기준)
-    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'today');
+    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'all');
     const kstOffset = 9 * 60 * 60 * 1000;
     const dailyData = [];
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));

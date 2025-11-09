@@ -69,8 +69,8 @@ interface ImprovedDashboardProps {
   hourlyData: HourlyInspectionData[];
   dailyData: DailyInspectionData[];
   userRole: UserRole;
-  dateRange: 'today' | 'this_week' | 'this_month' | 'last_month';
-  onDateRangeChange: (range: 'today' | 'this_week' | 'this_month' | 'last_month') => void;
+  dateRange: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month';
+  onDateRangeChange: (range: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month') => void;
   selectedSido?: string;
   selectedGugun?: string;
 }
@@ -92,11 +92,12 @@ export default function ImprovedDashboard({
   // 날짜 범위에 따른 차트 설명 텍스트
   const getChartDescription = (range: string) => {
     switch (range) {
+      case 'all': return '전체';
       case 'today': return '오늘';
       case 'this_week': return '이번주';
       case 'this_month': return '이번달';
       case 'last_month': return '지난달';
-      default: return '오늘';
+      default: return '전체';
     }
   };
 
@@ -263,6 +264,7 @@ export default function ImprovedDashboard({
             <SelectValue placeholder="기간 선택" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
             <SelectItem value="today">오늘</SelectItem>
             <SelectItem value="this_week">이번주</SelectItem>
             <SelectItem value="this_month">이번달</SelectItem>

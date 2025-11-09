@@ -110,7 +110,7 @@ export function StatCard({
                           {step.id}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-400">{step.label}</span>
+                      <span className="text-xs text-gray-400 whitespace-nowrap">{step.label}</span>
                     </div>
                     <span className={cn('text-sm font-semibold', colors.text)}>
                       {formatNumber(step.value)}/{formatNumber(step.total)}

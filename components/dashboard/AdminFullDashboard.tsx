@@ -16,9 +16,9 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [selectedSido, setSelectedSido] = useState<string>('전체');
   const [selectedGugun, setSelectedGugun] = useState<string>('전체');
-  const [dateRange, setDateRange] = useState<'today' | 'this_week' | 'this_month' | 'last_month'>('today');
+  const [dateRange, setDateRange] = useState<'all' | 'today' | 'this_week' | 'this_month' | 'last_month'>('all');
 
-  const loadDashboardData = async (sido: string, gugun: string, range: 'today' | 'this_week' | 'this_month' | 'last_month' = 'today') => {
+  const loadDashboardData = async (sido: string, gugun: string, range: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month' = 'all') => {
     try {
       setLoading(true);
 
@@ -78,7 +78,7 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
   }, [user]);
 
   // 날짜 범위 변경 핸들러
-  const handleDateRangeChange = (newRange: 'today' | 'this_week' | 'this_month' | 'last_month') => {
+  const handleDateRangeChange = (newRange: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month') => {
     setDateRange(newRange);
     loadDashboardData(selectedSido, selectedGugun, newRange);
   };
