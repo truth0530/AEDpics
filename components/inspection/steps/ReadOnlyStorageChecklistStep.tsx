@@ -99,11 +99,18 @@ export function ReadOnlyStorageChecklistStep({ stepData, inspection }: ReadOnlyS
 
     if (entries.length === 0) return null;
 
+    // Filter out empty entries
+    const validEntries = entries.filter(([, value]) => {
+      return value !== null && value !== undefined && value !== '';
+    });
+
+    if (validEntries.length === 0) return null;
+
     return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
         <h4 className="text-sm font-semibold text-gray-200 mb-3">점검 항목</h4>
         <div className="space-y-2">
-          {entries.map(([key, value]: [string | number, any]) => {
+          {validEntries.map(([key, value]: [string | number, any]) => {
             // Extract display label and status
             let label = '';
             let status = '';
@@ -116,10 +123,15 @@ export function ReadOnlyStorageChecklistStep({ stepData, inspection }: ReadOnlyS
             } else if (typeof value === 'object' && value !== null) {
               // Object value: extract label and status
               label = value.label || value.name || CHECKLIST_ITEMS_LABEL_MAP[keyStr] || keyStr;
-              status = value.value || value.status || value;
+              status = value.value || value.status || String(value);
             } else {
               label = CHECKLIST_ITEMS_LABEL_MAP[keyStr] || keyStr;
               status = String(value);
+            }
+
+            // Skip if status is empty after extraction
+            if (!status || status === 'undefined' || status === '[object Object]') {
+              return null;
             }
 
             return (
@@ -130,7 +142,7 @@ export function ReadOnlyStorageChecklistStep({ stepData, inspection }: ReadOnlyS
                 </span>
               </div>
             );
-          })}
+          }).filter(Boolean)}
         </div>
       </div>
     );

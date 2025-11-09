@@ -75,7 +75,7 @@ export function ReadOnlyInspectionSummaryStep({ stepData, inspection }: ReadOnly
     <div className="space-y-3">
       {/* 점검 기본 정보 */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <p className="text-xs text-gray-400 mb-1">점검 일시</p>
             <p className="text-sm text-gray-100">
@@ -89,15 +89,6 @@ export function ReadOnlyInspectionSummaryStep({ stepData, inspection }: ReadOnly
           <div>
             <p className="text-xs text-gray-400 mb-1">장비 연번</p>
             <p className="text-sm text-gray-100 font-mono">{inspection.equipment_serial || '-'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 mb-1">점검 유형</p>
-            <p className="text-sm text-gray-100">
-              {inspection.inspection_type === 'monthly' && '월정기'}
-              {inspection.inspection_type === 'special' && '특별'}
-              {inspection.inspection_type === 'emergency' && '긴급'}
-              {!inspection.inspection_type && '-'}
-            </p>
           </div>
         </div>
       </div>
