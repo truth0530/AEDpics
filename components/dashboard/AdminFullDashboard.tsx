@@ -31,32 +31,18 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
       params.append('dateRange', range);
 
       const url = `/api/dashboard?${params.toString()}`;
-      console.log('[AdminFullDashboard] 📡 API 요청 시작:', { sido, gugun, range, url });
-
       const response = await fetch(url);
       const result = await response.json();
-
-      console.log('[AdminFullDashboard] 📥 API 응답 수신:', {
-        success: result.success,
-        hasData: !!result.data,
-        sido,
-        gugun,
-        range,
-        dashboardDataCount: result.data?.dashboard?.data?.length
-      });
 
       if (result.success && result.data) {
         setDashboardData(result.data.dashboard);
         setHourlyData(result.data.hourly);
         setDailyData(result.data.daily);
-        console.log('[AdminFullDashboard] ✅ 데이터 업데이트 완료');
       } else {
         logger.error('AdminFullDashboard', 'Failed to load dashboard data', { error: result.error });
-        console.error('[AdminFullDashboard] ❌ API 응답 실패:', result.error);
       }
     } catch (error) {
       logger.error('AdminFullDashboard', 'Error loading data', { error });
-      console.error('[AdminFullDashboard] ❌ 요청 실패:', error);
     } finally {
       setLoading(false);
     }
