@@ -7,6 +7,15 @@ interface ReadOnlyStorageChecklistStepProps {
   inspection: InspectionHistory;
 }
 
+// StorageChecklistStep과 동일한 한글 레이블 매핑
+const CHECKLIST_ITEMS_LABEL_MAP: Record<string, string> = {
+  'alarm_functional': '도난경보장치 작동 여부',
+  'instructions_status': '보관함 각종 안내문구 표시',
+  'emergency_contact': '비상연락망 표시 여부',
+  'cpr_manual': '심폐소생술 방법 안내책자, 그림 여부',
+  'expiry_display': '패드 및 배터리 유효기간 표시 여부',
+};
+
 /**
  * 읽기 전용 3단계: 보관함 체크리스트 표시
  * InspectionHistoryModal에서 사용되는 래퍼 컴포넌트
@@ -63,17 +72,18 @@ export function ReadOnlyStorageChecklistStep({ stepData, inspection }: ReadOnlyS
             // Extract display label and status
             let label = '';
             let status = '';
+            const keyStr = String(key);
 
             if (typeof value === 'string') {
               // Simple string value: key is label, value is status
-              label = String(key);
+              label = CHECKLIST_ITEMS_LABEL_MAP[keyStr] || keyStr;
               status = value;
             } else if (typeof value === 'object' && value !== null) {
               // Object value: extract label and status
-              label = value.label || value.name || String(key);
+              label = value.label || value.name || CHECKLIST_ITEMS_LABEL_MAP[keyStr] || keyStr;
               status = value.value || value.status || value;
             } else {
-              label = String(key);
+              label = CHECKLIST_ITEMS_LABEL_MAP[keyStr] || keyStr;
               status = String(value);
             }
 
