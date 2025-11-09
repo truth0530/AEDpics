@@ -60,11 +60,6 @@ function getDateRangeForFilter(dateRange: 'all' | 'today' | 'this_week' | 'this_
   startDate: Date | null;
   endDate: Date | null;
 } {
-  // '전체'일 경우 date filter 없음
-  if (dateRange === 'all') {
-    return { startDate: null, endDate: null };
-  }
-
   // 한국 시간대(KST, UTC+9)로 현재 시간 계산
   const nowUTC = new Date();
   const kstOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로
@@ -80,6 +75,11 @@ function getDateRangeForFilter(dateRange: 'all' | 'today' | 'this_week' | 'this_
   let endDate: Date;
 
   switch (dateRange) {
+    case 'all':
+      // '전체'일 경우 지난 30일 데이터 조회 (차트 표시용)
+      startDate = new Date(Date.UTC(year, month, date - 30, 0, 0, 0, 0) - kstOffset);
+      endDate = new Date(Date.UTC(year, month, date, 23, 59, 59, 999) - kstOffset);
+      break;
     case 'today':
       // 오늘 00:00:00 KST ~ 23:59:59 KST
       startDate = new Date(Date.UTC(year, month, date, 0, 0, 0, 0) - kstOffset);
@@ -868,15 +868,12 @@ export const getCachedHourlyInspections = cache(async (
     }
 
     // 2. 점검 데이터 조회 (지역 필터링 적용)
-    const whereClause: any = {};
-
-    // startDate/endDate가 null이 아닐 때만 created_at 필터 적용 ('all' 옵션일 때 null)
-    if (startDate !== null && endDate !== null) {
-      whereClause.created_at = {
+    const whereClause: any = {
+      created_at: {
         gte: startDate,
         lte: endDate
-      };
-    }
+      }
+    };
 
     if (equipmentSerials.length > 0) {
       whereClause.equipment_serial = { in: equipmentSerials };
@@ -955,15 +952,12 @@ export const getCachedDailyInspections = cache(async (
     }
 
     // 2. 점검 데이터 조회 (지역 필터링 적용)
-    const whereClause: any = {};
-
-    // startDate/endDate가 null이 아닐 때만 created_at 필터 적용 ('all' 옵션일 때 null)
-    if (startDate !== null && endDate !== null) {
-      whereClause.created_at = {
+    const whereClause: any = {
+      created_at: {
         gte: startDate,
         lte: endDate
-      };
-    }
+      }
+    };
 
     if (equipmentSerials.length > 0) {
       whereClause.equipment_serial = { in: equipmentSerials };
@@ -1010,13 +1004,13 @@ export const getCachedDailyInspections = cache(async (
     logger.error('DashboardQueries:getCachedDailyInspections', 'Daily inspections query error', error instanceof Error ? error : { error });
 
     // 에러 시 빈 데이터 반환 (KST 기준)
-    const { startDate, endDate } = getDateRangeForFilter(dateRange || 'all');
+    const { startDate: errorStartDate, endDate: errorEndDate } = getDateRangeForFilter(dateRange || 'all');
     const kstOffset = 9 * 60 * 60 * 1000;
     const dailyData = [];
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.ceil((errorEndDate.getTime() - errorStartDate.getTime()) / (1000 * 60 * 60 * 24));
 
     for (let i = 0; i <= daysDiff; i++) {
-      const date = new Date(startDate.getTime() + kstOffset);
+      const date = new Date(errorStartDate.getTime() + kstOffset);
       date.setUTCDate(date.getUTCDate() + i);
       const dayLabel = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { UserProfile } from '@/packages/types';
 import ImprovedDashboard from './ImprovedDashboard';
 import { logger } from '@/lib/logger';
@@ -52,7 +52,7 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
 
     setSelectedSido(storedSido);
     setSelectedGugun(storedGugun);
-    // 초기 로드는 'all'로 고정
+    // 초기 로드
     loadDashboardData(storedSido, storedGugun, 'all');
   }, [user]);
 
