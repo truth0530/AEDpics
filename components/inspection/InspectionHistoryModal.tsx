@@ -70,24 +70,13 @@ export function InspectionHistoryModal({
             <div>
               장비 연번: <span className="font-mono text-gray-300">{inspection.equipment_serial}</span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded">
-                데이터 소스: AEDpics 시스템
-              </span>
-              {inspection.last_inspection_date_egen && (
+            {inspection.last_inspection_date_egen && (
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs bg-amber-900/50 text-amber-300 px-2 py-1 rounded">
                   참고: e-gen 최근점검일 {new Date(inspection.last_inspection_date_egen).toLocaleDateString('ko-KR')}
                 </span>
-              )}
-            </div>
-            <div className="text-xs text-gray-500 space-y-1">
-              <div>시스템 점검일: {new Date(inspection.inspection_date).toLocaleString('ko-KR')}</div>
-              {inspection.last_inspection_date_egen && inspection.last_inspection_date_egen !== inspection.inspection_date && (
-                <div className="text-amber-400">
-                  ⚠ e-gen 최근점검일과 다릅니다
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </DialogDescription>
         </DialogHeader>
 
