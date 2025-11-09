@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { UserProfile } from '@/packages/types';
 import ImprovedDashboard from './ImprovedDashboard';
 import { logger } from '@/lib/logger';
+// 지역명 하드코딩 제거: regions.ts에서 상수 가져오기
+// 참고: '전체'는 특수한 경우로서 모든 지역 선택을 의미하며, REGIONS 배열에는 없음
 
 interface AdminFullDashboardProps {
   user: UserProfile;
@@ -28,18 +30,33 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
       if (gugun && gugun !== '전체' && gugun !== '구군') params.append('gugun', gugun);
       params.append('dateRange', range);
 
-      const response = await fetch(`/api/dashboard?${params.toString()}`);
+      const url = `/api/dashboard?${params.toString()}`;
+      console.log('[AdminFullDashboard] 📡 API 요청 시작:', { sido, gugun, range, url });
+
+      const response = await fetch(url);
       const result = await response.json();
+
+      console.log('[AdminFullDashboard] 📥 API 응답 수신:', {
+        success: result.success,
+        hasData: !!result.data,
+        sido,
+        gugun,
+        range,
+        dashboardDataCount: result.data?.dashboard?.data?.length
+      });
 
       if (result.success && result.data) {
         setDashboardData(result.data.dashboard);
         setHourlyData(result.data.hourly);
         setDailyData(result.data.daily);
+        console.log('[AdminFullDashboard] ✅ 데이터 업데이트 완료');
       } else {
         logger.error('AdminFullDashboard', 'Failed to load dashboard data', { error: result.error });
+        console.error('[AdminFullDashboard] ❌ API 응답 실패:', result.error);
       }
     } catch (error) {
       logger.error('AdminFullDashboard', 'Error loading data', { error });
+      console.error('[AdminFullDashboard] ❌ 요청 실패:', error);
     } finally {
       setLoading(false);
     }
