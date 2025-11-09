@@ -16,6 +16,32 @@ const CHECKLIST_ITEMS_LABEL_MAP: Record<string, string> = {
   'expiry_display': '패드 및 배터리 유효기간 표시 여부',
 };
 
+// 각 체크리스트 항목별 상태값 한글 매핑
+const STATUS_VALUE_MAP: Record<string, Record<string, string>> = {
+  'alarm_functional': {
+    'needs_improvement': '개선필요',
+    'normal': '정상작동',
+  },
+  'instructions_status': {
+    'needs_improvement': '개선필요',
+    'normal': '정상 기재',
+  },
+  'emergency_contact': {
+    'needs_improvement': '개선필요',
+    'normal': '정상 표기',
+  },
+  'cpr_manual': {
+    'needs_improvement': '개선필요',
+    'booklet': '책자 비치',
+    'poster': '포스터형태',
+    'other': '기타',
+  },
+  'expiry_display': {
+    'needs_improvement': '개선필요',
+    'displayed': '별도 표기',
+  },
+};
+
 /**
  * 읽기 전용 3단계: 보관함 체크리스트 표시
  * InspectionHistoryModal에서 사용되는 래퍼 컴포넌트
@@ -24,7 +50,16 @@ const CHECKLIST_ITEMS_LABEL_MAP: Record<string, string> = {
 export function ReadOnlyStorageChecklistStep({ stepData, inspection }: ReadOnlyStorageChecklistStepProps) {
   const storage = stepData.storage || {};
 
-  const getStatusLabel = (value: string): string => {
+  const getStatusLabel = (itemId: string, value: string): string => {
+    // 먼저 해당 항목의 상태값 매핑 확인
+    if (STATUS_VALUE_MAP[itemId]) {
+      const statusMap = STATUS_VALUE_MAP[itemId];
+      if (statusMap[value]) {
+        return statusMap[value];
+      }
+    }
+
+    // 상태값 매핑이 없으면 일반 상태값 확인 (storage-level)
     switch (value) {
       case 'good':
         return '양호';
@@ -91,7 +126,7 @@ export function ReadOnlyStorageChecklistStep({ stepData, inspection }: ReadOnlyS
               <div key={key} className="flex items-center justify-between p-2 rounded bg-gray-800/50">
                 <span className="text-xs text-gray-300">{label}</span>
                 <span className={`text-xs px-2 py-0.5 rounded border ${getStatusColor(status)}`}>
-                  {getStatusLabel(status)}
+                  {getStatusLabel(keyStr, status)}
                 </span>
               </div>
             );
