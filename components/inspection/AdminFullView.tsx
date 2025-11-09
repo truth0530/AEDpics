@@ -193,7 +193,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     return true; // 지도 뷰는 모두 표시
   }) || [];
 
-  const dataCount = filteredData?.length || 0;
+  const dataCount = viewMode === 'completed' ? inspectionHistoryList.length : (filteredData?.length || 0);
 
   // 점검 세션 핸들러
   // 🔴 Phase B: inspection_status도 함께 저장
@@ -262,7 +262,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   const handleViewInspectionHistory = async (equipmentSerial: string) => {
     try {
       const mode = user?.role === 'local_admin' ? filterMode : 'address';
-      const history = await getInspectionHistory(equipmentSerial, 24, mode);
+      const history = await getInspectionHistory(equipmentSerial, 720, mode);
       if (history && history.length > 0) {
         // 가장 최근 점검 이력 선택
         setSelectedInspection(history[0]);
@@ -692,7 +692,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                         </td>
                         <td className="px-4 py-3 text-sm space-x-1">
                           <button
-                            onClick={() => handleViewInspectionHistory(inspection.id)}
+                            onClick={() => handleViewInspectionHistory(inspection.equipment_serial)}
                             className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                           >
                             상세

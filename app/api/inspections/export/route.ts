@@ -169,6 +169,16 @@ export const POST = apiHandler(async (request: NextRequest) => {
         }
       }
 
+      // 유효성 검증 5: mode는 'address' 또는 'jurisdiction'
+      if (body.mode !== undefined) {
+        if (typeof body.mode !== 'string' || !['address', 'jurisdiction'].includes(body.mode)) {
+          return NextResponse.json(
+            { error: 'Invalid mode: must be "address" or "jurisdiction"' },
+            { status: 400 }
+          );
+        }
+      }
+
       requestedFilters = body;
       filterSource = 'body';
 
@@ -263,11 +273,22 @@ export const POST = apiHandler(async (request: NextRequest) => {
 
     // Build equipment filter from validated filters (v5.3: equipment-centric pattern)
     // buildEquipmentFilter converts validated region/city codes to Prisma WHERE clause
+    const filterMode = requestedFilters.mode || 'address';
     const equipmentFilter = buildEquipmentFilter({
       regionCodes: filterResult.filters.regionCodes,
       cityCodes: filterResult.filters.cityCodes,
       userRole: userProfile.role
-    }, 'address');
+    }, filterMode);
+
+    // 관할보건소 기반 필터링 (local_admin + jurisdiction mode)
+    if (filterMode === 'jurisdiction' && userProfile.role === 'local_admin' && userProfile.organizations?.name) {
+      equipmentFilter.jurisdiction_health_center = userProfile.organizations.name;
+      logger.info('Export:JurisdictionFilter', 'Applied jurisdiction filter', {
+        userId: session.user.id,
+        healthCenter: userProfile.organizations.name,
+        recordCount: undefined // will be set after query
+      });
+    }
 
     // Build WHERE clause for aed_data FK relationship
     const whereClause: any = {};
