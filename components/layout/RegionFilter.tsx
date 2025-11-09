@@ -31,8 +31,8 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
 
   const userCityCode = (user.organization as any)?.city_code;
   // ✅ city_code를 실제 gugun 이름으로 변환 (예: "seogwipo" → "서귀포시")
-  // null일 경우 기본값 "구군" 사용
-  const userCity = mapCityCodeToGugun(userCityCode) || '구군';
+  // null일 경우 기본값 "전체" 사용
+  const userCity = mapCityCodeToGugun(userCityCode) || '전체';
 
   // regional_emergency_center_admin는 자신의 관할 지역을 기본값으로 설정
   // ministry_admin, emergency_center_admin, master는 '시도' (전체)를 기본값으로 설정
@@ -63,7 +63,7 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     // sessionStorage 값이 있으면 우선 사용 (위치 기반)
     if (typeof window !== 'undefined') {
       const storedGugun = window.sessionStorage.getItem('selectedGugun');
-      if (storedGugun && storedGugun !== '구군') {
+      if (storedGugun && storedGugun !== '전체') {
         // 보건소 담당자: 자신의 구군만 허용
         if (isHealthCenterStaff && storedGugun !== userCity) {
           console.log('[RegionFilter] Health center staff can only view their city:', userCity);
@@ -78,7 +78,7 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
       return userCity;
     }
 
-    return '구군';
+    return '전체';
   };
 
   const [selectedSido, setSelectedSido] = useState(getInitialSido());
@@ -150,14 +150,14 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     user.role === 'master';
 
   useEffect(() => {
-    // 시도가 변경되면 해당 시도의 구군 목록 업데이트 ('구군' 추가)
+    // 시도가 변경되면 해당 시도의 구군 목록 업데이트 ('전체' 추가)
     const regionCode = getRegionCode(selectedSido);
     const baseGugunList = regionCode ? getGugunListByRegionCode(regionCode) : [];
-    const newGugunList = ['구군', ...baseGugunList];
+    const newGugunList = ['전체', ...baseGugunList];
     setGugunList(newGugunList);
 
-    // 기본값은 '구군'으로 설정
-    setSelectedGugun('구군');
+    // 기본값은 '전체'으로 설정
+    setSelectedGugun('전체');
   }, [selectedSido]);
 
   // regional_admin(시도청)인 경우 본인 시도로 초기화
