@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -94,7 +93,7 @@ export function StatCard({
       </CardHeader>
 
       {workflowSteps && workflowSteps.length > 0 && (
-        <CardContent className="pb-3">
+        <CardContent className="px-4 py-3">
           <div className="space-y-2.5">
             {workflowSteps.map((step) => {
               const colors = colorMap[step.color];
