@@ -52,7 +52,8 @@ export default function AdminFullDashboard({ user }: AdminFullDashboardProps) {
 
     setSelectedSido(storedSido);
     setSelectedGugun(storedGugun);
-    loadDashboardData(storedSido, storedGugun, dateRange);
+    // 초기 로드는 'all'로 고정
+    loadDashboardData(storedSido, storedGugun, 'all');
   }, [user]);
 
   useEffect(() => {

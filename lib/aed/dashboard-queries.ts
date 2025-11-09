@@ -56,7 +56,7 @@ const MANDATORY_CATEGORY = '구비의무기관';
 /**
  * 날짜 범위 필터 헬퍼 함수 (한국 시간대 기준)
  */
-function getDateRangeForFilter(dateRange: 'all' | 'all' | 'today' | 'this_week' | 'this_month' | 'last_month'): {
+function getDateRangeForFilter(dateRange: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month'): {
   startDate: Date | null;
   endDate: Date | null;
 } {
