@@ -274,19 +274,37 @@ export const POST = apiHandler(async (request: NextRequest) => {
     // Build equipment filter from validated filters (v5.3: equipment-centric pattern)
     // buildEquipmentFilter converts validated region/city codes to Prisma WHERE clause
     const filterMode = requestedFilters.mode || 'address';
-    const equipmentFilter = buildEquipmentFilter({
-      regionCodes: filterResult.filters.regionCodes,
-      cityCodes: filterResult.filters.cityCodes,
-      userRole: userProfile.role
-    }, filterMode);
+    let equipmentFilter: any = {};
 
-    // 관할보건소 기반 필터링 (local_admin + jurisdiction mode)
-    if (filterMode === 'jurisdiction' && userProfile.role === 'local_admin' && userProfile.organizations?.name) {
-      equipmentFilter.jurisdiction_health_center = userProfile.organizations.name;
-      logger.info('Export:JurisdictionFilter', 'Applied jurisdiction filter', {
+    // v5.3 Critical Fix: Jurisdiction mode should use ONLY jurisdiction_health_center filter
+    // (not address filters combined with jurisdiction filter)
+    if (filterMode === 'jurisdiction') {
+      // Jurisdiction mode: Filter ONLY by jurisdiction_health_center
+      // This ensures compatibility with table's /api/inspections/history which also uses jurisdiction-only filtering
+      if (userProfile.role === 'local_admin' && userProfile.organizations?.name) {
+        equipmentFilter.jurisdiction_health_center = userProfile.organizations.name;
+        logger.info('Export:JurisdictionFilter', 'Applied jurisdiction-only filter', {
+          userId: session.user.id,
+          healthCenter: userProfile.organizations.name,
+          filterMode: 'jurisdiction',
+          note: 'Address filters intentionally excluded for jurisdiction mode'
+        });
+      }
+      // For other roles (regional_admin, master, etc.): No additional filter applied
+      // They have full access per their role permissions
+    } else {
+      // Address mode (default): Use standard region/city code filtering
+      equipmentFilter = buildEquipmentFilter({
+        regionCodes: filterResult.filters.regionCodes,
+        cityCodes: filterResult.filters.cityCodes,
+        userRole: userProfile.role
+      }, 'address');
+
+      logger.info('Export:AddressFilter', 'Applied address-based filter', {
         userId: session.user.id,
-        healthCenter: userProfile.organizations.name,
-        recordCount: undefined // will be set after query
+        regionCodes: filterResult.filters.regionCodes,
+        cityCodes: filterResult.filters.cityCodes,
+        filterMode: 'address'
       });
     }
 
