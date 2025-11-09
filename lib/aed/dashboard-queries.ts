@@ -113,10 +113,14 @@ function getDateRangeForFilter(dateRange: 'all' | 'today' | 'this_week' | 'this_
  */
 export const getCachedDashboardData = cache(async (
   userProfile: UserProfile,
+  dateRange: 'all' | 'today' | 'this_week' | 'this_month' | 'last_month' = 'all',
   selectedSido?: string,
   selectedGugun?: string
 ): Promise<DashboardData> => {
   try {
+    // 날짜 범위 필터 설정
+    const { startDate, endDate } = getDateRangeForFilter(dateRange);
+
     // 지역명 정규화 (예: "대구광역시" → "대구")
     const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
     const normalizedGugun = selectedGugun ? normalizeRegionName(selectedGugun) : selectedGugun;
@@ -275,7 +279,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN i.id END)::bigint as non_mandatory_count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun}
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else if (normalizedSido && normalizedSido !== '전체') {
@@ -288,7 +292,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN i.id END)::bigint as non_mandatory_count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido}
+            WHERE a.sido = ${normalizedSido} AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else {
@@ -301,6 +305,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN i.id END)::bigint as non_mandatory_count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
+            WHERE i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.sido
           `;
         }
@@ -329,7 +334,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN s.id END)::bigint as non_mandatory_count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun}
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else if (normalizedSido && normalizedSido !== '전체') {
@@ -342,7 +347,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN s.id END)::bigint as non_mandatory_count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido}
+            WHERE a.sido = ${normalizedSido} AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else {
@@ -355,6 +360,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN s.id END)::bigint as non_mandatory_count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
+            WHERE s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.sido
           `;
         }
@@ -378,7 +384,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT s.id)::bigint as count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.external_display = 'N'
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.external_display = 'N' AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else if (normalizedSido && normalizedSido !== '전체') {
@@ -388,7 +394,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT s.id)::bigint as count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.external_display = 'N'
+            WHERE a.sido = ${normalizedSido} AND a.external_display = 'N' AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else {
@@ -398,7 +404,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT s.id)::bigint as count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.external_display = 'N'
+            WHERE a.external_display = 'N' AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.sido
           `;
         }
@@ -421,7 +427,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT i.id)::bigint as count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.external_display = 'N'
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.external_display = 'N' AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else if (normalizedSido && normalizedSido !== '전체') {
@@ -431,7 +437,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT i.id)::bigint as count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.external_display = 'N'
+            WHERE a.sido = ${normalizedSido} AND a.external_display = 'N' AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else {
@@ -441,7 +447,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT i.id)::bigint as count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.external_display = 'N'
+            WHERE a.external_display = 'N' AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.sido
           `;
         }
@@ -464,7 +470,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT s.id)::bigint as count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.last_inspection_date IS NULL
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.last_inspection_date IS NULL AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else if (normalizedSido && normalizedSido !== '전체') {
@@ -474,7 +480,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT s.id)::bigint as count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.last_inspection_date IS NULL
+            WHERE a.sido = ${normalizedSido} AND a.last_inspection_date IS NULL AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else {
@@ -484,7 +490,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT s.id)::bigint as count
             FROM aedpics.inspection_schedule_entries s
             INNER JOIN aedpics.aed_data a ON s.device_equipment_serial = a.equipment_serial
-            WHERE a.last_inspection_date IS NULL
+            WHERE a.last_inspection_date IS NULL AND s.created_at >= ${startDate} AND s.created_at <= ${endDate}
             GROUP BY a.sido
           `;
         }
@@ -507,7 +513,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT i.id)::bigint as count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.last_inspection_date IS NULL
+            WHERE a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND a.last_inspection_date IS NULL AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else if (normalizedSido && normalizedSido !== '전체') {
@@ -517,7 +523,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT i.id)::bigint as count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.sido = ${normalizedSido} AND a.last_inspection_date IS NULL
+            WHERE a.sido = ${normalizedSido} AND a.last_inspection_date IS NULL AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else {
@@ -527,7 +533,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT i.id)::bigint as count
             FROM aedpics.inspections i
             INNER JOIN aedpics.aed_data a ON i.equipment_serial = a.equipment_serial
-            WHERE a.last_inspection_date IS NULL
+            WHERE a.last_inspection_date IS NULL AND i.created_at >= ${startDate} AND i.created_at <= ${endDate}
             GROUP BY a.sido
           `;
         }
@@ -555,7 +561,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN ia.id END)::bigint as non_mandatory_count
             FROM aedpics.inspection_assignments ia
             INNER JOIN aedpics.aed_data a ON ia.equipment_serial = a.equipment_serial
-            WHERE ia.status = 'unavailable' AND a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun}
+            WHERE ia.status = 'unavailable' AND a.sido = ${normalizedSido} AND a.gugun = ${normalizedGugun} AND ia.created_at >= ${startDate} AND ia.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else if (normalizedSido && normalizedSido !== '전체') {
@@ -568,7 +574,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN ia.id END)::bigint as non_mandatory_count
             FROM aedpics.inspection_assignments ia
             INNER JOIN aedpics.aed_data a ON ia.equipment_serial = a.equipment_serial
-            WHERE ia.status = 'unavailable' AND a.sido = ${normalizedSido}
+            WHERE ia.status = 'unavailable' AND a.sido = ${normalizedSido} AND ia.created_at >= ${startDate} AND ia.created_at <= ${endDate}
             GROUP BY a.gugun
           `;
         } else {
@@ -581,7 +587,7 @@ export const getCachedDashboardData = cache(async (
               COUNT(DISTINCT CASE WHEN a.category_1 != '구비의무기관' THEN ia.id END)::bigint as non_mandatory_count
             FROM aedpics.inspection_assignments ia
             INNER JOIN aedpics.aed_data a ON ia.equipment_serial = a.equipment_serial
-            WHERE ia.status = 'unavailable'
+            WHERE ia.status = 'unavailable' AND ia.created_at >= ${startDate} AND ia.created_at <= ${endDate}
             GROUP BY a.sido
           `;
         }

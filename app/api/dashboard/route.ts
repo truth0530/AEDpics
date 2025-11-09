@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // 대시보드 데이터 조회
     const [dashboardData, hourlyData, dailyData] = await Promise.all([
-      getCachedDashboardData(userProfile, selectedSido, selectedGugun),
+      getCachedDashboardData(userProfile, dateRange, selectedSido, selectedGugun),
       getCachedHourlyInspections(userProfile, dateRange, selectedSido, selectedGugun),
       getCachedDailyInspections(userProfile, dateRange, selectedSido, selectedGugun),
     ]);
