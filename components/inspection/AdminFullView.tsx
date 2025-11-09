@@ -335,146 +335,65 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     }
   };
 
-  // 엑셀 다운로드
-  const handleExcelDownload = () => {
+  // 엑셀 다운로드 (서버 사이드 필터링 적용)
+  const handleExcelDownload = async () => {
     try {
-      if (inspectionHistoryList.length === 0) {
-        showError('다운로드할 점검 기록이 없습니다');
+      // 필터 파라미터 구성 (user 권한 기반)
+      const filterParams = {
+        regionCodes: user?.organization?.region_code ? [user.organization.region_code] : [],
+        cityCodes: user?.organization?.city_code ? [user.organization.city_code] : [],
+        limit: 10000, // 최대 10,000건
+        mode: user?.role === 'local_admin' ? filterMode : 'address' // local_admin만 필터모드 적용
+      };
+
+      console.log('[handleExcelDownload] Filter params:', filterParams);
+
+      // POST /api/inspections/export 호출
+      const response = await fetch('/api/inspections/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(filterParams)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        showError(errorData.error || '엑셀 다운로드 실패');
+        console.error('[handleExcelDownload] API error:', errorData);
         return;
       }
 
-      // 엑셀 데이터 변환
-      const excelData = inspectionHistoryList.map((inspection, index) => {
-        // step_data에서 장치 정보 추출
-        const deviceInfo = (inspection as any).step_data?.deviceInfo || {};
-        // step_data에서 보관함 정보 추출
-        const storageInfo = (inspection as any).step_data?.storage || {};
-        // aed_data에서 위치 정보 추출
-        const aedData = (inspection as any).aed_data || {};
+      // 응답 헤더에서 파일 정보 추출
+      const contentDisposition = response.headers.get('Content-Disposition') || '';
+      let filename = 'AED_점검기록.xlsx';
 
-        return {
-          '번호': index + 1,
-          '장비연번': inspection.equipment_serial,
-          '점검일시': new Date(inspection.inspection_date).toLocaleString('ko-KR'),
-          '점검자': inspection.inspector_name,
-          '점검자 이메일': inspection.inspector_email || '-',
+      // Content-Disposition에서 filename 추출 (있는 경우)
+      const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+      if (filenameMatch) {
+        filename = decodeURIComponent(filenameMatch[1]);
+      }
 
-          // 위치 정보
-          '설치기관명': aedData.installation_institution || '-',
-          '시도': aedData.sido || '-',
-          '시군구': aedData.gugun || '-',
-          '상세주소': aedData.installation_address || '-',
+      // 응답을 Blob으로 변환
+      const blob = await response.blob();
 
-          // 장치 정보
-          '제조사': deviceInfo.manufacturer || '-',
-          '모델명': deviceInfo.model_name || '-',
-          '시리얼번호': deviceInfo.serial_number || '-',
-          '배터리 유효기간': deviceInfo.battery_expiry_date || '-',
-          '패드 유효기간': deviceInfo.pad_expiry_date || '-',
-          '제조일자': deviceInfo.manufacturing_date || '-',
-          '장비 상태': deviceInfo.device_status || '-',
-          '표시등 상태': deviceInfo.indicator_status || '-',
+      // 다운로드 링크 생성 및 실행
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      downloadLink.download = filename;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      window.URL.revokeObjectURL(downloadUrl);
 
-          // 상태 필드
-          '외관 상태': inspection.visual_status || '-',
-          '배터리 상태': inspection.battery_status === 'good' ? '정상' :
-                         inspection.battery_status === 'replaced' ? '교체됨' :
-                         inspection.battery_status === 'expired' ? '만료' :
-                         inspection.battery_status === 'not_checked' ? '미확인' : '-',
-          '패드 상태': inspection.pad_status === 'good' ? '정상' :
-                       inspection.pad_status === 'replaced' ? '교체됨' :
-                       inspection.pad_status === 'expired' ? '만료' :
-                       inspection.pad_status === 'not_checked' ? '미확인' : '-',
-          '작동 상태': inspection.operation_status || '-',
-          '종합 상태': inspection.overall_status === 'pass' ? '합격' :
-                       inspection.overall_status === 'fail' ? '불합격' :
-                       inspection.overall_status === 'normal' ? '정상' :
-                       inspection.overall_status === 'needs_improvement' ? '개선필요' :
-                       inspection.overall_status === 'malfunction' ? '고장' : '-',
-
-          // 보관함 정보
-          '보관함 형태': storageInfo.storage_type === 'none' ? '없음' :
-                        storageInfo.storage_type === 'wall_mounted' ? '벽걸이형' :
-                        storageInfo.storage_type === 'standalone' ? '스탠드형' : '-',
-          '도난경보장치': storageInfo.alarm_functional === true ? '있음' :
-                         storageInfo.alarm_functional === false ? '없음' : '-',
-          '안내문구': storageInfo.instructions_status || '-',
-          '비상연락망': storageInfo.emergency_contact === true ? '있음' :
-                       storageInfo.emergency_contact === false ? '없음' : '-',
-          '심폐소생술 안내': storageInfo.cpr_manual === true ? '있음' :
-                            storageInfo.cpr_manual === false ? '없음' : '-',
-          '유효기간 표시': storageInfo.expiry_display === true ? '있음' :
-                          storageInfo.expiry_display === false ? '없음' : '-',
-          '안내표지 위치': Array.isArray(storageInfo.signage_selected)
-                          ? storageInfo.signage_selected.join(', ')
-                          : '-',
-
-          // 기타
-          '비고': inspection.notes || '-',
-          '발견 문제': inspection.issues_found?.join(', ') || '-',
-          '사진 수': inspection.photos?.length || 0,
-          '점검 위도': inspection.inspection_latitude || '-',
-          '점검 경도': inspection.inspection_longitude || '-',
-        };
+      // 감사 로깅
+      const recordCount = response.headers.get('X-Record-Count');
+      console.log('[handleExcelDownload] Success', {
+        filename,
+        recordCount,
+        filters: filterParams
       });
-
-      // 워크시트 생성
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-      // 열 너비 자동 조정
-      const columnWidths = [
-        { wch: 6 },   // 번호
-        { wch: 20 },  // 장비연번
-        { wch: 20 },  // 점검일시
-        { wch: 12 },  // 점검자
-        { wch: 25 },  // 점검자 이메일
-        // 위치 정보
-        { wch: 25 },  // 설치기관명
-        { wch: 12 },  // 시도
-        { wch: 12 },  // 시군구
-        { wch: 30 },  // 상세주소
-        // 장치 정보
-        { wch: 15 },  // 제조사
-        { wch: 20 },  // 모델명
-        { wch: 20 },  // 시리얼번호
-        { wch: 15 },  // 배터리 유효기간
-        { wch: 15 },  // 패드 유효기간
-        { wch: 12 },  // 제조일자
-        { wch: 12 },  // 장비 상태
-        { wch: 12 },  // 표시등 상태
-        // 상태 필드
-        { wch: 12 },  // 외관 상태
-        { wch: 12 },  // 배터리 상태
-        { wch: 12 },  // 패드 상태
-        { wch: 12 },  // 작동 상태
-        { wch: 12 },  // 종합 상태
-        // 보관함 정보
-        { wch: 12 },  // 보관함 형태
-        { wch: 12 },  // 도난경보장치
-        { wch: 15 },  // 안내문구
-        { wch: 12 },  // 비상연락망
-        { wch: 15 },  // 심폐소생술 안내
-        { wch: 12 },  // 유효기간 표시
-        { wch: 20 },  // 안내표지 위치
-        // 기타
-        { wch: 30 },  // 비고
-        { wch: 30 },  // 발견 문제
-        { wch: 8 },   // 사진 수
-        { wch: 12 },  // 점검 위도
-        { wch: 12 },  // 점검 경도
-      ];
-      worksheet['!cols'] = columnWidths;
-
-      // 워크북 생성
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, '점검기록');
-
-      // 파일명 생성
-      const today = new Date();
-      const filename = `AED_점검기록_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}.xlsx`;
-
-      // 파일 다운로드
-      XLSX.writeFile(workbook, filename);
 
       showSuccess('엑셀 파일이 다운로드되었습니다');
     } catch (error) {
