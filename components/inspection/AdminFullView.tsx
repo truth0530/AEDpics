@@ -27,6 +27,7 @@ import { InspectionInProgressModal } from './InspectionInProgressModal';
 import { InspectionHistoryModal } from './InspectionHistoryModal';
 import { DeleteInspectionModal } from './DeleteInspectionModal';
 import * as XLSX from 'xlsx';
+import { Eye, Trash2 } from 'lucide-react';
 
 interface AdminFullViewProps {
   user: UserProfile;
@@ -732,10 +733,11 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                       <div className="px-4 py-3 border-t border-gray-700 flex gap-2">
                         <button
                           onClick={() => handleViewInspectionHistory(inspection.id)}
-                          className="flex-1 px-3 py-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors font-medium"
+                          className="flex-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
                           title="상세 정보 보기"
+                          aria-label="상세 정보 보기"
                         >
-                          상세
+                          <Eye className="w-4 h-4" />
                         </button>
                         {user?.role === 'master' ? (
                           <button
@@ -744,18 +746,20 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                               setInspectionToDelete(inspection);
                               setShowDeleteModal(true);
                             }}
-                            className="flex-1 px-3 py-2 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors font-medium"
+                            className="flex-1 p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
                             title="삭제 (마스터만)"
+                            aria-label="삭제 (마스터만)"
                           >
-                            삭제
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         ) : (
                           <button
                             disabled
-                            className="flex-1 px-3 py-2 text-xs bg-gray-700 text-gray-500 rounded cursor-not-allowed font-medium"
+                            className="flex-1 p-2 bg-gray-700 text-gray-500 rounded cursor-not-allowed flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
                             title="삭제 불가 (마스터만 가능)"
+                            aria-label="삭제 불가 (마스터만 가능)"
                           >
-                            삭제
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
@@ -819,10 +823,11 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                           <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">
                             <button
                               onClick={() => handleViewInspectionHistory(inspection.id)}
-                              className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
+                              className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
                               title="상세 정보 보기"
+                              aria-label="상세 정보 보기"
                             >
-                              상세
+                              <Eye className="w-4 h-4" />
                             </button>
                             {user?.role === 'master' ? (
                               <button
@@ -831,13 +836,21 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                                   setInspectionToDelete(inspection);
                                   setShowDeleteModal(true);
                                 }}
-                                className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
+                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
                                 title="삭제 (마스터만)"
+                                aria-label="삭제 (마스터만)"
                               >
-                                삭제
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             ) : (
-                              <span className="px-2 py-1 text-xs text-gray-500 flex-shrink-0">-</span>
+                              <button
+                                disabled
+                                className="p-1.5 bg-gray-700 text-gray-500 rounded cursor-not-allowed flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                title="삭제 불가 (마스터만 가능)"
+                                aria-label="삭제 불가 (마스터만 가능)"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             )}
                           </td>
                         </tr>
