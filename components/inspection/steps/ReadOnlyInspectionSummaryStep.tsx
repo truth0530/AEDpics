@@ -81,6 +81,11 @@ export function ReadOnlyInspectionSummaryStep({ stepData, inspection }: ReadOnly
             <p className="text-sm text-gray-100">
               {inspection.inspection_date ? formatDate(inspection.inspection_date) : '-'}
             </p>
+            {inspection.last_inspection_date_egen && (
+              <p className="text-xs text-gray-500 mt-1">
+                참고: e-gen 최근점검일 {new Date(inspection.last_inspection_date_egen).toLocaleDateString('ko-KR')}
+              </p>
+            )}
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-1">점검자</p>

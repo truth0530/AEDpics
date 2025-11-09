@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { FileText, Trash2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Trash2, ChevronRight, ChevronLeft } from 'lucide-react';
 import type { InspectionHistory } from '@/lib/inspections/session-utils';
 import { ReadOnlyBasicInfoStep } from './steps/ReadOnlyBasicInfoStep';
 import { ReadOnlyDeviceInfoStep } from './steps/ReadOnlyDeviceInfoStep';
@@ -62,21 +62,11 @@ export function InspectionHistoryModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden bg-gray-900 text-gray-100 border-gray-700 flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-100 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
+          <DialogTitle className="text-xl font-semibold text-gray-100">
             점검 이력 상세
           </DialogTitle>
-          <DialogDescription className="text-gray-400 space-y-2">
-            <div>
-              장비 연번: <span className="font-mono text-gray-300">{inspection.equipment_serial}</span>
-            </div>
-            {inspection.last_inspection_date_egen && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs bg-amber-900/50 text-amber-300 px-2 py-1 rounded">
-                  참고: e-gen 최근점검일 {new Date(inspection.last_inspection_date_egen).toLocaleDateString('ko-KR')}
-                </span>
-              </div>
-            )}
+          <DialogDescription className="text-gray-400">
+            장비 연번: <span className="font-mono text-gray-300">{inspection.equipment_serial}</span>
           </DialogDescription>
         </DialogHeader>
 
