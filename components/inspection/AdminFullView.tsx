@@ -725,16 +725,21 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                           >
                             상세
                           </button>
-                          <button
-                            onClick={() => {
-                              setSelectedInspection(inspection);
-                              setInspectionToDelete(inspection);
-                              setShowDeleteModal(true);
-                            }}
-                            className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                          >
-                            삭제
-                          </button>
+                          {user?.role === 'master' ? (
+                            <button
+                              onClick={() => {
+                                setSelectedInspection(inspection);
+                                setInspectionToDelete(inspection);
+                                setShowDeleteModal(true);
+                              }}
+                              className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                              title="삭제 (마스터만)"
+                            >
+                              삭제
+                            </button>
+                          ) : (
+                            <span className="px-2 py-1 text-xs text-gray-500">-</span>
+                          )}
                         </td>
                       </tr>
                     ))}
