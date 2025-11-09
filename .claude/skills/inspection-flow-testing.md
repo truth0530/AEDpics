@@ -98,6 +98,7 @@ Content-Type: application/json
 - [ ] 모든 status 필드가 저장됨
 - [ ] 프로필 관계 설정 (user_profiles { connect })
 - [ ] inspection_assignments 레코드 생성됨
+- [ ] Response에 세션 데이터 반환됨
 
 **에러 감지:**
 ```
@@ -105,8 +106,50 @@ Content-Type: application/json
 "Unknown field `inspector_id` on model `inspection_sessions`"
 
 원인: inspector_id를 직접 할당하려고 함
-해결: user_profiles: { connect: { id: userId } } 사용
+해결: user_profiles: { connect: { id: userId } } 사용 (2025-11-09 수정 완료)
 ```
+
+#### 1-4. **점검 완료 후 즉시 검증 (핵심: 점검이력 저장)**
+
+**문제**: 점검 완료했으나 점검이력에 안 보임
+→ POST /api/inspections이 제대로 작동하지 않음 또는 호출되지 않음
+
+```bash
+# 1단계: PATCH 완료 확인
+PATCH /api/inspections/sessions/<SESSION_ID>
+→ 응답: 200 OK + session_status: "completed"
+
+# 2단계: 점검이력이 저장되었는지 즉시 확인
+GET /api/inspections/history?equipment_serial=SN12345678
+
+# 예상 응답:
+{
+  "success": true,
+  "inspections": [
+    {
+      "id": "INS-001",
+      "equipment_serial": "SN12345678",
+      "inspection_date": "2025-11-09T14:30:00Z",
+      "visual_status": "good",
+      "battery_status": "good",
+      "pad_status": "good",
+      "operation_status": "normal",
+      "overall_status": "normal",
+      "inspector_name": "점검자이름"
+    }
+  ],
+  "total": 1
+}
+```
+
+**검증 항목 (중요):**
+- [ ] POST /api/inspections이 PATCH 완료 후 자동 호출되는가?
+  - 호출되면: inspections 테이블에 레코드 생성되어야 함
+  - 호출 안 되면: 프론트엔드 코드에서 POST 호출 누락 확인
+- [ ] GET /api/inspections/history 응답에 방금 저장된 레코드가 있는가?
+  - 있으면: 데이터 저장 정상, 프론트엔드 렌더링 문제 확인
+  - 없으면: POST /api/inspections가 실패함, 에러 로그 확인
+- [ ] 응답 필드가 모두 snake_case인가? (camelCase 혼동 확인)
 
 ### 단계 2: 점검 결과 API 검증
 
@@ -137,7 +180,7 @@ Content-Type: application/json
 - [ ] 모든 필드가 올바르게 저장됨
 - [ ] equipment_serial 기반 조회 가능
 
-#### 2-2. 점검 이력 조회
+#### 2-2. 점검 이력 조회 (단일 사용자)
 ```bash
 GET /api/inspections/history?equipment_serial=SN12345678
 ```
@@ -156,8 +199,61 @@ GET /api/inspections/history?equipment_serial=SN12345678
   "equipment_serial": "SN12345678",  // ✅ snake_case 일치
   "visual_status": "good",
   "battery_status": "good",
-  "inspection_date": "2025-11-09"
+  "inspection_date": "2025-11-09",
+  "inspector_name": "점검자이름",
+  "inspected_data": {
+    "basicInfo": { ... },
+    "deviceInfo": { ... },
+    "storage": { ... },
+    "documentation": { ... }
+  }
 }
+```
+
+#### 2-3. **권한 기반 점검이력 조회 (조직 권한 검증)**
+
+**문제**: 같은 조직의 다른 사용자가 동일한 장비의 점검이력을 볼 수 있는가?
+
+```bash
+# 사용자 A가 점검 완료
+POST /api/inspections
+{
+  "equipment_serial": "SN12345678",
+  "inspector_id": "user_A_id",
+  "organization_id": "ORG-001"
+  ...
+}
+→ 200 Created, inspections 테이블에 레코드 저장됨
+
+# 같은 조직 사용자 B가 조회
+GET /api/inspections/history?equipment_serial=SN12345678
+Authorization: Bearer user_B_token (ORG-001 소속)
+
+# 예상: 사용자 A가 저장한 점검이력이 보여야 함 ✅
+# 실제: 아무것도 안 보일 수 있음 ❌
+```
+
+**검증 항목 (권한 기반):**
+- [ ] 같은 조직 사용자 B가 사용자 A의 점검이력을 조회 가능?
+  - **조회 가능**: 권한 정책 정상
+  - **조회 불가**: 권한 필터 확인 필요 (organization_id 일치하는지 확인)
+- [ ] 다른 조직 사용자가 조회 가능한가?
+  - **조회 불가**: 올바른 권한 정책
+  - **조회 가능**: 보안 문제 (조직간 데이터 노출)
+
+**권한 기반 조회 필터:**
+```typescript
+// /api/inspections/history 에서 구현되어야 함
+const inspections = await db.inspections.findMany({
+  where: {
+    equipment_serial: serial,
+    // 권한 필터 추가 필요:
+    // 1. 같은 조직 사용자 → 모든 점검이력 조회 가능
+    // 2. 다른 조직 사용자 → 조회 불가능
+    organization_id: userOrganizationId  // ← 이 필터 확인 필요
+  },
+  orderBy: { inspection_date: 'desc' }
+});
 ```
 
 #### 2-3. 점검 결과 수정
@@ -231,30 +327,46 @@ DELETE /api/inspections/<INSPECTION_ID>
 
 ### 단계 4: 데이터 흐름 검증
 
-#### 4-1. End-to-End 점검 흐름
+#### 4-1. End-to-End 점검 흐름 (점검 완료부터 이력 표시까지)
 ```
 1. QuickInspectPanel 클릭
    ↓
 2. POST /api/inspections/sessions (세션 생성)
    ↓
-3. 점검 폼 입력 (상태, 문제, 사진)
+3. 점검 폼 입력 (4단계: BasicInfo, DeviceInfo, Storage, ManagerEducation)
    ↓
-4. "완료" 버튼 클릭
+4. "완료" 버튼 클릭 → InspectionSummaryStep 표시
    ↓
-5. PATCH /api/inspections/sessions (세션 상태 변경)
+5. PATCH /api/inspections/sessions (세션 상태 변경 → "completed")
    ↓
-6. POST /api/inspections (점검 결과 저장)
+6. POST /api/inspections (점검 결과 저장) ← 핵심: 이 단계가 정상 작동하는가?
    ↓
-7. GET /api/inspections/history (이력 조회)
+7. GET /api/inspections/history (이력 조회) ← 점검이력 API
    ↓
 8. InspectionHistoryModal 표시 (최신 데이터 포함)
 ```
 
-**검증:**
-- [ ] 각 단계 성공 (상태코드 200-201)
-- [ ] 데이터 일관성 (세션 ID → 점검 결과)
-- [ ] 타임스탬프 순서 정확
-- [ ] 사용자 ID 일치
+**검증 (단계별 상태 확인):**
+- [ ] 단계 1-5: 정상 작동 (이미 수정됨)
+- [ ] 단계 6: POST /api/inspections 호출되는가?
+  - [ ] HTTP 200-201 응답
+  - [ ] inspections 테이블에 레코드 저장됨
+  - [ ] 모든 4단계 데이터(basicInfo, deviceInfo, storage, documentation) 저장됨
+- [ ] 단계 7: GET /api/inspections/history 응답 확인
+  - [ ] 방금 저장된 점검이력이 배열에 포함되는가? ← **핵심 검증**
+  - [ ] 응답 필드 snake_case 일치
+  - [ ] inspected_data JSON 포함
+- [ ] 단계 8: UI에 표시되는가?
+  - [ ] InspectionHistoryModal이 열리는가?
+  - [ ] 저장된 데이터가 4개 탭에 정상 표시되는가?
+  - [ ] 각 탭이 정확한 데이터를 읽는가?
+
+**문제 진단 (점검이력 안 보일 때):**
+| 증상 | 원인 | 해결 방법 |
+|------|------|---------|
+| POST 200 OK지만 이력 안 보임 | POST 완료 후 GET 호출 안 됨 | 프론트엔드 코드 확인: /api/inspections 호출 순서 |
+| GET 호출되지만 빈 배열 반환 | POST가 실제로 실패함 (에러 무시됨) | 서버 에러 로그 확인: POST /api/inspections 에러 |
+| 레코드 저장되지만 조회 안 됨 | 권한 필터 문제 | /api/inspections/history에서 organization_id 필터 확인 |
 
 #### 4-2. 점검 수정 흐름
 ```
@@ -371,7 +483,56 @@ FINAL RESULT: ALL TESTS PASSED
 Inspection functionality is production-ready.
 ```
 
-### 테스트 실패
+### 테스트 실패 케이스
+
+#### 케이스 1: 점검 완료는 되지만 이력에 안 보임 (가장 많은 사용 사례)
+```
+INSPECTION FLOW TESTING REPORT
+Generated: 2025-11-09 14:30:00
+
+⚠️ Point of Failure: Step 6-7
+   - PATCH /api/inspections/sessions: PASSED (200 OK)
+   - POST /api/inspections: FAILED or NOT CALLED
+   - GET /api/inspections/history: 빈 배열 반환
+
+Symptoms:
+1. PDF는 생성됨 ✓
+2. 점검이력에 아무것도 안 보임 ✗
+3. 브라우저 콘솔에 에러 없음
+4. Network 탭에서 POST /api/inspections 호출이 보이지 않음
+
+Root Cause Analysis (우선순위):
+
+1️⃣ POST /api/inspections 호출 자체가 안 됨 (가능성 50%)
+   원인: 프론트엔드 코드에서 POST 호출 누락
+   위치: InspectionSummaryStep.tsx의 "완료" 버튼 클릭 핸들러
+   확인: Network 탭에서 POST /api/inspections 요청 있는지 확인
+
+2️⃣ POST /api/inspections 실패하지만 에러 처리 안 됨 (가능성 30%)
+   원인: 서버에서 POST 실패 (예: Prisma 에러, 필드 검증 실패)
+   확인: 서버 로그 확인 (npm run dev 로그)
+   에러 메시지: 응답 구조, 필드명 오류, 관계 설정 오류 등
+
+3️⃣ POST 성공했지만 GET에서 안 보임 (가능성 20%)
+   원인: 권한 필터 문제 (organization_id 검증)
+   확인: /api/inspections/history에 organization_id 필터 있는지 확인
+   테스트: 같은 조직의 다른 사용자로 로그인해서 조회
+
+Fix Checklist:
+- [ ] Network 탭에서 POST /api/inspections 요청 확인
+- [ ] POST 요청 본문(body)이 올바른지 확인
+- [ ] 서버 로그에서 POST 처리 결과 확인
+- [ ] inspections 테이블에 실제로 레코드 저장되는지 DB 확인
+- [ ] GET /api/inspections/history 응답 구조 확인
+- [ ] 권한 필터(organization_id) 정확한지 확인
+
+Next Steps:
+1. 서버 로그 확인하기 (가장 중요)
+2. POST /api/inspections 요청/응답 분석
+3. 권한 필터 검증
+```
+
+#### 케이스 2: Prisma 관계 설정 오류
 ```
 INSPECTION FLOW TESTING REPORT
 Generated: 2025-11-09 14:30:00
@@ -380,7 +541,7 @@ Generated: 2025-11-09 14:30:00
    - PATCH /api/inspections/sessions: FAILED
 
 Error Details:
-POST /api/inspections/sessions/sess_001
+PATCH /api/inspections/sessions/sess_001
 Status Code: 500
 Error Message: PrismaClientValidationError
 Details: Unknown field `inspector_id`
@@ -389,16 +550,9 @@ Root Cause Analysis:
 The route attempts to assign inspector_id directly
 instead of using relation: user_profiles { connect }
 
-Fix Required:
+Status: ✅ FIXED (2025-11-09)
 File: app/api/inspections/sessions/route.ts
-Line: 42
-Change: inspector_id: userId
-To: user_profiles: { connect: { id: userId } }
-
-Next Steps:
-1. Apply fix
-2. Test PATCH endpoint again
-3. Re-run full test suite
+Fix: Changed inspector_id: userId → user_profiles: { connect: { id: userId } }
 ```
 
 ## 참고 문서
