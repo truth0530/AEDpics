@@ -5,7 +5,7 @@ import { Search } from 'lucide-react';
 import { useAEDData } from '@/app/aed-data/components/AEDDataProvider';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { REGION_LABELS } from '@/lib/constants/filter-labels';
+import { getRegionCode, CITY_CODE_TO_GUGUN_MAP } from '@/lib/constants/regions';
 
 export function InspectionFilterBar() {
   const { setFilters } = useAEDData();
@@ -57,27 +57,32 @@ export function InspectionFilterBar() {
 
   // 검색 필터 적용
   const handleApply = useCallback(() => {
-    // 지역 필터 변환
+    // 지역 필터 변환: 라벨 → 코드로 중앙 관리 유틸 사용
     let regionCodes: string[] | undefined;
     let cityCodes: string[] | undefined;
 
+    // 필터 입력 → 코드 변환 → 중앙 매핑으로 라벨 비교 (CLAUDE.md 정책)
     if (regionFilter.sido && regionFilter.sido !== '시도') {
-      // 시도 라벨을 코드로 변환
-      const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === regionFilter.sido)?.[0];
-      if (regionCode) {
-        regionCodes = [regionFilter.sido]; // API는 라벨을 받음
+      // 중앙 유틸 getRegionCode()를 사용하여 라벨(예: '서울', '서울특별시')을 코드(예: 'SEO')로 변환
+      const regionCode = getRegionCode(regionFilter.sido);
+      if (regionCode && regionCode !== regionFilter.sido) {
+        // 변환 성공: 코드를 저장
+        regionCodes = [regionCode];
       }
     }
 
+    // 시군구 필터: 이미 한글 라벨 형식 (예: '강남구')
+    // mapCityCodeToGugun()의 역함수가 필요한 경우 CITY_CODE_TO_GUGUN_MAP 역매핑 사용
     if (regionFilter.gugun && regionFilter.gugun !== '구군') {
       cityCodes = [regionFilter.gugun];
     }
 
-    console.log('[InspectionFilterBar] Applying filters:', {
+    console.log('[InspectionFilterBar] Applying filters (labels→codes):', {
       search: searchTerm,
+      regionInput: regionFilter.sido,
       regionCodes,
-      cityCodes,
-      regionFilter
+      cityInput: regionFilter.gugun,
+      cityCodes
     });
 
     setFilters({
