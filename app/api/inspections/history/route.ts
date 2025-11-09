@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
-import { REGION_CODE_TO_DB_LABELS } from '@/lib/constants/regions';
+import { REGION_CODE_TO_DB_LABELS, mapCityCodeToGugun } from '@/lib/constants/regions';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -79,6 +79,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
     where.equipment_serial = equipmentSerial;
   }
 
+  // AED 필터 (aed_data relation 필터링용)
+  const aedFilter: any = {};
+
   // 권한별 필터링
   if (userProfile.role === 'local_admin' && userProfile.organizations) {
     // 보건소 담당자: 해당 지역의 점검만 조회
@@ -92,9 +95,6 @@ export const GET = apiHandler(async (request: NextRequest) => {
       cityCode,
       filterMode
     });
-
-    // AED 데이터와 조인하여 지역 필터링 - Prisma relation 필터링 사용
-    const aedFilter: any = {};
 
     if (filterMode === 'jurisdiction') {
       // 관할보건소 기준 필터링: 해당 보건소가 관리하는 모든 AED (타 지역 포함 가능)
@@ -116,15 +116,21 @@ export const GET = apiHandler(async (request: NextRequest) => {
           aedFilter.sido = { in: validSidoLabels };
         }
 
-        // 시군구 필터링
-        if (userProfile.organizations && userProfile.organizations.name) {
-          // 조직명에서 시군구 추출 (예: "대구광역시 중구 보건소" -> "중구")
-          const nameParts = userProfile.organizations.name.split(' ');
-          // '구' 또는 '군'을 포함하는 첫 번째 단어 추출 ('시'는 제외 - 시도와 혼동 방지)
-          const gugunIndex = nameParts.findIndex(part => part.includes('구') || part.includes('군'));
-          if (gugunIndex >= 0) {
-            const gugun = nameParts[gugunIndex];
-            aedFilter.gugun = gugun;
+        // 시군구 필터링 - city_code 기반으로 mapCityCodeToGugun 헬퍼 사용
+        // (CLAUDE 가이드라인: 중앙 유틸 functions 사용)
+        if (userProfile.organizations && userProfile.organizations.city_code) {
+          const gugunName = mapCityCodeToGugun(userProfile.organizations.city_code);
+          if (gugunName) {
+            aedFilter.gugun = gugunName;
+            logger.info('InspectionHistory:GET', 'Gugun name resolved via helper', {
+              cityCode: userProfile.organizations.city_code,
+              gugunName: gugunName
+            });
+          } else {
+            logger.warn('InspectionHistory:GET', 'Failed to resolve gugun name from city_code', {
+              cityCode: userProfile.organizations.city_code,
+              organizationName: userProfile.organizations.name
+            });
           }
         }
       }
@@ -155,7 +161,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
   try {
     logger.info('InspectionHistory:GET', 'Query conditions', { where });
 
-    const inspections = await prisma.inspections.findMany({
+    let inspections = await prisma.inspections.findMany({
       where,
       include: {
         user_profiles: {
@@ -180,10 +186,92 @@ export const GET = apiHandler(async (request: NextRequest) => {
       }
     });
 
+    // 폴백 쿼리: 기본 필터로 결과가 없고, local_admin이며 aedFilter가 있는 경우
+    // (equipment_serial이 aed_data에 없는 데이터 품질 문제 대비)
+    const shouldUseFallback = inspections.length === 0 &&
+                             userProfile.role === 'local_admin' &&
+                             Object.keys(aedFilter).length > 0;
+
+    if (shouldUseFallback) {
+      logger.warn('InspectionHistory:GET', 'Using NULL FK fallback query', {
+        userEmail: userProfile.email,
+        organization: userProfile.organizations?.name,
+        filterMode: filterMode,
+        reason: 'Primary query returned 0 results with aed_data relation filter'
+      });
+
+      // 폴백: aed_data 필터 없이 재조회 (NULL FK 포함)
+      const fallbackWhere: any = {
+        inspection_date: where.inspection_date,
+        overall_status: where.overall_status,
+        inspector_id: where.inspector_id  // 있는 경우만
+      };
+
+      const fallbackInspections = await prisma.inspections.findMany({
+        where: fallbackWhere,
+        select: {
+          id: true,
+          equipment_serial: true,
+          inspection_date: true,
+          aed_data_id: true
+        }
+      });
+
+      if (fallbackInspections.length > 0) {
+        logger.info('InspectionHistory:GET', `Fallback query found ${fallbackInspections.length} records`, {
+          equipment_serials: fallbackInspections.map(r => r.equipment_serial)
+        });
+
+        // equipment_serial 기준으로 중복 제거 (안전장치)
+        const uniqueSerials = new Set<string>();
+        const filteredFallback = fallbackInspections.filter(record => {
+          if (uniqueSerials.has(record.equipment_serial)) {
+            return false;
+          }
+          uniqueSerials.add(record.equipment_serial);
+          return true;
+        });
+
+        // 폴백 결과 포함하여 재조회 (full data with relations)
+        inspections = await prisma.inspections.findMany({
+          where: {
+            id: { in: filteredFallback.map(r => r.id) }
+          },
+          include: {
+            user_profiles: {
+              select: {
+                full_name: true,
+                email: true
+              }
+            },
+            aed_data: {
+              select: {
+                installation_institution: true,
+                sido: true,
+                gugun: true,
+                installation_address: true,
+                last_inspection_date: true,
+                jurisdiction_health_center: true
+              }
+            }
+          },
+          orderBy: {
+            inspection_date: 'desc'
+          }
+        });
+
+        logger.info('InspectionHistory:GET', `Fallback query merged ${inspections.length} records`, {
+          dedupedCount: filteredFallback.length,
+          finalCount: inspections.length
+        });
+      }
+    }
+
     logger.info('InspectionHistory:GET', `Found ${inspections.length} inspections`, {
       userEmail: userProfile.email,
       userRole: userProfile.role,
-      organization: userProfile.organizations?.name
+      organization: userProfile.organizations?.name,
+      usedFallback: shouldUseFallback
     });
 
     // 응답 데이터 포맷팅

@@ -346,13 +346,20 @@ export async function PATCH(request: NextRequest) {
           if (deviceInfo.battery_mfg_date_photo) photos.push(deviceInfo.battery_mfg_date_photo);
           if (storage.storage_box_photo) photos.push(storage.storage_box_photo);
 
-          // aed_data FK 조회
+          // aed_data FK 조회 (필수)
           const aedData = await tx.aed_data.findUnique({
             where: { equipment_serial: session.equipment_serial },
             select: { id: true }
           });
 
-          console.log('[PATCH Complete] aedData lookup result:', { found: !!aedData, id: aedData?.id });
+          console.log('[PATCH Complete] aedData lookup result:', { found: !!aedData, id: aedData?.id, serial: session.equipment_serial });
+
+          // FK 연결 필수 확인: equipment_serial이 aed_data에 없으면 즉시 실패
+          if (!aedData) {
+            const errorMsg = `[DATA_INTEGRITY_ERROR] Equipment ${session.equipment_serial} not registered in AED database. Cannot proceed with inspection completion.`;
+            console.error('[PATCH Complete] FK connection failed:', errorMsg);
+            throw new Error(errorMsg);
+          }
 
           // 점검 레코드 생성
           const createData: any = {
@@ -388,7 +395,7 @@ export async function PATCH(request: NextRequest) {
             overall_status: createData.overall_status,
             issuesCount: issuesFound.length,
             photosCount: photos.length,
-            hasAedDataConnect: !!aedData,
+            aedDataId: aedData.id,
             inspectedDataKeys: Object.keys(createData.inspected_data)
           }, null, 2));
 
@@ -396,10 +403,9 @@ export async function PATCH(request: NextRequest) {
           createData.user_profiles = { connect: { id: userId } };
           console.log('[PATCH Complete] inspector relation added via user_profiles:', userId);
 
-          if (aedData) {
-            createData.aed_data = { connect: { id: aedData.id } };
-            console.log('[PATCH Complete] aed_data connection added:', aedData.id);
-          }
+          // aed_data FK 연결 (필수 - 위에서 검증 완료)
+          createData.aed_data = { connect: { id: aedData.id } };
+          console.log('[PATCH Complete] aed_data connection established:', aedData.id);
 
           console.log('[PATCH Complete] About to call tx.inspections.create()...');
           const createdInspection = await tx.inspections.create({
@@ -487,26 +493,39 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ session: updatedSession });
   } catch (error) {
     // 에러 상세 정보 로깅
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isDataIntegrityError = errorMessage.includes('[DATA_INTEGRITY_ERROR]');
+
     const errorDetails = {
       userId,
-      message: error instanceof Error ? error.message : String(error),
+      message: errorMessage,
       code: (error as any)?.code,
       meta: (error as any)?.meta,
       stack: error instanceof Error ? error.stack : undefined,
+      isDataIntegrityError,
     };
 
     console.error('[PATCH /api/inspections/sessions] Error Details:', JSON.stringify(errorDetails, null, 2));
-    logger.error('InspectionSession:PATCH', 'Failed to update session', errorDetails);
+    logger.error('InspectionSession:PATCH',
+      isDataIntegrityError ? 'Data integrity error - equipment not found' : 'Failed to update session',
+      errorDetails);
+
+    // DATA_INTEGRITY_ERROR는 400 Bad Request (클라이언트 책임), 다른 에러는 500 Internal Server Error
+    const statusCode = isDataIntegrityError ? 400 : 500;
+    const responseError = isDataIntegrityError
+      ? errorMessage.replace('[DATA_INTEGRITY_ERROR] ', '')  // 프론트엔드에 깔끔한 메시지만 전달
+      : 'Failed to update session';
 
     return NextResponse.json(
       {
-        error: 'Failed to update session',
-        details: {
+        error: responseError,
+        type: isDataIntegrityError ? 'DATA_INTEGRITY_ERROR' : 'SYSTEM_ERROR',
+        details: isDataIntegrityError ? undefined : {
           code: (error as any)?.code,
           message: error instanceof Error ? error.message : String(error),
         }
       },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }
