@@ -667,15 +667,15 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+                <table className="w-full border-collapse table-fixed">
                   <thead className="sticky top-0 bg-gray-800 border-b border-gray-700">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-24">장비번호</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-32">점검일시</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-20">점검자</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 flex-1">시도/구군</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-16">종합상태</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-24">작업</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비번호</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden sm:table-cell min-w-[130px] max-w-[150px]">점검일시</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden lg:table-cell min-w-[80px] max-w-[100px]">점검자</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden md:table-cell min-w-[110px] max-w-[150px]">시도/구군</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[90px] max-w-[110px]">상태</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[110px] max-w-[140px]">작업</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -684,8 +684,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                         key={inspection.id}
                         className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
                       >
-                        <td className="px-4 py-3 text-sm text-gray-200 font-medium">{inspection.equipment_serial}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400">
+                        <td className="px-4 py-3 text-sm text-gray-200 font-medium truncate whitespace-nowrap">{inspection.equipment_serial}</td>
+                        <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell whitespace-nowrap">
                           {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
                             year: '2-digit',
                             month: '2-digit',
@@ -694,8 +694,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                             minute: '2-digit'
                           })}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-400">{inspection.inspector_name}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400">
+                        <td className="px-4 py-3 text-sm text-gray-400 hidden lg:table-cell truncate">{inspection.inspector_name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
                           {inspection.aed_data
                             ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
                             : '-'
@@ -718,10 +718,11 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                              inspection.overall_status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm space-x-1">
+                        <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">
                           <button
                             onClick={() => handleViewInspectionHistory(inspection.id)}
-                            className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                            className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
+                            title="상세 정보 보기"
                           >
                             상세
                           </button>
@@ -732,13 +733,13 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                                 setInspectionToDelete(inspection);
                                 setShowDeleteModal(true);
                               }}
-                              className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                              className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
                               title="삭제 (마스터만)"
                             >
                               삭제
                             </button>
                           ) : (
-                            <span className="px-2 py-1 text-xs text-gray-500">-</span>
+                            <span className="px-2 py-1 text-xs text-gray-500 flex-shrink-0">-</span>
                           )}
                         </td>
                       </tr>
