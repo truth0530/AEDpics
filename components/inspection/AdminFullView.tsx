@@ -709,25 +709,93 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
             }}
           />
         ) : viewMode === 'completed' ? (
-          <DataTable
-            filterData={(device) => {
-              const equipmentSerial = device.equipment_serial || '';
-              const hasActiveSession = inspectionSessions.has(equipmentSerial);
-              const isCompleted = completedInspections.has(equipmentSerial);
-              const isUnavailable = unavailableAssignments.has(equipmentSerial);
-              // 점검완료 탭: 점검중 + 완료된 장비 + 점검불가 처리된 장비
-              return isCompleted || hasActiveSession || isUnavailable;
-            }}
-            showInspectionStatus={true}
-            inspectionCompleted={completedInspections}
-            inspectionUnavailable={unavailableAssignments}
-            inspectionSessions={inspectionSessions}
-            onInspectionInProgress={handleInspectionInProgress}
-            onViewInspectionHistory={handleViewInspectionHistory}
-            totalDataCount={data?.length || 0}
-            currentViewMode={viewMode}
-            pageType="inspection"
-          />
+          // 완료 탭: inspectionHistoryList 직접 사용 (권한 필터링 이미 적용됨)
+          <div className="flex-1 overflow-y-auto bg-gray-900">
+            {inspectionHistoryList.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-gray-400">
+                <div className="text-center">
+                  <p className="text-sm">점검이력이 없습니다</p>
+                  <p className="text-xs text-gray-500 mt-1">선택된 지역에서 완료된 점검이 없습니다</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 bg-gray-800 border-b border-gray-700">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-24">장비번호</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-32">점검일시</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-20">점검자</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 flex-1">시도/구군</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-16">종합상태</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 w-24">작업</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inspectionHistoryList.map((inspection) => (
+                      <tr
+                        key={inspection.id}
+                        className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-sm text-gray-200 font-medium">{inspection.equipment_serial}</td>
+                        <td className="px-4 py-3 text-sm text-gray-400">
+                          {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
+                            year: '2-digit',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-400">{inspection.inspector_name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-400">
+                          {inspection.aed_data
+                            ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
+                            : '-'
+                          }
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                            inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
+                            inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
+                            inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
+                            inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
+                            inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
+                            'bg-gray-700 text-gray-200'
+                          }`}>
+                            {inspection.overall_status === 'pass' ? '합격' :
+                             inspection.overall_status === 'fail' ? '불합격' :
+                             inspection.overall_status === 'normal' ? '정상' :
+                             inspection.overall_status === 'needs_improvement' ? '개선필요' :
+                             inspection.overall_status === 'malfunction' ? '고장' :
+                             inspection.overall_status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm space-x-1">
+                          <button
+                            onClick={() => handleViewInspectionHistory(inspection.id)}
+                            className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                          >
+                            상세
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedInspection(inspection);
+                              setInspectionToDelete(inspection);
+                              setShowDeleteModal(true);
+                            }}
+                            className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                          >
+                            삭제
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         ) : viewMode === 'drafts' ? (
           // 임시저장 탭: 임시저장된 점검 세션 표시
           <div className="p-4">
