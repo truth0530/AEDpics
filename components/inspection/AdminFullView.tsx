@@ -258,14 +258,13 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     }
   };
 
-  // 점검 이력 보기 핸들러
-  const handleViewInspectionHistory = async (equipmentSerial: string) => {
+  // 점검 이력 보기 핸들러 (inspection.id 기반)
+  const handleViewInspectionHistory = async (inspectionId: string) => {
     try {
-      const mode = user?.role === 'local_admin' ? filterMode : 'address';
-      const history = await getInspectionHistory(equipmentSerial, 720, mode);
-      if (history && history.length > 0) {
-        // 가장 최근 점검 이력 선택
-        setSelectedInspection(history[0]);
+      // inspectionHistoryList에서 직접 해당 레코드 찾기 (특정 행 선택 보장)
+      const selected = inspectionHistoryList.find(item => item.id === inspectionId);
+      if (selected) {
+        setSelectedInspection(selected);
         setShowHistoryModal(true);
       } else {
         showError('점검 이력을 찾을 수 없습니다');
@@ -692,7 +691,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                         </td>
                         <td className="px-4 py-3 text-sm space-x-1">
                           <button
-                            onClick={() => handleViewInspectionHistory(inspection.equipment_serial)}
+                            onClick={() => handleViewInspectionHistory(inspection.id)}
                             className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                           >
                             상세
