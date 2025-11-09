@@ -272,10 +272,25 @@ export function InspectionSummaryStep() {
         label: '작동상태',
         corrected: devInfo.operation_status || deviceInfo.operation_status || '-',
       });
+      // 배터리/패드 조치계획 추가 (2025-11-09: Critical fix)
+      if (devInfo.battery_action_plan) {
+        matched.push({
+          label: '배터리 조치계획',
+          corrected: devInfo.battery_action_plan,
+        });
+      }
+      if (devInfo.pad_action_plan) {
+        matched.push({
+          label: '패드 조치계획',
+          corrected: devInfo.pad_action_plan,
+        });
+      }
     } else if (devInfo.supplies_matched === 'edited') {
       const supplyFields = [
         { key: 'battery_expiry_date', label: '배터리 유효기간', dbKey: 'battery_expiry_date' },
         { key: 'pad_expiry_date', label: '패드 유효기간', dbKey: 'patch_expiry_date' },
+        { key: 'battery_action_plan', label: '배터리 조치계획', dbKey: 'battery_action_plan' },
+        { key: 'pad_action_plan', label: '패드 조치계획', dbKey: 'pad_action_plan' },
         { key: 'manufacturing_date', label: '제조일자', dbKey: 'manufacturing_date' },
         { key: 'operation_status', label: '작동상태', dbKey: 'operation_status' },
       ];
