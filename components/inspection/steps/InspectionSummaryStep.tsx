@@ -53,6 +53,8 @@ interface DeviceInfoData {
   supplies_matched?: boolean | 'edited';
   battery_expiry_date?: string;
   pad_expiry_date?: string;
+  battery_action_plan?: string;
+  pad_action_plan?: string;
   manufacturing_date?: string;
   operation_status?: string;
   serial_number_photo?: string;
