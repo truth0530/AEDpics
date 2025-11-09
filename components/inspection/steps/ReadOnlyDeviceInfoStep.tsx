@@ -93,17 +93,53 @@ export function ReadOnlyDeviceInfoStep({ stepData, inspection }: ReadOnlyDeviceI
           {/* 배터리 유효기간 */}
           <div className="space-y-1">
             <div className="text-[10px] font-medium text-gray-400">배터리 유효기간</div>
-            <div className="text-xs font-medium text-gray-100">
-              {formatDate(deviceInfo.battery_expiry_date)}
+            <div className="text-xs text-gray-300">
+              <span className="text-gray-500">당시:</span> {formatDate(deviceInfo.battery_expiry_date)}
             </div>
+            {inspection.battery_status?.toLowerCase() === 'replaced' && inspection.inspection_date ? (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.battery_expiry_date)} <span className="text-gray-400">수정</span>
+              </div>
+            ) : deviceInfo.battery_expiry_date_matched === true ? (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.battery_expiry_date)} <span className="text-green-400 font-medium">일치</span>
+              </div>
+            ) : deviceInfo.battery_expiry_date_matched === 'edited' ? (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.battery_expiry_date)} <span className="text-yellow-400 font-medium">수정됨</span>
+              </div>
+            ) : null}
+            {inspection.aed_data?.battery_expiry_date && (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">현재:</span> {formatDate(inspection.aed_data.battery_expiry_date)}
+              </div>
+            )}
           </div>
 
           {/* 패드 유효기간 */}
           <div className="space-y-1">
             <div className="text-[10px] font-medium text-gray-400">패드 유효기간</div>
-            <div className="text-xs font-medium text-gray-100">
-              {formatDate(deviceInfo.pad_expiry_date)}
+            <div className="text-xs text-gray-300">
+              <span className="text-gray-500">당시:</span> {formatDate(deviceInfo.pad_expiry_date)}
             </div>
+            {inspection.pad_status?.toLowerCase() === 'replaced' && inspection.inspection_date ? (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.pad_expiry_date)} <span className="text-gray-400">수정</span>
+              </div>
+            ) : deviceInfo.pad_expiry_date_matched === true ? (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.pad_expiry_date)} <span className="text-green-400 font-medium">일치</span>
+              </div>
+            ) : deviceInfo.pad_expiry_date_matched === 'edited' ? (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.pad_expiry_date)} <span className="text-yellow-400 font-medium">수정됨</span>
+              </div>
+            ) : null}
+            {inspection.aed_data?.patch_expiry_date && (
+              <div className="text-xs text-gray-300">
+                <span className="text-gray-500">현재:</span> {formatDate(inspection.aed_data.patch_expiry_date)}
+              </div>
+            )}
           </div>
 
           {/* 제조일자 */}

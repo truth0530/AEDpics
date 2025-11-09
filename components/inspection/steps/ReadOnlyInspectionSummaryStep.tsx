@@ -39,7 +39,11 @@ export function ReadOnlyInspectionSummaryStep({ stepData, inspection }: ReadOnly
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
+    if (!status || status === '' || status === '-') {
+      return '미확인';
+    }
+
+    switch (status.toLowerCase()) {
       case 'good':
         return '정상';
       case 'warning':
@@ -48,8 +52,14 @@ export function ReadOnlyInspectionSummaryStep({ stepData, inspection }: ReadOnly
         return '불량';
       case 'not_checked':
         return '미확인';
+      case 'replaced':
+        return '교체됨';
+      case 'pass':
+        return '통과';
+      case 'fail':
+        return '실패';
       default:
-        return status || '-';
+        return status;
     }
   };
 
@@ -109,17 +119,31 @@ export function ReadOnlyInspectionSummaryStep({ stepData, inspection }: ReadOnly
               {getStatusLabel(inspection.visual_status)}
             </span>
           </div>
-          <div className="flex justify-between items-center p-2 rounded bg-gray-800">
-            <span className="text-sm text-gray-400">배터리:</span>
-            <span className={`text-sm px-2 py-0.5 rounded ${getStatusColor(inspection.battery_status)}`}>
-              {getStatusLabel(inspection.battery_status)}
-            </span>
+          <div className="flex flex-col p-2 rounded bg-gray-800">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">배터리:</span>
+              <span className={`text-sm px-2 py-0.5 rounded ${getStatusColor(inspection.battery_status)}`}>
+                {getStatusLabel(inspection.battery_status)}
+              </span>
+            </div>
+            {inspection.battery_status?.toLowerCase() === 'replaced' && inspection.inspection_date && (
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(inspection.inspection_date).toLocaleDateString('ko-KR')}
+              </p>
+            )}
           </div>
-          <div className="flex justify-between items-center p-2 rounded bg-gray-800">
-            <span className="text-sm text-gray-400">패드:</span>
-            <span className={`text-sm px-2 py-0.5 rounded ${getStatusColor(inspection.pad_status)}`}>
-              {getStatusLabel(inspection.pad_status)}
-            </span>
+          <div className="flex flex-col p-2 rounded bg-gray-800">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">패드:</span>
+              <span className={`text-sm px-2 py-0.5 rounded ${getStatusColor(inspection.pad_status)}`}>
+                {getStatusLabel(inspection.pad_status)}
+              </span>
+            </div>
+            {inspection.pad_status?.toLowerCase() === 'replaced' && inspection.inspection_date && (
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(inspection.inspection_date).toLocaleDateString('ko-KR')}
+              </p>
+            )}
           </div>
           <div className="flex justify-between items-center p-2 rounded bg-gray-800">
             <span className="text-sm text-gray-400">작동 상태:</span>

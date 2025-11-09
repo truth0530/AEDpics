@@ -177,7 +177,11 @@ export const GET = apiHandler(async (request: NextRequest) => {
             gugun: true,
             installation_address: true,
             last_inspection_date: true,
-            jurisdiction_health_center: true
+            jurisdiction_health_center: true,
+            battery_expiry_date: true,
+            patch_expiry_date: true,
+            manufacturing_date: true,
+            operation_status: true
           }
         }
       },
@@ -271,7 +275,11 @@ export const GET = apiHandler(async (request: NextRequest) => {
                 gugun: true,
                 installation_address: true,
                 last_inspection_date: true,
-                jurisdiction_health_center: true
+                jurisdiction_health_center: true,
+                battery_expiry_date: true,
+                patch_expiry_date: true,
+                manufacturing_date: true,
+                operation_status: true
               }
             }
           },
@@ -365,7 +373,11 @@ export const GET = apiHandler(async (request: NextRequest) => {
           sido: inspection.aed_data.sido,
           gugun: inspection.aed_data.gugun,
           installation_address: inspection.aed_data.installation_address,
-          jurisdiction_health_center: inspection.aed_data.jurisdiction_health_center
+          jurisdiction_health_center: inspection.aed_data.jurisdiction_health_center,
+          battery_expiry_date: inspection.aed_data.battery_expiry_date,
+          patch_expiry_date: inspection.aed_data.patch_expiry_date,
+          manufacturing_date: inspection.aed_data.manufacturing_date,
+          operation_status: inspection.aed_data.operation_status
         } : null,
         created_at: inspection.created_at,
         updated_at: inspection.updated_at,
