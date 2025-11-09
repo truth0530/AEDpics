@@ -64,7 +64,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        'border border-gray-800',
+        'border border-gray-800 flex flex-col',
         variant === 'gradient' && 'from-primary/5 to-card bg-gradient-to-t',
         className
       )}
