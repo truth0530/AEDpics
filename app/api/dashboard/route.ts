@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const selectedSido = searchParams.get('sido') || undefined;
     const selectedGugun = searchParams.get('gugun') || undefined;
-    const dateRange = (searchParams.get('dateRange') || 'today') as 'today' | 'this_week' | 'this_month' | 'last_month';
+    const dateRange = (searchParams.get('dateRange') || 'all') as 'all' | 'today' | 'this_week' | 'this_month' | 'last_month';
 
     // 대시보드 데이터 조회
     const [dashboardData, hourlyData, dailyData] = await Promise.all([
