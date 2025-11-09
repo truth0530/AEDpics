@@ -325,19 +325,33 @@ export function InspectionSummaryStep() {
     const issues: SummaryItem[] = [];
     const photos: string[] = [];
 
+    // 2025-11-09: CRITICAL FIX - 실제 저장된 필드명 사용
+    const checklistItems = storage.checklist_items || {};
+    const improvementNotes = storage.improvement_notes || {};
+
+    // 보관함 형태
+    if (storage.storage_type) {
+      matched.push({
+        label: '보관함 형태',
+        corrected: storage.storage_type === 'wall_mounted' ? '벽면부착식'
+                 : storage.storage_type === 'standalone' ? '독립식'
+                 : '기타',
+      });
+    }
+
+    // 체크리스트 항목들 (실제 저장된 필드명 사용)
     const checkItems = [
-      { key: 'cleanliness', label: '청결 상태' },
-      { key: 'visibility', label: '가시성' },
-      { key: 'accessibility', label: '접근성' },
-      { key: 'label_condition', label: '라벨 상태' },
-      { key: 'lock_function', label: '잠금장치' },
-      { key: 'signage', label: '안내표지' },
+      { key: 'alarm_functional', label: '도난경보장치 작동 여부' },
+      { key: 'instructions_status', label: '보관함 각종 안내문구 표시' },
+      { key: 'emergency_contact', label: '비상연락망 표시 여부' },
+      { key: 'cpr_manual', label: '심폐소생술 방법 안내책자/그림 여부' },
+      { key: 'expiry_display', label: '패드 및 배터리 유효기간 표시 여부' },
     ];
 
     checkItems.forEach(item => {
-      const value = storage[item.key];
-      const note = storage[`${item.key}_note`] || '';
-      if (value === 'good' || value === 'yes') {
+      const value = checklistItems[item.key];
+      const note = improvementNotes[item.key] || '';
+      if (value === 'normal' || value === 'yes') {
         matched.push({
           label: item.label,
           corrected: note || '양호',
@@ -355,18 +369,91 @@ export function InspectionSummaryStep() {
       }
     });
 
+    // 안내표지 설치 (다중선택)
+    if (storage.signage_selected && Array.isArray(storage.signage_selected) && storage.signage_selected.length > 0) {
+      const signageLabels = storage.signage_selected.map(s =>
+        s === 'entrance' ? '출입구'
+        : s === 'interior' ? '실내'
+        : s === 'map' ? '지도'
+        : s
+      ).join(', ');
+      matched.push({
+        label: '안내표지 설치',
+        corrected: signageLabels,
+      });
+    }
+
+    // 사진
     if (storage.storage_box_photo) photos.push('보관함 사진');
     if (storage.signage_photo) photos.push('안내표지 사진');
 
     return { matched, issues, photos };
   }, [stepData.storage]);
 
-  // 전체 통계
+  // 4단계: 관리책임자 교육 정보 분석 (2025-11-09: CRITICAL FIX)
+  const managerEducationSummary = useMemo(() => {
+    const managerEducation = stepData.managerEducation || {};
+    const matched: SummaryItem[] = [];
+
+    if (managerEducation.education_status) {
+      let educationStatusLabel = '';
+      switch (managerEducation.education_status) {
+        case 'manager_education':
+          educationStatusLabel = '관리책임자 교육 이수';
+          break;
+        case 'legal_mandatory_education':
+          educationStatusLabel = '법정의무교육 이수';
+          break;
+        case 'not_completed':
+          educationStatusLabel = '미이수';
+          // 미이수 사유 추가
+          if (managerEducation.not_completed_reason) {
+            let reasonLabel = '';
+            switch (managerEducation.not_completed_reason) {
+              case 'new_manager':
+                reasonLabel = '관리책임자 신규지정';
+                break;
+              case 'recent_installation':
+                reasonLabel = '최근 설치';
+                break;
+              case 'other':
+                reasonLabel = managerEducation.not_completed_other_text || '기타 사유';
+                break;
+            }
+            educationStatusLabel += ` (${reasonLabel})`;
+          }
+          break;
+        case 'other':
+          educationStatusLabel = `기타 (${managerEducation.education_other_text || ''})`;
+          break;
+      }
+
+      if (educationStatusLabel) {
+        matched.push({
+          label: '관리책임자 교육 이수 현황',
+          corrected: educationStatusLabel,
+        });
+      }
+    }
+
+    // 보건복지부 전달사항
+    if (managerEducation.message_to_mohw) {
+      matched.push({
+        label: '보건복지부 재난의료대응과로 전달할 사항',
+        corrected: managerEducation.message_to_mohw,
+      });
+    }
+
+    return { matched, issues: [], photos: [] };
+  }, [stepData.managerEducation]);
+
+  // 전체 통계 (2025-11-09: 관리책임자 교육 포함)
   const totalStats = useMemo(() => {
     const matchedCount =
       basicInfoSummary.matched.length +
       deviceInfoSummary.matched.length +
-      storageChecklistSummary.matched.length;
+      storageChecklistSummary.matched.length +
+      managerEducationSummary.matched.length;
 
     const modifiedCount =
       basicInfoSummary.modified.length +
@@ -379,7 +466,7 @@ export function InspectionSummaryStep() {
       storageChecklistSummary.photos.length;
 
     return { matchedCount, modifiedCount, issuesCount, photosCount };
-  }, [basicInfoSummary, deviceInfoSummary, storageChecklistSummary]);
+  }, [basicInfoSummary, deviceInfoSummary, storageChecklistSummary, managerEducationSummary]);
 
   // 권장 조치 판단
   const recommendedAction = useMemo(() => {
@@ -664,20 +751,20 @@ export function InspectionSummaryStep() {
         </div>
 
         {/* 2. 점검 항목 (Ⅱ. 점검 항목) - 수정 항목 통합 */}
-        {basicInfoSummary.matched.length + deviceInfoSummary.matched.length + storageChecklistSummary.matched.length > 0 && (
+        {basicInfoSummary.matched.length + deviceInfoSummary.matched.length + storageChecklistSummary.matched.length + managerEducationSummary.matched.length > 0 && (
           <div className="report-section">
             <div className="section-title">Ⅱ. 점검 항목</div>
             <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '8px', color: '#e5e7eb' }}>일치항목</div>
 
-            {/* 정상 항목 */}
-            {[...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched]
+            {/* 정상 항목 (2025-11-09: 관리책임자 교육 포함) */}
+            {[...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched, ...managerEducationSummary.matched]
               .filter(item => !['청결 상태', '가시성', '접근성', '라벨 상태'].includes(item.label)).length > 0 && (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: '12px' }}>
                 <tbody>
                   <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '2px solid #4b5563' }}>
                     <td style={{ padding: '6px', border: 'none', color: '#d1d5db', lineHeight: '1.6' }}>
                       {(() => {
-                        const items = [...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched]
+                        const items = [...basicInfoSummary.matched, ...deviceInfoSummary.matched, ...storageChecklistSummary.matched, ...managerEducationSummary.matched]
                           .filter(item => !['청결 상태', '가시성', '접근성', '라벨 상태'].includes(item.label));
                         const itemsPerLine = 2;
                         const lines = [];
