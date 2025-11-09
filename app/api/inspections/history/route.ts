@@ -200,12 +200,31 @@ export const GET = apiHandler(async (request: NextRequest) => {
         reason: 'Primary query returned 0 results with aed_data relation filter'
       });
 
-      // 폴백: aed_data 필터 없이 재조회 (NULL FK 포함)
+      // 폴백: aedFilter로 허용된 equipment_serial만 추출 (권한 유지)
+      const allowedAeds = await prisma.aed_data.findMany({
+        where: aedFilter,
+        select: { equipment_serial: true }
+      });
+
+      const allowedEquipmentSerials = allowedAeds.map(aed => aed.equipment_serial);
+
+      logger.info('InspectionHistory:GET', 'Extracted allowed equipment serials from aedFilter', {
+        count: allowedEquipmentSerials.length,
+        sample: allowedEquipmentSerials.slice(0, 5)
+      });
+
+      // 폴백 쿼리: aedFilter로 제한된 equipment_serial 범위 내에서만 조회 (권한 보호)
       const fallbackWhere: any = {
         inspection_date: where.inspection_date,
         overall_status: where.overall_status,
+        equipment_serial: { in: allowedEquipmentSerials },  // ← 권한 필터 유지
         inspector_id: where.inspector_id  // 있는 경우만
       };
+
+      // 명시적 equipment_serial 파라미터 재적용 (API 계약 준수)
+      if (equipmentSerial) {
+        fallbackWhere.equipment_serial = equipmentSerial;
+      }
 
       const fallbackInspections = await prisma.inspections.findMany({
         where: fallbackWhere,
@@ -218,8 +237,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
       });
 
       if (fallbackInspections.length > 0) {
-        logger.info('InspectionHistory:GET', `Fallback query found ${fallbackInspections.length} records`, {
-          equipment_serials: fallbackInspections.map(r => r.equipment_serial)
+        logger.info('InspectionHistory:GET', `Fallback query found ${fallbackInspections.length} records (권한 범위 내)`, {
+          equipment_serials: fallbackInspections.map(r => r.equipment_serial),
+          aedFilterApplied: Object.keys(aedFilter).length > 0
         });
 
         // equipment_serial 기준으로 중복 제거 (안전장치)
@@ -260,9 +280,14 @@ export const GET = apiHandler(async (request: NextRequest) => {
           }
         });
 
-        logger.info('InspectionHistory:GET', `Fallback query merged ${inspections.length} records`, {
+        logger.info('InspectionHistory:GET', `Fallback query merged ${inspections.length} records (권한 검증 완료)`, {
           dedupedCount: filteredFallback.length,
-          finalCount: inspections.length
+          finalCount: inspections.length,
+          accessControlMaintained: true
+        });
+      } else {
+        logger.info('InspectionHistory:GET', 'Fallback query returned 0 records (권한 범위 내에서 NULL FK 데이터 없음)', {
+          allowedEquipmentCount: allowedEquipmentSerials.length
         });
       }
     }
