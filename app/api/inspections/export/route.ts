@@ -276,22 +276,60 @@ export const POST = apiHandler(async (request: NextRequest) => {
     const filterMode = requestedFilters.mode || 'address';
     let equipmentFilter: any = {};
 
-    // v5.3 Critical Fix: Jurisdiction mode should use ONLY jurisdiction_health_center filter
-    // (not address filters combined with jurisdiction filter)
+    // v5.3 Critical Fix: Jurisdiction mode filtering with role-based permission enforcement
+    // ⚠️ SECURITY: Always enforce role-based access control (region/city codes) regardless of mode
     if (filterMode === 'jurisdiction') {
-      // Jurisdiction mode: Filter ONLY by jurisdiction_health_center
-      // This ensures compatibility with table's /api/inspections/history which also uses jurisdiction-only filtering
-      if (userProfile.role === 'local_admin' && userProfile.organizations?.name) {
+      // Jurisdiction mode: local_admin ONLY (non-local_admin must use address mode)
+      if (userProfile.role === 'local_admin') {
+        // 조직이 없으면 jurisdiction 모드 사용 불가
+        if (!userProfile.organizations?.name) {
+          logger.warn('Export:JurisdictionError', 'Organization mapping required for jurisdiction mode', {
+            userId: session.user.id,
+            role: userProfile.role,
+            reason: 'organizations.name is missing'
+          });
+
+          return NextResponse.json(
+            {
+              error: 'Organization mapping required for jurisdiction mode',
+              details: 'Your account must be assigned to a health center to use jurisdiction mode'
+            },
+            { status: 403 }
+          );
+        }
+
+        // local_admin: ONLY jurisdiction_health_center filter (타 지역 AED 포함 가능)
         equipmentFilter.jurisdiction_health_center = userProfile.organizations.name;
-        logger.info('Export:JurisdictionFilter', 'Applied jurisdiction-only filter', {
+        logger.info('Export:JurisdictionFilter', 'Applied jurisdiction-only filter (local_admin)', {
           userId: session.user.id,
           healthCenter: userProfile.organizations.name,
           filterMode: 'jurisdiction',
-          note: 'Address filters intentionally excluded for jurisdiction mode'
+          note: 'Address filters excluded, allowing AED from other regions'
+        });
+      } else {
+        // non-local_admin (regional_admin, regional_emergency_center_admin, master, etc.)
+        // 권한 우회 방지: 반드시 region/city 필터 유지
+        logger.warn('Export:JurisdictionWarning', 'Jurisdiction mode requested by non-local_admin, reverting to address mode', {
+          userId: session.user.id,
+          role: userProfile.role,
+          reason: 'Only local_admin can use jurisdiction mode to prevent permission bypass'
+        });
+
+        // Fallback to address mode with role-based access control
+        equipmentFilter = buildEquipmentFilter({
+          regionCodes: filterResult.filters.regionCodes,
+          cityCodes: filterResult.filters.cityCodes,
+          userRole: userProfile.role
+        }, 'address');
+
+        logger.info('Export:AddressFilter', 'Applied address-based filter (fallback from jurisdiction request)', {
+          userId: session.user.id,
+          role: userProfile.role,
+          regionCodes: filterResult.filters.regionCodes,
+          cityCodes: filterResult.filters.cityCodes,
+          reason: 'Non-local_admin cannot use jurisdiction mode'
         });
       }
-      // For other roles (regional_admin, master, etc.): No additional filter applied
-      // They have full access per their role permissions
     } else {
       // Address mode (default): Use standard region/city code filtering
       equipmentFilter = buildEquipmentFilter({
