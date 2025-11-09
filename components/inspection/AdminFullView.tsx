@@ -37,7 +37,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed' | 'drafts'>('list');
   const [filterCollapsed, setFilterCollapsed] = useState(false);
   const [filterMode, setFilterModeState] = useState<'address' | 'jurisdiction'>('address');
-  const { data, isLoading, setFilters } = useAEDData();
+  const { data, isLoading, setFilters, filters } = useAEDData();
   const router = useRouter();
   const { showSuccess, showError } = useToast();
 
@@ -127,13 +127,40 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     return () => clearInterval(interval);
   }, []);
 
-  // 점검진행목록 탭으로 전환 시 점검 이력 조회
+  // 점검진행목록 탭으로 전환 시 점검 이력 조회 (필터 상태 포함)
   useEffect(() => {
     async function loadInspectionHistory() {
       if (viewMode === 'completed') {
         // local_admin이면 filterMode 적용, 아니면 기본값 'address' 사용
         const mode = user?.role === 'local_admin' ? filterMode : 'address';
-        const history = await getInspectionHistory(undefined, 720, mode); // 최근 30일
+        let history = await getInspectionHistory(undefined, 720, mode); // 최근 30일
+
+        // 필터 상태에 따라 클라이언트 사이드 필터링 적용
+        // (필터가 선택되었을 때만 필터링)
+        if (filters.regionCodes && filters.regionCodes.length > 0) {
+          // region_code 필터 적용
+          history = history.filter(item => {
+            // aed_data에서 sido 정보 추출
+            const itemSido = (item as any).aed_data?.sido;
+            if (!itemSido) return true; // sido가 없으면 포함
+
+            // 필터 regionCodes와 매칭 (정규화 필요)
+            return filters.regionCodes!.some(code => {
+              // 간단한 문자열 비교 (정규화된 지역명과 code 비교)
+              return itemSido.includes(code) || code.includes(itemSido);
+            });
+          });
+
+          // city_code 필터 추가 적용
+          if (filters.cityCodes && filters.cityCodes.length > 0) {
+            history = history.filter(item => {
+              const itemGugun = (item as any).aed_data?.gugun;
+              if (!itemGugun) return true;
+              return filters.cityCodes!.includes(itemGugun);
+            });
+          }
+        }
+
         setInspectionHistoryList(history);
       } else if (viewMode === 'drafts') {
         const drafts = await getDraftSessions();
@@ -142,7 +169,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     }
 
     loadInspectionHistory();
-  }, [viewMode, filterMode, user?.role]);
+  }, [viewMode, filterMode, user?.role, filters.regionCodes, filters.cityCodes]);
 
   // AdminFullView 레벨에서 mapRegionChanged 이벤트 리스닝
   useEffect(() => {
