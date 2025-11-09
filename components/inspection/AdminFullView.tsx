@@ -666,87 +666,186 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                 </div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse table-fixed">
-                  <thead className="sticky top-0 bg-gray-800 border-b border-gray-700">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비번호</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden sm:table-cell min-w-[130px] max-w-[150px]">점검일시</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden lg:table-cell min-w-[80px] max-w-[100px]">점검자</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden md:table-cell min-w-[110px] max-w-[150px]">시도/구군</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[90px] max-w-[110px]">상태</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[110px] max-w-[140px]">작업</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inspectionHistoryList.map((inspection) => (
-                      <tr
-                        key={inspection.id}
-                        className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
-                      >
-                        <td className="px-4 py-3 text-sm text-gray-200 font-medium truncate whitespace-nowrap">{inspection.equipment_serial}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell whitespace-nowrap">
-                          {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
-                            year: '2-digit',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-400 hidden lg:table-cell truncate">{inspection.inspector_name}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
-                          {inspection.aed_data
-                            ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
-                            : '-'
-                          }
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                            inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
-                            inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
-                            inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
-                            inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
-                            inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
-                            'bg-gray-700 text-gray-200'
-                          }`}>
-                            {inspection.overall_status === 'pass' ? '합격' :
-                             inspection.overall_status === 'fail' ? '불합격' :
-                             inspection.overall_status === 'normal' ? '정상' :
-                             inspection.overall_status === 'needs_improvement' ? '개선필요' :
-                             inspection.overall_status === 'malfunction' ? '고장' :
-                             inspection.overall_status}
+              <>
+                {/* 모바일 레이아웃 (< 640px) */}
+                <div className="sm:hidden px-2 py-3 space-y-3">
+                  {inspectionHistoryList.map((inspection) => (
+                    <div
+                      key={inspection.id}
+                      className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:bg-gray-750 transition-colors"
+                    >
+                      {/* 헤더: 장비번호 + 상태 */}
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800/50">
+                        <div className="font-medium text-sm text-gray-200 truncate flex-1">
+                          {inspection.equipment_serial}
+                        </div>
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 flex-shrink-0 ${
+                          inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
+                          inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
+                          inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
+                          inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
+                          inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
+                          'bg-gray-700 text-gray-200'
+                        }`}>
+                          {inspection.overall_status === 'pass' ? '합격' :
+                           inspection.overall_status === 'fail' ? '불합격' :
+                           inspection.overall_status === 'normal' ? '정상' :
+                           inspection.overall_status === 'needs_improvement' ? '개선필요' :
+                           inspection.overall_status === 'malfunction' ? '고장' :
+                           inspection.overall_status}
+                        </span>
+                      </div>
+
+                      {/* 본문: 점검 정보 */}
+                      <div className="px-4 py-3 space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">점검일시</span>
+                          <span className="text-gray-200 font-medium">
+                            {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
+                              year: '2-digit',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">점검자</span>
+                          <span className="text-gray-200 font-medium">{inspection.inspector_name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">시도</span>
+                          <span className="text-gray-200 font-medium">
+                            {inspection.aed_data?.sido || '-'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">구군</span>
+                          <span className="text-gray-200 font-medium">
+                            {inspection.aed_data?.gugun || '-'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 푸터: 작업 버튼 */}
+                      <div className="px-4 py-3 border-t border-gray-700 flex gap-2">
+                        <button
+                          onClick={() => handleViewInspectionHistory(inspection.id)}
+                          className="flex-1 px-3 py-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors font-medium"
+                          title="상세 정보 보기"
+                        >
+                          상세
+                        </button>
+                        {user?.role === 'master' ? (
                           <button
-                            onClick={() => handleViewInspectionHistory(inspection.id)}
-                            className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
-                            title="상세 정보 보기"
+                            onClick={() => {
+                              setSelectedInspection(inspection);
+                              setInspectionToDelete(inspection);
+                              setShowDeleteModal(true);
+                            }}
+                            className="flex-1 px-3 py-2 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors font-medium"
+                            title="삭제 (마스터만)"
                           >
-                            상세
+                            삭제
                           </button>
-                          {user?.role === 'master' ? (
-                            <button
-                              onClick={() => {
-                                setSelectedInspection(inspection);
-                                setInspectionToDelete(inspection);
-                                setShowDeleteModal(true);
-                              }}
-                              className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
-                              title="삭제 (마스터만)"
-                            >
-                              삭제
-                            </button>
-                          ) : (
-                            <span className="px-2 py-1 text-xs text-gray-500 flex-shrink-0">-</span>
-                          )}
-                        </td>
+                        ) : (
+                          <button
+                            disabled
+                            className="flex-1 px-3 py-2 text-xs bg-gray-700 text-gray-500 rounded cursor-not-allowed font-medium"
+                            title="삭제 불가 (마스터만 가능)"
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 데스크톱/태블릿 레이아웃 (>= 640px) */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full border-collapse table-fixed">
+                    <thead className="sticky top-0 bg-gray-800 border-b border-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비번호</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden sm:table-cell min-w-[130px] max-w-[150px]">점검일시</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden lg:table-cell min-w-[80px] max-w-[100px]">점검자</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden md:table-cell min-w-[110px] max-w-[150px]">시도/구군</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[90px] max-w-[110px]">상태</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[110px] max-w-[140px]">작업</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {inspectionHistoryList.map((inspection) => (
+                        <tr
+                          key={inspection.id}
+                          className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
+                        >
+                          <td className="px-4 py-3 text-sm text-gray-200 font-medium truncate whitespace-nowrap">{inspection.equipment_serial}</td>
+                          <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell whitespace-nowrap">
+                            {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
+                              year: '2-digit',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-400 hidden lg:table-cell truncate">{inspection.inspector_name}</td>
+                          <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
+                            {inspection.aed_data
+                              ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
+                              : '-'
+                            }
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                              inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
+                              inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
+                              inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
+                              inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
+                              inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
+                              'bg-gray-700 text-gray-200'
+                            }`}>
+                              {inspection.overall_status === 'pass' ? '합격' :
+                               inspection.overall_status === 'fail' ? '불합격' :
+                               inspection.overall_status === 'normal' ? '정상' :
+                               inspection.overall_status === 'needs_improvement' ? '개선필요' :
+                               inspection.overall_status === 'malfunction' ? '고장' :
+                               inspection.overall_status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">
+                            <button
+                              onClick={() => handleViewInspectionHistory(inspection.id)}
+                              className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
+                              title="상세 정보 보기"
+                            >
+                              상세
+                            </button>
+                            {user?.role === 'master' ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedInspection(inspection);
+                                  setInspectionToDelete(inspection);
+                                  setShowDeleteModal(true);
+                                }}
+                                className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
+                                title="삭제 (마스터만)"
+                              >
+                                삭제
+                              </button>
+                            ) : (
+                              <span className="px-2 py-1 text-xs text-gray-500 flex-shrink-0">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         ) : viewMode === 'drafts' ? (
