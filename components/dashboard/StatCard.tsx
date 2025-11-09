@@ -119,7 +119,7 @@ export function StatCard({
                       </span>
                     </span>
                   </div>
-                  <div className="w-full bg-gray-800 rounded-full h-1.5">
+                  <div className="bg-gray-800 rounded-full h-1.5 overflow-hidden">
                     <div
                       className={cn('h-1.5 rounded-full transition-all', colors.progress)}
                       style={{ width: `${step.percentage}%` }}
