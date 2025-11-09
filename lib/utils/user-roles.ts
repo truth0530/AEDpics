@@ -1,4 +1,5 @@
 import { user_role as UserRole } from '@prisma/client';
+import { getRegionFullLabel, REGION_CODE_TO_LABEL } from '@/lib/constants/regions';
 
 /**
  * 사용자 역할 관리 유틸리티
@@ -169,32 +170,24 @@ export function getAccessLevelLabel(role: UserRole): string {
 
 /**
  * 지역명 표시 (지역 코드 숨김)
+ * 중앙 lib/constants/regions.ts에서 관리되는 지역 코드를 사용하여
+ * 항상 일관된 지역명을 표시합니다.
  */
 export function getRegionDisplay(regionCode: string | null): string {
   if (!regionCode) return '';
 
-  const regionMap: Record<string, string> = {
-    'SEL': '서울특별시',
-    'BSN': '부산광역시',
-    'DGU': '대구광역시',
-    'ICN': '인천광역시',
-    'GWJ': '광주광역시',
-    'DJN': '대전광역시',
-    'ULS': '울산광역시',
-    'SEJ': '세종특별자치시',
-    'GGD': '경기도',
-    'GWD': '강원특별자치도',
-    'CBD': '충청북도',
-    'CND': '충청남도',
-    'JBD': '전북특별자치도',
-    'JND': '전라남도',
-    'GBD': '경상북도',
-    'GND': '경상남도',
-    'JJD': '제주특별자치도',
-    // 구 코드 (하위 호환)
-    'DAE': '대구광역시',
-    'INC': '인천광역시'
-  };
+  // 1. 정식명칭(fullLabel) 먼저 시도 (예: '서울특별시')
+  const fullLabel = getRegionFullLabel(regionCode);
+  if (fullLabel !== regionCode) {
+    return fullLabel;
+  }
 
-  return regionMap[regionCode] || regionCode;
+  // 2. 짧은 이름(label) 시도 (예: '서울')
+  const shortLabel = REGION_CODE_TO_LABEL[regionCode];
+  if (shortLabel) {
+    return shortLabel;
+  }
+
+  // 3. 매핑 실패 시 원본 코드 반환
+  return regionCode;
 }

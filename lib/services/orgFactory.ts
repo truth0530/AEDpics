@@ -14,7 +14,8 @@ import {
   REGIONS,
   REGION_CODE_TO_GUGUNS,
   getEmergencyCenterName,
-  generateHealthCenterName
+  generateHealthCenterName,
+  getFullRegionName
 } from '@/lib/constants/regions';
 
 /**
@@ -95,26 +96,7 @@ export function generateRegionOrganizations(): RegionOrgData[] {
   return REGIONS.map(region => ({
     region: region.label,  // 짧은 이름 (KEY)
     regionCode: region.code,
-    fullRegionName: region.code === 'KR'
-      ? '중앙'
-      : region.code === 'SEO' ? '서울특별시'
-      : region.code === 'BUS' ? '부산광역시'
-      : region.code === 'DAE' ? '대구광역시'
-      : region.code === 'INC' ? '인천광역시'
-      : region.code === 'GWA' ? '광주광역시'
-      : region.code === 'DAJ' ? '대전광역시'
-      : region.code === 'ULS' ? '울산광역시'
-      : region.code === 'SEJ' ? '세종특별자치시'
-      : region.code === 'GYE' ? '경기도'
-      : region.code === 'GAN' ? '강원특별자치도'
-      : region.code === 'CHB' ? '충청북도'
-      : region.code === 'CHN' ? '충청남도'
-      : region.code === 'JEB' ? '전북특별자치도'
-      : region.code === 'JEN' ? '전라남도'
-      : region.code === 'GYB' ? '경상북도'
-      : region.code === 'GYN' ? '경상남도'
-      : region.code === 'JEJ' ? '제주특별자치도'
-      : region.label,
+    fullRegionName: getFullRegionName(region.code),
     organizations: generateOrganizationsForRegion(region.code),
     guguns: REGION_CODE_TO_GUGUNS[region.code] || []
   }));
