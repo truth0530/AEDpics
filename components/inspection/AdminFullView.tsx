@@ -8,6 +8,7 @@ import { DataTable } from '@/app/aed-data/components/DataTable';
 import { InspectionFilterBar } from './InspectionFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
+import { REGION_CODE_TO_DB_LABELS } from '@/lib/constants/regions';
 import {
   getActiveInspectionSessions,
   getCompletedInspections,
@@ -136,29 +137,30 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         let history = await getInspectionHistory(undefined, 720, mode); // 최근 30일
 
         // 필터 상태에 따라 클라이언트 사이드 필터링 적용
-        // (필터가 선택되었을 때만 필터링)
+        // ⚠️ CRITICAL: regionCodes를 REGION_CODE_TO_DB_LABELS로 변환 후 매칭
+        // (filters.regionCodes에는 코드가 들어있지만 aed_data.sido에는 한글 라벨이 저장됨)
         if (filters.regionCodes && filters.regionCodes.length > 0) {
-          // region_code 필터 적용
+          // 코드를 한글 라벨로 변환 (예: 'SEO' → '서울특별시')
+          const regionLabels = filters.regionCodes
+            .flatMap(code => REGION_CODE_TO_DB_LABELS[code] || [])
+            .filter(Boolean);
+
+          // sido 필터 적용 (변환된 라벨과 정확히 매칭)
           history = history.filter(item => {
-            // aed_data에서 sido 정보 추출
             const itemSido = (item as any).aed_data?.sido;
             if (!itemSido) return true; // sido가 없으면 포함
-
-            // 필터 regionCodes와 매칭 (정규화 필요)
-            return filters.regionCodes!.some(code => {
-              // 간단한 문자열 비교 (정규화된 지역명과 code 비교)
-              return itemSido.includes(code) || code.includes(itemSido);
-            });
+            return regionLabels.includes(itemSido);
           });
+        }
 
-          // city_code 필터 추가 적용
-          if (filters.cityCodes && filters.cityCodes.length > 0) {
-            history = history.filter(item => {
-              const itemGugun = (item as any).aed_data?.gugun;
-              if (!itemGugun) return true;
-              return filters.cityCodes!.includes(itemGugun);
-            });
-          }
+        // ⚠️ CRITICAL: cityCodes 필터를 독립적으로 처리
+        // (regionCodes가 없어도 cityCodes 필터가 적용되어야 함)
+        if (filters.cityCodes && filters.cityCodes.length > 0) {
+          history = history.filter(item => {
+            const itemGugun = (item as any).aed_data?.gugun;
+            if (!itemGugun) return true;
+            return filters.cityCodes!.includes(itemGugun);
+          });
         }
 
         setInspectionHistoryList(history);
