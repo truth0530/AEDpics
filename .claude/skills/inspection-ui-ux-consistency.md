@@ -588,6 +588,186 @@ export function getCompletionPercentage(
 
 ---
 
+## Phase 4: 상태 전환 플로우 검증 (NEW)
+
+### 개요
+이 단계는 **사용자 인터랙션에 따른 상태 전환 시 UI 동작의 일관성**을 검증합니다.
+Phase 1-3은 정적 UI 요소를 검증하지만, Phase 4는 **동적 상태 변화에 따른 필드 가용성 일관성**을 보장합니다.
+
+### 근본 원인
+사용자의 같은 의도(예: 배터리 유효기간 입력)는 어느 상태에서 시작하든 일관된 결과를 제공해야 하지만,
+조건부 필드 표시 로직이 상태마다 다르게 구성되면 혼란이 발생합니다.
+
+**실제 사건 (2025-11-09)**:
+- 배터리 유효기간이 "2025-03-31 (만료)"일 때
+- "일치" 버튼 클릭 후 → "유효기간 경과 - 조치계획" 필드 표시됨 ✅
+- "수정" 버튼 클릭 후 → "유효기간 경과 - 조치계획" 필드 표시 안됨 ❌
+- 사용자 혼란: "같은 데이터인데 왜 필드가 다르게 보이나?"
+
+### 검증 항목
+
+#### 1. 조건부 필드 활성화 일관성
+```
+검증 기준: 같은 조건은 모든 상태에서 같은 결과를 제공해야 함
+
+잘못된 패턴 (일관성 없음):
+┌─────────────────────────────────────┐
+│ 상태: isMatched = true              │
+│ 조건: currentIsExpired && value    │
+│ 결과: 필드 표시됨 ✅                │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ 상태: isEditMode = true             │
+│ 조건: currentIsExpired && value    │
+│ 결과: 필드 표시 안됨 ❌             │  ← 모순!
+└─────────────────────────────────────┘
+
+올바른 패턴 (일관성 있음):
+┌─────────────────────────────────────┐
+│ 상태: isMatched = true              │
+│ 조건: currentIsExpired && value    │
+│ 결과: 필드 표시됨 ✅                │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ 상태: isEditMode = true             │
+│ 조건: value (상태 무관)            │
+│ 결과: 항상 필드 표시됨 ✅           │
+└─────────────────────────────────────┘
+```
+
+#### 2. 상태 전환 후 필드 가용성 유지
+```
+검증 기준: 상태 전환 후에도 입력 가능한 필드는 유지되어야 함
+
+시나리오:
+1. "일치" 상태에서 "조치계획" 입력 가능 ✅
+2. "수정" 상태로 전환
+3. "수정" 상태에서도 "조치계획" 입력 가능해야 함 ✅
+
+데이터 손실 위험:
+- 상태 전환 시 필드가 비활성화되면 사용자 입력 손실 가능
+- 예: "일치" → "수정" 전환 시 선택한 "조치계획"이 초기화됨
+```
+
+#### 3. 같은 사용자 의도의 일관된 처리
+```
+검증 기준: 사용자 의도(intent)가 같으면 진입 경로(state)와 무관하게 같은 결과
+
+예시:
+의도: "배터리 유효기간 2025-03-31 입력 후 조치계획 선택"
+
+경로 A: 읽기 → "일치" 클릭 → 조치계획 선택 가능 ✅
+경로 B: 읽기 → "수정" 클릭 → 조치계획 선택 가능 ✅  (일관성)
+
+잘못된 경우:
+경로 A: 읽기 → "일치" 클릭 → 조치계획 선택 가능 ✅
+경로 B: 읽기 → "수정" 클릭 → 조치계획 선택 불가능 ❌ (일관성 위반)
+```
+
+### 자동 감지 체크리스트
+
+#### Pattern Matching
+```typescript
+// 감지할 패턴 1: 상태별 조건부 렌더링
+if (stateA && condition) {
+  show_field()  // ✅ 표시됨
+}
+else if (stateB && condition) {
+  // show_field() 호출 없음  // ❌ 표시 안됨
+}
+→ 감지: "같은 조건이 다른 상태에서 다르게 처리됨"
+
+// 감지할 패턴 2: 상태 의존성 있는 조건
+{isMatched && currentIsExpired && value && <field />}  // ✅
+{isEditMode && currentIsExpired && value && <field />} // ✅ (일관성)
+
+// 감지할 패턴 3: 상태 의존성 없는 조건 (권장)
+{currentIsExpired && value && <field />}  // ✅ 모든 상태에서 동일
+```
+
+#### 코드 리뷰 체크리스트
+- [ ] 같은 조건부 렌더링이 모든 관련 상태에서 동일하게 구현되었는가?
+- [ ] 조건에 불필요한 상태 체크가 포함되어 있지 않은가?
+- [ ] 상태 전환 시 사용자가 입력한 값이 보존되는가?
+- [ ] 같은 필드가 다른 상태에서 다르게 활성화되지 않는가?
+
+#### DeviceInfoStep 검증 예시
+```typescript
+// Line 428 (isMatched):
+{currentIsExpired && formattedCurrentValue && <select/>}
+
+// Line 521 (isEditMode):
+// 이전: {currentIsExpired && formattedCurrentValue && <select/>}
+// 수정 후: {formattedCurrentValue && <select/>}  ✅ 일관성 개선
+
+// 개선 이유:
+// - "일치": 만료 상태면 조치계획 필수 (변경 가능)
+// - "수정": 날짜 입력 후 항상 조치계획 선택 가능 (유연성)
+// - 결과: 일관된 사용자 경험
+```
+
+### 검증 도구
+
+#### 1. Pattern Detection Script
+```bash
+# 같은 조건부 렌더링을 찾아 비교
+grep -n "currentIsExpired.*formattedCurrentValue" \
+  components/inspection/steps/*.tsx
+
+# 결과가 여러 파일에서 다르게 처리되면 불일치 의심
+```
+
+#### 2. State Flow Diagram
+각 컴포넌트별로 상태 전환 다이어그램을 작성하여 필드 가용성 검증:
+```
+DeviceInfoStep.tsx - Battery Expiry Field
+┌──────────┐
+│ 읽기모드 │
+└────┬─────┘
+     │
+  [선택]
+   │ └─→ [일치]  → isMatched=true  → 조치계획 표시 ✅
+   │
+   └─→ [수정]    → isEditMode=true → 조치계획 표시 ✅ (이제 일관성 있음)
+```
+
+### 검증 결과 보고
+
+#### 성공 상태 (Green)
+```
+PASS: State Transition Flow Validation
+- DeviceInfoStep: 배터리 필드 일관성 확인 ✅
+- StorageChecklistStep: 패드 필드 일관성 확인 ✅
+- 모든 조건부 필드가 상태 전환 시 일관되게 작동 ✅
+```
+
+#### 경고 상태 (Yellow)
+```
+WARNING: Inconsistent Field Visibility
+- DeviceInfoStep line 521: isEditMode에서 currentIsExpired 조건이 isMatched와 다름
+  → 권장: 같은 조건 사용 또는 명확한 의도 문서화
+
+Action: 일관성 검토 후 수정
+```
+
+#### 실패 상태 (Red)
+```
+FAIL: State Transition Inconsistency
+- Battery Action Plan field not available in Edit mode
+- Same condition (currentIsExpired && value) produces different results
+- Users confused by inconsistent behavior
+
+Action:
+1. 상태별 조건부 로직 재검토
+2. 같은 의도는 같은 결과를 제공하도록 통일
+3. 필드 가용성 다이어그램 작성 및 검증
+4. 테스트: 모든 상태에서 필드 동작 확인
+```
+
+---
+
 ## 참고 문서
 - [INSPECTION_APPROVAL_WORKFLOW.md](docs/operations/INSPECTION_APPROVAL_WORKFLOW.md) - 점검 승인 워크플로우
 - [InspectionHistoryModal.tsx](components/inspection/InspectionHistoryModal.tsx) - 점검 이력 상세 모달

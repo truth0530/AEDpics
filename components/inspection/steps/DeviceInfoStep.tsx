@@ -517,10 +517,12 @@ export function DeviceInfoStep() {
                       className="w-full rounded-lg px-3 py-2 bg-gray-800 border-2 border-yellow-500/50 text-sm text-white focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
                     />
 
-                    {/* 만료 여부에 따른 추가 입력 필드 */}
-                    {currentIsExpired && formattedCurrentValue && (
+                    {/* 수정 중 항상 조치계획 선택 가능 (만료 여부와 무관) */}
+                    {formattedCurrentValue && (
                       <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                        <div className="text-xs text-red-400 font-medium">유효기간 경과 - 조치계획</div>
+                        <div className="text-xs text-red-400 font-medium">
+                          {currentIsExpired ? '유효기간 경과 - 조치계획' : '조치계획 (참고)'}
+                        </div>
                         <select
                           value={actionPlan}
                           onChange={(e) => {
