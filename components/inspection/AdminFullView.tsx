@@ -652,27 +652,27 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               const hasActiveSession = inspectionSessions.has(equipmentSerial);
               const isCompleted = completedInspections.has(equipmentSerial);
               const isUnavailable = unavailableAssignments.has(equipmentSerial);
-              // ⚠️ CRITICAL: API에서 반환된 inspection_status도 확인!
-              // completedInspections는 최근 24시간만 포함하므로
-              // 더 오래된 점검 완료 데이터를 놓칠 수 있음
               const inspectionStatus = (device as any).inspection_status;
-              const hasCompletedStatus = inspectionStatus === 'completed' || inspectionStatus === 'in_progress';
-              // 목록 탭: 점검 시작 전인 장비만 (점검불가, 완료, 진행중 제외)
+
+              // CRITICAL FIX: inspection_status를 정확하게 체크
+              // - pending 또는 NULL: 점검 대상 (표시)
+              // - in_progress, completed, unavailable, cancelled: 제외
+              const shouldExclude = inspectionStatus && inspectionStatus !== 'pending';
 
               // 디버그: 29-0001352 (세인트존스베리아카데미) 추적
               if (equipmentSerial === '29-0001352') {
                 console.log('[AdminFullView DataTable filterData]', {
                   serial: equipmentSerial,
                   inspectionStatus,
-                  hasCompletedStatus,
+                  shouldExclude,
                   hasActiveSession,
                   isCompleted,
                   isUnavailable,
-                  willInclude: !hasActiveSession && !isCompleted && !isUnavailable && !hasCompletedStatus
+                  willInclude: !hasActiveSession && !isCompleted && !isUnavailable && !shouldExclude
                 });
               }
 
-              return !hasActiveSession && !isCompleted && !isUnavailable && !hasCompletedStatus;
+              return !hasActiveSession && !isCompleted && !isUnavailable && !shouldExclude;
             }}
             showInspectionStatus={false}
             inspectionSessions={inspectionSessions}
