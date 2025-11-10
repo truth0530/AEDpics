@@ -250,8 +250,27 @@ export default function EditUserPage() {
           <CardTitle>사용자 정보 수정</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* 지역 | 구/군 | 소속 조직 | 역할 (4열) */}
-          <div className="grid gap-4" style={{ gridTemplateColumns: '0.4fr 0.6fr 1fr 1fr' }}>
+          {/* 역할 | 지역 | 구/군 | 소속 조직 (4열) */}
+          <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 0.4fr 0.6fr 1fr' }}>
+            {/* 역할 선택 */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                역할 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+              >
+                <option value="">역할을 선택하세요</option>
+                {getRoleOptions().map(role => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* 지역 선택 */}
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -335,25 +354,6 @@ export default function EditUserPage() {
                   ))}
                 </select>
               )}
-            </div>
-
-            {/* 역할 선택 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                역할 <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
-              >
-                <option value="">역할을 선택하세요</option>
-                {getRoleOptions().map(role => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 
