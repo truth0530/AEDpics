@@ -146,49 +146,76 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // === Step 9: 시간 범위 기반 중복 체크 ===
+    // === Step 9-10: 트랜잭션 내에서 중복 체크 및 스케줄 생성 (Race Condition 방지) ===
+    // 시간 범위 기반 중복 체크와 스케줄 생성을 원자적(atomic)으로 처리
     const windowStart = new Date(scheduledFor);
     windowStart.setMinutes(windowStart.getMinutes() - 30);
     const windowEnd = new Date(scheduledFor);
     windowEnd.setMinutes(windowEnd.getMinutes() + 30);
 
-    const duplicateCheck = await prisma.inspection_schedules.findFirst({
-      where: {
-        aed_data_id: aedData.id,
-        scheduled_for: {
-          gte: windowStart,
-          lt: windowEnd,
-        },
-      },
-      select: { id: true },
-    });
+    let schedule;
+    try {
+      schedule = await prisma.$transaction(async (tx) => {
+        // 트랜잭션 내에서 중복 체크
+        const duplicateCheck = await tx.inspection_schedules.findFirst({
+          where: {
+            aed_data_id: aedData.id,
+            scheduled_for: {
+              gte: windowStart,
+              lt: windowEnd,
+            },
+          },
+          select: { id: true },
+        });
 
-    if (duplicateCheck) {
-      return NextResponse.json(
-        { error: 'A schedule already exists near the selected time for this device' },
-        { status: 409 }
-      );
+        // 중복이 있으면 에러 발생 (트랜잭션 롤백)
+        if (duplicateCheck) {
+          throw new Error(
+            `SCHEDULE_CONFLICT|A schedule already exists near the selected time for this device|${duplicateCheck.id}`
+          );
+        }
+
+        // 중복이 없으면 스케줄 생성
+        const newSchedule = await tx.inspection_schedules.create({
+          data: {
+            aed_data_id: aedData.id,
+            equipment_serial: aedData.equipment_serial,
+            scheduled_for: new Date(scheduledFor),
+            assignee_identifier: payload.assignee,
+            priority: payload.priority || 'normal',
+            notes: payload.notes,
+            created_by: session.user.id,
+          },
+          select: {
+            id: true,
+            equipment_serial: true,
+            scheduled_for: true,
+            priority: true,
+            status: true,
+          },
+        });
+
+        return newSchedule;
+      });
+    } catch (error: any) {
+      // SCHEDULE_CONFLICT 에러 처리
+      if (error.message?.startsWith('SCHEDULE_CONFLICT|')) {
+        const [, errorMessage] = error.message.split('|');
+        logger.warn('ScheduleCreation:POST', 'Schedule creation blocked - duplicate found', {
+          userId: session.user.id,
+          equipmentSerial: aedData.equipment_serial,
+          scheduledFor: scheduledFor
+        });
+
+        return NextResponse.json(
+          { error: errorMessage },
+          { status: 409 }
+        );
+      }
+
+      // 다른 에러는 상위 catch로 전파
+      throw error;
     }
-
-    // === Step 10: 스케줄 생성 ===
-    const schedule = await prisma.inspection_schedules.create({
-      data: {
-        aed_data_id: aedData.id,
-        equipment_serial: aedData.equipment_serial,
-        scheduled_for: new Date(scheduledFor),
-        assignee_identifier: payload.assignee,
-        priority: payload.priority || 'normal',
-        notes: payload.notes,
-        created_by: session.user.id,
-      },
-      select: {
-        id: true,
-        equipment_serial: true,
-        scheduled_for: true,
-        priority: true,
-        status: true,
-      },
-    });
 
     // === Step 11: 감사 로그 ===
     logger.info('ScheduleCreation:POST', 'Schedule created successfully', {
