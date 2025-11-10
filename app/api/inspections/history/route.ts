@@ -14,6 +14,7 @@ import { prisma } from '@/lib/prisma';
  *   - equipment_serial: 특정 장비의 점검 이력만 조회
  *   - hours: 조회 범위 (기본값: 24시간)
  *   - mode: 지역 필터링 기준 ('address'=물리적 위치, 'jurisdiction'=관할보건소 기본값: 'address')
+ *   - status: 점검 상태 필터 ('all'=전체, 'in_progress'=점검중, 'completed'=점검완료, 기본값: 'completed')
  *
  * 권한별 조회 범위:
  *   - local_admin (보건소): 'address' 또는 'jurisdiction' 모드로 조회
@@ -32,6 +33,8 @@ export const GET = apiHandler(async (request: NextRequest) => {
   const hoursAgo = parseInt(searchParams.get('hours') || '24');
   // 지역 필터링 기준: 'address' (물리적 위치) 또는 'jurisdiction' (관할보건소)
   const filterMode = searchParams.get('mode') || 'address';
+  // 상태 필터: 'all' (전체), 'in_progress' (점검중), 'completed' (점검완료)
+  const statusFilter = searchParams.get('status') || 'completed';
 
   // 인증 확인
   const session = await getServerSession(authOptions);
@@ -172,40 +175,100 @@ export const GET = apiHandler(async (request: NextRequest) => {
   }
 
   try {
-    logger.info('InspectionHistory:GET', 'Query conditions', { where });
+    logger.info('InspectionHistory:GET', 'Query conditions', { where, statusFilter });
 
-    let inspections = await prisma.inspections.findMany({
-      where,
-      include: {
-        user_profiles: {
-          select: {
-            full_name: true,
-            email: true
+    let inspections: any[] = [];
+    let inProgressSessions: any[] = [];
+
+    // 점검완료 조회 (completed 또는 all)
+    if (statusFilter === 'completed' || statusFilter === 'all') {
+      inspections = await prisma.inspections.findMany({
+        where,
+        include: {
+          user_profiles: {
+            select: {
+              full_name: true,
+              email: true
+            }
+          },
+          aed_data: {
+            select: {
+              installation_institution: true,
+              sido: true,
+              gugun: true,
+              installation_address: true,
+              last_inspection_date: true,
+              jurisdiction_health_center: true,
+              battery_expiry_date: true,
+              patch_expiry_date: true,
+              manufacturing_date: true,
+              operation_status: true
+            }
           }
         },
-        aed_data: {
-          select: {
-            installation_institution: true,
-            sido: true,
-            gugun: true,
-            installation_address: true,
-            last_inspection_date: true,
-            jurisdiction_health_center: true,
-            battery_expiry_date: true,
-            patch_expiry_date: true,
-            manufacturing_date: true,
-            operation_status: true
-          }
+        orderBy: {
+          inspection_date: 'desc'
         }
-      },
-      orderBy: {
-        inspection_date: 'desc'
-      }
-    });
+      });
+    }
 
-    // 폴백 쿼리: 기본 필터로 결과가 없고, local_admin이며 aedFilter가 있는 경우
+    // 점검중 조회 (in_progress 또는 all)
+    if (statusFilter === 'in_progress' || statusFilter === 'all') {
+      const sessionWhere: any = {
+        status: 'active',
+        started_at: {
+          gte: cutoffDate
+        }
+      };
+
+      if (equipmentSerial) {
+        sessionWhere.equipment_serial = equipmentSerial;
+      }
+
+      // 권한별 필터링 (inspection_sessions에 적용)
+      if (userProfile.role === 'local_admin' && userProfile.organizations) {
+        // inspection_sessions는 aed_data와 relation이 있으므로 동일한 aedFilter 적용 가능
+        if (Object.keys(aedFilter).length > 0) {
+          sessionWhere.aed_data = aedFilter;
+        }
+      } else if (userProfile.role === 'temporary_inspector') {
+        sessionWhere.inspector_id = session.user.id;
+      }
+
+      inProgressSessions = await prisma.inspection_sessions.findMany({
+        where: sessionWhere,
+        include: {
+          user_profiles: {
+            select: {
+              full_name: true,
+              email: true
+            }
+          },
+          aed_data: {
+            select: {
+              installation_institution: true,
+              sido: true,
+              gugun: true,
+              installation_address: true,
+              last_inspection_date: true,
+              jurisdiction_health_center: true,
+              battery_expiry_date: true,
+              patch_expiry_date: true,
+              manufacturing_date: true,
+              operation_status: true
+            }
+          }
+        },
+        orderBy: {
+          started_at: 'desc'
+        }
+      });
+    }
+
+    // 폴백 쿼리: 점검완료 조회 시 결과가 없고, local_admin이며 aedFilter가 있는 경우
     // (equipment_serial이 aed_data에 없는 데이터 품질 문제 대비)
-    const shouldUseFallback = inspections.length === 0 &&
+    const shouldUseFallback = (statusFilter === 'completed' || statusFilter === 'all') &&
+                             inspections.length === 0 &&
                              userProfile.role === 'local_admin' &&
                              Object.keys(aedFilter).length > 0;
 
@@ -313,10 +376,11 @@ export const GET = apiHandler(async (request: NextRequest) => {
       }
     }
 
-    logger.info('InspectionHistory:GET', `Found ${inspections.length} inspections`, {
+    logger.info('InspectionHistory:GET', `Found ${inspections.length} completed inspections and ${inProgressSessions.length} in-progress sessions`, {
       userEmail: userProfile.email,
       userRole: userProfile.role,
       organization: userProfile.organizations?.name,
+      statusFilter,
       usedFallback: shouldUseFallback
     });
 
@@ -398,10 +462,66 @@ export const GET = apiHandler(async (request: NextRequest) => {
       };
     });
 
+    // 점검중 세션 데이터 포맷팅
+    const formattedSessions = inProgressSessions.map((session: any) => {
+      return {
+        id: session.id,
+        equipment_serial: session.equipment_serial,
+        inspector_id: session.inspector_id,
+        inspector_name: session.user_profiles?.full_name || '알 수 없음',
+        inspector_email: session.user_profiles?.email,
+        // 점검 시작일을 inspection_date로 매핑
+        inspection_date: session.started_at,
+        last_inspection_date_egen: session.aed_data?.last_inspection_date || null,
+        data_source: 'aedpics',
+        inspection_type: 'in_progress',
+        // 점검중 상태는 아직 결과가 없으므로 기본값
+        visual_status: 'pending',
+        battery_status: 'pending',
+        pad_status: 'pending',
+        operation_status: 'pending',
+        overall_status: 'in_progress',
+        notes: null,
+        issues_found: [],
+        photos: [],
+        inspection_latitude: null,
+        inspection_longitude: null,
+        step_data: session.step_data || {},
+        original_data: {},
+        aed_data: session.aed_data ? {
+          installation_institution: session.aed_data.installation_institution,
+          sido: session.aed_data.sido,
+          gugun: session.aed_data.gugun,
+          installation_address: session.aed_data.installation_address,
+          jurisdiction_health_center: session.aed_data.jurisdiction_health_center,
+          battery_expiry_date: session.aed_data.battery_expiry_date,
+          patch_expiry_date: session.aed_data.patch_expiry_date,
+          manufacturing_date: session.aed_data.manufacturing_date,
+          operation_status: session.aed_data.operation_status
+        } : null,
+        created_at: session.created_at,
+        updated_at: session.updated_at,
+        completed_at: null,
+        // 점검중 세션 고유 필드
+        current_step: session.current_step,
+        started_at: session.started_at,
+      };
+    });
+
+    // 두 배열 병합 (점검중 + 점검완료)
+    const allRecords = [...formattedSessions, ...formattedInspections];
+
+    // inspection_date 기준 내림차순 정렬
+    allRecords.sort((a, b) => {
+      const dateA = new Date(a.inspection_date).getTime();
+      const dateB = new Date(b.inspection_date).getTime();
+      return dateB - dateA;
+    });
+
     return NextResponse.json({
       success: true,
-      count: formattedInspections.length,
-      inspections: formattedInspections,
+      count: allRecords.length,
+      inspections: allRecords,
     });
 
   } catch (error) {

@@ -35,6 +35,7 @@ interface AdminFullViewProps {
 
 function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfile; pageType?: 'inspection' | 'schedule' }) {
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'completed'>('completed');
   const [filterCollapsed, setFilterCollapsed] = useState(false);
   const [filterMode, setFilterModeState] = useState<'address' | 'jurisdiction'>('address');
   const { data, isLoading, setFilters, filters } = useAEDData();
@@ -124,6 +125,13 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     return () => clearInterval(interval);
   }, []);
 
+  // viewMode 변경 시 statusFilter 초기화
+  useEffect(() => {
+    if (viewMode === 'completed' && statusFilter !== 'completed') {
+      setStatusFilter('completed');
+    }
+  }, [viewMode, statusFilter]);
+
   // 점검진행목록 탭으로 전환 시 점검 이력 조회 (필터 상태 포함)
   useEffect(() => {
     async function loadInspectionHistory() {
@@ -131,12 +139,25 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         console.log('[AdminFullView Debug] === 점검이력 로드 시작 ===');
         console.log('[AdminFullView Debug] user.role:', user?.role);
         console.log('[AdminFullView Debug] filterMode:', filterMode);
+        console.log('[AdminFullView Debug] statusFilter:', statusFilter);
         console.log('[AdminFullView Debug] filters.regionCodes:', filters.regionCodes);
         console.log('[AdminFullView Debug] filters.cityCodes:', filters.cityCodes);
 
         // local_admin이면 filterMode 적용, 아니면 기본값 'address' 사용
         const mode = user?.role === 'local_admin' ? filterMode : 'address';
-        let history = await getInspectionHistory(undefined, 720, mode); // 최근 30일
+
+        // API 호출 시 status 파라미터 추가
+        const params = new URLSearchParams();
+        params.append('mode', mode);
+        params.append('hours', '720');
+        params.append('status', statusFilter);
+
+        const response = await fetch(`/api/inspections/history?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error('점검이력 조회 실패');
+        }
+        const data = await response.json();
+        let history = data.inspections || [];
 
         console.log('[AdminFullView Debug] API 응답 레코드 수:', history.length);
         console.log('[AdminFullView Debug] 첫 3개 레코드:', history.slice(0, 3).map(h => ({
@@ -182,7 +203,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     }
 
     loadInspectionHistory();
-  }, [viewMode, filterMode, user?.role, filters.regionCodes, filters.cityCodes]);
+  }, [viewMode, statusFilter, filterMode, user?.role, filters.regionCodes, filters.cityCodes]);
 
   // AdminFullView 레벨에서 mapRegionChanged 이벤트 리스닝
   useEffect(() => {
@@ -384,8 +405,16 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         setCompletedInspections(completed);
         // 점검 이력 목록도 재로드
         const mode = user?.role === 'local_admin' ? filterMode : 'address';
-        const history = await getInspectionHistory(undefined, 720, mode);
-        setInspectionHistoryList(history);
+        const params = new URLSearchParams();
+        params.append('mode', mode);
+        params.append('hours', '720');
+        params.append('status', statusFilter);
+
+        const response = await fetch(`/api/inspections/history?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setInspectionHistoryList(data.inspections || []);
+        }
       } else {
         showError(result.error || '점검 이력 삭제 실패');
       }
@@ -579,6 +608,45 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           </div>
         </div>
       </div>
+
+      {/* 점검이력 상태 필터 버튼 - 점검이력 탭일 때만 표시 */}
+      {viewMode === 'completed' && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-gray-900/50 border-b border-gray-800">
+          <span className="text-xs text-gray-400 font-medium">상태:</span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                statusFilter === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+              }`}
+            >
+              전체
+            </button>
+            <button
+              onClick={() => setStatusFilter('in_progress')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                statusFilter === 'in_progress'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+              }`}
+            >
+              점검중
+            </button>
+            <button
+              onClick={() => setStatusFilter('completed')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                statusFilter === 'completed'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+              }`}
+            >
+              점검완료
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Bar - 목록/점검완료 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
       {(viewMode === 'list' || viewMode === 'completed') && (

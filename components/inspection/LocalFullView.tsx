@@ -49,6 +49,7 @@ interface LocalViewContentProps {
 
 function LocalViewContent({ user }: LocalViewContentProps) {
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'completed'>('completed');
   // ✅ 현장점검에서는 접기/펼치기 불필요 - 항상 필터 표시
   const { data, isLoading } = useAEDData();
   const { inspectionStarted, inspectionCompleted, handleInspectionStart } = useInspection();
@@ -80,12 +81,22 @@ function LocalViewContent({ user }: LocalViewContentProps) {
 
   // ✅ 점검이력 데이터 조회 (viewMode가 'completed'일 때만 활성화)
   const { data: inspectionHistoryData = [], isLoading: isLoadingHistory, isFetching, refetch } = useQuery({
-    queryKey: ['inspection-history', viewMode],
+    queryKey: ['inspection-history', viewMode, statusFilter],
     queryFn: async () => {
-      console.log('[LocalFullView] getInspectionHistory API 호출 시작: jurisdiction 모드, 720시간');
-      const result = await getInspectionHistory(undefined, 720, 'jurisdiction');
-      console.log(`[LocalFullView] 점검이력 조회 완료: ${result.length}개`);
-      return result;
+      console.log(`[LocalFullView] getInspectionHistory API 호출 시작: jurisdiction 모드, 720시간, status=${statusFilter}`);
+      // API 호출 시 status 파라미터 추가
+      const params = new URLSearchParams();
+      params.append('mode', 'jurisdiction');
+      params.append('hours', '720');
+      params.append('status', statusFilter);
+
+      const response = await fetch(`/api/inspections/history?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('점검이력 조회 실패');
+      }
+      const data = await response.json();
+      console.log(`[LocalFullView] 점검이력 조회 완료: ${data.inspections?.length || 0}개`);
+      return data.inspections || [];
     },
     enabled: viewMode === 'completed', // 점검이력 탭일 때만 호출
     staleTime: 0, // ⚠️ 캐시를 사용하지 않고 항상 새로 fetch
@@ -104,6 +115,13 @@ function LocalViewContent({ user }: LocalViewContentProps) {
   useEffect(() => {
     console.log(`[LocalFullView] viewMode 변경됨: ${viewMode}, 점검이력 데이터 개수: ${inspectionHistoryData.length}`);
   }, [viewMode, inspectionHistoryData.length]);
+
+  // viewMode 변경 시 statusFilter 초기화
+  useEffect(() => {
+    if (viewMode === 'completed' && statusFilter !== 'completed') {
+      setStatusFilter('completed');
+    }
+  }, [viewMode, statusFilter]);
 
   // 점검 이력 상세보기 핸들러
   const handleViewInspectionHistory = async (inspectionId: string) => {
@@ -343,6 +361,45 @@ function LocalViewContent({ user }: LocalViewContentProps) {
           {dataCount}개
         </div>
       </div>
+
+      {/* 점검이력 상태 필터 버튼 - 점검이력 탭일 때만 표시 */}
+      {viewMode === 'completed' && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-gray-900/50 border-b border-gray-800">
+          <span className="text-xs text-gray-400 font-medium">상태:</span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                statusFilter === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+              }`}
+            >
+              전체
+            </button>
+            <button
+              onClick={() => setStatusFilter('in_progress')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                statusFilter === 'in_progress'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+              }`}
+            >
+              점검중
+            </button>
+            <button
+              onClick={() => setStatusFilter('completed')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                statusFilter === 'completed'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+              }`}
+            >
+              점검완료
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Bar - 목록/점검완료 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
       {/* ✅ 현장점검에서는 접기/펼치기 버튼 제거 - 항상 필터 표시 */}
