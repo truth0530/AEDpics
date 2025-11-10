@@ -377,20 +377,8 @@ function LocalViewContent({ user }: LocalViewContentProps) {
                             <div className="font-medium text-sm text-gray-200 truncate flex-1">
                               {inspection.equipment_serial}
                             </div>
-                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 flex-shrink-0 ${
-                              inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
-                              inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
-                              inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
-                              inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
-                              inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
-                              'bg-gray-700 text-gray-200'
-                            }`}>
-                              {inspection.overall_status === 'pass' ? '합격' :
-                               inspection.overall_status === 'fail' ? '불합격' :
-                               inspection.overall_status === 'normal' ? '정상' :
-                               inspection.overall_status === 'needs_improvement' ? '개선필요' :
-                               inspection.overall_status === 'malfunction' ? '고장' :
-                               inspection.overall_status}
+                            <span className="inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 flex-shrink-0 bg-blue-900 text-blue-200">
+                              점검완료
                             </span>
                           </div>
 
@@ -511,20 +499,8 @@ function LocalViewContent({ user }: LocalViewContentProps) {
                                 }
                               </td>
                               <td className="px-4 py-3 text-sm">
-                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                                  inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
-                                  inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
-                                  inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
-                                  inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
-                                  inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
-                                  'bg-gray-700 text-gray-200'
-                                }`}>
-                                  {inspection.overall_status === 'pass' ? '합격' :
-                                   inspection.overall_status === 'fail' ? '불합격' :
-                                   inspection.overall_status === 'normal' ? '정상' :
-                                   inspection.overall_status === 'needs_improvement' ? '개선필요' :
-                                   inspection.overall_status === 'malfunction' ? '고장' :
-                                   inspection.overall_status}
+                                <span className="inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-blue-900 text-blue-200">
+                                  점검완료
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">
