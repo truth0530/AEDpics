@@ -248,3 +248,118 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+/**
+ * PATCH /api/inspections/sessions
+ * 점검 세션 진행 상황 저장
+ *
+ * 동작:
+ * - 세션 소유자만 업데이트 가능
+ * - current_step, step_data, field_changes, status 업데이트
+ */
+export async function PATCH(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { sessionId, currentStep, stepData, fieldChanges, status, notes } = body;
+
+    if (!sessionId) {
+      return NextResponse.json(
+        { error: 'sessionId is required' },
+        { status: 400 }
+      );
+    }
+
+    // 세션 조회 및 권한 확인
+    const existingSession = await prisma.inspection_sessions.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!existingSession) {
+      return NextResponse.json(
+        { error: '점검 세션을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // 세션 소유자 확인
+    if (existingSession.inspector_id !== session.user.id) {
+      return NextResponse.json(
+        { error: '다른 사용자의 점검 세션은 수정할 수 없습니다.' },
+        { status: 403 }
+      );
+    }
+
+    // 세션 업데이트 데이터 준비
+    const updateData: any = {
+      updated_at: new Date(),
+    };
+
+    if (currentStep !== undefined) {
+      updateData.current_step = currentStep;
+    }
+
+    if (stepData !== undefined) {
+      updateData.step_data = stepData;
+    }
+
+    if (fieldChanges !== undefined) {
+      updateData.field_changes = fieldChanges;
+    }
+
+    if (status !== undefined) {
+      updateData.status = status;
+
+      // 완료 상태로 변경 시 completed_at 설정
+      if (status === 'completed') {
+        updateData.completed_at = new Date();
+      }
+    }
+
+    // notes는 inspection_sessions 테이블에 없을 수 있으므로 로그로만 기록
+    if (notes !== undefined) {
+      logger.info('InspectionSessions:PATCH', 'Notes provided', {
+        sessionId,
+        notes: typeof notes === 'string' ? notes.substring(0, 100) : notes,
+      });
+    }
+
+    // 세션 업데이트
+    const updatedSession = await prisma.inspection_sessions.update({
+      where: { id: sessionId },
+      data: updateData,
+      include: {
+        user_profiles: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    logger.info('InspectionSessions:PATCH', 'Session updated successfully', {
+      sessionId: updatedSession.id,
+      currentStep: updatedSession.current_step,
+      status: updatedSession.status,
+      userId: session.user.id,
+    });
+
+    return NextResponse.json({
+      success: true,
+      session: updatedSession,
+    });
+  } catch (error: any) {
+    logger.error('InspectionSessions:PATCH', 'Unexpected error', error instanceof Error ? error : { error });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
