@@ -715,12 +715,15 @@ export function AEDFilterBar() {
     // 코드 → 라벨 배열로 변환 (API route는 라벨 배열을 기대: ['서울'], ['대구'] 등)
     const regionLabels = regionCodesToUse?.map(code => REGION_LABELS[code]).filter(Boolean);
 
-    // 구군 필터링 ('구군' 기본값 제거)
-    const cityToUse = (selectedGugun && selectedGugun !== '구군') ? [selectedGugun] : draftFilters.cities;
+    // 구군 필터링 ('구군' 기본값 및 '전체' 제거)
+    const cityToUse = (selectedGugun && selectedGugun !== '구군' && selectedGugun !== '전체')
+      ? [selectedGugun]
+      : draftFilters.cities;
 
-    // 권한 체크: 구군 접근 권한 검증
+    // 권한 체크: 구군 접근 권한 검증 ('전체' 옵션은 제외)
     if (cityToUse && cityToUse.length > 0 && accessScope?.allowedCityCodes) {
-      const unauthorizedCities = cityToUse.filter(city => !accessScope.allowedCityCodes!.includes(city));
+      const citiesToCheck = cityToUse.filter(city => city !== '전체'); // '전체'는 권한 검사에서 제외
+      const unauthorizedCities = citiesToCheck.filter(city => !accessScope.allowedCityCodes!.includes(city));
       if (unauthorizedCities.length > 0) {
         console.error('[AEDFilterBar] Access denied: User cannot access cities:', unauthorizedCities);
         alert(`접근 권한이 없는 시군구입니다: ${unauthorizedCities.join(', ')}`);
