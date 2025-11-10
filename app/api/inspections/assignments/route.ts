@@ -508,6 +508,7 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.id },
       select: {
         id: true,
+        email: true,
         role: true,
         region_code: true,
         region: true,

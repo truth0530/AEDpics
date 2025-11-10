@@ -27,6 +27,27 @@ function formatDate(dateValue: string | null | undefined): string | undefined {
   }
 }
 
+function formatDateTime(dateValue: string | null | undefined): string | undefined {
+  if (!dateValue || dateValue === 'null' || dateValue === 'undefined' || dateValue === '') {
+    return undefined;
+  }
+
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) {
+      return undefined;
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  } catch {
+    return undefined;
+  }
+}
+
 interface AEDDeviceModalProps {
   device: AEDDevice;
   accessScope: UserAccessScope | undefined;
@@ -53,32 +74,56 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
   const isScheduled = scheduledEquipment?.has(device.equipment_serial) || false;
 
   // Assignment 상태 조회
+  const [assignmentInfo, setAssignmentInfo] = useState<any>(null);
+
   useEffect(() => {
     async function fetchAssignmentStatus() {
-      if (!isScheduled || !device.equipment_serial) return;
+      if (!device.equipment_serial) return;
 
       try {
         const response = await fetch(
           `/api/inspections/assignments?equipmentSerial=${device.equipment_serial}`
         );
-        if (response.ok) {
-          const { data } = await response.json();
-          const activeAssignment = data?.find(
+
+        if (!response.ok) {
+          // 404나 다른 오류는 일정이 없을 수 있으므로 무시
+          if (response.status === 404) {
+            console.log('[AEDDeviceModal] No assignments found for this equipment');
+            return;
+          }
+          console.warn('[AEDDeviceModal] API error:', response.status);
+          return;
+        }
+
+        const result = await response.json();
+        const data = result?.data;
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          const activeAssignment = data.find(
             (a: any) => a.status !== 'cancelled' && a.status !== 'completed'
-          ) || data?.[0];
+          ) || data[0];
 
           if (activeAssignment) {
             setAssignmentStatus(activeAssignment.status);
             setAssignmentId(activeAssignment.id);
+            // 추가: 할당 정보 저장 (생성자, 생성일시)
+            setAssignmentInfo(activeAssignment);
+
+            console.log('[AEDDeviceModal] Assignment info:', {
+              id: activeAssignment.id,
+              status: activeAssignment.status,
+              created_at: activeAssignment.created_at,
+              assigned_by: activeAssignment.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name
+            });
           }
         }
       } catch (error) {
-        console.error('Failed to fetch assignment status:', error);
+        console.error('[AEDDeviceModal] Failed to fetch assignment status:', error);
       }
     }
 
     fetchAssignmentStatus();
-  }, [isScheduled, device.equipment_serial]);
+  }, [device.equipment_serial]);
 
   // \ub514\ubc84\uae45\uc744 \uc704\ud55c \ub85c\uadf8
   console.log('AEDDeviceModal - device data:', device);
@@ -346,14 +391,15 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
             </div>
           </div>
 
-          {/* 마스킹 정보 */}
-          {maskedFields.length > 0 && (
-            <div className="pt-0.5">
-              <div className="text-[10px] text-gray-500">
-                마스킹: {maskedFields.join(', ')}
+          {/* 일정 정보 */}
+          {assignmentInfo && (
+            <div className="pb-1.5 mb-1.5 border-b border-gray-700">
+              <div className="text-xs text-yellow-400 text-right">
+                추가일시: {assignmentInfo.created_at ? formatDateTime(assignmentInfo.created_at) : '-'}({assignmentInfo.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name || '-'})
               </div>
             </div>
           )}
+
         </div>
       </div>
 
