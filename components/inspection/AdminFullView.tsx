@@ -758,9 +758,15 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                       {/* 본문: 점검 정보 */}
                       <div className="px-4 py-3 space-y-2 text-xs">
                         <div className="flex justify-between">
+                          <span className="text-gray-400">설치기관</span>
+                          <span className="text-gray-200 font-medium truncate ml-2">
+                            {inspection.aed_data?.installation_institution || '-'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
                           <span className="text-gray-400">점검일시</span>
                           <span className="text-gray-200 font-medium">
-                            {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
+                            {new Date(inspection.created_at).toLocaleString('ko-KR', {
                               year: '2-digit',
                               month: '2-digit',
                               day: '2-digit',
@@ -830,7 +836,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                   <table className="w-full border-collapse table-fixed">
                     <thead className="sticky top-0 bg-gray-800 border-b border-gray-700">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비번호</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비연번</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden xl:table-cell min-w-[150px] max-w-[200px]">설치기관</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden sm:table-cell min-w-[130px] max-w-[150px]">점검일시</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden lg:table-cell min-w-[80px] max-w-[100px]">점검자</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden md:table-cell min-w-[110px] max-w-[150px]">시도/구군</th>
@@ -845,8 +852,11 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                           className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
                         >
                           <td className="px-4 py-3 text-sm text-gray-200 font-medium truncate whitespace-nowrap">{inspection.equipment_serial}</td>
+                          <td className="px-4 py-3 text-sm text-gray-400 hidden xl:table-cell truncate">
+                            {inspection.aed_data?.installation_institution || '-'}
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell whitespace-nowrap">
-                            {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
+                            {new Date(inspection.created_at).toLocaleString('ko-KR', {
                               year: '2-digit',
                               month: '2-digit',
                               day: '2-digit',
