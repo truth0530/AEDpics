@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth/auth-options';
 import { logger } from '@/lib/logger';
-import { validateSessionWithUserContext } from '@/lib/inspections/session-validation';
 
 export async function GET(request: NextRequest) {
   try {

@@ -28,22 +28,31 @@ Priority 2 마이그레이션 작업의 현재 상태를 명확히 합니다.
 **상태**: 프로덕션 운영 중
 
 파일: `app/api/inspections/sessions/route.ts`
-- 트랜잭션 기반 중복 체크 ✅ (Lines 119-167)
-- 현재 동작: 활성 세션이 있으면 누구든지 차단 (모두 불가)
-- 코드 상태: 완전히 작동 중
+- 트랜잭션 기반 원자적 재검증 ✅ (Lines 120-205)
+- 현재 동작: 활성 세션이 있으면 본인은 재개, 타인은 차단
+- 코드 상태: Race Condition 방지 완벽히 적용됨
 
 ```typescript
-// 현재 로직 (완전히 적용됨)
-const existingSession = await tx.inspection_sessions.findFirst({
-  where: {
-    equipment_serial,
-    status: { in: ['active', 'paused'] }
-  }
-});
+// 최신 로직 (2025-11-10 적용)
+const result = await prisma.$transaction(async (tx) => {
+  const existingSession = await tx.inspection_sessions.findFirst({
+    where: {
+      equipment_serial,
+      status: { in: ['active', 'paused'] }
+    }
+  });
 
-if (existingSession) {
-  throw new Error('SESSION_EXISTS|...');  // 모두 차단
-}
+  if (existingSession) {
+    const isOwnSession = existingSession.inspector_id === session.user.id;
+    if (isOwnSession) {
+      return tx.inspection_sessions.update({...});  // ✅ 재개
+    } else {
+      throw new Error('BLOCKED|...');  // ✅ 차단
+    }
+  }
+
+  return tx.inspection_sessions.create({...});  // ✅ 생성
+});
 ```
 
 #### 1.2 세션 재개 기능 ✅ 완료
@@ -252,20 +261,22 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 | 항목 | 상태 | 구현 위치 |
 |------|------|---------|
-| Race Condition 방지 - Application Level | ✅ 완료 | app/api/inspections/sessions/route.ts:122-205 |
+| Race Condition 방지 - Application Level | ✅ 완료 | app/api/inspections/sessions/route.ts:120-205 |
 | 세션 재개 기능 | ✅ 완료 (통합) | app/api/inspections/sessions/route.ts (트랜잭션 내 재검증) |
 | 중복 세션 정리 (로컬) | ✅ 완료 | scripts/cleanup_duplicate_sessions.mjs |
 | Database 인덱스 (로컬) | ✅ 완료 | prisma/migrations/20251110_add_partial_unique_indexes |
+| Cron 모니터링 API | ✅ 완료 (API Key 인증) | app/api/cron/monitor-duplicates/route.ts |
+| 중복 세션 모니터링 로직 | ✅ 완료 | lib/cron/monitor-duplicates.ts |
 
-## 미완성 항목 (Priority 3 or 배포 대기)
+## 미완성 항목 (배포 대기 또는 Priority 3)
 
 | 항목 | 상태 | 위치 | 우선순위 |
 |------|------|------|---------|
 | 프로덕션 Cleanup 실행 | ⏳ 대기 | scripts/cleanup_duplicate_sessions.mjs | P1 (배포) |
 | 프로덕션 Migration 적용 | ⏳ 대기 | prisma migrate deploy | P1 (배포) |
-| Cron 자동화 | ⏳ 미구현 | 구현 필요 | Priority 3 |
-| Slack 연동 | ⏳ 미구현 | 구현 필요 | Priority 3 |
-| 운영팀 대시보드 | ⏳ 기본 구조만 | app/admin/statistics/page.tsx | Priority 3 |
+| Slack 알림 연동 | ⏳ 미구현 | lib/cron/monitor-duplicates.ts (TODO 주석) | Priority 3 |
+| 운영팀 모니터링 대시보드 | ⏳ 기본 구조만 | app/admin/statistics/page.tsx | Priority 3 |
+| GitHub Actions Cron 스케줄 | ⏳ 미구현 | .github/workflows/ | Priority 3 |
 
 ---
 
@@ -279,9 +290,9 @@ curl -H "Authorization: Bearer $TOKEN" \
 - "Cron job으로 자동화 가능"
 
 **변경됨** (정확함):
-- "Race condition 방지: 현재 application-level, 배포 후 database-level 추가"
+- "Race condition 방지: 현재 application-level (완벽), 배포 후 database-level 추가"
 - "향후 중복 생성 방지: cleanup + migration 완료 후"
-- "Cron 자동화: Priority 3 (인증 메커니즘 필요)"
+- "Cron API: 구현 완료 (X-Cron-Token 인증), GitHub Actions 스케줄 연동은 Priority 3"
 
 ### 상태 정의
 
@@ -295,10 +306,13 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 - **작성**: 2025-11-10
 - **상태 확인**: 2025-11-10 (최종 검증)
-- **마지막 업데이트**: 2025-11-10 (외부 검토 반영)
-  - Race Condition 재검증 및 트랜잭션 로직 개선
-  - 로컬 vs 프로덕션 상태 명확히 구분
-  - validateSessionWithUserContext 통합 완료 문서화
+- **마지막 업데이트**: 2025-11-10 (외부 검토 최종 반영)
+  - Race Condition 재검증 및 트랜잭션 로직 개선 ✅
+  - 로컬 vs 프로덕션 상태 명확히 구분 ✅
+  - validateSessionWithUserContext 통합 완료 문서화 ✅
+  - 미사용 import 제거 (route.ts line 6) ✅
+  - 문서 코드 스니펫 최신화 (실제 구현과 동기화) ✅
+  - Cron 자동화 상태 표 업데이트 ✅
 - **배포 예정**: 2025-11-11 (새벽 2-3시)
 - **담당자**: DevOps/Backend
 
