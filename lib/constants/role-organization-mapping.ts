@@ -31,7 +31,11 @@ export const ROLE_ORGANIZATION_TYPE_MAP: Record<UserRole, OrganizationType[]> = 
   'regional_admin': ['province'],
   'local_admin': ['health_center'],
   'temporary_inspector': ['health_center'],
-  'master': ['province', 'health_center', 'emergency_center'] // master는 모든 조직 선택 가능
+  'master': ['province', 'health_center', 'emergency_center'], // master는 모든 조직 선택 가능
+  // 다음은 임시 상태로 조직 접근 권한이 없음
+  'pending_approval': [],
+  'email_verified': [],
+  'rejected': []
 };
 
 /**
