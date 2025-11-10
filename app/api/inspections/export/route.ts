@@ -428,7 +428,23 @@ export const POST = apiHandler(async (request: NextRequest) => {
     });
 
     // === Step 13: 응답 전송 ===
-    const fileName = `AED_inspection_export_${new Date().toISOString().split('T')[0]}_${Date.now()}.xlsx`;
+    // 파일명 생성: {시도}_{시군구}_{YYMMDDHHmm}.xlsx
+    const now = new Date();
+    const yy = now.getFullYear().toString().slice(-2);
+    const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+    const dd = now.getDate().toString().padStart(2, '0');
+    const hh = now.getHours().toString().padStart(2, '0');
+    const min = now.getMinutes().toString().padStart(2, '0');
+    const timestamp = `${yy}${mm}${dd}${hh}${min}`; // YYMMDDHHmm
+
+    // 시도명 추출 (regionCodes[0] → 한글)
+    const sidoCode = filterResult.filters.regionCodes?.[0];
+    const sidoName = sidoCode ? getNormalizedRegionLabel(sidoCode) : '전국';
+
+    // 시군구명 추출 (cityCodes[0] → 이미 한글)
+    const gugunName = filterResult.filters.cityCodes?.[0] || '전체';
+
+    const fileName = `${sidoName}_${gugunName}_${timestamp}.xlsx`;
 
     return new NextResponse(Buffer.from(excelBuffer), {
       headers: {
