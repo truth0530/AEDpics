@@ -148,8 +148,16 @@ export async function checkBeforeCreatingSession(
 }
 
 /**
- * Inspector ID 기반 검증 (개선된 버전)
+ * Inspector ID 기반 검증 (개선된 버전) - Priority 3 구현 예정
  * 자신의 세션은 재개 가능, 다른 사람의 세션은 차단
+ *
+ * 현재 상태: 함수 정의만 완료, API에서 미사용
+ *
+ * TODO (Priority 3): 다음이 필요합니다:
+ * 1. app/api/inspections/sessions/route.ts의 POST 핸들러에서 이 함수 호출 추가
+ * 2. 세션 재개(resume) 로직 구현 (현재는 "활성 세션 존재 → 모두 차단만" 운영)
+ * 3. UI에서 재개 확인 대화창 추가
+ * 4. 테스트 (race condition 확인 필수)
  *
  * @param equipmentSerial - 장비 시리얼
  * @param currentUserId - 현재 사용자 ID

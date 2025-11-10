@@ -10,8 +10,8 @@ import { logger } from '@/lib/logger';
  *
  * 목적:
  * - 운영팀이 중복 세션 현황을 파악하기 위한 API
- * - Cron job으로 정기적 호출 (예: 일 1회)
- * - Slack 알림 연동 가능
+ * - 웹 UI에서 마스터 관리자가 수동으로 모니터링 가능
+ * - Slack 알림 연동 가능 (Priority 3)
  * - 대시보드에 표시 가능
  *
  * 응답:
@@ -19,8 +19,16 @@ import { logger } from '@/lib/logger';
  * - duplicates: 장비별 중복 세션 정보 배열
  * - timestamp: 조회 시간
  *
- * 권한:
- * - 마스터 관리자만 접근 가능
+ * 현재 인증 방식:
+ * - NextAuth 세션 기반 (마스터 관리자만 접근 가능)
+ *
+ * TODO (Priority 3): Cron job / 자동 스케줄러 지원
+ * - 현재는 NextAuth 세션이 필요하므로 외부 Cron에서 직접 호출 불가
+ * - 다음 중 하나 구현 필요:
+ *   1. API Key 인증 추가 (X-Monitoring-Token 헤더)
+ *   2. 내부 서비스 계정 지원 (서명된 요청)
+ *   3. 별도의 Cron-only 엔드포인트 생성
+ *   4. 내부 스케줄러(예: node-cron)에서 호출
  */
 export async function GET(request: NextRequest) {
   try {
