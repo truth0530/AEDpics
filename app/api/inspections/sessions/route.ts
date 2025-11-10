@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth/auth-options';
 import { logger } from '@/lib/logger';
+import { validateSessionWithUserContext } from '@/lib/inspections/session-validation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,15 +89,17 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/inspections/sessions
- * 새로운 점검 세션 생성 (트랜잭션 기반 race condition 방지)
- *
- * 개념 분리:
- * - '점검 시작': 세션이 없을 때만 새 세션 생성 (이 endpoint)
- * - '이어하기': 기존 세션에서 진행 (별도 endpoint)
+ * 점검 세션 생성 또는 재개 (트랜잭션 기반 race condition 방지)
  *
  * 동작:
- * - 활성 세션 없음 → 새 세션 생성 (성공)
- * - 활성 세션 있음 → 모두 차단 (409 Conflict) - 누구든지 새로 시작 불가
+ * - 활성 세션 없음 → 새 세션 생성 (action: 'created')
+ * - 자신의 활성 세션 있음 → 세션 재개 (action: 'resumed')
+ * - 다른 사람의 활성 세션 있음 → 차단 (409 Conflict)
+ *
+ * Race Condition 방지:
+ * - Application Level: 트랜잭션 기반 원자적 검증 및 생성/재개
+ * - Database Level: Partial Unique Index (equipment_serial + status IN ('active', 'paused'))
+ * - 이중 방어 구현으로 완전한 race condition 방지
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -116,101 +119,96 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // 트랜잭션 내에서 원자적(atomic) 검증 및 생성 수행
-    // 이를 통해 race condition 완전 방지: 검증과 생성을 한 번에 처리
-    const result = await prisma.$transaction(async (tx) => {
-      // 트랜잭션 내에서 활성 세션 확인
-      const existingSession = await tx.inspection_sessions.findFirst({
-        where: {
-          equipment_serial,
-          status: { in: ['active', 'paused'] }
-        },
-        include: {
-          user_profiles: {
-            select: {
-              id: true,
-              full_name: true,
-              email: true
-            }
-          }
-        }
-      });
+    // 사용자 컨텍스트 기반 세션 검증
+    // 자신의 세션은 재개 가능, 다른 사람의 세션은 차단
+    const validation = await validateSessionWithUserContext(equipment_serial, session.user.id);
 
-      // 활성 세션이 있으면 누구든지 차단 (점검 시작 불가)
-      if (existingSession) {
-        throw new Error(
-          `SESSION_EXISTS|이미 진행 중인 점검 세션이 있습니다. (점검자: ${existingSession.user_profiles?.full_name || '알 수 없음'}, 시작: ${existingSession.started_at})|${existingSession.id}`
-        );
-      }
-
-      // 활성 세션이 없으면 새 세션 생성
-      const newSession = await tx.inspection_sessions.create({
-        data: {
-          equipment_serial,
-          inspector_id: session.user.id,
-          status: 'active',
-          current_step: 0,
-          started_at: new Date()
-        },
-        include: {
-          user_profiles: {
-            select: {
-              id: true,
-              full_name: true,
-              email: true
-            }
-          }
-        }
-      });
-
-      return newSession;
-    });
-
-    logger.info('InspectionSessions:POST', 'New inspection session created', {
-      sessionId: result.id,
-      equipmentSerial: equipment_serial,
-      userId: session.user.id
-    });
-
-    return NextResponse.json({
-      success: true,
-      session: result
-    });
-  } catch (error: any) {
-    // 세션 이미 존재 에러 처리
-    if (error.message?.startsWith('SESSION_EXISTS|')) {
-      const [, errorMessage, existingSessionId] = error.message.split('|');
-
-      logger.warn('InspectionSessions:POST', 'Session creation blocked - active session already exists', {
+    // action에 따른 처리
+    if (validation.action === 'block') {
+      // 다른 사람의 세션이 활성 상태 → 차단
+      logger.warn('InspectionSessions:POST', 'Session creation blocked - other user session active', {
         equipmentSerial: equipment_serial,
         userId: session.user.id,
-        existingSessionId: existingSessionId
-      });
-
-      // 차단된 경우 기존 세션 정보와 함께 응답
-      const existingSession = await prisma.inspection_sessions.findUnique({
-        where: { id: existingSessionId },
-        include: {
-          user_profiles: {
-            select: {
-              id: true,
-              full_name: true,
-              email: true
-            }
-          }
-        }
+        existingUserId: validation.existingSession?.inspector_id
       });
 
       return NextResponse.json(
         {
           success: false,
-          error: errorMessage,
-          existingSession: existingSession
+          error: validation.reason,
+          existingSession: validation.existingSession
         },
-        { status: 409 } // Conflict: 이미 활성 세션 존재
+        { status: 409 } // Conflict: 다른 사용자의 활성 세션 존재
       );
     }
 
+    // 트랜잭션 내에서 세션 생성 또는 재개
+    const result = await prisma.$transaction(async (tx) => {
+      if (validation.action === 'create') {
+        // 활성 세션 없음 → 새 세션 생성
+        const newSession = await tx.inspection_sessions.create({
+          data: {
+            equipment_serial,
+            inspector_id: session.user.id,
+            status: 'active',
+            current_step: 0,
+            started_at: new Date()
+          },
+          include: {
+            user_profiles: {
+              select: {
+                id: true,
+                full_name: true,
+                email: true
+              }
+            }
+          }
+        });
+
+        return {
+          sessionData: newSession,
+          action: 'created',
+          message: '새로운 점검 세션이 생성되었습니다.'
+        };
+      } else if (validation.action === 'resume') {
+        // 자신의 세션 → 재개 (status를 active로 변경)
+        const resumedSession = await tx.inspection_sessions.update({
+          where: { id: validation.existingSession.id },
+          data: { status: 'active' },
+          include: {
+            user_profiles: {
+              select: {
+                id: true,
+                full_name: true,
+                email: true
+              }
+            }
+          }
+        });
+
+        return {
+          sessionData: resumedSession,
+          action: 'resumed',
+          message: '기존 점검 세션을 재개합니다.'
+        };
+      }
+    });
+
+    logger.info('InspectionSessions:POST', `Session ${result.action}`, {
+      sessionId: result.sessionData.id,
+      equipmentSerial: equipment_serial,
+      userId: session.user.id,
+      action: result.action,
+      message: result.message
+    });
+
+    return NextResponse.json({
+      success: true,
+      session: result.sessionData,
+      action: result.action,
+      message: result.message
+    });
+  } catch (error: any) {
     // 다른 에러 처리
     logger.error('InspectionSessions:POST', 'Unexpected error', error instanceof Error ? error : { error });
     return NextResponse.json(
