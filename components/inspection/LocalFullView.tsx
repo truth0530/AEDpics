@@ -9,7 +9,17 @@ import { DataTable } from '@/app/aed-data/components/DataTable';
 import { InspectionFilterBar } from './InspectionFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
-import { getActiveInspectionSessions, getCompletedInspections, getInspectionHistory, getDraftSessions, deleteDraftSession } from '@/lib/inspections/session-utils';
+import {
+  getActiveInspectionSessions,
+  getCompletedInspections,
+  getInspectionHistory,
+  getDraftSessions,
+  deleteDraftSession,
+  type InspectionHistory
+} from '@/lib/inspections/session-utils';
+import { Eye, Trash2 } from 'lucide-react';
+import { InspectionHistoryModal } from './InspectionHistoryModal';
+import { DeleteInspectionModal } from './DeleteInspectionModal';
 
 // Inspection context for filtering
 interface InspectionContextType {
@@ -49,6 +59,13 @@ function LocalViewContent({ user }: LocalViewContentProps) {
 
   // 임시저장된 세션 목록
   const [draftSessions, setDraftSessions] = useState<any[]>([]);
+
+  // 점검 이력 관리 상태
+  const [selectedInspection, setSelectedInspection] = useState<InspectionHistory | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [inspectionToDelete, setInspectionToDelete] = useState<InspectionHistory | null>(null);
+  const [inspectionHistoryList, setInspectionHistoryList] = useState<InspectionHistory[]>([]);
 
   // ✅ 실제 DB에서 활성 세션 조회 (30초마다 자동 갱신)
   const { data: activeInspectionSessions = new Map() } = useQuery({
@@ -92,10 +109,64 @@ function LocalViewContent({ user }: LocalViewContentProps) {
     loadDraftSessions();
   }, [viewMode]);
 
+  // 점검이력 데이터 동기화
+  useEffect(() => {
+    if (inspectionHistoryData && inspectionHistoryData.length > 0) {
+      setInspectionHistoryList(inspectionHistoryData as InspectionHistory[]);
+    }
+  }, [inspectionHistoryData]);
+
   // 디버깅: viewMode 변경 감지
   useEffect(() => {
     console.log(`[LocalFullView] viewMode 변경됨: ${viewMode}, 점검이력 데이터 개수: ${inspectionHistoryData.length}`);
   }, [viewMode, inspectionHistoryData.length]);
+
+  // 점검 이력 상세보기 핸들러
+  const handleViewInspectionHistory = async (inspectionId: string) => {
+    try {
+      const selected = inspectionHistoryList.find(item => item.id === inspectionId);
+      if (selected) {
+        setSelectedInspection(selected);
+        setShowHistoryModal(true);
+      }
+    } catch (error) {
+      console.error('[handleViewInspectionHistory] Error:', error);
+      showSuccess('점검 이력 조회 실패');
+    }
+  };
+
+  // 점검 이력 삭제 핸들러
+  const handleDeleteInspection = (inspectionId: string) => {
+    if (selectedInspection && selectedInspection.id === inspectionId) {
+      setInspectionToDelete(selectedInspection);
+      setShowDeleteModal(true);
+    }
+  };
+
+  // 삭제 확인 핸들러
+  const handleConfirmDelete = async () => {
+    if (!inspectionToDelete) return;
+
+    try {
+      const res = await fetch(`/api/inspections/${inspectionToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        showSuccess('점검 이력이 삭제되었습니다');
+        setShowDeleteModal(false);
+        setInspectionToDelete(null);
+        setSelectedInspection(null);
+        // 목록 새로고침
+        refetch();
+      } else {
+        throw new Error('삭제 실패');
+      }
+    } catch (error) {
+      console.error('[handleConfirmDelete] Error:', error);
+      showSuccess('삭제 중 오류가 발생했습니다');
+    }
+  };
 
   // 목록/지도 탭: 점검 대상만 (AdminFullView와 동일한 로직)
   const pendingData = data?.filter(item => {
@@ -283,35 +354,209 @@ function LocalViewContent({ user }: LocalViewContentProps) {
                 }}
               />
             ) : viewMode === 'completed' ? (
-              <div className="flex-1 overflow-y-auto bg-gray-900 p-4">
-                <div className="space-y-4">
-                  {inspectionHistoryData.map((inspection: any) => (
-                    <div key={inspection.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-400">장비번호:</span>
-                          <span className="ml-2 text-white">{inspection.equipment_serial}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">점검일시:</span>
-                          <span className="ml-2 text-white">
-                            {new Date(inspection.completed_at || inspection.created_at).toLocaleString('ko-KR')}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">위치:</span>
-                          <span className="ml-2 text-white">
-                            {inspection.aed_data?.sido} {inspection.aed_data?.gugun}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">상태:</span>
-                          <span className="ml-2 text-green-400">{inspection.status === 'completed' ? '완료' : inspection.status}</span>
-                        </div>
-                      </div>
+              // 완료 탭: inspectionHistoryList 직접 사용 (권한 필터링 이미 적용됨)
+              <div className="flex-1 overflow-y-auto bg-gray-900">
+                {inspectionHistoryList.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    <div className="text-center">
+                      <p className="text-sm">점검이력이 없습니다</p>
+                      <p className="text-xs text-gray-500 mt-1">선택된 지역에서 완료된 점검이 없습니다</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* 모바일 레이아웃 (< 640px) */}
+                    <div className="sm:hidden px-2 py-3 space-y-3">
+                      {inspectionHistoryList.map((inspection) => (
+                        <div
+                          key={inspection.id}
+                          className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:bg-gray-750 transition-colors"
+                        >
+                          {/* 헤더: 장비번호 + 상태 */}
+                          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800/50">
+                            <div className="font-medium text-sm text-gray-200 truncate flex-1">
+                              {inspection.equipment_serial}
+                            </div>
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 flex-shrink-0 ${
+                              inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
+                              inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
+                              inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
+                              inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
+                              inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
+                              'bg-gray-700 text-gray-200'
+                            }`}>
+                              {inspection.overall_status === 'pass' ? '합격' :
+                               inspection.overall_status === 'fail' ? '불합격' :
+                               inspection.overall_status === 'normal' ? '정상' :
+                               inspection.overall_status === 'needs_improvement' ? '개선필요' :
+                               inspection.overall_status === 'malfunction' ? '고장' :
+                               inspection.overall_status}
+                            </span>
+                          </div>
+
+                          {/* 본문: 점검 정보 */}
+                          <div className="px-4 py-3 space-y-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">점검일시</span>
+                              <span className="text-gray-200 font-medium">
+                                {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
+                                  year: '2-digit',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">점검자</span>
+                              <span className="text-gray-200 font-medium">{inspection.inspector_name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">시도</span>
+                              <span className="text-gray-200 font-medium">
+                                {inspection.aed_data?.sido || '-'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">구군</span>
+                              <span className="text-gray-200 font-medium">
+                                {inspection.aed_data?.gugun || '-'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 액션 버튼 */}
+                          <div className="px-4 py-3 border-t border-gray-700 bg-gray-800/30 flex gap-2">
+                            <button
+                              onClick={() => handleViewInspectionHistory(inspection.id)}
+                              className="flex-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                              title="상세 정보 보기"
+                              aria-label="상세 정보 보기"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {user?.role === 'master' ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedInspection(inspection);
+                                  setInspectionToDelete(inspection);
+                                  setShowDeleteModal(true);
+                                }}
+                                className="flex-1 p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                title="삭제 (마스터만)"
+                                aria-label="삭제 (마스터만)"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="flex-1 p-2 bg-gray-700 text-gray-500 rounded cursor-not-allowed flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                title="삭제 불가 (마스터만 가능)"
+                                aria-label="삭제 불가 (마스터만 가능)"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 데스크톱/태블릿 레이아웃 (>= 640px) */}
+                    <div className="hidden sm:block overflow-x-auto">
+                      <table className="w-full border-collapse table-fixed">
+                        <thead className="sticky top-0 bg-gray-800 border-b border-gray-700">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비번호</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden sm:table-cell min-w-[130px] max-w-[150px]">점검일시</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden lg:table-cell min-w-[80px] max-w-[100px]">점검자</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden md:table-cell min-w-[110px] max-w-[150px]">시도/구군</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[90px] max-w-[110px]">상태</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[110px] max-w-[140px]">작업</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {inspectionHistoryList.map((inspection) => (
+                            <tr
+                              key={inspection.id}
+                              className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
+                            >
+                              <td className="px-4 py-3 text-sm text-gray-200 font-medium truncate whitespace-nowrap">{inspection.equipment_serial}</td>
+                              <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell whitespace-nowrap">
+                                {new Date(inspection.inspection_date).toLocaleString('ko-KR', {
+                                  year: '2-digit',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-400 hidden lg:table-cell truncate">{inspection.inspector_name}</td>
+                              <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
+                                {inspection.aed_data
+                                  ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
+                                  : '-'
+                                }
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                                  inspection.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
+                                  inspection.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
+                                  inspection.overall_status === 'normal' ? 'bg-blue-900 text-blue-200' :
+                                  inspection.overall_status === 'needs_improvement' ? 'bg-yellow-900 text-yellow-200' :
+                                  inspection.overall_status === 'malfunction' ? 'bg-red-800 text-red-100' :
+                                  'bg-gray-700 text-gray-200'
+                                }`}>
+                                  {inspection.overall_status === 'pass' ? '합격' :
+                                   inspection.overall_status === 'fail' ? '불합격' :
+                                   inspection.overall_status === 'normal' ? '정상' :
+                                   inspection.overall_status === 'needs_improvement' ? '개선필요' :
+                                   inspection.overall_status === 'malfunction' ? '고장' :
+                                   inspection.overall_status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">
+                                <button
+                                  onClick={() => handleViewInspectionHistory(inspection.id)}
+                                  className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                  title="상세 정보 보기"
+                                  aria-label="상세 정보 보기"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                {user?.role === 'master' ? (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedInspection(inspection);
+                                      setInspectionToDelete(inspection);
+                                      setShowDeleteModal(true);
+                                    }}
+                                    className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                    title="삭제 (마스터만)"
+                                    aria-label="삭제 (마스터만)"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    disabled
+                                    className="p-1.5 bg-gray-700 text-gray-500 rounded cursor-not-allowed flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                                    title="삭제 불가 (마스터만 가능)"
+                                    aria-label="삭제 불가 (마스터만 가능)"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
               </div>
             ) : viewMode === 'drafts' ? (
               <div className="flex-1 overflow-y-auto bg-gray-900 p-4">
@@ -383,6 +628,34 @@ function LocalViewContent({ user }: LocalViewContentProps) {
           </>
         )}
       </div>
+
+      {/* 점검 이력 상세보기 모달 */}
+      {selectedInspection && (
+        <InspectionHistoryModal
+          isOpen={showHistoryModal}
+          onClose={() => {
+            setShowHistoryModal(false);
+            setSelectedInspection(null);
+          }}
+          inspection={selectedInspection}
+          onDelete={handleDeleteInspection}
+          canEdit={false}
+          canDelete={user?.role === 'master'}
+        />
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {inspectionToDelete && (
+        <DeleteInspectionModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setInspectionToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          inspectionId={inspectionToDelete.equipment_serial}
+        />
+      )}
     </div>
   );
 }
