@@ -13,26 +13,50 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const equipmentSerial = searchParams.get('equipmentSerial');
-    const status = searchParams.get('status');
+    const statusParam = searchParams.get('status');
 
-    if (!equipmentSerial) {
-      return NextResponse.json(
-        { error: 'Equipment serial is required' },
-        { status: 400 }
-      );
+    // Case 1: 특정 장비의 세션 조회 (equipmentSerial 제공)
+    if (equipmentSerial) {
+      const where: any = {
+        equipment_serial: equipmentSerial
+      };
+
+      if (statusParam) {
+        where.status = statusParam;
+      }
+
+      const session_record = await prisma.inspection_sessions.findFirst({
+        where,
+        include: {
+          user_profiles: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          started_at: 'desc'
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: session_record
+      });
     }
 
-    // 조건 구성
-    const where: any = {
-      equipment_serial: equipmentSerial
-    };
-
-    if (status) {
-      where.status = status;
+    // Case 2: 모든 활성 세션 조회 (equipmentSerial 미제공)
+    // statusParam이 'active'이면 완료되지 않은 세션만, 없으면 모든 세션 반환
+    const where: any = {};
+    if (statusParam === 'active') {
+      where.status = {
+        in: ['active', 'paused'] // 완료/취소/보류 제외
+      };
     }
 
-    // 가장 최근의 세션 조회
-    const session_record = await prisma.inspection_sessions.findFirst({
+    const sessions = await prisma.inspection_sessions.findMany({
       where,
       include: {
         user_profiles: {
@@ -50,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: session_record
+      sessions: sessions
     });
   } catch (error) {
     console.error('[InspectionSessions:GET]', error);

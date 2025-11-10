@@ -295,37 +295,21 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                   )}
 
                   {isScheduled && assignmentStatus === 'in_progress' && (
-                    <div className="flex flex-col gap-1">
-                      <Button
-                        disabled
-                        className="bg-blue-600 text-white text-xs px-2 py-1 h-7 cursor-default"
-                      >
-                        점검진행중
-                      </Button>
-                      {inspectionSession && (
-                        <div className="text-xs text-gray-400 space-y-0.5">
-                          <div>점검자: {inspectionSession.user_profiles?.full_name || '-'}</div>
-                          <div>시작: {inspectionSession.started_at ? formatDateTime(inspectionSession.started_at) : '-'}</div>
-                        </div>
-                      )}
-                    </div>
+                    <Button
+                      disabled
+                      className="bg-blue-600 text-white text-xs px-2 py-1 h-7 cursor-default w-full"
+                    >
+                      점검진행중
+                    </Button>
                   )}
 
                   {isScheduled && assignmentStatus === 'completed' && (
-                    <div className="flex flex-col gap-1">
-                      <Button
-                        disabled
-                        className="bg-gray-600 text-white text-xs px-2 py-1 h-7 cursor-default"
-                      >
-                        점검완료
-                      </Button>
-                      {inspectionSession && (
-                        <div className="text-xs text-gray-400 space-y-0.5">
-                          <div>점검자: {inspectionSession.user_profiles?.full_name || '-'}</div>
-                          <div>완료: {inspectionSession.completed_at ? formatDateTime(inspectionSession.completed_at) : '-'}</div>
-                        </div>
-                      )}
-                    </div>
+                    <Button
+                      disabled
+                      className="bg-gray-600 text-white text-xs px-2 py-1 h-7 cursor-default w-full"
+                    >
+                      점검완료
+                    </Button>
                   )}
                 </>
               )}
@@ -338,6 +322,79 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
           </div>
         </div>
         <div className="p-2.5 space-y-1.5">
+          {/* 일정 정보 */}
+          {assignmentInfo && (
+            <div className="pb-1 mb-1 border-b border-gray-700">
+              {/* 점검 상태 배지 */}
+              <div className="mb-0.5">
+                {assignmentStatus === 'pending' && (
+                  <span className="text-[10px] bg-gray-600 text-white px-1.5 py-0.5 rounded">점검예정</span>
+                )}
+                {assignmentStatus === 'in_progress' && (
+                  <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded">점검중</span>
+                )}
+                {assignmentStatus === 'completed' && (
+                  <span className="text-[10px] bg-green-600 text-white px-1.5 py-0.5 rounded">점검완료</span>
+                )}
+              </div>
+
+              {/* 일정 정보 (시간순: 추가정보) */}
+              <div className="grid grid-cols-3 gap-x-1 gap-y-0.5 mb-1">
+                <InfoField
+                  label="추가일시"
+                  value={assignmentInfo.created_at ? formatDateTime(assignmentInfo.created_at) : '-'}
+                />
+                <InfoField
+                  label="담당"
+                  value={assignmentInfo.user_profiles_inspection_assignments_assigned_toTouser_profiles?.full_name || '-'}
+                />
+                <InfoField
+                  label="추가자"
+                  value={assignmentInfo.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name || '-'}
+                />
+              </div>
+
+              {/* 점검 정보 (시간순: 점검정보) */}
+              {inspectionSession && (
+                <>
+                  <div className="text-[10px] text-gray-500 mb-0.5 pb-0.5 border-t border-gray-700 pt-0.5">점검 정보</div>
+                  <div className="grid grid-cols-3 gap-x-1 gap-y-0.5 mb-1">
+                    {inspectionSession?.user_profiles?.full_name && (
+                      <InfoField
+                        label="점검자"
+                        value={inspectionSession.user_profiles.full_name}
+                      />
+                    )}
+                    {inspectionSession?.started_at && (
+                      <InfoField
+                        label="시작"
+                        value={formatDateTime(inspectionSession.started_at)}
+                      />
+                    )}
+                    {inspectionSession?.completed_at && (
+                      <InfoField
+                        label="완료"
+                        value={formatDateTime(inspectionSession.completed_at)}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* 점검 진행 중일 때 현장점검으로 이동 링크 */}
+              {assignmentStatus === 'in_progress' && (
+                <div className="pt-0.5 border-t border-gray-700 text-right">
+                  <button
+                    onClick={() => setShowInProgressConfirm(true)}
+                    className="text-xs text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                  >
+                    현장점검으로 이동 →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 외부표출 차단 경고 */}
           {device.external_non_display_reason &&
            device.external_non_display_reason !== '구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박' && (
@@ -417,32 +474,6 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
               <InfoField label="시리얼" value={device.serial_number} />
             </div>
           </div>
-
-          {/* 일정 정보 */}
-          {assignmentInfo && (
-            <div className="pb-1.5 mb-1.5 border-b border-gray-700">
-              <div className="text-xs text-yellow-400 text-right space-y-1">
-                <div>
-                  추가일시: {assignmentInfo.created_at ? formatDateTime(assignmentInfo.created_at) : '-'}({assignmentInfo.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name || '-'})
-                </div>
-                <div>
-                  담당: {assignmentInfo.user_profiles_inspection_assignments_assigned_toTouser_profiles?.full_name || '-'}
-                </div>
-              </div>
-
-              {/* 점검 진행 중일 때 현장점검으로 이동 링크 */}
-              {assignmentStatus === 'in_progress' && (
-                <div className="mt-2 pt-2 border-t border-gray-700 text-right">
-                  <button
-                    onClick={() => setShowInProgressConfirm(true)}
-                    className="text-xs text-blue-400 hover:text-blue-300 underline cursor-pointer"
-                  >
-                    현장점검으로 이동 →
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
         </div>
       </div>

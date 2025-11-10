@@ -517,6 +517,13 @@ export const GET = async (request: NextRequest) => {
           paramIndex++;
         }
 
+        // 점검중인 장비 제외 (inspection_sessions 중 active/paused 상태인 것)
+        sqlConditions.push(`NOT EXISTS (
+          SELECT 1 FROM aedpics.inspection_sessions
+          WHERE equipment_serial = a.equipment_serial
+          AND status IN ('active', 'paused')
+        )`);
+
         // Build final SQL query with LEFT JOIN
         const whereClause = sqlConditions.length > 0 ? `WHERE ${sqlConditions.join(' AND ')}` : '';
 
