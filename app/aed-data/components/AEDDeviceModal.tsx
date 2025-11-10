@@ -394,8 +394,13 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
           {/* 일정 정보 */}
           {assignmentInfo && (
             <div className="pb-1.5 mb-1.5 border-b border-gray-700">
-              <div className="text-xs text-yellow-400 text-right">
-                추가일시: {assignmentInfo.created_at ? formatDateTime(assignmentInfo.created_at) : '-'}({assignmentInfo.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name || '-'})
+              <div className="text-xs text-yellow-400 text-right space-y-1">
+                <div>
+                  추가일시: {assignmentInfo.created_at ? formatDateTime(assignmentInfo.created_at) : '-'}({assignmentInfo.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name || '-'})
+                </div>
+                <div>
+                  담당: {assignmentInfo.user_profiles_inspection_assignments_assigned_toTouser_profiles?.full_name || '-'}
+                </div>
               </div>
             </div>
           )}
