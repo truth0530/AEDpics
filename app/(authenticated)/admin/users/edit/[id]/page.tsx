@@ -22,6 +22,8 @@ interface UserProfile {
   organization_name?: string;
   is_active: boolean;
   created_at: string;
+  login_count?: number;
+  last_login_at?: string;
 }
 
 interface Organization {
@@ -417,6 +419,41 @@ export default function EditUserPage() {
               <input
                 type="tel"
                 value={user?.phone || ''}
+                disabled
+                className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
+              />
+            </div>
+          </div>
+
+          {/* 로그인 횟수 | 최근 로그인 (2열) */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* 로그인 횟수 (읽기 전용) */}
+            <div>
+              <label className="block text-sm font-medium mb-2">로그인 횟수</label>
+              <input
+                type="text"
+                value={user?.login_count !== undefined ? user.login_count.toString() : '0'}
+                disabled
+                className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
+              />
+            </div>
+
+            {/* 최근 로그인 (읽기 전용) */}
+            <div>
+              <label className="block text-sm font-medium mb-2">최근 로그인</label>
+              <input
+                type="text"
+                value={user?.last_login_at
+                  ? new Date(user.last_login_at).toLocaleString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })
+                  : '-'
+                }
                 disabled
                 className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
               />
