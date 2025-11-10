@@ -414,7 +414,14 @@ export default function AdminUsersPage() {
                           {new Date(user.created_at).toLocaleDateString('ko-KR')}
                         </TableCell>
                         <TableCell className="text-gray-400 text-xs whitespace-nowrap">
-                          {user.last_login_at ? new Date(user.last_login_at).toLocaleDateString('ko-KR') : '-'}
+                          {user.last_login_at ? new Date(user.last_login_at).toLocaleString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          }) : '-'}
                         </TableCell>
                         <TableCell className="text-gray-400 text-xs text-center">
                           {user.login_count || 0}
