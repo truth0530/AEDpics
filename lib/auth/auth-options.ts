@@ -52,22 +52,25 @@ export const authOptions: NextAuthOptions = {
           throw new Error(`계정이 잠겼습니다: ${user.lock_reason || '관리자에게 문의하세요'}`)
         }
 
-        // 로그인 성공 - 이력 기록
-        await prisma.login_history.create({
-          data: {
-            id: randomUUID(),
-            user_id: user.id,
-            success: true,
-            ip_address: 'server',
-            user_agent: 'NextAuth'
-          }
-        })
-
-        // last_login_at 업데이트
-        await prisma.user_profiles.update({
-          where: { id: user.id },
-          data: { last_login_at: new Date() }
-        })
+        // 로그인 성공 - 이력 기록 및 프로필 업데이트 (트랜잭션으로 처리)
+        await prisma.$transaction([
+          prisma.login_history.create({
+            data: {
+              id: randomUUID(),
+              user_id: user.id,
+              success: true,
+              ip_address: 'server',
+              user_agent: 'NextAuth'
+            }
+          }),
+          prisma.user_profiles.update({
+            where: { id: user.id },
+            data: {
+              last_login_at: new Date(),
+              login_count: { increment: 1 }
+            }
+          })
+        ])
 
         logger.info('Auth:authorize', 'Login successful', { userId: user.id, email: user.email });
 

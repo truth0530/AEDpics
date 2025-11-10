@@ -35,11 +35,17 @@ export function ProfileDropdown({ user, pendingApprovalCount }: ProfileDropdownP
   }, []);
 
   const handleSignOut = async () => {
-    // redirect: false로 설정하여 NextAuth의 기본 signout 페이지를 거치지 않도록 함
-    await signOut({
-      redirect: false
-    });
-    // 수동으로 로그인 페이지로 리다이렉트
+    try {
+      // signOut 완료를 기다림
+      await signOut({
+        redirect: false
+      });
+    } catch (error) {
+      console.error('로그아웃 처리 중 오류:', error);
+      // 실패해도 로그인 페이지로 이동하여 사용자를 갇히게 하지 않음
+    }
+
+    // 성공/실패 여부와 관계없이 로그인 페이지로 이동
     window.location.href = '/auth/signin';
   };
 

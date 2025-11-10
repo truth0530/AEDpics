@@ -22,11 +22,21 @@ export async function GET(
       return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
     }
 
-    // 사용자 프로필 조회
+    // 사용자 프로필 조회 (필요한 필드만 선택)
     const profile = await prisma.user_profiles.findUnique({
       where: { id },
-      include: {
-        organizations: true,
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        role: true,
+        organization_id: true,
+        organization_name: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        organizations: true
+        // 제외: password_hash, account_locked, lock_reason, approval_status 등 민감 정보
       }
     })
 
@@ -34,7 +44,6 @@ export async function GET(
       return NextResponse.json({ error: '프로필을 찾을 수 없습니다' }, { status: 404 })
     }
 
-    // 비밀번호 해시 제거 (보안) - passwordHash 필드 없음
     return NextResponse.json(profile)
   } catch (error) {
     console.error('프로필 조회 오류:', error)

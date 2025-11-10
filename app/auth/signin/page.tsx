@@ -68,48 +68,49 @@ function SignInForm() {
       }
 
       if (result?.ok) {
-        // 사용자 프로필 확인 (NextAuth 세션에서)
-        const sessionResponse = await fetch('/api/auth/session');
-        const session = await sessionResponse.json();
-
-        if (!session?.user) {
-          throw new Error('세션을 가져올 수 없습니다.');
-        }
-
-        // 프로필 상세 정보 가져오기
-        const profileResponse = await fetch(`/api/user/profile/${session.user.id}`);
-        const profile = await profileResponse.json();
-
-        if (!profile) {
-          // 프로필이 없으면 프로필 설정 페이지로
-          setRedirecting(true);
-          router.push('/auth/complete-profile');
-          return;
-        }
-
-        // 승인 대기 중인 경우
-        if (profile.role === 'pending_approval') {
-          setRedirecting(true);
-          router.push('/auth/pending-approval');
-          return;
-        }
-
-        // 로그인 추적 (비동기로 실행, UI 블로킹 없음)
-        void fetch('/api/auth/track-login', { method: 'POST' }).catch(error => {
-          console.warn('Failed to track login:', error);
-        });
-
-        // 정상 로그인 - redirect 또는 redirectTo가 있으면 해당 경로로, 없으면 역할별 기본 랜딩 페이지로 이동
+        // 인증 성공 - 즉시 리다이렉트 상태로 변경 (UX 개선)
         setRedirecting(true);
-        const redirectTo = searchParams.get('redirect') || searchParams.get('redirectTo');
 
-        if (redirectTo) {
-          router.push(redirectTo);
-        } else {
-          // 역할별 기본 랜딩 페이지 사용
-          const userRole = profile.role as UserRole;
-          const defaultLanding = ROLE_ACCESS_MATRIX[userRole]?.defaultLandingPage || '/dashboard';
-          router.push(defaultLanding);
+        // 프로필 상세 정보는 백그라운드에서 로드
+        try {
+          const sessionResponse = await fetch('/api/auth/session');
+          const session = await sessionResponse.json();
+
+          if (!session?.user) {
+            throw new Error('세션을 가져올 수 없습니다.');
+          }
+
+          // 프로필 상세 정보 가져오기
+          const profileResponse = await fetch(`/api/user/profile/${session.user.id}`);
+          const profile = await profileResponse.json();
+
+          if (!profile) {
+            // 프로필이 없으면 프로필 설정 페이지로
+            router.push('/auth/complete-profile');
+            return;
+          }
+
+          // 승인 대기 중인 경우
+          if (profile.role === 'pending_approval') {
+            router.push('/auth/pending-approval');
+            return;
+          }
+
+          // 정상 로그인 - redirect 또는 redirectTo가 있으면 해당 경로로, 없으면 역할별 기본 랜딩 페이지로 이동
+          const redirectTo = searchParams.get('redirect') || searchParams.get('redirectTo');
+
+          if (redirectTo) {
+            router.push(redirectTo);
+          } else {
+            // 역할별 기본 랜딩 페이지 사용
+            const userRole = profile.role as UserRole;
+            const defaultLanding = ROLE_ACCESS_MATRIX[userRole]?.defaultLandingPage || '/dashboard';
+            router.push(defaultLanding);
+          }
+        } catch (error) {
+          console.error('프로필 로드 실패:', error);
+          // 프로필 로드 실패해도 대시보드로 이동 (기본 페이지)
+          router.push('/dashboard');
         }
       }
     } catch (err) {
