@@ -4,8 +4,9 @@ import { randomUUID } from 'crypto'
 import { isAllowedEmailDomain } from '@/lib/auth/config'
 import { checkRateLimitWithMessage } from '@/lib/security/rate-limit-middleware'
 import { validateRegionInfo, autocompleteRegionInfo } from '@/lib/auth/region-validation'
-
 import { prisma } from '@/lib/prisma';
+import type { UserRole } from '@/packages/types';
+import { validateRoleOrganizationAssignment } from '@/lib/auth/role-organization-validation';
 
 // 비밀번호 강도 검증 함수
 function validatePasswordStrength(password: string): { valid: boolean; error?: string } {
@@ -103,34 +104,41 @@ export async function POST(request: NextRequest) {
     // 지역 정보 자동 완성
     const autocompletedInfo = autocompleteRegionInfo(organizationInfo)
 
-    // 8. 임시점검원 조직 검증 (local_admin이 있는지 확인)
-    const emailDomain = email.split('@')[1];
-    const isTemporaryInspector = emailDomain !== 'korea.kr' && emailDomain !== 'nmc.or.kr';
+    const organizationId = profileData.organizationId || profileData.organization_id || null;
 
-    if (isTemporaryInspector && profileData.organizationId) {
-      // 해당 조직에 local_admin이 있는지 확인
-      const organization = await prisma.organizations.findFirst({
-        where: {
-          id: profileData.organizationId
-        },
-        include: {
-          user_profiles: {
-            where: {
-              role: 'local_admin',
-              is_active: true
-            }
-          }
+    let organizationRecord: { id: string; name: string; type: string | null } | null = null;
+    if (organizationId) {
+      organizationRecord = await prisma.organizations.findUnique({
+        where: { id: organizationId },
+        select: {
+          id: true,
+          name: true,
+          type: true
         }
       });
 
-      if (!organization) {
+      if (!organizationRecord) {
         return NextResponse.json(
           { success: false, error: '선택한 조직을 찾을 수 없습니다' },
           { status: 400 }
         );
       }
+    }
 
-      if (organization.user_profiles.length === 0) {
+    // 8. 임시점검원 조직 검증 (local_admin이 있는지 확인)
+    const emailDomain = email.split('@')[1];
+    const isTemporaryInspector = emailDomain !== 'korea.kr' && emailDomain !== 'nmc.or.kr';
+
+    if (isTemporaryInspector && organizationId) {
+      const localAdminCount = await prisma.user_profiles.count({
+        where: {
+          organization_id: organizationId,
+          role: 'local_admin',
+          is_active: true
+        }
+      });
+
+      if (localAdminCount === 0) {
         // 관리자에게 알림 발송
         try {
           await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/notify-orphan-inspector`, {
@@ -139,7 +147,7 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               inspectorEmail: email,
               inspectorName: profileData.fullName || profileData.full_name,
-              organizationName: organization.name,
+              organizationName: organizationRecord?.name,
               region: profileData.region,
               issue: '담당자(local_admin)가 없는 조직에 가입 시도'
             })
@@ -159,6 +167,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 8.5 역할-조직 타입 일관성 검증
+    const normalizedRole: UserRole | null =
+      profileData.role && profileData.role !== 'pending_approval'
+        ? profileData.role
+        : (isTemporaryInspector ? 'temporary_inspector' : null);
+
+    if (organizationRecord && normalizedRole) {
+      const validation = await validateRoleOrganizationAssignment(
+        prisma,
+        normalizedRole,
+        organizationId,
+        { organizationRecord }
+      );
+
+      if (!validation.isValid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: validation.error,
+            details: validation.details
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // 9. 비밀번호 해싱 (bcrypt, salt rounds 10)
     const passwordHash = await bcrypt.hash(password, 10)
 
@@ -172,8 +206,13 @@ export async function POST(request: NextRequest) {
         phone: profileData.phone || null,
         region: profileData.region || null,
         region_code: autocompletedInfo.regionCode || profileData.regionCode || profileData.region_code || null,
-        organization_name: autocompletedInfo.normalizedOrgName || profileData.organizationName || profileData.organization_name || null,
-        organization_id: profileData.organizationId || profileData.organization_id || null,
+        organization_name:
+          organizationRecord?.name
+          || autocompletedInfo.normalizedOrgName
+          || profileData.organizationName
+          || profileData.organization_name
+          || null,
+        organization_id: organizationId,
         remarks: profileData.remarks || null,
         role: profileData.role || 'pending_approval',
         is_active: profileData.isActive !== undefined ? profileData.isActive : false,

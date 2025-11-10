@@ -6,6 +6,9 @@ import { canApproveUsers } from '@/lib/auth/config';
 import { generateApprovalSuggestion } from '@/lib/utils/approval-helpers';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
+import { validateRoleOrganizationAssignment } from '@/lib/auth/role-organization-validation';
+import { sendApprovalEmail } from '@/lib/email/approval-email';
+import { sendRejectionEmail } from '@/lib/email/rejection-email';
 
 import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
@@ -61,6 +64,7 @@ export async function POST(request: NextRequest) {
         email: true,
         full_name: true,
         organization_name: true,
+        organization_id: true,
         role: true
       }
     });
@@ -94,6 +98,22 @@ export async function POST(request: NextRequest) {
           targetUser.organization_name || ''
         );
 
+        const validation = await validateRoleOrganizationAssignment(
+          prisma,
+          suggestion.role,
+          targetUser.organization_id
+        );
+
+        if (!validation.isValid) {
+          errors.push({
+            userId: targetUser.id,
+            email: targetUser.email,
+            error: validation.error,
+            details: validation.details
+          });
+          continue;
+        }
+
         // 사용자 프로필 업데이트
         try {
           await prisma.user_profiles.update({
@@ -124,62 +144,14 @@ export async function POST(request: NextRequest) {
 
         // 승인 이메일 발송 (비동기)
         try {
-          const roleNames: Record<string, string> = {
-            'master': 'Master 관리자',
-            'emergency_center_admin': '중앙응급의료센터 관리자',
-            'ministry_admin': '보건복지부 관리자',
-            'regional_admin': '시도 관리자',
-            'local_admin': '보건소 담당자',
-            'temporary_inspector': '임시 점검원'
-          };
-
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: 'noreply@aed.pics',
-              to: targetUser.email,
-              subject: '[AED 시스템] 회원가입이 승인되었습니다',
-              html: `
-                <h2>AED 점검 시스템 가입 승인 안내</h2>
-
-                <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <h3 style="color: #2e7d32;">회원가입이 승인되었습니다!</h3>
-                  <p style="color: #333; line-height: 1.6;">
-                    축하합니다! AED 점검 시스템에 성공적으로 가입하셨습니다.
-                  </p>
-                </div>
-
-                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <h4>당신의 계정 정보</h4>
-                  <ul style="line-height: 1.8;">
-                    <li><strong>역할:</strong> ${roleNames[suggestion.role] || suggestion.role}</li>
-                    ${suggestion.regionCode ? `<li><strong>지역:</strong> ${suggestion.regionCode}</li>` : ''}
-                  </ul>
-                  <p style="color: #666; margin-top: 10px; font-size: 14px;">
-                    * 일괄 승인 처리로 자동 설정되었습니다.
-                  </p>
-                </div>
-
-                <div style="margin-top: 30px; text-align: center;">
-                  <a href="${env.NEXT_PUBLIC_SITE_URL}/auth/signin"
-                     style="background: #22c55e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                    로그인하기
-                  </a>
-                </div>
-
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-                <p style="color: #666; font-size: 12px;">
-                  문의사항: truth0530@nmc.or.kr<br>
-                  이 이메일은 AED 점검 시스템에서 자동으로 발송되었습니다.
-                </p>
-              `
-            })
-          });
+          const org = validation.organization;
+          await sendApprovalEmail(
+            targetUser.email,
+            targetUser.full_name,
+            suggestion.role as any,
+            org?.name || '미정의 조직',
+            new Date()
+          );
         } catch (emailError) {
           logger.error('API:bulkApprove', 'Failed to send bulk approval email', emailError instanceof Error ? emailError : { emailError });
           // 이메일 발송 실패해도 승인은 완료
@@ -359,51 +331,11 @@ export async function DELETE(request: NextRequest) {
 
         // 거부 이메일 발송 (비동기)
         try {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: 'noreply@aed.pics',
-              to: targetUser.email,
-              subject: '[AED 시스템] 회원가입 검토 결과 안내',
-              html: `
-                <h2>AED 점검 시스템 가입 검토 결과</h2>
-
-                <div style="background: #ffebee; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <h3 style="color: #c62828;">회원가입이 거부되었습니다</h3>
-                  <p style="color: #333; line-height: 1.6;">
-                    죄송합니다. 귀하의 회원가입 신청이 승인되지 않았습니다.
-                  </p>
-                </div>
-
-                ${rejectReason ? `
-                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <h4>거부 사유</h4>
-                  <p style="color: #666; line-height: 1.6;">${rejectReason}</p>
-                </div>
-                ` : ''}
-
-                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <h4>다시 신청하려면?</h4>
-                  <ul style="line-height: 1.8; color: #666;">
-                    <li>공공기관 이메일(@korea.kr, @nmc.or.kr)로 재가입을 권장합니다</li>
-                    <li>소속기관 확인 후 정확한 정보로 가입해주세요</li>
-                    <li>문의사항은 아래 연락처로 문의해주세요</li>
-                  </ul>
-                </div>
-
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-                <p style="color: #666; font-size: 12px;">
-                  문의사항: truth0530@nmc.or.kr<br>
-                  이 이메일은 AED 점검 시스템에서 자동으로 발송되었습니다.
-                </p>
-              `
-            })
-          });
+          await sendRejectionEmail(
+            targetUser.email,
+            targetUser.full_name,
+            rejectReason || '관리자가 일괄 거부했습니다.'
+          );
         } catch (emailError) {
           logger.error('API:bulkReject', 'Failed to send bulk rejection email', emailError instanceof Error ? emailError : { emailError });
           // 이메일 발송 실패해도 거부는 완료

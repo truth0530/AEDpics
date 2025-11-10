@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { PrismaClient, user_role } from '@prisma/client';
+import { user_role } from '@prisma/client';
 import { checkPermission, getPermissionError } from '@/lib/auth/permissions';
 import { randomUUID } from 'crypto';
 import { sendApprovalEmail } from '@/lib/email/approval-email';
 import { logger } from '@/lib/logger';
 import { validateDomainForRole } from '@/lib/auth/access-control';
 import { syncUserToTeam } from '@/lib/auth/team-sync';
+import type { UserRole } from '@/packages/types';
+import { validateRoleOrganizationAssignment } from '@/lib/auth/role-organization-validation';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -127,7 +129,24 @@ export async function POST(
       }
     }
 
-    // 7. 사용자 승인 (role, region_code, organization_id 변경)
+    // 7. 조직 정보 조회 및 역할-조직 타입 검증
+    const validation = await validateRoleOrganizationAssignment(
+      prisma,
+      role as UserRole,
+      organizationId
+    );
+
+    if (!validation.isValid) {
+      return NextResponse.json(
+        {
+          error: validation.error,
+          details: validation.details
+        },
+        { status: 400 }
+      );
+    }
+
+    // 8. 사용자 승인 (role, region_code, organization_id 변경)
     const updatedUser = await prisma.user_profiles.update({
       where: { id },
       data: {
@@ -144,7 +163,7 @@ export async function POST(
       }
     });
 
-    // 8. Audit Log 기록
+    // 9. Audit Log 기록
     await prisma.audit_logs.create({
       data: {
         id: randomUUID(),
@@ -169,7 +188,7 @@ export async function POST(
       }
     });
 
-    // 9. team_members 테이블에 자동 추가
+    // 10. team_members 테이블에 자동 추가
     try {
       const memberType = role === 'temporary_inspector' ? 'temporary' : 'permanent';
       await syncUserToTeam(
@@ -192,7 +211,7 @@ export async function POST(
       );
     }
 
-    // 10. 승인 이메일 발송
+    // 11. 승인 이메일 발송
     try {
       await sendApprovalEmail(
         updatedUser.email,
