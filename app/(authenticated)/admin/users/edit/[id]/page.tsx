@@ -239,8 +239,8 @@ export default function EditUserPage() {
           <CardTitle>사용자 정보 수정</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* 지역 | 소속 조직 (2열) */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 지역 | 구/군 | 소속 조직 (3열) */}
+          <div className="grid grid-cols-3 gap-4">
             {/* 지역 선택 */}
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -252,8 +252,7 @@ export default function EditUserPage() {
                   setFormData({
                     ...formData,
                     region: e.target.value,
-                    organization_id: '', // 지역 변경 시 조직 초기화
-                    organization_name: ''
+                    organization_id: '' // 지역 변경 시 조직ID만 초기화 (직접 입력값은 유지)
                   });
                 }}
                 className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
@@ -267,6 +266,21 @@ export default function EditUserPage() {
               </select>
             </div>
 
+            {/* 구/군 입력 */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                구/군 {(formData.role === 'local_admin' || formData.role === 'regional_admin' || formData.role === 'temporary_inspector') && <span className="text-red-500">*</span>}
+              </label>
+              <input
+                type="text"
+                value={formData.district || ''}
+                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+                placeholder="구/군을 입력하세요"
+                disabled={formData.role !== 'local_admin' && formData.role !== 'regional_admin' && formData.role !== 'temporary_inspector'}
+              />
+            </div>
+
             {/* 소속 조직 선택 */}
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -274,7 +288,7 @@ export default function EditUserPage() {
               </label>
               {loadingOrgs ? (
                 <div className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800">
-                  조직 목록을 불러오는 중...
+                  불러오는 중...
                 </div>
               ) : (
                 <select
@@ -285,7 +299,7 @@ export default function EditUserPage() {
                     setFormData({
                       ...formData,
                       organization_id: orgId,
-                      organization_name: org?.name || ''
+                      organization_name: org?.name || formData.organization_name // 선택하지 않으면 기존값 유지
                     });
                   }}
                   className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
@@ -293,10 +307,10 @@ export default function EditUserPage() {
                 >
                   <option value="">
                     {!formData.region
-                      ? '지역을 먼저 선택하세요'
+                      ? '지역 선택'
                       : organizations.length === 0
-                      ? '선택 가능한 조직이 없습니다'
-                      : '조직을 선택하세요'
+                      ? '조직 없음'
+                      : '선택 (선택사항)'
                     }
                   </option>
                   {organizations.map(org => (
@@ -304,44 +318,43 @@ export default function EditUserPage() {
                       {org.name}
                       {org.hasAdmin
                         ? ` (담당자 ${org.adminCount}명)`
-                        : ' ⚠️ (담당자 없음)'
+                        : ' (담당자 없음)'
                       }
                     </option>
                   ))}
                 </select>
               )}
-
-              {formData.role === 'temporary_inspector' && formData.organization_id && (
-                <div className="mt-2">
-                  {organizations.find(o => o.id === formData.organization_id)?.hasAdmin ? (
-                    <Alert className="bg-green-50 border-green-200">
-                      <AlertDescription className="text-green-700">
-                        ✅ 이 보건소에는 담당자가 있어 정상적으로 장비 할당이 가능합니다
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <Alert className="bg-yellow-50 border-yellow-200">
-                      <AlertDescription className="text-yellow-700">
-                        ⚠️ 이 보건소에는 담당자가 없습니다. 시스템 관리자가 대리 할당해야 합니다
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              )}
-
-              {/* 조직명 직접 입력 (필요시) */}
-              {!formData.organization_id && formData.organization_name && (
-                <div className="mt-2">
-                  <label className="block text-sm font-medium mb-2">조직명 (직접 입력)</label>
-                  <input
-                    type="text"
-                    value={formData.organization_name}
-                    onChange={(e) => setFormData({ ...formData, organization_name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              )}
             </div>
+          </div>
+
+          {/* 조직 선택 후 안내 메시지 */}
+          {formData.role === 'temporary_inspector' && formData.organization_id && (
+            <Alert className={organizations.find(o => o.id === formData.organization_id)?.hasAdmin ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}>
+              <AlertDescription className={organizations.find(o => o.id === formData.organization_id)?.hasAdmin ? "text-green-700" : "text-yellow-700"}>
+                {organizations.find(o => o.id === formData.organization_id)?.hasAdmin
+                  ? "✅ 이 보건소에는 담당자가 있어 정상적으로 장비 할당이 가능합니다"
+                  : "⚠️ 이 보건소에는 담당자가 없습니다. 시스템 관리자가 대리 할당해야 합니다"}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* 조직명 직접 입력 (항상 표시) */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              조직명 (직접 입력) {formData.role === 'temporary_inspector' && !formData.organization_id && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              type="text"
+              value={formData.organization_name}
+              onChange={(e) => setFormData({ ...formData, organization_name: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+              placeholder="조직을 선택하지 않은 경우 직접 입력하세요"
+            />
+            {formData.organization_id && formData.organization_name && (
+              <p className="text-xs text-gray-500 mt-1">
+                위의 선택된 조직으로 저장됩니다
+              </p>
+            )}
           </div>
 
           {/* 이름 | 이메일 (2열) */}
@@ -387,20 +400,6 @@ export default function EditUserPage() {
               ))}
             </select>
           </div>
-
-          {/* 구/군 선택 (local_admin, regional_admin, temporary_inspector만 표시) */}
-          {(formData.role === 'local_admin' || formData.role === 'regional_admin' || formData.role === 'temporary_inspector') && (
-            <div>
-              <label className="block text-sm font-medium mb-2">구/군</label>
-              <input
-                type="text"
-                value={formData.district || ''}
-                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
-                placeholder="구/군을 입력하세요"
-              />
-            </div>
-          )}
 
           {/* 계정 활성화 */}
           <div className="flex items-center space-x-2">
