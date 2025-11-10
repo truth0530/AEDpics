@@ -250,8 +250,8 @@ export default function EditUserPage() {
           <CardTitle>사용자 정보 수정</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* 지역 | 구/군 | 소속 조직 (3열) */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* 지역 | 구/군 | 소속 조직 | 역할 (4열) */}
+          <div className="grid grid-cols-4 gap-4">
             {/* 지역 선택 */}
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -336,6 +336,25 @@ export default function EditUserPage() {
                 </select>
               )}
             </div>
+
+            {/* 역할 선택 */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                역할 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+              >
+                <option value="">역할을 선택하세요</option>
+                {getRoleOptions().map(role => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* 조직 선택 후 안내 메시지 */}
@@ -391,25 +410,6 @@ export default function EditUserPage() {
                 className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
               />
             </div>
-          </div>
-
-          {/* 역할 선택 */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              역할 <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
-            >
-              <option value="">역할을 선택하세요</option>
-              {getRoleOptions().map(role => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* 계정 활성화 */}
