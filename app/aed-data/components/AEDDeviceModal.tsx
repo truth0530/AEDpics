@@ -76,6 +76,7 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
 
   // Assignment 상태 조회
   const [assignmentInfo, setAssignmentInfo] = useState<any>(null);
+  const [inspectionSession, setInspectionSession] = useState<any>(null);
 
   useEffect(() => {
     async function fetchAssignmentStatus() {
@@ -116,6 +117,24 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
               created_at: activeAssignment.created_at,
               assigned_by: activeAssignment.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name
             });
+
+            // in_progress 상태일 때 점검 세션 정보 조회
+            if (activeAssignment.status === 'in_progress') {
+              try {
+                const sessionResponse = await fetch(
+                  `/api/inspections/sessions?equipmentSerial=${device.equipment_serial}&status=active`
+                );
+                if (sessionResponse.ok) {
+                  const sessionData = await sessionResponse.json();
+                  if (sessionData.data) {
+                    setInspectionSession(sessionData.data);
+                    console.log('[AEDDeviceModal] Inspection session info:', sessionData.data);
+                  }
+                }
+              } catch (sessionError) {
+                console.warn('[AEDDeviceModal] Failed to fetch inspection session:', sessionError);
+              }
+            }
           }
         }
       } catch (error) {
@@ -276,21 +295,37 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                   )}
 
                   {isScheduled && assignmentStatus === 'in_progress' && (
-                    <Button
-                      disabled
-                      className="bg-blue-600 text-white text-xs px-2 py-1 h-7 cursor-default"
-                    >
-                      점검진행중
-                    </Button>
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        disabled
+                        className="bg-blue-600 text-white text-xs px-2 py-1 h-7 cursor-default"
+                      >
+                        점검진행중
+                      </Button>
+                      {inspectionSession && (
+                        <div className="text-xs text-gray-400 space-y-0.5">
+                          <div>점검자: {inspectionSession.user_profiles?.full_name || '-'}</div>
+                          <div>시작: {inspectionSession.started_at ? formatDateTime(inspectionSession.started_at) : '-'}</div>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {isScheduled && assignmentStatus === 'completed' && (
-                    <Button
-                      disabled
-                      className="bg-gray-600 text-white text-xs px-2 py-1 h-7 cursor-default"
-                    >
-                      점검완료
-                    </Button>
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        disabled
+                        className="bg-gray-600 text-white text-xs px-2 py-1 h-7 cursor-default"
+                      >
+                        점검완료
+                      </Button>
+                      {inspectionSession && (
+                        <div className="text-xs text-gray-400 space-y-0.5">
+                          <div>점검자: {inspectionSession.user_profiles?.full_name || '-'}</div>
+                          <div>완료: {inspectionSession.completed_at ? formatDateTime(inspectionSession.completed_at) : '-'}</div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </>
               )}
