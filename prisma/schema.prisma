@@ -161,23 +161,24 @@ model gps_issues {
 }
 
 model inspection_assignments {
-  id                                                              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  equipment_serial                                                String         @db.VarChar(255)
-  assigned_to                                                     String?        @db.Uuid
-  assigned_by                                                     String?        @db.Uuid
+  id                                                              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  equipment_serial                                                String            @db.VarChar(255)
+  assigned_to                                                     String?           @db.Uuid
+  assigned_by                                                     String?           @db.Uuid
   assignment_type                                                 String?
-  scheduled_date                                                  DateTime?      @db.Date
-  scheduled_time                                                  DateTime?      @db.Time(6)
-  status                                                          String?        @default("pending")
+  scheduled_date                                                  DateTime?         @db.Date
+  scheduled_time                                                  DateTime?         @db.Time(6)
+  status                                                          String?           @default("pending")
   priority_level                                                  Int?
   notes                                                           String?
-  started_at                                                      DateTime?      @db.Timestamptz(6)
-  completed_at                                                    DateTime?      @db.Timestamptz(6)
-  cancelled_at                                                    DateTime?      @db.Timestamptz(6)
-  created_at                                                      DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at                                                      DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
-  user_profiles_inspection_assignments_assigned_byTouser_profiles user_profiles? @relation("inspection_assignments_assigned_byTouser_profiles", fields: [assigned_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  user_profiles_inspection_assignments_assigned_toTouser_profiles user_profiles? @relation("inspection_assignments_assigned_toTouser_profiles", fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  started_at                                                      DateTime?         @db.Timestamptz(6)
+  completed_at                                                    DateTime?         @db.Timestamptz(6)
+  cancelled_at                                                    DateTime?         @db.Timestamptz(6)
+  assignment_scope                                                assignment_scope  @default(assigned)
+  created_at                                                      DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at                                                      DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  user_profiles_inspection_assignments_assigned_byTouser_profiles user_profiles?   @relation("inspection_assignments_assigned_byTouser_profiles", fields: [assigned_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_profiles_inspection_assignments_assigned_toTouser_profiles user_profiles?   @relation("inspection_assignments_assigned_toTouser_profiles", fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([assigned_to, status, scheduled_date(sort: Desc)], map: "idx_assignments_user_status")
   @@index([assigned_to], map: "idx_inspection_assignments_assigned_to")
@@ -736,6 +737,12 @@ enum access_scope {
   assigned_only
   department
   custom
+}
+
+enum assignment_scope {
+  assigned
+  all_team
+  unassigned
 }
 
 enum assignment_status {

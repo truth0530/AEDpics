@@ -99,6 +99,14 @@ export interface AEDDevice {
   // 메타데이터
   created_at?: string;
   updated_at?: string;
+
+  // 할당 정보 (scheduled 탭에서 사용)
+  assignment_info?: {
+    id: string;
+    created_at: string;
+    assigned_by_name: string;
+    assigned_to_name?: string;
+  };
 }
 
 // AED 데이터 응답 타입

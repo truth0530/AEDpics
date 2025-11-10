@@ -725,6 +725,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
               totalDataCount={data?.length || 0}
               currentViewMode={viewMode === 'toAdd' ? 'list' : viewMode === 'scheduled' ? 'completed' : 'map'}
               pageType="schedule"
+              showAssignmentInfo={viewMode === 'scheduled'}
             />
           )
         ) : (

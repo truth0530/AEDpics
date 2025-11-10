@@ -926,7 +926,7 @@ export const GET = async (request: NextRequest) => {
     // 분류와 검색 필터는 이제 RPC에서 처리됨
     // 클라이언트 측 필터링 제거
 
-    const maskedData = maskSensitiveData(filteredData, accessScope);
+    let maskedData = maskSensitiveData(filteredData, accessScope);
 
     // 다음 커서 생성
     let nextCursor: string | null = null;
@@ -1094,21 +1094,64 @@ export const GET = async (request: NextRequest) => {
 
     // includeSchedule이 true이면 일정추가된 장비 조회
     let scheduledEquipment: string[] | undefined = undefined;
+    let scheduledAssignmentMap: Map<string, { id: string; created_at: Date; assigned_by_name: string; assigned_to_name: string }> | undefined = undefined;
+
     if (includeSchedule) {
+      // ✅ 수정 (2025-11-10): "추가된목록" 필터링 - 사용자에게 할당된 모든 일정 표시
+      // assigned_to = session.user.id: 이 사용자에게 할당된 모든 일정 조회
+      // (할당자 assigned_by는 무관 - 누구든 할당한 일정 모두 포함)
       const assignments = await prisma.inspection_assignments.findMany({
         where: {
-          assigned_to: session.user.id,
+          assigned_to: session.user.id,  // ← 올바른 필터: 나에게 할당된 모든 것
           status: { in: ['pending', 'in_progress'] }
         },
         select: {
-          equipment_serial: true
+          equipment_serial: true,
+          id: true,
+          created_at: true,
+          assigned_to: true,
+          scheduled_date: true,
+          user_profiles_inspection_assignments_assigned_byTouser_profiles: {
+            select: {
+              full_name: true
+            }
+          },
+          user_profiles_inspection_assignments_assigned_toTouser_profiles: {
+            select: {
+              full_name: true
+            }
+          }
         }
       });
 
       scheduledEquipment = assignments.map(a => a.equipment_serial);
-      logger.info('AEDDataAPI:GET', 'includeSchedule: Found scheduled equipment', {
-        count: scheduledEquipment.length
+
+      // Map으로 assignment 정보 저장 (나중에 데이터에 추가하기 위함)
+      scheduledAssignmentMap = new Map(
+        assignments.map(a => [
+          a.equipment_serial,
+          {
+            id: a.id,
+            created_at: a.created_at || new Date(),
+            assigned_by_name: a.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name || '미지정',
+            assigned_to_name: a.user_profiles_inspection_assignments_assigned_toTouser_profiles?.full_name || '미할당'
+          }
+        ])
+      );
+
+      logger.info('AEDDataAPI:GET', 'includeSchedule: Found scheduled equipment created by user', {
+        count: scheduledEquipment.length,
+        userId: session.user.id,
+        filter: 'assigned_by = current_user'
       });
+    }
+
+    // ✅ assignment_info 추가 (scheduled 탭에서 사용)
+    if (scheduledAssignmentMap && scheduledAssignmentMap.size > 0) {
+      maskedData = maskedData.map(device => ({
+        ...device,
+        assignment_info: scheduledAssignmentMap.get(device.equipment_serial || '')
+      }));
     }
 
     // 접근 로깅 (민감 정보 제외)

@@ -4,6 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { resolveAccessScope } from '@/lib/auth/access-control';
 import { canAccessEquipment, buildEquipmentFilter } from '@/lib/auth/equipment-access';
+import {
+  canAssignToUser,
+  validateAssignmentScope,
+  shouldPreventDuplicateAssignment,
+} from '@/lib/utils/team-authorization';
 
 import { prisma } from '@/lib/prisma';
 // 대량 일정추가 핸들러
@@ -94,13 +99,15 @@ async function handleBulkAssignment(
     }
 
     // Prisma를 사용한 대량 삽입 (RPC 대체)
+    // 중복 체크: pending, in_progress, completed 상태 모두 제외
+    // (completed는 이미 점검 완료되었으므로 재할당 불가)
     const existingAssignments = await prisma.inspection_assignments.findMany({
       where: {
         equipment_serial: { in: equipmentSerials },
         assigned_to: finalAssignedTo,
-        status: { in: ['pending', 'in_progress'] }
+        status: { in: ['pending', 'in_progress', 'completed'] }
       },
-      select: { equipment_serial: true }
+      select: { equipment_serial: true, status: true }
     });
 
     const existingSerials = new Set(existingAssignments.map(a => a.equipment_serial));
@@ -290,11 +297,12 @@ export async function POST(request: NextRequest) {
     // 병렬 쿼리로 성능 개선 (순차 → 병렬)
     const [existing, aedDevice] = await Promise.all([
       // 1. 중복 방지: 동일 장비 + 동일 점검원 + active 상태 확인
+      // completed 상태도 제외 (이미 점검 완료)
       prisma.inspection_assignments.findFirst({
         where: {
           equipment_serial: equipmentSerial,
           assigned_to: finalAssignedTo,
-          status: { in: ['pending', 'in_progress'] }
+          status: { in: ['pending', 'in_progress', 'completed'] }
         },
         select: {
           id: true,
@@ -817,10 +825,10 @@ export async function PATCH(request: NextRequest) {
     // === Step 6: 상태 변경 규칙 검증 ===
     const currentStatus = assignment.status;
 
-    // 완료된 일정은 변경 불가
-    if (currentStatus === 'completed') {
+    // 완료된 일정은 재완료 유지 편집만 허용 (상태 변경 금지)
+    if (currentStatus === 'completed' && newStatus !== 'completed') {
       return NextResponse.json(
-        { error: '완료된 일정은 변경할 수 없습니다.' },
+        { error: '완료된 일정의 상태를 변경할 수 없습니다.' },
         { status: 400 }
       );
     }
@@ -871,13 +879,17 @@ export async function PATCH(request: NextRequest) {
       updateData.notes = notes;
     }
 
+    const isStatusChange = newStatus !== currentStatus;
+
     // 타임스탬프 수동 설정 (Prisma에는 DB 트리거가 없으므로)
-    if (newStatus === 'in_progress' && currentStatus === 'pending') {
-      updateData.started_at = new Date();
-    } else if (newStatus === 'completed') {
-      updateData.completed_at = new Date();
-    } else if (newStatus === 'cancelled') {
-      updateData.cancelled_at = new Date();
+    if (isStatusChange) {
+      if (newStatus === 'in_progress' && currentStatus === 'pending') {
+        updateData.started_at = new Date();
+      } else if (newStatus === 'completed') {
+        updateData.completed_at = new Date();
+      } else if (newStatus === 'cancelled') {
+        updateData.cancelled_at = new Date();
+      }
     }
 
     const updatedAssignment = await prisma.inspection_assignments.update({
@@ -999,6 +1011,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    const isMaster = userProfile.role === 'master';
+
     // === Step 5: Equipment 접근 권한 검증 (v5.2: equipment-centric pattern) ===
     // Fetch aed_data separately using equipment_serial FK
     const aedData = await prisma.aed_data.findUnique({
@@ -1041,7 +1055,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // === Step 6: 본인이 생성한 할당만 삭제 가능 ===
-    if (assignment.assigned_by !== session.user.id) {
+    if (!isMaster && assignment.assigned_by !== session.user.id) {
       logger.warn('InspectionAssignments:DELETE', 'Deletion permission denied (not creator)', {
         userId: session.user.id,
         assignmentId,
@@ -1057,16 +1071,16 @@ export async function DELETE(request: NextRequest) {
     // === Step 7: 상태 검증 ===
     const currentStatus = assignment.status;
 
-    // 완료된 할당은 삭제 불가
-    if (currentStatus === 'completed') {
+    // 완료된 할당 삭제는 마스터만 가능
+    if (!isMaster && currentStatus === 'completed') {
       return NextResponse.json(
         { error: '완료된 할당은 삭제할 수 없습니다.' },
         { status: 400 }
       );
     }
 
-    // pending 상태만 취소 가능
-    if (currentStatus !== 'pending') {
+    // 마스터가 아닌 경우 pending 상태만 취소 가능
+    if (!isMaster && currentStatus !== 'pending') {
       return NextResponse.json(
         { error: 'pending 상태의 일정만 취소할 수 있습니다.' },
         { status: 400 }

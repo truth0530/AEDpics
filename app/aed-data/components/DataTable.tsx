@@ -38,12 +38,16 @@ function getDeviceId(device: AEDDevice): string {
 // 터치 타겟 최소 크기 보장 (접근성)
 const TOUCH_TARGET_BUTTON = 'min-h-[40px] px-3 sm:min-h-[36px] touch-manipulation';
 
-const getColumnTemplate = (enableSelection: boolean, showInspectionStatus: boolean = false) => {
+const getColumnTemplate = (enableSelection: boolean, showInspectionStatus: boolean = false, showAssignmentInfo: boolean = false) => {
   // 태블릿에서도 작업 버튼이 보이도록 컬럼 크기 최적화
   // 세부위치와 거리는 xl 해상도에서만 표시됨
   const baseColumns = showInspectionStatus
-    ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px"
-    : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px";
+    ? showAssignmentInfo
+      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
+      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px"
+    : showAssignmentInfo
+      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
+      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px";
 
   return enableSelection ? `35px ${baseColumns}` : baseColumns;
 };
@@ -71,6 +75,7 @@ const DesktopTableRow = memo(({
   onInspectionInProgress,
   onViewInspectionHistory,
   rowIndex,
+  showAssignmentInfo,
 }: {
   device: AEDDevice;
   accessScope: UserAccessScope | undefined;
@@ -93,6 +98,7 @@ const DesktopTableRow = memo(({
   onInspectionInProgress?: (equipmentSerial: string) => void;
   onViewInspectionHistory?: (equipmentSerial: string) => void;
   rowIndex?: number;
+  showAssignmentInfo?: boolean;
 }) => {
   const deviceId = getDeviceId(device);
   const statusKey = device.operation_status || 'unknown';
@@ -127,7 +133,7 @@ const DesktopTableRow = memo(({
       className={`hidden lg:grid items-center py-1.5 px-2 hover:bg-gray-800/50 border-b border-gray-800 min-h-[30px] gap-2 ${
         isScheduled ? 'bg-gray-800/30' : ''
       }`}
-      style={{ gridTemplateColumns: getColumnTemplate(enableSelection, showInspectionStatus) }}
+      style={{ gridTemplateColumns: getColumnTemplate(enableSelection, showInspectionStatus, showAssignmentInfo) }}
     >
     {/* 데스크톱 테이블 행 */}
       {enableSelection && (
@@ -276,7 +282,42 @@ const DesktopTableRow = memo(({
         </div>
       </div>
 
-      {/* 11. 작업 - 우측 여백 추가 */}
+      {/* 10.5. 추가일시 (scheduled 탭에서만) */}
+      {showAssignmentInfo && (
+        <div className="min-w-0 pl-2">
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-400 truncate" title={device.assignment_info?.created_at || '-'}>
+            {device.assignment_info?.created_at
+              ? new Date(device.assignment_info.created_at).toLocaleDateString('ko-KR', {
+                  year: '2-digit',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+              : '-'}
+          </div>
+        </div>
+      )}
+
+      {/* 10.7. 추가자이름 (scheduled 탭에서만) */}
+      {showAssignmentInfo && (
+        <div className="min-w-0 pl-2">
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-400 truncate" title={device.assignment_info?.assigned_by_name || '-'}>
+            {device.assignment_info?.assigned_by_name || '-'}
+          </div>
+        </div>
+      )}
+
+      {/* 10.9. 담당 (scheduled 탭에서만) */}
+      {showAssignmentInfo && (
+        <div className="min-w-0 pl-2">
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-400 truncate" title={device.assignment_info?.assigned_to_name || '-'}>
+            {device.assignment_info?.assigned_to_name || '-'}
+          </div>
+        </div>
+      )}
+
+      {/* 12. 작업 - 우측 여백 추가 */}
       <div className="flex items-center justify-center gap-1 pr-3">
         {device.assignment_status === 'unavailable' ? (
           <button
@@ -694,6 +735,7 @@ interface DataTableProps {
   totalDataCount?: number; // 전체 데이터 개수
   currentViewMode?: 'list' | 'completed' | 'map'; // 현재 탭 모드
   pageType?: 'inspection' | 'schedule'; // 페이지 타입 (현장점검 vs 일정관리)
+  showAssignmentInfo?: boolean; // scheduled 탭에서 추가일시, 추가자 표시 여부
 }
 
 export function DataTable({
@@ -714,7 +756,8 @@ export function DataTable({
   onViewInspectionHistory,
   totalDataCount,
   currentViewMode,
-  pageType = 'schedule'
+  pageType = 'schedule',
+  showAssignmentInfo
 }: DataTableProps = {}) {
   const router = useRouter();
   const {
@@ -734,13 +777,25 @@ export function DataTable({
   } = useAEDData();
 
   // Apply external data filter if provided
-  const data = filterData ? rawData?.filter(filterData) : rawData;
-
-  const isInspectionView = viewMode === 'inspection';
-  const enableSelection = !isInspectionView;
+  let data = filterData ? rawData?.filter(filterData) : rawData;
 
   // 서브 필터 상태 (미추가/추가완료) - prop으로 받은 값 우선 사용
   const scheduleFilter = propScheduleFilter || 'unscheduled';
+
+  // ✅ Apply schedule filter (scheduled vs unscheduled)
+  if (data && scheduledEquipment && scheduledEquipment.size > 0) {
+    if (scheduleFilter === 'scheduled') {
+      // Show only equipment that has inspection_assignments
+      data = data.filter(device => scheduledEquipment.has(device.equipment_serial));
+    } else if (scheduleFilter === 'unscheduled') {
+      // Show only equipment that does NOT have inspection_assignments
+      data = data.filter(device => !scheduledEquipment.has(device.equipment_serial));
+    }
+    // If scheduleFilter === 'all', show all equipment (no additional filtering)
+  }
+
+  const isInspectionView = viewMode === 'inspection';
+  const enableSelection = !isInspectionView;
 
   const flagQuickInspect = isFeatureEnabled('quickInspect');
   const flagSchedule = isFeatureEnabled('schedule');
@@ -1232,7 +1287,7 @@ export function DataTable({
         <div className="flex-shrink-0 hidden lg:block bg-gray-800 border-b border-gray-700">
           <div
             className="grid items-center py-1.5 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide gap-2"
-            style={{ gridTemplateColumns: getColumnTemplate(enableSelection, showInspectionStatus) }}
+            style={{ gridTemplateColumns: getColumnTemplate(enableSelection, showInspectionStatus, showAssignmentInfo) }}
           >
             {enableSelection && (
               <div className="flex items-center pl-2">
@@ -1253,6 +1308,9 @@ export function DataTable({
             <div className="text-center text-xs lg:text-sm xl:text-base">주소</div>
             <div className="text-center text-xs lg:text-sm xl:text-base">세부위치</div>
             <div className="text-center text-xs lg:text-sm xl:text-base">거리</div>
+            {showAssignmentInfo && <div className="text-center text-xs lg:text-sm xl:text-base whitespace-nowrap">추가일시</div>}
+            {showAssignmentInfo && <div className="text-center text-xs lg:text-sm xl:text-base">추가자</div>}
+            {showAssignmentInfo && <div className="text-center text-xs lg:text-sm xl:text-base">담당</div>}
             <div className="flex justify-center pr-3 text-xs lg:text-sm xl:text-base">작업</div>
           </div>
         </div>
@@ -1320,6 +1378,7 @@ export function DataTable({
                 onInspectionInProgress={onInspectionInProgress}
                 onViewInspectionHistory={onViewInspectionHistory}
                 rowIndex={index}
+                showAssignmentInfo={showAssignmentInfo}
               />
             );
           })}

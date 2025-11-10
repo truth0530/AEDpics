@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/prisma';
+import {
+  getTeamMemberFilter,
+  buildTeamMemberSearchQuery,
+  getOrganizationType,
+} from '@/lib/utils/team-authorization';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,60 +15,74 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 현재 사용자의 조직 ID 조회
-    const userProfile = await prisma.user_profiles.findUnique({
+    // 1. 현재 사용자 정보 조회
+    const currentUser = await prisma.user_profiles.findUnique({
       where: { id: session.user.id },
       select: {
-        organization_id: true,
+        id: true,
+        full_name: true,
+        email: true,
         role: true,
-        full_name: true
-      }
+        region_code: true,
+        district: true,
+        organization_id: true,
+      },
     });
 
-    if (!userProfile?.organization_id) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    if (!currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // 팀원 목록 조회
-    const members = await prisma.team_members.findMany({
-      where: {
-        organization_id: userProfile.organization_id,
-        is_active: true
-      },
+    // 2. 권한 기반 팀원 필터 생성
+    let memberFilter = getTeamMemberFilter(currentUser);
+
+    // 3. 검색 쿼리 지원 (query 파라미터)
+    const searchUrl = new URL(request.url);
+    const searchTerm = searchUrl.searchParams.get('search');
+
+    if (searchTerm && searchTerm.trim().length > 0) {
+      memberFilter = buildTeamMemberSearchQuery(searchTerm, memberFilter);
+    }
+
+    // 4. 팀원 목록 조회 (user_profiles 기반)
+    // N+1 방지: COUNT aggregation으로 통계 함께 조회
+    const members = await prisma.user_profiles.findMany({
+      where: memberFilter,
       select: {
         id: true,
-        name: true,
+        full_name: true,
         email: true,
         phone: true,
         position: true,
-        member_type: true,
-        user_profile_id: true
+        role: true,
+        region_code: true,
+        district: true,
       },
       orderBy: [
         { position: 'asc' },
-        { name: 'asc' }
-      ]
+        { full_name: 'asc' },
+      ],
     });
 
-    // 팀원별 할당 통계 (할당된 일정 수)
-    const memberIds = members.map(m => m.user_profile_id).filter(Boolean) as string[];
+    const memberIds = members.map((m) => m.id);
 
+    // 5. 할당 통계 조회 (활성 과제: pending/in_progress)
     const assignmentCounts = await prisma.inspection_assignments.groupBy({
       by: ['assigned_to'],
       where: {
         assigned_to: { in: memberIds },
-        status: { in: ['pending', 'in_progress'] }
+        status: { in: ['pending', 'in_progress'] },
       },
       _count: {
-        id: true
-      }
+        id: true,
+      },
     });
 
     const assignmentMap = new Map(
-      assignmentCounts.map(a => [a.assigned_to, a._count.id])
+      assignmentCounts.map((a) => [a.assigned_to, a._count.id])
     );
 
-    // 완료 통계 (이번 달)
+    // 6. 완료 통계 (이번 달)
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -75,38 +94,53 @@ export async function GET(request: NextRequest) {
         status: 'completed',
         completed_at: {
           gte: startOfMonth,
-          lte: endOfMonth
-        }
+          lte: endOfMonth,
+        },
       },
       _count: {
-        id: true
-      }
+        id: true,
+      },
     });
 
     const completedMap = new Map(
-      completedCounts.map(a => [a.assigned_to, a._count.id])
+      completedCounts.map((a) => [a.assigned_to, a._count.id])
     );
 
-    // 응답 데이터 구성
-    const membersWithStats = members.map(member => ({
-      ...member,
-      current_assigned: member.user_profile_id
-        ? assignmentMap.get(member.user_profile_id) || 0
-        : 0,
-      completed_this_month: member.user_profile_id
-        ? completedMap.get(member.user_profile_id) || 0
-        : 0
+    // 7. 응답 데이터 구성
+    const membersWithStats = members.map((member) => ({
+      id: member.id,
+      name: member.full_name,
+      email: member.email,
+      phone: member.phone,
+      position: member.position,
+      role: member.role,
+      region_code: member.region_code,
+      district: member.district,
+      current_assigned: assignmentMap.get(member.id) || 0,
+      completed_this_month: completedMap.get(member.id) || 0,
     }));
 
-    // 부서별 그룹핑
-    const groupedByDept = membersWithStats.reduce((acc, member) => {
-      const dept = member.position || '미지정';
-      if (!acc[dept]) {
-        acc[dept] = [];
-      }
-      acc[dept].push(member);
-      return acc;
-    }, {} as Record<string, typeof membersWithStats>);
+    // 8. 부서(position) 기반 그룹핑
+    const groupedByDept = membersWithStats.reduce(
+      (acc, member) => {
+        const dept = member.position || '미지정';
+        if (!acc[dept]) {
+          acc[dept] = [];
+        }
+        acc[dept].push(member);
+        return acc;
+      },
+      {} as Record<string, typeof membersWithStats>
+    );
+
+    // 로깅 (성능 모니터링)
+    console.log('[Team Members API]', {
+      userId: session.user.id,
+      orgType: getOrganizationType(currentUser.role),
+      searchTerm: searchTerm || null,
+      memberCount: members.length,
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({
       success: true,
@@ -114,13 +148,13 @@ export async function GET(request: NextRequest) {
         members: membersWithStats,
         groupedByDept,
         currentUser: {
-          id: session.user.id,
-          name: userProfile.full_name,
-          role: userProfile.role
-        }
-      }
+          id: currentUser.id,
+          name: currentUser.full_name,
+          role: currentUser.role,
+          orgType: getOrganizationType(currentUser.role),
+        },
+      },
     });
-
   } catch (error) {
     console.error('[Team Members API Error]', error);
     return NextResponse.json(
