@@ -875,7 +875,8 @@ export async function PATCH(request: NextRequest) {
       status: newStatus as any
     };
 
-    if (notes) {
+    // notes가 명시적으로 제공된 경우 업데이트 (빈 문자열, null 포함)
+    if (notes !== undefined) {
       updateData.notes = notes;
     }
 
