@@ -305,12 +305,14 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
               <div className="flex flex-col gap-3">
                 <Button
                   onClick={handleContinueAdding}
+                  disabled={isSubmitting}
                   className="w-full py-3 bg-green-600 hover:bg-green-700 text-white"
                 >
                   계속 추가
                 </Button>
                 <Button
                   onClick={handleViewScheduled}
+                  disabled={isSubmitting}
                   variant="outline"
                   className="w-full py-3 text-gray-300 border-gray-600 hover:bg-gray-800"
                 >
@@ -318,6 +320,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
                 </Button>
                 <Button
                   onClick={handleGoToInspection}
+                  disabled={isSubmitting}
                   variant="outline"
                   className="w-full py-3 text-gray-300 border-gray-600 hover:bg-gray-800"
                 >
