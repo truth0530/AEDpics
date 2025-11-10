@@ -104,6 +104,16 @@ export default function EditUserPage() {
     }
   }, [formData.region]);
 
+  // 역할 변경 시 조직 목록 다시 로드 (현재 선택된 지역이 있는 경우)
+  useEffect(() => {
+    if (formData.region && formData.role) {
+      const regionCode = getRegionCode(formData.region);
+      if (regionCode) {
+        fetchOrganizations(regionCode);
+      }
+    }
+  }, [formData.role]);
+
   const fetchUser = async () => {
     try {
       const response = await fetch(`/api/admin/users/${userId}`);
@@ -134,8 +144,9 @@ export default function EditUserPage() {
   const fetchOrganizations = async (region: string) => {
     setLoadingOrgs(true);
     try {
-      // 편집 페이지에서는 모든 조직을 조회 (includeAll=true)
-      const response = await fetch(`/api/organizations/with-admin?region=${encodeURIComponent(region)}&includeAll=true`);
+      // 역할에 맞는 조직만 조회 (역할 기반 필터링)
+      const roleParam = formData.role ? `&role=${encodeURIComponent(formData.role)}` : '';
+      const response = await fetch(`/api/organizations/with-admin?region=${encodeURIComponent(region)}${roleParam}`);
       if (!response.ok) throw new Error('조직 목록을 불러올 수 없습니다');
 
       const data = await response.json();

@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { UserRole } from '@/packages/types';
 import { isValidRegionForRole } from '@/lib/constants/regions';
+import { isValidRoleOrganizationMatch } from '@/lib/constants/role-organization-mapping';
 import { randomUUID } from 'crypto';
 
 import { prisma } from '@/lib/prisma';
@@ -89,6 +90,35 @@ export async function PATCH(request: NextRequest) {
         { error: '보건소 담당자는 소속기관이 필수입니다.' },
         { status: 400 }
       );
+    }
+
+    // 역할과 조직 타입이 일치하는지 검증 (organizationId가 제공된 경우)
+    if (role && organizationId) {
+      const organization = await prisma.organizations.findUnique({
+        where: { id: organizationId },
+        select: { type: true, name: true }
+      });
+
+      if (!organization) {
+        return NextResponse.json(
+          { error: '조직을 찾을 수 없습니다.' },
+          { status: 404 }
+        );
+      }
+
+      if (!isValidRoleOrganizationMatch(role as UserRole, organization.type as any)) {
+        return NextResponse.json(
+          {
+            error: `역할(${role})과 조직 타입(${organization.type})이 일치하지 않습니다. "${organization.name}"에는 이 역할을 할당할 수 없습니다.`,
+            details: {
+              role,
+              organizationType: organization.type,
+              organizationName: organization.name
+            }
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Master 권한 부여 제한 (통일된 권한 시스템 사용)

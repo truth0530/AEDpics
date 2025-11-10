@@ -1,23 +1,38 @@
 /**
- * 지역별 조직 목록 조회 API
+ * 지역별 조직 목록 조회 API (역할 기반 필터링)
  *
  * 동작:
- * - includeAll=false (기본값): 담당자(local_admin)가 있는 health_center만 반환 (회원가입용)
- * - includeAll=true: 모든 조직 타입(health_center, province, emergency_center) 반환 (편집용)
+ * - region: 조회할 지역 코드 (필수)
+ * - role: 사용자 역할 (선택사항, 제공 시 역할에 맞는 조직만 반환)
+ * - includeAll: true일 때 모든 조직 타입 반환, false일 때 역할별 필터링 적용
  *
- * 목적: 임시점검원 회원가입 시 담당자가 있는 보건소만 선택 가능하도록, 편집 시 모든 조직 선택 가능하도록
+ * 역할별 조직 타입:
+ * - emergency_center_admin, regional_emergency_center_admin: emergency_center만
+ * - ministry_admin, regional_admin: province만
+ * - local_admin, temporary_inspector: health_center만
+ *
+ * 목적: 역할과 조직 타입의 일관성을 보장하여 데이터 무결성 유지
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAllowedOrganizationTypes } from '@/lib/constants/role-organization-mapping';
+import { UserRole } from '@/packages/types';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const region = searchParams.get('region');
-    const includeAll = searchParams.get('includeAll') === 'true'; // 편집 페이지에서 모든 조직 조회할 때 사용
+    const role = searchParams.get('role') as UserRole | null;
+    const includeAll = searchParams.get('includeAll') === 'true';
 
-    // includeAll=true면 모든 조직, false면 local_admin이 있는 조직만 조회
+    // 역할에 따른 선택 가능한 조직 타입 결정
+    let allowedTypes: string[] = [];
+    if (role && !includeAll) {
+      allowedTypes = getAllowedOrganizationTypes(role);
+    }
+
+    // includeAll=true면 모든 조직, false면 역할별 필터링 + local_admin 조건
     const organizationsWithAdmin = await prisma.organizations.findMany({
       where: {
         ...(region && {
@@ -26,12 +41,13 @@ export async function GET(request: NextRequest) {
             { city_code: region }
           ]
         }),
-        // includeAll이 true일 때는 모든 타입, false일 때는 health_center만
-        ...(includeAll === false && {
-          type: 'health_center'
+        // role이 제공되고 includeAll이 false일 때만 역할별 타입 필터링
+        ...(role && !includeAll && allowedTypes.length > 0 && {
+          type: { in: allowedTypes as any }
         }),
-        // includeAll이 false일 때만 local_admin 조건 추가
-        ...(includeAll === false && {
+        // role이 없거나 includeAll이 false인 경우만 local_admin 조건 추가
+        ...(!role && includeAll === false && {
+          type: 'health_center',
           user_profiles: {
             some: {
               role: 'local_admin',
