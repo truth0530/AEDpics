@@ -17,7 +17,7 @@ CREATE UNIQUE INDEX idx_inspection_sessions_active_session_per_equipment
 
 #### 목적
 - 같은 장비(equipment_serial)에서 활성(active) 또는 일시정지(paused) 상태인 세션은 최대 1개만 존재하도록 강제
-- Race condition 완전 방지: Application-level transaction과 DB-level constraint 이중 방어
+- Race condition 방지: 현재 application-level transaction 방어, 마이그레이션 후 DB-level constraint 추가로 이중 방어
 
 #### 비즈니스 로직
 - 점검 세션 생성 API: `POST /api/inspections/sessions`

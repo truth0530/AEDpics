@@ -36,9 +36,9 @@ node scripts/cleanup_duplicate_sessions.mjs
 
 **엔드포인트 1**: `GET /api/monitoring/duplicate-sessions`
 - 중복 점검 세션 실시간 모니터링
-- 마스터 관리자만 접근 가능
+- 마스터 관리자만 접근 가능 (NextAuth 세션 필요)
 - 응답: equipment_serial, session_count, 점검자 정보
-- 감시 주기: 일 1회 (Cron job으로 자동화 가능)
+- Cron job 자동화: Priority 3에서 구현 예정 (인증 메커니즘 필요)
 
 **엔드포인트 2**: `GET /api/monitoring/duplicate-schedules`
 - 중복 점검 일정 실시간 모니터링
@@ -48,8 +48,9 @@ node scripts/cleanup_duplicate_sessions.mjs
 
 **용도**:
 - 운영팀 대시보드 (현황 파악)
-- Cron job 자동 감시 (이상 감지)
-- Slack 알림 연동 (자동 보고)
+- 웹 UI에서 마스터 관리자가 수동으로 모니터링
+- Cron job 자동 감시: Priority 3 (인증 메커니즘 추가 필요)
+- Slack 알림 연동: Priority 3 (인증 메커니즘 추가 필요)
 
 ### 3. 마이그레이션 배포 가이드 ✅
 
@@ -244,11 +245,12 @@ curl -H "Authorization: Bearer $ADMIN_TOKEN" \
 Priority 2 작업이 완료되어 다음이 가능해졌습니다:
 
 1. **기존 중복 정리**: 동적 감지로 모든 중복 발견 가능
-2. **실시간 모니터링**: Monitoring API로 상황 파악
-3. **자동화 준비**: Cron job + Slack 연동 가능
-4. **재발 방지**: DB-level unique index로 영구 방지
+2. **실시간 모니터링**: Monitoring API로 상황 파악 (마스터 관리자 웹 UI)
+3. **자동화 준비**: Priority 3에서 Cron job + Slack 연동 예정 (인증 메커니즘 필요)
+4. **재발 방지 예정**: Cleanup + Migration 완료 후 DB-level unique index로 중복 생성 차단
 
-이제 Priority 3 (자동화)로 진행할 수 있습니다.
+**현재 상태**: Application-level transaction으로 race condition 방지 중
+**배포 후 상태**: Database-level unique index 추가로 완전한 이중 방어 구현
 
 ---
 

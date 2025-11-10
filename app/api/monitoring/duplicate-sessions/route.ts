@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       SELECT
         equipment_serial,
         COUNT(*) as session_count,
-        STRING_AGG(id, ',') as session_ids,
+        STRING_AGG(id::text, ',') as session_ids,
         MIN(started_at) as earliest_start,
         MAX(started_at) as latest_start,
         STRING_AGG(DISTINCT status, ',') as statuses,

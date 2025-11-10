@@ -34,7 +34,7 @@ async function findDuplicateEquipment() {
       SELECT
         equipment_serial,
         COUNT(*) as session_count,
-        STRING_AGG(id, ',') as session_ids
+        STRING_AGG(id::text, ',') as session_ids
       FROM aedpics.inspection_sessions
       WHERE status IN ('active', 'paused')
       GROUP BY equipment_serial
