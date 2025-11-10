@@ -4,6 +4,7 @@ import { UserProfile, UserRole } from '@/packages/types';
 import { AEDDataProvider } from '@/app/aed-data/components/AEDDataProvider';
 import { AEDFilterBar } from '@/app/aed-data/components/AEDFilterBar';
 import { DataTable } from '@/app/aed-data/components/DataTable';
+import { useToast } from '@/components/ui/Toast';
 
 interface ReadOnlyViewProps {
   user: UserProfile;
@@ -13,6 +14,74 @@ interface ReadOnlyViewProps {
 export function ReadOnlyView({ user, role }: ReadOnlyViewProps) {
   const isMinistry = role === 'ministry_admin';
   const isRegional = role === 'regional_admin';
+  const { showSuccess, showError } = useToast();
+
+  // 엑셀 다운로드 (서버 사이드 필터링 적용)
+  const handleExcelDownload = async () => {
+    try {
+      // 필터 파라미터 구성 (user 권한 기반)
+      const filterParams = {
+        regionCodes: user?.organization?.region_code ? [user.organization.region_code] : [],
+        cityCodes: user?.organization?.city_code ? [user.organization.city_code] : [],
+        limit: 10000, // 최대 10,000건
+        mode: 'address' // read-only는 항상 address 모드
+      };
+
+      console.log('[ReadOnlyView][handleExcelDownload] Filter params:', filterParams);
+
+      // POST /api/inspections/export 호출
+      const response = await fetch('/api/inspections/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(filterParams)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        showError(errorData.error || '엑셀 다운로드 실패');
+        console.error('[ReadOnlyView][handleExcelDownload] API error:', errorData);
+        return;
+      }
+
+      // 응답 헤더에서 파일 정보 추출
+      const contentDisposition = response.headers.get('Content-Disposition') || '';
+      let filename = 'AED_점검기록.xlsx';
+
+      // Content-Disposition에서 filename 추출 (있는 경우)
+      const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+      if (filenameMatch) {
+        filename = decodeURIComponent(filenameMatch[1]);
+      }
+
+      // 응답을 Blob으로 변환
+      const blob = await response.blob();
+
+      // 다운로드 링크 생성 및 실행
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      downloadLink.download = filename;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      window.URL.revokeObjectURL(downloadUrl);
+
+      // 감사 로깅
+      const recordCount = response.headers.get('X-Record-Count');
+      console.log('[ReadOnlyView][handleExcelDownload] Success', {
+        filename,
+        recordCount,
+        filters: filterParams
+      });
+
+      showSuccess('엑셀 파일이 다운로드되었습니다');
+    } catch (error) {
+      console.error('[ReadOnlyView][handleExcelDownload] Error:', error);
+      showError('엑셀 다운로드 실패');
+    }
+  };
 
   return (
     <AEDDataProvider viewMode="inspection" initialFilters={{}} userProfile={user}>
@@ -31,8 +100,14 @@ export function ReadOnlyView({ user, role }: ReadOnlyViewProps) {
               <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                 통계 보기
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                보고서 출력
+              <button
+                onClick={handleExcelDownload}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                엑셀다운로드
               </button>
             </div>
           </div>
