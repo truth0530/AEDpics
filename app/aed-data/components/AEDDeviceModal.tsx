@@ -67,6 +67,7 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
   const [assignmentStatus, setAssignmentStatus] = useState<'pending' | 'in_progress' | 'completed' | null>(null);
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showInProgressConfirm, setShowInProgressConfirm] = useState(false);
   const router = useRouter();
   const { showSuccess, showError } = useToast();
 
@@ -276,10 +277,7 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
 
                   {isScheduled && assignmentStatus === 'in_progress' && (
                     <Button
-                      onClick={() => {
-                        onClose();
-                        router.push('/inspection');
-                      }}
+                      onClick={() => setShowInProgressConfirm(true)}
                       disabled={isSubmitting}
                       className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 h-7"
                     >
@@ -420,6 +418,25 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
           '✅ 이전에 완료된 점검 기록은 보존됩니다'
         ]}
         confirmText="예, 취소합니다"
+        cancelText="아니오"
+      />
+
+      {/* 점검 진행 중 안내 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={showInProgressConfirm}
+        onClose={() => setShowInProgressConfirm(false)}
+        onConfirm={() => {
+          setShowInProgressConfirm(false);
+          onClose();
+          router.push('/inspection');
+        }}
+        type="info"
+        title="점검 진행 중"
+        message="이미 점검이 시작되어 일정을 취소할 수 없습니다."
+        details={[
+          '점검 세션으로 이동하여 점검 세션을 관리할 수 있습니다.'
+        ]}
+        confirmText="예, 현장점검으로 이동"
         cancelText="아니오"
       />
     </div>
