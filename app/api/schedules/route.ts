@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
 import { buildScheduledTimestamp, isValidAssigneeIdentifier } from '@/lib/utils/schedule';
+import { buildScheduleWindow } from '@/lib/utils/schedule-window';
 import { prisma } from '@/lib/prisma';
 import { resolveAccessScope } from '@/lib/auth/access-control';
 import { canAccessEquipment } from '@/lib/auth/equipment-access';
@@ -148,10 +149,8 @@ export async function POST(request: NextRequest) {
 
     // === Step 9-10: 트랜잭션 내에서 중복 체크 및 스케줄 생성 (Race Condition 방지) ===
     // 시간 범위 기반 중복 체크와 스케줄 생성을 원자적(atomic)으로 처리
-    const windowStart = new Date(scheduledFor);
-    windowStart.setMinutes(windowStart.getMinutes() - 30);
-    const windowEnd = new Date(scheduledFor);
-    windowEnd.setMinutes(windowEnd.getMinutes() + 30);
+    // ±30분 윈도우로 중복 감지 (점검자 이동 시간 고려)
+    const scheduleWindow = buildScheduleWindow(scheduledFor, 30);
 
     let schedule;
     try {
@@ -161,8 +160,8 @@ export async function POST(request: NextRequest) {
           where: {
             aed_data_id: aedData.id,
             scheduled_for: {
-              gte: windowStart,
-              lt: windowEnd,
+              gte: scheduleWindow.start,
+              lt: scheduleWindow.end,
             },
           },
           select: { id: true },
