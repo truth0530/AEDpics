@@ -40,7 +40,7 @@ CREATE UNIQUE INDEX idx_inspection_sessions_active_session_per_equipment
 DROP INDEX IF EXISTS idx_inspection_schedules_equipment_date;
 
 CREATE INDEX idx_inspection_schedules_equipment_date
-  ON inspection_schedules(aed_data_id, DATE(scheduled_for));
+  ON inspection_schedules(aed_data_id, scheduled_for);
 
 -- ========================================
 -- 3. inspection_schedules: 모니터링 인덱스 2
