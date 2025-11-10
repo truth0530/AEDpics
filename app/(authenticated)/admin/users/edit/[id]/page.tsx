@@ -251,7 +251,7 @@ export default function EditUserPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 지역 | 구/군 | 소속 조직 | 역할 (4열) */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid gap-4" style={{ gridTemplateColumns: '0.4fr 0.6fr 1fr 1fr' }}>
             {/* 지역 선택 */}
             <div>
               <label className="block text-sm font-medium mb-2">
