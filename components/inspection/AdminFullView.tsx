@@ -658,6 +658,20 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               const inspectionStatus = (device as any).inspection_status;
               const hasCompletedStatus = inspectionStatus === 'completed' || inspectionStatus === 'in_progress';
               // 목록 탭: 점검 시작 전인 장비만 (점검불가, 완료, 진행중 제외)
+
+              // 디버그: 29-0001352 (세인트존스베리아카데미) 추적
+              if (equipmentSerial === '29-0001352') {
+                console.log('[AdminFullView DataTable filterData]', {
+                  serial: equipmentSerial,
+                  inspectionStatus,
+                  hasCompletedStatus,
+                  hasActiveSession,
+                  isCompleted,
+                  isUnavailable,
+                  willInclude: !hasActiveSession && !isCompleted && !isUnavailable && !hasCompletedStatus
+                });
+              }
+
               return !hasActiveSession && !isCompleted && !isUnavailable && !hasCompletedStatus;
             }}
             showInspectionStatus={false}
