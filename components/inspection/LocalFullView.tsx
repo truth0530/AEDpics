@@ -55,7 +55,7 @@ function LocalViewContent({ user }: LocalViewContentProps) {
   const { data, isLoading } = useAEDData();
   const { inspectionStarted, inspectionCompleted, handleInspectionStart } = useInspection();
   const router = useRouter();
-  const { showSuccess } = useToast();
+  const { showSuccess, showError } = useToast();
 
   // 임시저장된 세션 목록
   const [draftSessions, setDraftSessions] = useState<any[]>([]);
@@ -144,12 +144,16 @@ function LocalViewContent({ user }: LocalViewContentProps) {
   };
 
   // 삭제 확인 핸들러
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (reason: string) => {
     if (!inspectionToDelete) return;
 
     try {
       const res = await fetch(`/api/inspections/${inspectionToDelete.id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
       });
 
       if (res.ok) {
@@ -164,7 +168,7 @@ function LocalViewContent({ user }: LocalViewContentProps) {
       }
     } catch (error) {
       console.error('[handleConfirmDelete] Error:', error);
-      showSuccess('삭제 중 오류가 발생했습니다');
+      showError('삭제 중 오류가 발생했습니다');
     }
   };
 
@@ -717,7 +721,7 @@ function LocalViewContent({ user }: LocalViewContentProps) {
             setInspectionToDelete(null);
           }}
           onConfirm={handleConfirmDelete}
-          inspectionId={inspectionToDelete.equipment_serial}
+          equipmentSerial={inspectionToDelete.equipment_serial}
         />
       )}
     </div>
