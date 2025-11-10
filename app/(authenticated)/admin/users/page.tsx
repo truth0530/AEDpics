@@ -362,9 +362,9 @@ export default function AdminUsersPage() {
           </Alert>
         )}
 
-        {/* 사용자 목록 테이블 */}
+        {/* 사용자 목록 테이블 - 데스크톱 */}
         {!isLoading && !error && (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-gray-900 border-gray-800 hidden md:block">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -466,6 +466,117 @@ export default function AdminUsersPage() {
               </Table>
             </div>
           </Card>
+        )}
+
+        {/* 사용자 목록 카드 - 모바일 */}
+        {!isLoading && !error && (
+          <div className="md:hidden space-y-3">
+            {data?.users.length === 0 ? (
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="py-12">
+                  <div className="flex flex-col items-center justify-center">
+                    <User className="w-8 h-8 text-gray-600 mb-2" />
+                    <p className="text-gray-400 text-sm">사용자가 없습니다.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              data?.users.map((user) => (
+                <Card key={user.id} className="bg-gray-900 border-gray-800">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      {/* 사용자 기본 정보 */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <User className="w-5 h-5 text-blue-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-white truncate">
+                              {user.full_name || '-'}
+                            </div>
+                            <div className="text-xs text-gray-400 truncate">
+                              {user.email}
+                            </div>
+                            <Badge className={`${getRoleBadgeClass(user.role)} text-xs mt-1`} variant="outline">
+                              {getRoleLabel(user.role)}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 조직 및 지역 정보 */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <div className="text-gray-500">조직</div>
+                          <div className="text-gray-300 truncate">
+                            {user.organizations?.name || '-'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">지역</div>
+                          <div className="text-gray-300">
+                            {user.region_code ? getRegionDisplay(user.region_code) : '-'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 가입 및 로그인 정보 */}
+                      <div className="grid grid-cols-2 gap-2 text-xs border-t border-gray-800 pt-2">
+                        <div>
+                          <div className="text-gray-500">가입일</div>
+                          <div className="text-gray-400">
+                            {new Date(user.created_at).toLocaleDateString('ko-KR')}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500">로그인 횟수</div>
+                          <div className="text-gray-400">
+                            {user.login_count || 0}회
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 액션 버튼 */}
+                      <div className="flex gap-2 pt-2 border-t border-gray-800">
+                        {user.role === 'pending_approval' ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => handleApprove(user)}
+                              className="flex-1 h-9 bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              승인
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReject(user)}
+                              className="flex-1 h-9"
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              거부
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => router.push(`/admin/users/edit/${user.id}`)}
+                            className="flex-1 h-9 border-gray-700 text-gray-300 hover:bg-gray-800"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            수정
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         )}
 
         {/* 페이지네이션 */}
