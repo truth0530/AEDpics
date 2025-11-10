@@ -13,8 +13,6 @@ import {
   getActiveInspectionSessions,
   getCompletedInspections,
   getInspectionHistory,
-  getDraftSessions,
-  deleteDraftSession,
   type InspectionHistory
 } from '@/lib/inspections/session-utils';
 import { Eye, Trash2 } from 'lucide-react';
@@ -27,7 +25,7 @@ interface InspectionContextType {
   inspectionCompleted: Set<string>;
   handleInspectionStart: (serial: string) => void;
   handleInspectionComplete: (serial: string) => void;
-  viewMode: 'list' | 'map' | 'completed' | 'drafts';
+  viewMode: 'list' | 'map' | 'completed';
 }
 
 const InspectionContext = createContext<InspectionContextType | null>(null);
@@ -50,15 +48,12 @@ interface LocalViewContentProps {
 }
 
 function LocalViewContent({ user }: LocalViewContentProps) {
-  const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed' | 'drafts'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
   // ✅ 현장점검에서는 접기/펼치기 불필요 - 항상 필터 표시
   const { data, isLoading } = useAEDData();
   const { inspectionStarted, inspectionCompleted, handleInspectionStart } = useInspection();
   const router = useRouter();
   const { showSuccess, showError } = useToast();
-
-  // 임시저장된 세션 목록
-  const [draftSessions, setDraftSessions] = useState<any[]>([]);
 
   // 점검 이력 관리 상태
   const [selectedInspection, setSelectedInspection] = useState<InspectionHistory | null>(null);
@@ -97,17 +92,6 @@ function LocalViewContent({ user }: LocalViewContentProps) {
     refetchOnMount: 'always', // 마운트될 때마다 항상 refetch
     refetchInterval: 30000, // 30초마다 갱신
   });
-
-  // 임시저장 탭으로 전환 시 임시저장 세션 조회
-  useEffect(() => {
-    async function loadDraftSessions() {
-      if (viewMode === 'drafts') {
-        const drafts = await getDraftSessions();
-        setDraftSessions(drafts);
-      }
-    }
-    loadDraftSessions();
-  }, [viewMode]);
 
   // 점검이력 데이터 동기화
   useEffect(() => {
@@ -341,26 +325,6 @@ function LocalViewContent({ user }: LocalViewContentProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>점검이력</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setViewMode('drafts')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              viewMode === 'drafts'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
-              </svg>
-              <span>임시저장</span>
-              {draftSessions.length > 0 && (
-                <span className="bg-yellow-600 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {draftSessions.length}
-                </span>
-              )}
             </div>
           </button>
         </div>
@@ -624,57 +588,6 @@ function LocalViewContent({ user }: LocalViewContentProps) {
                       </table>
                     </div>
                   </>
-                )}
-              </div>
-            ) : viewMode === 'drafts' ? (
-              <div className="flex-1 overflow-y-auto bg-gray-900 p-4">
-                {draftSessions.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <p className="text-sm">임시저장된 점검이 없습니다.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {draftSessions.map((draft) => (
-                      <div key={draft.id} className="bg-gray-800 rounded-lg p-4 flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-gray-200">
-                              {draft.equipment_serial}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(draft.created_at).toLocaleString('ko-KR')}
-                            </span>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-500">
-                            {draft.current_step}단계 진행중
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              // TODO: 점검 재개 기능 구현
-                              console.log('Resume draft:', draft.id);
-                            }}
-                            className="px-3 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                          >
-                            이어하기
-                          </button>
-                          <button
-                            onClick={async () => {
-                              const result = await deleteDraftSession(draft.id);
-                              if (result.success) {
-                                const drafts = await getDraftSessions();
-                                setDraftSessions(drafts);
-                              }
-                            }}
-                            className="px-3 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 )}
               </div>
             ) : (

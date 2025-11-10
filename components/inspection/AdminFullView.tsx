@@ -17,8 +17,6 @@ import {
   getInspectionHistory,
   updateInspectionRecord,
   deleteInspectionRecord,
-  getDraftSessions,
-  deleteDraftSession,
   type InspectionSession,
   type InspectionHistory
 } from '@/lib/inspections/session-utils';
@@ -36,7 +34,7 @@ interface AdminFullViewProps {
 }
 
 function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfile; pageType?: 'inspection' | 'schedule' }) {
-  const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed' | 'drafts'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
   const [filterCollapsed, setFilterCollapsed] = useState(false);
   const [filterMode, setFilterModeState] = useState<'address' | 'jurisdiction'>('address');
   const { data, isLoading, setFilters, filters } = useAEDData();
@@ -93,9 +91,6 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
   // 점검 이력 목록 (엑셀 다운로드용)
   const [inspectionHistoryList, setInspectionHistoryList] = useState<InspectionHistory[]>([]);
-
-  // 임시저장된 세션 목록
-  const [draftSessions, setDraftSessions] = useState<any[]>([]);
 
   // 점검시작/점검불가 선택 모달
   const [showInspectionChoiceModal, setShowInspectionChoiceModal] = useState(false);
@@ -183,9 +178,6 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         console.log('[AdminFullView Debug] === 점검이력 로드 완료 ===');
 
         setInspectionHistoryList(history);
-      } else if (viewMode === 'drafts') {
-        const drafts = await getDraftSessions();
-        setDraftSessions(drafts);
       }
     }
 
@@ -543,26 +535,6 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               <span>점검이력</span>
             </div>
           </button>
-          <button
-            onClick={() => setViewMode('drafts')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              viewMode === 'drafts'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2" />
-              </svg>
-              <span>임시저장</span>
-              {draftSessions.length > 0 && (
-                <span className="bg-yellow-600 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {draftSessions.length}
-                </span>
-              )}
-            </div>
-          </button>
         </div>
         <div className="flex items-center gap-3 px-4">
           {/* 점검이력 탭일 때 local_admin을 위한 모드 선택 버튼 */}
@@ -608,8 +580,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         </div>
       </div>
 
-      {/* Filter Bar - 목록/점검완료/임시저장 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
-      {(viewMode === 'list' || viewMode === 'completed' || viewMode === 'drafts') && (
+      {/* Filter Bar - 목록/점검완료 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
+      {(viewMode === 'list' || viewMode === 'completed') && (
         <>
           {/* 현장점검 페이지에서는 필터바 항상 표시, 일정관리에서는 토글 가능 */}
           {(pageType === 'inspection' || !filterCollapsed) && <InspectionFilterBar />}
@@ -903,59 +875,6 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                   </table>
                 </div>
               </>
-            )}
-          </div>
-        ) : viewMode === 'drafts' ? (
-          // 임시저장 탭: 임시저장된 점검 세션 표시
-          <div className="p-4">
-            {draftSessions.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <p className="text-sm">임시저장된 점검이 없습니다.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {draftSessions.map((draft) => (
-                  <div key={draft.id} className="bg-gray-800 rounded-lg p-4 flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-gray-200">
-                          {draft.equipment_serial}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(draft.created_at).toLocaleString('ko-KR')}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {draft.current_step}단계 진행중
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          // TODO: 점검 재개 기능 구현
-                          console.log('Resume draft:', draft.id);
-                        }}
-                        className="px-3 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                      >
-                        이어하기
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const result = await deleteDraftSession(draft.id);
-                          if (result.success) {
-                            // 목록 새로고침
-                            const drafts = await getDraftSessions();
-                            setDraftSessions(drafts);
-                          }
-                        }}
-                        className="px-3 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
           </div>
         ) : (
