@@ -276,16 +276,14 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
 
                   {isScheduled && assignmentStatus === 'in_progress' && (
                     <Button
-                      onClick={() => setShowCancelConfirm(true)}
+                      onClick={() => {
+                        onClose();
+                        router.push('/inspection');
+                      }}
                       disabled={isSubmitting}
-                      className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 h-7 flex items-center gap-1"
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 h-7"
                     >
-                      {isSubmitting ? '처리 중...' : (
-                        <>
-                          <span>취소</span>
-                          <span className="text-yellow-300">⚠️</span>
-                        </>
-                      )}
+                      {isSubmitting ? '이동 중...' : '현장점검'}
                     </Button>
                   )}
 
