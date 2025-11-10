@@ -103,11 +103,27 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
     onChange(newSchedule);
   };
 
-  // 토요일, 공휴일 일괄 적용
-  const applyWeekendBatch = () => {
+  // 월~토 일괄 적용
+  const applyWeekdaySaturdayBatch = () => {
+    const newSchedule = { ...value, is24hours: false } as any;
+    const weekdaysAndSaturday = DAYS.filter(d =>
+      (d.group === 'weekday' && d.key !== 'is24hours') || d.key === 'saturday'
+    );
+
+    weekdaysAndSaturday.forEach(({ key }) => {
+      newSchedule[key] = {
+        timeRange: batchTime
+      };
+    });
+
+    onChange(newSchedule);
+  };
+
+  // 일요일, 공휴일 일괄 적용
+  const applySundayHolidayBatch = () => {
     const newSchedule = { ...value, is24hours: false } as any;
 
-    newSchedule.saturday = {
+    newSchedule.sunday = {
       timeRange: batchTime
     };
     newSchedule.holiday = {
@@ -207,10 +223,17 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
             </button>
             <button
               type="button"
-              onClick={applyWeekendBatch}
+              onClick={applyWeekdaySaturdayBatch}
+              className="px-1.5 py-1 text-xs font-medium whitespace-nowrap flex-shrink-0 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            >
+              월~토 일괄
+            </button>
+            <button
+              type="button"
+              onClick={applySundayHolidayBatch}
               className="px-1.5 py-1 text-xs font-medium whitespace-nowrap flex-shrink-0 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
-              토,공 일괄
+              일,공 일괄
             </button>
           </>
         )}
