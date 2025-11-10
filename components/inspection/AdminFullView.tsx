@@ -133,14 +133,28 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   useEffect(() => {
     async function loadInspectionHistory() {
       if (viewMode === 'completed') {
+        console.log('[AdminFullView Debug] === 점검이력 로드 시작 ===');
+        console.log('[AdminFullView Debug] user.role:', user?.role);
+        console.log('[AdminFullView Debug] filterMode:', filterMode);
+        console.log('[AdminFullView Debug] filters.regionCodes:', filters.regionCodes);
+        console.log('[AdminFullView Debug] filters.cityCodes:', filters.cityCodes);
+
         // local_admin이면 filterMode 적용, 아니면 기본값 'address' 사용
         const mode = user?.role === 'local_admin' ? filterMode : 'address';
         let history = await getInspectionHistory(undefined, 720, mode); // 최근 30일
 
+        console.log('[AdminFullView Debug] API 응답 레코드 수:', history.length);
+        console.log('[AdminFullView Debug] 첫 3개 레코드:', history.slice(0, 3).map(h => ({
+          equipment_serial: h.equipment_serial,
+          sido: (h as any).aed_data?.sido,
+          gugun: (h as any).aed_data?.gugun
+        })));
+
         // 필터 상태에 따라 클라이언트 사이드 필터링 적용
-        // ⚠️ CRITICAL: regionCodes를 REGION_CODE_TO_DB_LABELS로 변환 후 매칭
-        // (filters.regionCodes에는 코드가 들어있지만 aed_data.sido에는 한글 라벨이 저장됨)
-        if (filters.regionCodes && filters.regionCodes.length > 0) {
+        // ⚠️ CRITICAL: local_admin은 API가 이미 권한 기반 필터링했으므로 건너뜀
+        // 전국 권한 사용자만 클라이언트 필터링 적용
+        console.log('[AdminFullView Debug] local_admin 체크:', user?.role !== 'local_admin');
+        if (user?.role !== 'local_admin' && filters.regionCodes && filters.regionCodes.length > 0) {
           // 코드를 한글 라벨로 변환 (예: 'SEO' → '서울특별시')
           const regionLabels = filters.regionCodes
             .flatMap(code => REGION_CODE_TO_DB_LABELS[code] || [])
@@ -154,15 +168,19 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           });
         }
 
-        // ⚠️ CRITICAL: cityCodes 필터를 독립적으로 처리
-        // (regionCodes가 없어도 cityCodes 필터가 적용되어야 함)
-        if (filters.cityCodes && filters.cityCodes.length > 0) {
+        // ⚠️ CRITICAL: cityCodes 필터는 API가 이미 권한 기반으로 필터링했으므로
+        // 클라이언트에서 추가 필터링하지 않음 (이중 필터링 방지)
+        // local_admin이 아닌 경우에만 클라이언트 필터링 적용
+        if (user?.role !== 'local_admin' && filters.cityCodes && filters.cityCodes.length > 0) {
           history = history.filter(item => {
             const itemGugun = (item as any).aed_data?.gugun;
             if (!itemGugun) return true;
             return filters.cityCodes!.includes(itemGugun);
           });
         }
+
+        console.log('[AdminFullView Debug] 필터링 후 최종 레코드 수:', history.length);
+        console.log('[AdminFullView Debug] === 점검이력 로드 완료 ===');
 
         setInspectionHistoryList(history);
       } else if (viewMode === 'drafts') {

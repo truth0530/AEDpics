@@ -299,7 +299,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { sessionId, currentStep, stepData, fieldChanges, status, notes } = body;
+    const { sessionId, currentStep, stepData, fieldChanges, status, notes, finalizeData } = body;
 
     if (!sessionId) {
       return NextResponse.json(
@@ -328,7 +328,180 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 세션 업데이트 데이터 준비
+    // 점검 완료 처리 (트랜잭션)
+    if (status === 'completed') {
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          // 1. 세션 업데이트
+          const updatedSession = await tx.inspection_sessions.update({
+            where: { id: sessionId },
+            data: {
+              status: 'completed',
+              completed_at: new Date(),
+              current_step: currentStep !== undefined ? currentStep : existingSession.current_step,
+              step_data: stepData !== undefined ? stepData : existingSession.step_data,
+              field_changes: fieldChanges !== undefined ? fieldChanges : existingSession.field_changes,
+              updated_at: new Date(),
+            },
+            include: {
+              user_profiles: {
+                select: {
+                  id: true,
+                  full_name: true,
+                  email: true,
+                },
+              },
+            },
+          });
+
+          // 2. inspections 테이블에 레코드 생성
+          const mergedStepData = stepData || existingSession.step_data || {};
+          const deviceInfo = (mergedStepData as any).deviceInfo || {};
+          const basicInfo = (mergedStepData as any).basicInfo || {};
+          const storage = (mergedStepData as any).storage || {};
+
+          // aed_data FK 조회
+          let aedDataId: number | null = null;
+          try {
+            const aedData = await tx.aed_data.findUnique({
+              where: { equipment_serial: existingSession.equipment_serial },
+              select: { id: true },
+            });
+            if (aedData) {
+              aedDataId = aedData.id;
+            }
+          } catch (aedLookupError) {
+            logger.warn('InspectionSessions:PATCH', 'Failed to lookup aed_data', {
+              equipment_serial: existingSession.equipment_serial,
+              error: aedLookupError instanceof Error ? aedLookupError.message : 'Unknown error',
+            });
+          }
+
+          // issues_found 배열 생성
+          const issuesFound: string[] = [];
+          if (deviceInfo.battery_expiry_date_matched === false) {
+            issuesFound.push('배터리 유효기간 불일치');
+          }
+          if (deviceInfo.pad_expiry_date_matched === false) {
+            issuesFound.push('패드 유효기간 불일치');
+          }
+          if (storage.checklist_items) {
+            Object.entries(storage.checklist_items).forEach(([key, value]) => {
+              if (value === 'bad' || value === 'needs_improvement') {
+                issuesFound.push(`보관함 ${key} 개선 필요`);
+              }
+            });
+          }
+
+          // photos 배열 생성
+          const photos: string[] = [];
+          if (deviceInfo.serial_number_photo) photos.push(deviceInfo.serial_number_photo);
+          if (deviceInfo.battery_mfg_date_photo) photos.push(deviceInfo.battery_mfg_date_photo);
+          if (storage.storage_box_photo) photos.push(storage.storage_box_photo);
+
+          const createData: any = {
+            equipment_serial: existingSession.equipment_serial,
+            inspection_date: new Date(),
+            inspection_type: 'monthly',
+            battery_status: deviceInfo.battery_expiry_date_matched === true ? 'good' :
+                          deviceInfo.battery_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked',
+            pad_status: deviceInfo.pad_expiry_date_matched === true ? 'good' :
+                       deviceInfo.pad_expiry_date_matched === 'edited' ? 'replaced' : 'not_checked',
+            overall_status: 'pass',
+            notes: notes || null,
+            issues_found: issuesFound,
+            photos: photos,
+            original_data: existingSession.current_snapshot || {},
+            inspected_data: {
+              basicInfo: basicInfo,
+              deviceInfo: deviceInfo,
+              storage: storage,
+              confirmedLocation: basicInfo.address,
+              confirmedManufacturer: deviceInfo.manufacturer,
+              confirmedModelName: deviceInfo.model_name,
+              confirmedSerialNumber: deviceInfo.serial_number,
+              batteryExpiryChecked: deviceInfo.battery_expiry_date,
+              padExpiryChecked: deviceInfo.pad_expiry_date,
+            },
+            // Relations
+            user_profiles: { connect: { id: session.user.id } },
+          };
+
+          // aed_data FK 연결
+          if (aedDataId) {
+            createData.aed_data = { connect: { id: aedDataId } };
+          }
+
+          const createdInspection = await tx.inspections.create({
+            data: createData,
+          });
+
+          logger.info('InspectionSessions:PATCH', 'Inspection record created', {
+            inspectionId: createdInspection.id,
+            equipment_serial: existingSession.equipment_serial,
+            sessionId: sessionId,
+          });
+
+          // 3. aed_data.last_inspection_date 업데이트
+          if (aedDataId) {
+            try {
+              await tx.aed_data.update({
+                where: { equipment_serial: existingSession.equipment_serial },
+                data: { last_inspection_date: new Date() },
+              });
+            } catch (updateError) {
+              logger.warn('InspectionSessions:PATCH', 'Failed to update last_inspection_date', {
+                equipment_serial: existingSession.equipment_serial,
+                error: updateError instanceof Error ? updateError.message : 'Unknown error',
+              });
+            }
+          }
+
+          // 4. inspection_assignments 상태 업데이트 (있다면)
+          // pending 또는 in_progress 상태의 assignment를 모두 completed로 업데이트
+          try {
+            await tx.inspection_assignments.updateMany({
+              where: {
+                equipment_serial: existingSession.equipment_serial,
+                status: { in: ['pending', 'in_progress'] },
+              },
+              data: {
+                status: 'completed',
+                completed_at: new Date(),
+              },
+            });
+          } catch (assignmentError) {
+            logger.warn('InspectionSessions:PATCH', 'Failed to update assignment status', {
+              equipment_serial: existingSession.equipment_serial,
+              error: assignmentError instanceof Error ? assignmentError.message : 'Unknown error',
+            });
+          }
+
+          return updatedSession;
+        });
+
+        logger.info('InspectionSessions:PATCH', 'Session completed successfully', {
+          sessionId: sessionId,
+          userId: session.user.id,
+        });
+
+        return NextResponse.json({
+          success: true,
+          session: result,
+        });
+      } catch (transactionError) {
+        logger.error('InspectionSessions:PATCH', 'Transaction failed during completion', {
+          error: transactionError instanceof Error ? transactionError.message : 'Unknown error',
+          sessionId: sessionId,
+        });
+        return NextResponse.json(
+          { error: '점검 완료 처리 중 오류가 발생했습니다.' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // 일반 업데이트 (완료가 아닌 경우)
     const updateData: any = {
       updated_at: new Date(),
     };
@@ -345,13 +518,8 @@ export async function PATCH(request: NextRequest) {
       updateData.field_changes = fieldChanges;
     }
 
-    if (status !== undefined) {
+    if (status !== undefined && status !== 'completed') {
       updateData.status = status;
-
-      // 완료 상태로 변경 시 completed_at 설정
-      if (status === 'completed') {
-        updateData.completed_at = new Date();
-      }
     }
 
     // notes는 inspection_sessions 테이블에 없을 수 있으므로 로그로만 기록
