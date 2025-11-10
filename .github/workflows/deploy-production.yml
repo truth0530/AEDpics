@@ -103,11 +103,46 @@ jobs:
           echo "   (Will be built on server)"
         fi
 
-  # Phase 3: Database migrations
+  # Phase 3: Cleanup duplicate sessions
+  cleanup-duplicates:
+    name: Cleanup Duplicate Sessions
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run cleanup dry-run
+      run: |
+        echo "=== Cleanup Dry-Run ==="
+        node scripts/cleanup_duplicate_sessions.mjs --dry-run
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      continue-on-error: true
+
+    - name: Run cleanup apply
+      run: |
+        echo "=== Cleanup Apply ==="
+        node scripts/cleanup_duplicate_sessions.mjs --apply
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      continue-on-error: true
+
+  # Phase 4: Database migrations
   migrate:
     name: Database Migrations
     runs-on: ubuntu-latest
-    needs: build
+    needs: [ build, cleanup-duplicates ]
     environment: production
 
     steps:
@@ -143,11 +178,11 @@ jobs:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
       continue-on-error: true
 
-  # Phase 4: Production deployment
+  # Phase 5: Production deployment
   deploy:
     name: Deploy to NCP
     runs-on: ubuntu-latest
-    needs: [ build, migrate ]
+    needs: [ build, cleanup-duplicates, migrate ]
     environment: production
 
     steps:
