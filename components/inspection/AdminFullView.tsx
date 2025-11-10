@@ -206,15 +206,27 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     if (viewMode === 'list') {
       // 목록 탭: 점검을 시작하기 전의 장비만 (예정중인 것만)
       // 점검중 및 점검완료된 것 제외
-      // 우선순위: inspection_status 확인 → 액티브 세션 확인
+      // 우선순위:
+      // 1. inspection_sessions 상태 (가장 신뢰성 높음)
+      // 2. inspection_assignments 상태
+      // 3. completedInspections set
 
-      // CRITICAL FIX: inspection_status를 우선적으로 확인
-      // 활성 세션이 없더라도 inspection_status가 'in_progress'면 제외
-      if (inspectionStatus === 'completed' || inspectionStatus === 'in_progress') {
-        return false;
+      // 우선순위 1: inspection_sessions에서 활성 세션 확인
+      if (hasActiveSession) {
+        return false; // active/paused 세션 있음 → 제외
       }
 
-      return !hasActiveSession && !isCompleted;
+      // 우선순위 2: inspection_assignments 상태 확인
+      if (inspectionStatus === 'completed' || inspectionStatus === 'in_progress') {
+        return false; // completed/in_progress → 제외
+      }
+
+      // 우선순위 3: completedInspections set 확인
+      if (isCompleted) {
+        return false; // completed inspection → 제외
+      }
+
+      return true; // 모든 조건을 통과 → 점검대상으로 표시
     } else if (viewMode === 'completed') {
       // 점검완료 탭: 점검완료 + 점검중인 장비 모두 표시
       // inspection_status가 completed인 항목 우선 포함
