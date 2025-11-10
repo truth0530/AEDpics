@@ -413,6 +413,38 @@ export function DeviceInfoStep() {
                       )}
                       <span>{formattedOriginalValue || '등록 정보 없음'} {originalIsExpired && '(만료)'}</span>
                     </div>
+                    {/* 초기 상태에서도 만료되면 즉시 조치계획 입력 가능 */}
+                    {originalIsExpired && formattedOriginalValue && (
+                      <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
+                        <div className="text-xs text-red-400 font-medium">유효기간 경과 - 조치계획 입력</div>
+                        <select
+                          value={actionPlan}
+                          onChange={(e) => {
+                            handleChange('battery_action_plan', e.target.value);
+                            if (e.target.value !== '기타') {
+                              handleChange('battery_action_custom_reason', '');
+                            }
+                          }}
+                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        >
+                          <option value="">조치계획 선택</option>
+                          <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
+                          <option value="과태료 부과 예정">과태료 부과 예정</option>
+                          <option value="구매신청서 확인">구매신청서 확인</option>
+                          <option value="기타">기타</option>
+                        </select>
+
+                        {actionPlan === '기타' && (
+                          <input
+                            type="text"
+                            value={actionCustomReason}
+                            onChange={(e) => handleChange('battery_action_custom_reason', e.target.value)}
+                            placeholder="기타 조치계획을 입력하세요"
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                          />
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -847,21 +879,57 @@ export function DeviceInfoStep() {
                 </div>
                 <div className="flex flex-col gap-2">
                   {isUnchecked && (
-                    <div className={`w-full rounded-lg px-3 py-2 border text-sm flex items-center gap-2 ${
-                      originalIsExpired
-                        ? 'bg-red-900/20 border-red-600/50 text-red-300'
-                        : 'bg-gray-800/50 border-gray-700 text-gray-300'
-                    }`}>
-                      {originalIsExpired && (
-                        <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
+                    <>
+                      <div className={`w-full rounded-lg px-3 py-2 border text-sm flex items-center gap-2 ${
+                        originalIsExpired
+                          ? 'bg-red-900/20 border-red-600/50 text-red-300'
+                          : 'bg-gray-800/50 border-gray-700 text-gray-300'
+                      }`}>
+                        {originalIsExpired && (
+                          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        <span>
+                          {formattedOriginalValue || '등록 정보 없음'}
+                          {originalIsExpired && (field.key === 'manufacturing_date' ? ' (10년 경과)' : ' (만료)')}
+                        </span>
+                      </div>
+                      {/* 초기 상태에서도 만료되면 즉시 조치계획 입력 가능 */}
+                      {originalIsExpired && formattedOriginalValue && (
+                        <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
+                          <div className="text-xs text-red-400 font-medium">
+                            {field.key === 'manufacturing_date' ? '제조일 10년 경과 - 조치계획 입력' : '유효기간 경과 - 조치계획 입력'}
+                          </div>
+                          <select
+                            value={actionPlan}
+                            onChange={(e) => {
+                              handleChange(actionPlanKey, e.target.value);
+                              if (e.target.value !== '기타') {
+                                handleChange(actionCustomReasonKey, '');
+                              }
+                            }}
+                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                          >
+                            <option value="">조치계획 선택</option>
+                            <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
+                            <option value="과태료 부과 예정">과태료 부과 예정</option>
+                            <option value="구매신청서 확인">구매신청서 확인</option>
+                            <option value="기타">기타</option>
+                          </select>
+
+                          {actionPlan === '기타' && (
+                            <input
+                              type="text"
+                              value={actionCustomReason}
+                              onChange={(e) => handleChange(actionCustomReasonKey, e.target.value)}
+                              placeholder="기타 조치계획을 입력하세요"
+                              className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                            />
+                          )}
+                        </div>
                       )}
-                      <span>
-                        {formattedOriginalValue || '등록 정보 없음'}
-                        {originalIsExpired && (field.key === 'manufacturing_date' ? ' (10년 경과)' : ' (만료)')}
-                      </span>
-                    </div>
+                    </>
                   )}
 
                   {isMatched && (
