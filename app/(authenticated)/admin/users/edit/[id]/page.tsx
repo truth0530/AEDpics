@@ -184,7 +184,7 @@ export default function EditUserPage() {
           organizationName: selectedOrg?.name || formData.organization_name,
           fullName: user?.full_name,
           email: user?.email,
-          phone: null
+          phone: user?.phone
         })
       });
 
