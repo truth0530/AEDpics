@@ -207,9 +207,13 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
       // 목록 탭: 점검을 시작하기 전의 장비만 (예정중인 것만)
       // 점검중 및 점검완료된 것 제외
       // 우선순위: inspection_status 확인 → 액티브 세션 확인
-      if (inspectionStatus === 'completed') {
-        return false; // inspection_status가 completed면 절대 목록에 표시 금지
+
+      // CRITICAL FIX: inspection_status를 우선적으로 확인
+      // 활성 세션이 없더라도 inspection_status가 'in_progress'면 제외
+      if (inspectionStatus === 'completed' || inspectionStatus === 'in_progress') {
+        return false;
       }
+
       return !hasActiveSession && !isCompleted;
     } else if (viewMode === 'completed') {
       // 점검완료 탭: 점검완료 + 점검중인 장비 모두 표시
