@@ -387,8 +387,8 @@ export default function EditUserPage() {
             )}
           </div>
 
-          {/* 이름 | 이메일 (2열) */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 이름 | 이메일 | 연락처 (3열) */}
+          <div className="grid grid-cols-3 gap-4">
             {/* 이름 (읽기 전용) */}
             <div>
               <label className="block text-sm font-medium mb-2">이름</label>
@@ -406,6 +406,17 @@ export default function EditUserPage() {
               <input
                 type="email"
                 value={user?.email || ''}
+                disabled
+                className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
+              />
+            </div>
+
+            {/* 연락처 (읽기 전용) */}
+            <div>
+              <label className="block text-sm font-medium mb-2">연락처</label>
+              <input
+                type="tel"
+                value={user?.phone || ''}
                 disabled
                 className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
               />
