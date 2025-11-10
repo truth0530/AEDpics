@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { UserProfile } from '@/packages/types';
 import { AEDDataProvider, useAEDData } from '@/app/aed-data/components/AEDDataProvider';
 import { DataTable } from '@/app/aed-data/components/DataTable';
-import { AEDFilterBar } from '@/app/aed-data/components/AEDFilterBar';
+import { InspectionFilterBar } from './InspectionFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
 import { getActiveInspectionSessions, getCompletedInspections } from '@/lib/inspections/session-utils';
@@ -174,7 +174,7 @@ function LocalViewContent({ user }: LocalViewContentProps) {
 
       {/* Filter Bar - 목록/점검완료 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
       {/* ✅ 현장점검에서는 접기/펼치기 버튼 제거 - 항상 필터 표시 */}
-      {(viewMode === 'list' || viewMode === 'completed') && <AEDFilterBar />}
+      {(viewMode === 'list' || viewMode === 'completed') && <InspectionFilterBar />}
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden relative">
@@ -183,7 +183,7 @@ function LocalViewContent({ user }: LocalViewContentProps) {
         {viewMode === 'map' && (
           <div className="absolute top-0 left-0 right-0 z-10">
             <div className="bg-gray-900/70 backdrop-blur-md shadow-lg border-b border-gray-700/30">
-              <AEDFilterBar />
+              <InspectionFilterBar />
             </div>
           </div>
         )}
