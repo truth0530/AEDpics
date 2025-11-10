@@ -473,6 +473,22 @@ export default function ImprovedSignUpPage() {
 
         // 관리자에게 실시간 알림 및 이메일 발송
         try {
+          const regionCode = getRegionCode(formData.region);
+
+          // regionCode 검증 로깅 (매핑 실패 감지)
+          if (!regionCode || regionCode === formData.region) {
+            console.warn(
+              '[SIGNUP] Region code mapping issue',
+              {
+                region: formData.region,
+                regionCode: regionCode,
+                status: regionCode === formData.region ? 'UNMAPPED' : 'INVALID',
+                userEmail: verifiedEmail,
+                message: 'Region label might not be properly mapped. This will cause admin notifications to only go to master/central admins'
+              }
+            );
+          }
+
           // 실시간 알림 발송
           await fetch('/api/notifications/new-signup', {
             method: 'POST',
@@ -482,6 +498,7 @@ export default function ImprovedSignUpPage() {
               userName: formData.fullName,
               organizationName: finalOrgName,
               region: formData.region,
+              regionCode: regionCode,
               accountType: accountType
             })
           });
@@ -495,6 +512,7 @@ export default function ImprovedSignUpPage() {
               fullName: formData.fullName,
               organizationName: finalOrgName,
               region: formData.region,
+              regionCode: regionCode,
               accountType: accountType
             })
           });

@@ -25,7 +25,7 @@ export async function GET(
       where: { email: session.user.email }
     });
 
-    if (!currentUser || !['master', 'regional_admin', 'local_admin'].includes(currentUser.role)) {
+    if (!currentUser || !['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'local_admin'].includes(currentUser.role)) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -85,7 +85,7 @@ export async function PATCH(
       where: { email: session.user.email }
     });
 
-    if (!currentUser || !['master', 'regional_admin', 'local_admin'].includes(currentUser.role)) {
+    if (!currentUser || !['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'local_admin'].includes(currentUser.role)) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }

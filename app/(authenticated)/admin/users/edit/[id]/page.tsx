@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { REGIONS, getRegionCode } from '@/lib/constants/regions';
+import { REGIONS, getRegionCode, getRegionLabel } from '@/lib/constants/regions';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 interface UserProfile {
   id: string;
@@ -35,6 +36,7 @@ interface Organization {
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const userId = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,41 @@ export default function EditUserPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
 
+  // 편집 대상 사용자의 이메일 도메인에 따라 역할 선택지 결정
+  const getRoleOptions = () => {
+    const targetEmail = user?.email || '';
+
+    // 역할 선택지 정의
+    const allRoles = [
+      { value: 'emergency_center_admin', label: '중앙응급의료센터' },
+      { value: 'regional_emergency_center_admin', label: '응급의료지원센터' },
+      { value: 'ministry_admin', label: '보건복지부' },
+      { value: 'regional_admin', label: '시도 담당자' },
+      { value: 'local_admin', label: '보건소 담당자' },
+      { value: 'temporary_inspector', label: '임시점검원' }
+    ];
+
+    // @nmc.or.kr 계정: 중앙응급의료센터, 응급의료지원센터만 선택 가능
+    if (targetEmail.endsWith('@nmc.or.kr')) {
+      return allRoles.filter(r =>
+        r.value === 'emergency_center_admin' ||
+        r.value === 'regional_emergency_center_admin'
+      );
+    }
+
+    // @korea.kr 계정: 보건복지부, 시도 담당자, 보건소 담당자만 선택 가능
+    if (targetEmail.endsWith('@korea.kr')) {
+      return allRoles.filter(r =>
+        r.value === 'ministry_admin' ||
+        r.value === 'regional_admin' ||
+        r.value === 'local_admin'
+      );
+    }
+
+    // 기타 이메일: 임시점검원만 선택 가능
+    return allRoles.filter(r => r.value === 'temporary_inspector');
+  };
+
   // 사용자 정보 로드
   useEffect(() => {
     fetchUser();
@@ -59,7 +96,11 @@ export default function EditUserPage() {
   // 지역 변경 시 조직 목록 로드
   useEffect(() => {
     if (formData.region) {
-      fetchOrganizations(formData.region);
+      // 지역 레이블을 코드로 변환하여 API에 전달
+      const regionCode = getRegionCode(formData.region);
+      if (regionCode) {
+        fetchOrganizations(regionCode);
+      }
     }
   }, [formData.region]);
 
@@ -70,9 +111,13 @@ export default function EditUserPage() {
 
       const data = await response.json();
       setUser(data.user);
+
+      // region_code를 label로 변환 (DB에서는 code로 저장되어 있음)
+      const regionLabel = data.user.region_code ? getRegionLabel(data.user.region_code) : (data.user.region || '');
+
       setFormData({
         role: data.user.role,
-        region: data.user.region || '',
+        region: regionLabel,
         district: data.user.district || '',
         organization_id: data.user.organization_id || '',
         organization_name: data.user.organization_name || '',
@@ -89,8 +134,8 @@ export default function EditUserPage() {
   const fetchOrganizations = async (region: string) => {
     setLoadingOrgs(true);
     try {
-      // local_admin이 있는 조직만 조회
-      const response = await fetch(`/api/organizations/with-admin?region=${encodeURIComponent(region)}`);
+      // 편집 페이지에서는 모든 조직을 조회 (includeAll=true)
+      const response = await fetch(`/api/organizations/with-admin?region=${encodeURIComponent(region)}&includeAll=true`);
       if (!response.ok) throw new Error('조직 목록을 불러올 수 없습니다');
 
       const data = await response.json();
@@ -115,19 +160,20 @@ export default function EditUserPage() {
       // region_code 계산
       const regionCode = getRegionCode(formData.region);
 
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/admin/users/update`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          userId: userId,
           role: formData.role,
-          region: formData.region,
-          district: formData.district,
-          region_code: regionCode,
-          organization_id: formData.organization_id,
-          organization_name: selectedOrg?.name || formData.organization_name,
-          is_active: formData.is_active
+          regionCode: regionCode,
+          organizationId: formData.organization_id,
+          organizationName: selectedOrg?.name || formData.organization_name,
+          fullName: user?.full_name,
+          email: user?.email,
+          phone: null
         })
       });
 
@@ -193,24 +239,132 @@ export default function EditUserPage() {
           <CardTitle>사용자 정보 수정</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* 기본 정보 (읽기 전용) */}
+          {/* 지역 | 소속 조직 (2열) */}
           <div className="grid grid-cols-2 gap-4">
+            {/* 지역 선택 */}
             <div>
-              <label className="block text-sm font-medium mb-2">이메일</label>
-              <input
-                type="text"
-                value={user.email}
-                disabled
-                className="w-full px-3 py-2 border rounded-md bg-gray-50 text-gray-500"
-              />
+              <label className="block text-sm font-medium mb-2">
+                지역 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.region}
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    region: e.target.value,
+                    organization_id: '', // 지역 변경 시 조직 초기화
+                    organization_name: ''
+                  });
+                }}
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+              >
+                <option value="">지역을 선택하세요</option>
+                {REGIONS.map(region => (
+                  <option key={region.code} value={region.label}>
+                    {region.label}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* 소속 조직 선택 */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                소속 조직 {formData.role === 'temporary_inspector' && <span className="text-red-500">*</span>}
+              </label>
+              {loadingOrgs ? (
+                <div className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800">
+                  조직 목록을 불러오는 중...
+                </div>
+              ) : (
+                <select
+                  value={formData.organization_id}
+                  onChange={(e) => {
+                    const orgId = e.target.value;
+                    const org = organizations.find(o => o.id === orgId);
+                    setFormData({
+                      ...formData,
+                      organization_id: orgId,
+                      organization_name: org?.name || ''
+                    });
+                  }}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+                  disabled={!formData.region}
+                >
+                  <option value="">
+                    {!formData.region
+                      ? '지역을 먼저 선택하세요'
+                      : organizations.length === 0
+                      ? '선택 가능한 조직이 없습니다'
+                      : '조직을 선택하세요'
+                    }
+                  </option>
+                  {organizations.map(org => (
+                    <option key={org.id} value={org.id}>
+                      {org.name}
+                      {org.hasAdmin
+                        ? ` (담당자 ${org.adminCount}명)`
+                        : ' ⚠️ (담당자 없음)'
+                      }
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {formData.role === 'temporary_inspector' && formData.organization_id && (
+                <div className="mt-2">
+                  {organizations.find(o => o.id === formData.organization_id)?.hasAdmin ? (
+                    <Alert className="bg-green-50 border-green-200">
+                      <AlertDescription className="text-green-700">
+                        ✅ 이 보건소에는 담당자가 있어 정상적으로 장비 할당이 가능합니다
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Alert className="bg-yellow-50 border-yellow-200">
+                      <AlertDescription className="text-yellow-700">
+                        ⚠️ 이 보건소에는 담당자가 없습니다. 시스템 관리자가 대리 할당해야 합니다
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+
+              {/* 조직명 직접 입력 (필요시) */}
+              {!formData.organization_id && formData.organization_name && (
+                <div className="mt-2">
+                  <label className="block text-sm font-medium mb-2">조직명 (직접 입력)</label>
+                  <input
+                    type="text"
+                    value={formData.organization_name}
+                    onChange={(e) => setFormData({ ...formData, organization_name: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 이름 | 이메일 (2열) */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* 이름 (읽기 전용) */}
             <div>
               <label className="block text-sm font-medium mb-2">이름</label>
               <input
                 type="text"
-                value={user.full_name}
+                value={user?.full_name || ''}
                 disabled
-                className="w-full px-3 py-2 border rounded-md bg-gray-50 text-gray-500"
+                className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
+              />
+            </div>
+
+            {/* 이메일 (읽기 전용) */}
+            <div>
+              <label className="block text-sm font-medium mb-2">이메일</label>
+              <input
+                type="email"
+                value={user?.email || ''}
+                disabled
+                className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600"
               />
             </div>
           </div>
@@ -225,129 +379,25 @@ export default function EditUserPage() {
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
             >
-              <option value="pending_approval">승인 대기</option>
-              <option value="temporary_inspector">임시 점검원</option>
-              <option value="local_admin">보건소 담당자</option>
-              <option value="regional_admin">시도 관리자</option>
-              <option value="master">중앙 관리자</option>
-            </select>
-            {formData.role === 'temporary_inspector' && (
-              <p className="text-sm text-yellow-600 mt-1">
-                ⚠️ 임시점검원은 local_admin이 있는 보건소에만 소속될 수 있습니다
-              </p>
-            )}
-          </div>
-
-          {/* 지역 선택 */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              지역 <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.region}
-              onChange={(e) => {
-                setFormData({
-                  ...formData,
-                  region: e.target.value,
-                  organization_id: '', // 지역 변경 시 조직 초기화
-                  organization_name: ''
-                });
-              }}
-              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
-            >
-              <option value="">지역을 선택하세요</option>
-              {Object.keys(REGIONS).map(region => (
-                <option key={region} value={region}>
-                  {region}
+              <option value="">역할을 선택하세요</option>
+              {getRoleOptions().map(role => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* 구/군 입력 */}
-          <div>
-            <label className="block text-sm font-medium mb-2">구/군</label>
-            <input
-              type="text"
-              value={formData.district}
-              onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-              placeholder="예: 중구, 충주시"
-              className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          {/* 소속 조직 선택 */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              소속 조직 {formData.role === 'temporary_inspector' && <span className="text-red-500">*</span>}
-            </label>
-            {loadingOrgs ? (
-              <div className="w-full px-3 py-2 border rounded-md bg-gray-50">
-                조직 목록을 불러오는 중...
-              </div>
-            ) : (
-              <select
-                value={formData.organization_id}
-                onChange={(e) => {
-                  const orgId = e.target.value;
-                  const org = organizations.find(o => o.id === orgId);
-                  setFormData({
-                    ...formData,
-                    organization_id: orgId,
-                    organization_name: org?.name || ''
-                  });
-                }}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
-                disabled={!formData.region}
-              >
-                <option value="">
-                  {!formData.region
-                    ? '지역을 먼저 선택하세요'
-                    : organizations.length === 0
-                    ? '선택 가능한 조직이 없습니다'
-                    : '조직을 선택하세요'
-                  }
-                </option>
-                {organizations.map(org => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                    {org.hasAdmin
-                      ? ` (담당자 ${org.adminCount}명)`
-                      : ' ⚠️ (담당자 없음)'
-                    }
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {formData.role === 'temporary_inspector' && formData.organization_id && (
-              <div className="mt-2">
-                {organizations.find(o => o.id === formData.organization_id)?.hasAdmin ? (
-                  <Alert className="bg-green-50 border-green-200">
-                    <AlertDescription className="text-green-700">
-                      ✅ 이 보건소에는 담당자가 있어 정상적으로 장비 할당이 가능합니다
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <Alert className="bg-yellow-50 border-yellow-200">
-                    <AlertDescription className="text-yellow-700">
-                      ⚠️ 이 보건소에는 담당자가 없습니다. 시스템 관리자가 대리 할당해야 합니다
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* 조직명 직접 입력 (필요시) */}
-          {!formData.organization_id && formData.organization_name && (
+          {/* 구/군 선택 (local_admin, regional_admin, temporary_inspector만 표시) */}
+          {(formData.role === 'local_admin' || formData.role === 'regional_admin' || formData.role === 'temporary_inspector') && (
             <div>
-              <label className="block text-sm font-medium mb-2">조직명 (직접 입력)</label>
+              <label className="block text-sm font-medium mb-2">구/군</label>
               <input
                 type="text"
-                value={formData.organization_name}
-                onChange={(e) => setFormData({ ...formData, organization_name: e.target.value })}
+                value={formData.district || ''}
+                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                 className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary"
+                placeholder="구/군을 입력하세요"
               />
             </div>
           )}

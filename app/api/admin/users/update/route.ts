@@ -101,10 +101,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 전화번호 암호화 처리
-    let encryptedPhone = null;
-    if (phone) {
-      const { encryptPhone } = await import('@/lib/utils/encryption');
-      encryptedPhone = encryptPhone(phone);
+    let encryptedPhone: string | null = undefined;
+    if (phone !== undefined) {
+      if (phone && phone.trim()) {
+        // 전화번호가 있으면 암호화
+        const { encryptPhone } = await import('@/lib/utils/encryption');
+        encryptedPhone = encryptPhone(phone);
+      } else {
+        // 전화번호가 null이거나 빈 문자열이면 명시적으로 null로 초기화
+        encryptedPhone = null;
+      }
     }
 
     // 업데이트할 데이터 준비 (제공된 필드만 업데이트)
@@ -117,7 +123,7 @@ export async function PATCH(request: NextRequest) {
     if (organizationName !== undefined) updateData.organization_name = organizationName;
     if (regionCode !== undefined) updateData.region_code = regionCode || null;
     if (fullName !== undefined) updateData.full_name = fullName;
-    if (encryptedPhone) updateData.phone = encryptedPhone;
+    if (encryptedPhone !== undefined) updateData.phone = encryptedPhone;
 
     // 사용자 프로필 업데이트
     try {
@@ -131,7 +137,7 @@ export async function PATCH(request: NextRequest) {
       if (regionCode !== undefined) prismaUpdateData.region_code = regionCode || null;
       if (fullName !== undefined) prismaUpdateData.full_name = fullName;
       if (email !== undefined) prismaUpdateData.email = email;
-      if (encryptedPhone) prismaUpdateData.phone = encryptedPhone;
+      if (encryptedPhone !== undefined) prismaUpdateData.phone = encryptedPhone;
 
       await prisma.user_profiles.update({
         where: { id: userId },

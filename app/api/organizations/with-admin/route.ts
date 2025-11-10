@@ -1,7 +1,11 @@
 /**
- * local_admin이 있는 조직만 조회하는 API
+ * 지역별 조직 목록 조회 API
  *
- * 목적: 임시점검원 회원가입 시 담당자가 있는 보건소만 선택 가능하도록
+ * 동작:
+ * - includeAll=false (기본값): 담당자(local_admin)가 있는 health_center만 반환 (회원가입용)
+ * - includeAll=true: 모든 조직 타입(health_center, province, emergency_center) 반환 (편집용)
+ *
+ * 목적: 임시점검원 회원가입 시 담당자가 있는 보건소만 선택 가능하도록, 편집 시 모든 조직 선택 가능하도록
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,8 +15,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const region = searchParams.get('region');
+    const includeAll = searchParams.get('includeAll') === 'true'; // 편집 페이지에서 모든 조직 조회할 때 사용
 
-    // local_admin이 있는 조직 조회
+    // includeAll=true면 모든 조직, false면 local_admin이 있는 조직만 조회
     const organizationsWithAdmin = await prisma.organizations.findMany({
       where: {
         ...(region && {
@@ -21,14 +26,19 @@ export async function GET(request: NextRequest) {
             { city_code: region }
           ]
         }),
-        type: 'health_center',
-        // local_admin이 있는 조직만
-        user_profiles: {
-          some: {
-            role: 'local_admin',
-            is_active: true
+        // includeAll이 true일 때는 모든 타입, false일 때는 health_center만
+        ...(includeAll === false && {
+          type: 'health_center'
+        }),
+        // includeAll이 false일 때만 local_admin 조건 추가
+        ...(includeAll === false && {
+          user_profiles: {
+            some: {
+              role: 'local_admin',
+              is_active: true
+            }
           }
-        }
+        })
       },
       select: {
         id: true,

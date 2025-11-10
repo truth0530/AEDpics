@@ -33,29 +33,71 @@ function selectNotificationSender(recipientEmail: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, fullName, organizationName, region, accountType } = await request.json();
+    const { email, fullName, organizationName, region, regionCode, accountType } = await request.json();
 
     // Master 관리자 이메일 목록 가져오기
     const masterEmails = new Set(getMasterAdminEmails());
 
     // 실제 승인 권한이 있는 사용자만 조회
-    // - 역할: master / emergency_center_admin / regional_emergency_center_admin
+    // - master / emergency_center_admin: 지역 제약 없음
+    // - regional_emergency_center_admin: regionCode와 일치하는 지역의 관리자만
     // - 상태: is_active = true
     // - 권한: canApproveUsers(role) = true
-    const adminProfiles = await prisma.user_profiles.findMany({
-      where: {
-        role: { in: APPROVER_ROLES },
-        is_active: true,
-      },
-      select: {
-        email: true,
-        full_name: true,
-        role: true
-      },
-    });
+
+    // regional_emergency_center_admin 조회 필터
+    let adminProfiles;
+
+    if (regionCode) {
+      // regionCode가 제공된 경우: master, emergency_center_admin, 해당 지역의 regional_emergency_center_admin
+      adminProfiles = await prisma.user_profiles.findMany({
+        where: {
+          is_active: true,
+          AND: [
+            {
+              OR: [
+                // master와 emergency_center_admin은 지역 제약 없음
+                { role: 'master' },
+                { role: 'emergency_center_admin' },
+                // regional_emergency_center_admin은 해당 지역만
+                {
+                  role: 'regional_emergency_center_admin',
+                  region_code: regionCode
+                }
+              ]
+            }
+          ]
+        },
+        select: {
+          email: true,
+          full_name: true,
+          role: true
+        },
+      });
+    } else {
+      // regionCode 없으면 master와 emergency_center_admin만
+      adminProfiles = await prisma.user_profiles.findMany({
+        where: {
+          is_active: true,
+          role: { in: ['master', 'emergency_center_admin'] }
+        },
+        select: {
+          email: true,
+          full_name: true,
+          role: true
+        },
+      });
+    }
 
     // 승인 권한 보유자만 알림 대상에 포함
     const adminEmailMap = new Map<string, string>();
+
+    logger.info('API:notifyNewSignup', 'Admin profile filtering', {
+      newUser: email,
+      region: region,
+      regionCode: regionCode,
+      totalAdminsFound: adminProfiles?.length || 0,
+      admins: adminProfiles?.map(p => ({ email: p.email, role: p.role })) || []
+    });
 
     for (const profile of adminProfiles || []) {
       // canApproveUsers() 함수로 최종 권한 검증
@@ -69,6 +111,13 @@ export async function POST(request: NextRequest) {
       adminEmailMap.set(profile.email, profile.full_name || '관리자');
       masterEmails.delete(profile.email);
     }
+
+    logger.info('API:notifyNewSignup', 'Filtered admin emails for notification', {
+      newUser: email,
+      region: region,
+      regionCode: regionCode,
+      notificationRecipients: Array.from(adminEmailMap.keys())
+    });
 
     // MASTER_EMAIL 동기화 확인
     // 문제: MASTER_EMAIL이 환경변수에 정의되어 있지만 DB에 프로필이 없으면?
