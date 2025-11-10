@@ -300,21 +300,129 @@ WHERE indexname LIKE '%trigram%';
 
 ---
 
-## 결론
+## 검증 제한사항 및 QA 계획
 
-### ✅ **배포 준비 완료 (READY FOR DEPLOYMENT)**
+### 현재 검증 방법의 제한
 
-모든 5가지 시나리오가 코드 레벨에서 완벽히 검증되었습니다.
+**검증됨**:
+- ✅ 코드 로직 검증 (핸들러 직접 읽기, 조건 분석)
+- ✅ 타입 검증 (TypeScript 컴파일 0 errors)
+- ✅ DB 데이터 상태 확인
+- ✅ 개별 비즈니스 규칙 검증
 
-**배포 다음 단계**:
-1. GitHub 커밋: 변경사항 커밋
-2. 푸시: main 브랜치로 푸시
-3. GitHub Actions: 자동 배포 시작
-4. 모니터링: 24시간 에러율 모니터링 (< 0.1%)
+**미검증** (HTTP 계층):
+- ⚠️ NextAuth 세션 토큰 발급/검증
+- ⚠️ Middleware 통과
+- ⚠️ Zod 스키마 검증
+- ⚠️ NextResponse JSON 직렬화
+- ⚠️ CORS/쿠키 처리
+
+### 세션 인증 문제 및 원인
+
+**현상**: `curl` 및 Node.js HTTP 요청에서 401 Unauthorized
+
+**원인 분석**:
+1. NextAuth 세션 쿠키가 CLI 환경에서 전달 불가
+2. JWT 토큰 추출 방법 부재
+3. CORS/Same-Site 정책으로 비브라우저 요청 차단
+
+**해결 시도**:
+- document.cookie 추출: 값 없음 (서버사이드 세션)
+- Bearer 토큰 사용: NextAuth JWT 포맷 불명확
+- 쿠키 헤더 전달: 세션 매칭 실패
+
+### 권장 QA 절차 (배포 전)
+
+#### 단계 1: 프로덕션 배포 전 로컬 테스트
+```bash
+# 포트 3000에서 dev server 실행 확인
+npm run dev
+
+# 브라우저로 수동 테스트
+# 1. http://localhost:3000/auth/signin로 마스터 로그인
+# 2. DevTools Network 탭에서 API 호출 모니터링
+# 3. 5가지 시나리오 수동 테스트
+```
+
+#### 단계 2: 실제 API 호출 검증 스크립트 (추가 예정)
+```bash
+# test-api-handler-mocking.mjs
+# - NextRequest 모킹 + Prisma 직접 호출
+# - HTTP 계층 제외, 비즈니스 로직만 검증
+```
+
+#### 단계 3: DB 전후 스냅샷 확보
+```sql
+-- 각 시나리오 전후로 실행
+SELECT id, status, completed_at, cancelled_at, updated_at
+FROM inspection_assignments
+WHERE id = '<테스트 ID>';
+```
+
+#### 단계 4: 감사 로그 확인
+```bash
+pm2 logs | grep InspectionAssignments
+# 기대 출력:
+# [InspectionAssignments:PATCH] Assignment status updated successfully
+# [InspectionAssignments:DELETE] Assignment cancelled successfully
+```
+
+### 배포 후 모니터링 (필수)
+
+24시간 내 다음 메트릭 확인:
+
+```bash
+# 1. 에러율 모니터링
+pm2 logs --err | grep -i "unauthorized\|permission\|forbidden"
+
+# 2. 응답 시간
+pm2 logs | grep "InspectionAssignments" | grep -o "[\d]+ms"
+
+# 3. DB 상태 일관성
+PGPASSWORD='...' psql -c "
+SELECT COUNT(*) as total,
+       SUM(CASE WHEN completed_at > updated_at THEN 1 ELSE 0 END) as anomaly
+FROM inspection_assignments
+WHERE status = 'completed'
+  AND updated_at > NOW() - INTERVAL '24 hours';"
+```
 
 ---
 
-**작성**: 2025-11-10 03:30 KST
+## 결론
+
+### 🔄 **조건부 배포 승인 (CONDITIONAL DEPLOYMENT)**
+
+**상태**: ✅ 코드 검증 완료, ⚠️ HTTP 레이어 미검증
+
+**배포 조건**:
+1. [x] 코드 레벨 검증 완료
+2. [x] TypeScript/ESLint 통과
+3. [ ] **프로덕션 배포 전 QA 환경에서 브라우저로 5가지 시나리오 실행** (필수)
+4. [ ] **배포 후 24시간 모니터링 계획** (필수)
+
+**배포 절차**:
+1. GitHub: 커밋 및 푸시 완료 ✅
+2. GitHub Actions: 자동 배포 시작 (승인 대기)
+3. **QA 환경에서 최종 검증**
+4. 모니터링: 24시간 에러율 < 0.1% 확인
+
+**위험 요소**:
+- NextAuth 세션 토큰 검증 실패 → 모든 API 401 에러
+- 권한 체크 미완료 → 비마스터가 권한 없는 작업 수행
+- 타임스탬프 논리 오류 → completed_at 중복 업데이트
+
+**완화 전략**:
+- 배포 직후 logs 모니터링 (401 에러 감지 시 즉시 롤백)
+- 에러 급증 알림 설정 (CloudWatch 또는 PM2 Plus)
+- 데이터 검증 쿼리 자동화 (6시간마다 무결성 확인)
+
+---
+
+**작성**: 2025-11-10 03:40 KST
 **검증자**: Claude Code
-**상태**: FINAL_REVIEW_COMPLETE
-**다음 액션**: GitHub 커밋 및 배포
+**상태**: CODE_REVIEW_COMPLETE_AWAITING_QA
+**다음 액션**:
+1. GitHub Actions에서 자동 배포 시작
+2. QA 환경에서 브라우저 테스트 (필수)
+3. 배포 후 24시간 모니터링
