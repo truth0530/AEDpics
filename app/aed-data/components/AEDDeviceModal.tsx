@@ -277,23 +277,19 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
 
                   {isScheduled && assignmentStatus === 'in_progress' && (
                     <Button
-                      onClick={() => setShowInProgressConfirm(true)}
-                      disabled={isSubmitting}
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 h-7"
+                      disabled
+                      className="bg-blue-600 text-white text-xs px-2 py-1 h-7 cursor-default"
                     >
-                      {isSubmitting ? '이동 중...' : '현장점검'}
+                      점검진행중
                     </Button>
                   )}
 
                   {isScheduled && assignmentStatus === 'completed' && (
                     <Button
-                      onClick={() => {
-                        // TODO: 점검 기록 보기
-                        showSuccess('기록 보기 기능은 곧 추가됩니다.');
-                      }}
-                      className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 h-7"
+                      disabled
+                      className="bg-gray-600 text-white text-xs px-2 py-1 h-7 cursor-default"
                     >
-                      기록 보기
+                      점검완료
                     </Button>
                   )}
                 </>
@@ -398,6 +394,18 @@ export function AEDDeviceModal({ device, accessScope, onClose, viewMode, allowQu
                   담당: {assignmentInfo.user_profiles_inspection_assignments_assigned_toTouser_profiles?.full_name || '-'}
                 </div>
               </div>
+
+              {/* 점검 진행 중일 때 현장점검으로 이동 링크 */}
+              {assignmentStatus === 'in_progress' && (
+                <div className="mt-2 pt-2 border-t border-gray-700 text-right">
+                  <button
+                    onClick={() => setShowInProgressConfirm(true)}
+                    className="text-xs text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                  >
+                    현장점검으로 이동 →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
