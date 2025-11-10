@@ -2,12 +2,14 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { UserProfile } from '@/packages/types';
 import { AEDDataProvider, useAEDData } from '@/app/aed-data/components/AEDDataProvider';
 import { DataTable } from '@/app/aed-data/components/DataTable';
 import { AEDFilterBar } from '@/app/aed-data/components/AEDFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
+import { getActiveInspectionSessions, getCompletedInspections } from '@/lib/inspections/session-utils';
 
 // Inspection context for filtering
 interface InspectionContextType {
@@ -45,15 +47,56 @@ function LocalViewContent({ user }: LocalViewContentProps) {
   const router = useRouter();
   const { showSuccess } = useToast();
 
-  // 목록/지도 탭: 점검 시작 안 된 장비만
-  const pendingData = data?.filter(item =>
-    !inspectionStarted.has(item.equipment_serial)
-  ) || [];
+  // ✅ 실제 DB에서 활성 세션 조회 (30초마다 자동 갱신)
+  const { data: activeInspectionSessions = new Map() } = useQuery({
+    queryKey: ['active-inspection-sessions'],
+    queryFn: getActiveInspectionSessions,
+    refetchInterval: 30000, // 30초마다 갱신
+    staleTime: 25000,
+  });
 
-  // 점검완료 탭: 점검 시작된 장비만
-  const completedData = data?.filter(item =>
-    inspectionStarted.has(item.equipment_serial)
-  ) || [];
+  // ✅ 24시간 이내 완료된 점검 조회 (30초마다 자동 갱신)
+  const { data: dbCompletedInspections = new Set() } = useQuery({
+    queryKey: ['completed-inspections'],
+    queryFn: () => getCompletedInspections(24), // 24시간 이내 완료된 점검
+    refetchInterval: 30000, // 30초마다 갱신
+    staleTime: 25000,
+  });
+
+  // 목록/지도 탭: 점검 대상만 (AdminFullView와 동일한 로직)
+  const pendingData = data?.filter(item => {
+    const equipmentSerial = item.equipment_serial || '';
+    const hasActiveSession = activeInspectionSessions.has(equipmentSerial);
+    const isCompletedInDB = dbCompletedInspections.has(equipmentSerial);
+    const isCompletedLocally = inspectionCompleted.has(equipmentSerial);
+    const inspectionStatus = (item as any).inspection_status;
+
+    // ✅ inspection_status를 정확하게 체크
+    // - pending 또는 NULL: 점검 대상 (표시)
+    // - in_progress, completed, unavailable, cancelled: 제외
+    const shouldExclude = inspectionStatus && inspectionStatus !== 'pending';
+
+    // 디버깅: 29-0001352 추적
+    if (equipmentSerial === '29-0001352') {
+      console.log('[LocalFullView pendingData filter]', {
+        serial: equipmentSerial,
+        inspectionStatus,
+        shouldExclude,
+        hasActiveSession,
+        isCompletedInDB,
+        isCompletedLocally,
+        willInclude: !hasActiveSession && !isCompletedInDB && !isCompletedLocally && !shouldExclude
+      });
+    }
+
+    return !hasActiveSession && !isCompletedInDB && !isCompletedLocally && !shouldExclude;
+  }) || [];
+
+  // 점검완료 탭: localStorage 또는 DB에서 완료된 장비
+  const completedData = data?.filter(item => {
+    const equipmentSerial = item.equipment_serial || '';
+    return inspectionCompleted.has(equipmentSerial) || dbCompletedInspections.has(equipmentSerial);
+  }) || [];
 
   const dataCount = viewMode === 'completed' ? completedData.length : pendingData.length;
 
