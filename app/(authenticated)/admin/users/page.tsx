@@ -121,9 +121,9 @@ export default function AdminUsersPage() {
 
       if (filter === 'pending') {
         params.append('role', 'pending_approval');
-      } else if (filter === 'approved') {
-        params.append('role', 'local_admin');
       }
+      // 'approved' 필터는 특정 role만 필터링하지 않음
+      // 대신 pending_approval이 아닌 모든 사용자를 보여줌
       if (searchQuery) {
         params.append('search', searchQuery);
       }
