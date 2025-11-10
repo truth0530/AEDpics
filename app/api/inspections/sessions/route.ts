@@ -119,79 +119,89 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // 사용자 컨텍스트 기반 세션 검증
-    // 자신의 세션은 재개 가능, 다른 사람의 세션은 차단
-    const validation = await validateSessionWithUserContext(equipment_serial, session.user.id);
-
-    // action에 따른 처리
-    if (validation.action === 'block') {
-      // 다른 사람의 세션이 활성 상태 → 차단
-      logger.warn('InspectionSessions:POST', 'Session creation blocked - other user session active', {
-        equipmentSerial: equipment_serial,
-        userId: session.user.id,
-        existingUserId: validation.existingSession?.inspector_id
+    // 트랜잭션 내에서 세션 생성 또는 재개 (Race Condition 방지)
+    // - 트랜잭션 내에서 원자적으로 검증 및 작업 수행
+    // - 두 개의 동시 요청이 모두 "no active session"을 보고 create할 수 없음
+    // - Database-level Partial Unique Index가 마지막 방어선 역할
+    const result = await prisma.$transaction(async (tx) => {
+      // STEP 1: 트랜잭션 내에서 현재 상태 확인
+      const existingSession = await tx.inspection_sessions.findFirst({
+        where: {
+          equipment_serial,
+          status: { in: ['active', 'paused'] }
+        },
+        include: {
+          user_profiles: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true
+            }
+          }
+        }
       });
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: validation.reason,
-          existingSession: validation.existingSession
-        },
-        { status: 409 } // Conflict: 다른 사용자의 활성 세션 존재
-      );
-    }
+      // STEP 2: 활성 세션 존재 여부에 따른 처리
+      if (existingSession) {
+        // 활성 세션이 존재함
+        const isOwnSession = existingSession.inspector_id === session.user.id;
 
-    // 트랜잭션 내에서 세션 생성 또는 재개
-    const result = await prisma.$transaction(async (tx) => {
-      if (validation.action === 'create') {
-        // 활성 세션 없음 → 새 세션 생성
-        const newSession = await tx.inspection_sessions.create({
-          data: {
-            equipment_serial,
-            inspector_id: session.user.id,
-            status: 'active',
-            current_step: 0,
-            started_at: new Date()
-          },
-          include: {
-            user_profiles: {
-              select: {
-                id: true,
-                full_name: true,
-                email: true
+        if (isOwnSession) {
+          // 자신의 세션 → 재개
+          const resumedSession = await tx.inspection_sessions.update({
+            where: { id: existingSession.id },
+            data: { status: 'active' },
+            include: {
+              user_profiles: {
+                select: {
+                  id: true,
+                  full_name: true,
+                  email: true
+                }
               }
             }
-          }
-        });
+          });
 
-        return {
-          sessionData: newSession,
-          action: 'created',
-          message: '새로운 점검 세션이 생성되었습니다.'
-        };
-      } else if (validation.action === 'resume') {
-        // 자신의 세션 → 재개 (status를 active로 변경)
-        const resumedSession = await tx.inspection_sessions.update({
-          where: { id: validation.existingSession.id },
-          data: { status: 'active' },
-          include: {
-            user_profiles: {
-              select: {
-                id: true,
-                full_name: true,
-                email: true
-              }
-            }
-          }
-        });
-
-        return {
-          sessionData: resumedSession,
-          action: 'resumed',
-          message: '기존 점검 세션을 재개합니다.'
-        };
+          return {
+            sessionData: resumedSession,
+            action: 'resumed',
+            message: '기존 점검 세션을 재개합니다.',
+            shouldContinue: true
+          };
+        } else {
+          // 다른 사람의 세션 → 차단 (에러 발생)
+          throw new Error(
+            `BLOCKED|다른 점검자가 이미 점검 중입니다 (점검자: ${existingSession.user_profiles?.full_name || '알 수 없음'}, 시작: ${existingSession.started_at.toISOString()})|${existingSession.id}`
+          );
+        }
       }
+
+      // STEP 3: 활성 세션 없음 → 새 세션 생성
+      const newSession = await tx.inspection_sessions.create({
+        data: {
+          equipment_serial,
+          inspector_id: session.user.id,
+          status: 'active',
+          current_step: 0,
+          started_at: new Date()
+        },
+        include: {
+          user_profiles: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      return {
+        sessionData: newSession,
+        action: 'created',
+        message: '새로운 점검 세션이 생성되었습니다.',
+        shouldContinue: true
+      };
     });
 
     logger.info('InspectionSessions:POST', `Session ${result.action}`, {
@@ -209,7 +219,29 @@ export async function POST(request: NextRequest) {
       message: result.message
     });
   } catch (error: any) {
-    // 다른 에러 처리
+    // Race Condition 감지: 다른 사용자의 활성 세션 존재
+    if (error instanceof Error && error.message.startsWith('BLOCKED|')) {
+      const parts = error.message.split('|');
+      const reason = parts[1] || '다른 점검자가 이미 점검 중입니다';
+      const sessionId = parts[2];
+
+      logger.warn('InspectionSessions:POST', 'Session creation blocked - other user session active', {
+        equipmentSerial: equipment_serial,
+        userId: session.user.id,
+        reason
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: reason,
+          existingSessionId: sessionId
+        },
+        { status: 409 } // Conflict: 다른 사용자의 활성 세션 존재
+      );
+    }
+
+    // 기타 에러 처리
     logger.error('InspectionSessions:POST', 'Unexpected error', error instanceof Error ? error : { error });
     return NextResponse.json(
       { error: 'Internal server error' },
