@@ -9,7 +9,7 @@ import { DataTable } from '@/app/aed-data/components/DataTable';
 import { InspectionFilterBar } from './InspectionFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
-import { getActiveInspectionSessions, getCompletedInspections } from '@/lib/inspections/session-utils';
+import { getActiveInspectionSessions, getCompletedInspections, getInspectionHistory } from '@/lib/inspections/session-utils';
 
 // Inspection context for filtering
 interface InspectionContextType {
@@ -63,6 +63,26 @@ function LocalViewContent({ user }: LocalViewContentProps) {
     staleTime: 25000,
   });
 
+  // ✅ 점검이력 데이터 조회 (viewMode가 'completed'일 때만 활성화)
+  const { data: inspectionHistoryData = [], isLoading: isLoadingHistory, isFetching, refetch } = useQuery({
+    queryKey: ['inspection-history', viewMode],
+    queryFn: async () => {
+      console.log('[LocalFullView] getInspectionHistory API 호출 시작: jurisdiction 모드, 720시간');
+      const result = await getInspectionHistory(undefined, 720, 'jurisdiction');
+      console.log(`[LocalFullView] 점검이력 조회 완료: ${result.length}개`);
+      return result;
+    },
+    enabled: viewMode === 'completed', // 점검이력 탭일 때만 호출
+    staleTime: 0, // ⚠️ 캐시를 사용하지 않고 항상 새로 fetch
+    refetchOnMount: 'always', // 마운트될 때마다 항상 refetch
+    refetchInterval: 30000, // 30초마다 갱신
+  });
+
+  // 디버깅: viewMode 변경 감지
+  useEffect(() => {
+    console.log(`[LocalFullView] viewMode 변경됨: ${viewMode}, 점검이력 데이터 개수: ${inspectionHistoryData.length}`);
+  }, [viewMode, inspectionHistoryData.length]);
+
   // 목록/지도 탭: 점검 대상만 (AdminFullView와 동일한 로직)
   const pendingData = data?.filter(item => {
     const equipmentSerial = item.equipment_serial || '';
@@ -98,7 +118,8 @@ function LocalViewContent({ user }: LocalViewContentProps) {
     return inspectionCompleted.has(equipmentSerial) || dbCompletedInspections.has(equipmentSerial);
   }) || [];
 
-  const dataCount = viewMode === 'completed' ? completedData.length : pendingData.length;
+  // viewMode에 따라 다른 데이터 카운트 사용
+  const dataCount = viewMode === 'completed' ? inspectionHistoryData.length : pendingData.length;
 
   const locations = (viewMode === 'completed' ? completedData : pendingData).map(item => ({
     equipment_serial: item.equipment_serial || item.device_serial || '',
@@ -228,10 +249,36 @@ function LocalViewContent({ user }: LocalViewContentProps) {
                 }}
               />
             ) : viewMode === 'completed' ? (
-              <DataTable
-                showInspectionStatus={true}
-                inspectionCompleted={inspectionCompleted}
-              />
+              <div className="flex-1 overflow-y-auto bg-gray-900 p-4">
+                <div className="space-y-4">
+                  {inspectionHistoryData.map((inspection: any) => (
+                    <div key={inspection.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-400">장비번호:</span>
+                          <span className="ml-2 text-white">{inspection.equipment_serial}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">점검일시:</span>
+                          <span className="ml-2 text-white">
+                            {new Date(inspection.completed_at || inspection.created_at).toLocaleString('ko-KR')}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">위치:</span>
+                          <span className="ml-2 text-white">
+                            {inspection.aed_data?.sido} {inspection.aed_data?.gugun}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">상태:</span>
+                          <span className="ml-2 text-green-400">{inspection.status === 'completed' ? '완료' : inspection.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <MapView
                 locations={locations}

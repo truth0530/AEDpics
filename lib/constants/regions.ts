@@ -656,7 +656,28 @@ export function normalizeJurisdictionName(name?: string | null): string | null {
   if (!trimmed) {
     return null;
   }
-  return trimmed.replace(/\s+/g, '');
+
+  // 1. 공백 제거
+  let normalized = trimmed.replace(/\s+/g, '');
+
+  console.log('[normalizeJurisdictionName] Input:', name);
+  console.log('[normalizeJurisdictionName] After space removal:', normalized);
+
+  // 2. 구군명 중복 패턴 처리
+  // 예: "서귀포시보건소" → "서귀포시서귀포보건소"
+  // 패턴: "시/군/구 + 시/군/구이름 + 보건소"
+  const districtMatch = normalized.match(/^(.+?)(시|군|구)보건소$/);
+  console.log('[normalizeJurisdictionName] Regex match:', districtMatch);
+
+  if (districtMatch) {
+    const cityName = districtMatch[1];  // "서귀포"
+    const districtType = districtMatch[2];  // "시"
+    const district = cityName + districtType;  // "서귀포시"
+    normalized = district + cityName + '보건소';  // "서귀포시서귀포보건소" (districtType 제외)
+    console.log('[normalizeJurisdictionName] After duplication:', normalized);
+  }
+
+  return normalized;
 }
 
 /**

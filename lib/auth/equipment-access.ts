@@ -7,6 +7,7 @@ import { UserRole } from '@/packages/types';
 import {
   normalizeAedDataRegion,
   getNormalizedRegionLabel,
+  normalizeJurisdictionName,
   REGION_LONG_LABELS,
   REGION_CODE_TO_DB_LABELS
 } from '@/lib/constants/regions';
@@ -139,15 +140,36 @@ function buildAddressBasedFilter(scope: AccessScope): EquipmentFilter {
 /**
  * Build jurisdiction-based equipment filter (jurisdiction_health_center)
  * Used when filtering by managing health center (may be in different region)
+ *
+ * IMPORTANT: Includes both original AND normalized jurisdiction names to handle mismatches
+ * Example: "서귀포시 보건소" (original) + "서귀포시서귀포보건소" (normalized)
  */
 function buildJurisdictionBasedFilter(scope: AccessScope): EquipmentFilter {
   const filter: EquipmentFilter = {};
 
   if (scope.jurisdictionCodes && scope.jurisdictionCodes.length > 0) {
-    if (scope.jurisdictionCodes.length === 1) {
-      filter.jurisdiction_health_center = scope.jurisdictionCodes[0];
-    } else if (scope.jurisdictionCodes.length > 1) {
-      filter.jurisdiction_health_center = { in: scope.jurisdictionCodes };
+    // Normalize each jurisdiction name and include both variants
+    const allJurisdictionVariants: string[] = [];
+
+    for (const originalName of scope.jurisdictionCodes) {
+      // Add original name
+      allJurisdictionVariants.push(originalName);
+
+      // Add normalized name (handles space removal and district name duplication)
+      const normalizedName = normalizeJurisdictionName(originalName);
+      if (normalizedName !== originalName) {
+        allJurisdictionVariants.push(normalizedName);
+      }
+    }
+
+    // Remove duplicates
+    const uniqueJurisdictions = [...new Set(allJurisdictionVariants)];
+
+    // Use IN clause to match any variant (equivalent to OR condition)
+    if (uniqueJurisdictions.length === 1) {
+      filter.jurisdiction_health_center = uniqueJurisdictions[0];
+    } else if (uniqueJurisdictions.length > 1) {
+      filter.jurisdiction_health_center = { in: uniqueJurisdictions };
     }
   }
 
