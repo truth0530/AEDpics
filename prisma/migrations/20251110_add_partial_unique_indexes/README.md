@@ -64,27 +64,77 @@ CREATE INDEX idx_inspection_schedules_active
 
 ## 마이그레이션 적용 전 필수 작업
 
-### 1. 기존 중복 세션 정리
+### 1. 데이터베이스 환경 확인
 
-마이그레이션을 적용하기 전에 52개의 기존 중복 세션을 삭제해야 합니다.
+마이그레이션이 올바른 schema에 적용되는지 확인:
 
 ```bash
-# 중복 세션 확인
-node scripts/find_duplicate_sessions.mjs
+# 환경변수 확인
+echo $DATABASE_URL
 
-# 중복 세션 정리 (dry-run 먼저 확인 권장)
-node scripts/cleanup_duplicate_sessions.mjs --dry-run
-node scripts/cleanup_duplicate_sessions.mjs --apply
+# 예상 형식:
+# postgresql://aedpics_admin:PASSWORD@pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com:5432/aedpics_production?schema=aedpics
+
+# 중요: schema=aedpics 파라미터가 포함되어 있어야 함
 ```
 
-### 2. 마이그레이션 적용
+마이그레이션 SQL의 `SET search_path = aedpics;`가 이 schema와 일치해야 합니다.
+
+### 2. 기존 중복 세션 정리 (필수)
+
+마이그레이션을 적용하기 전에 52개의 기존 중복 세션을 삭제해야 합니다.
+**중복이 존재하면 unique index 생성이 실패합니다.**
+
+```bash
+# Step 1: 중복 세션 현황 확인 (dry-run)
+node scripts/cleanup_duplicate_sessions.mjs --dry-run
+
+# 출력 예시:
+# 찾음: 10개 장비에서 중복 세션 감지
+# 총 10개 장비
+# 총 25개 세션 삭제 예정
+
+# Step 2: 실제 중복 세션 정리 실행
+node scripts/cleanup_duplicate_sessions.mjs --apply
+
+# 출력 예시:
+# ✨ 정리 완료!
+# 총 25개 세션이 삭제되었습니다.
+# ✅ 모든 중복 세션이 정리되었습니다!
+# 이제 마이그레이션을 적용할 준비가 되었습니다.
+```
+
+### 3. 마이그레이션 적용
 
 ```bash
 # 프로덕션 환경에서 마이그레이션 적용
 npx prisma migrate deploy
 
-# 또는 수동으로 SQL 실행
-psql -h <host> -U <user> -d aedpics_production -f migration.sql
+# 성공 메시지:
+# Your database is now in sync with your schema.
+
+# 또는 수동으로 SQL 실행 (Prisma 없이)
+psql -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com -U aedpics_admin -d aedpics_production -f migration.sql
+```
+
+### 4. 마이그레이션 검증
+
+```bash
+# 인덱스 생성 확인
+psql -h pg-3aqmb1.vpc-pub-cdb-kr.ntruss.com -U aedpics_admin -d aedpics_production << 'EOF'
+SET search_path = aedpics;
+
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename IN ('inspection_sessions', 'inspection_schedules')
+  AND (indexname LIKE '%active%' OR indexname LIKE '%equipment%')
+ORDER BY indexname;
+EOF
+
+# 예상 결과: 3개 인덱스
+# - idx_inspection_sessions_active_session_per_equipment
+# - idx_inspection_schedules_equipment_date
+# - idx_inspection_schedules_active
 ```
 
 ## 검증 및 모니터링

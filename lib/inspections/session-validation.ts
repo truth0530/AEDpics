@@ -146,3 +146,53 @@ export async function checkBeforeCreatingSession(
     message: '점검을 시작할 수 있습니다.'
   };
 }
+
+/**
+ * Inspector ID 기반 검증 (개선된 버전)
+ * 자신의 세션은 재개 가능, 다른 사람의 세션은 차단
+ *
+ * @param equipmentSerial - 장비 시리얼
+ * @param currentUserId - 현재 사용자 ID
+ * @returns 검증 결과
+ */
+export async function validateSessionWithUserContext(
+  equipmentSerial: string,
+  currentUserId: string
+): Promise<{
+  allowed: boolean;
+  action: 'create' | 'resume' | 'block'; // create: 새로 생성, resume: 기존 세션 재개, block: 차단
+  existingSession?: any;
+  reason?: string;
+}> {
+  const existingSession = await getActiveInspectionSession(equipmentSerial);
+
+  if (!existingSession) {
+    // 활성 세션이 없으면 새로 생성
+    return {
+      allowed: true,
+      action: 'create',
+      existingSession: null
+    };
+  }
+
+  // 자신의 세션인가?
+  const isOwnSession = existingSession.inspector_id === currentUserId;
+
+  if (isOwnSession) {
+    // 자신의 세션이면 재개 가능
+    return {
+      allowed: true,
+      action: 'resume',
+      existingSession,
+      reason: '기존 점검 세션을 재개합니다.'
+    };
+  }
+
+  // 다른 사람의 세션이면 차단
+  return {
+    allowed: false,
+    action: 'block',
+    existingSession,
+    reason: `다른 점검자(${existingSession.user_profiles?.full_name || '알 수 없음'})가 이미 점검 중입니다. (시작: ${existingSession.started_at})`
+  };
+}
