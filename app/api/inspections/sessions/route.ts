@@ -123,6 +123,15 @@ export async function POST(request: NextRequest) {
     // - 두 개의 동시 요청이 모두 "no active session"을 보고 create할 수 없음
     // - Database-level Partial Unique Index가 마지막 방어선 역할
     const result = await prisma.$transaction(async (tx) => {
+      // STEP 0: 장비 데이터 조회 (세션 생성 전 필요)
+      const deviceData = await tx.aed_data.findUnique({
+        where: { equipment_serial }
+      });
+
+      if (!deviceData) {
+        throw new Error(`NO_DEVICE|장비 정보를 찾을 수 없습니다. (Serial: ${equipment_serial})`);
+      }
+
       // STEP 1: 트랜잭션 내에서 현재 상태 확인
       const existingSession = await tx.inspection_sessions.findFirst({
         where: {
@@ -146,10 +155,13 @@ export async function POST(request: NextRequest) {
         const isOwnSession = existingSession.inspector_id === session.user.id;
 
         if (isOwnSession) {
-          // 자신의 세션 → 재개
+          // 자신의 세션 → 재개 (최신 장비 데이터로 스냅샷 업데이트)
           const resumedSession = await tx.inspection_sessions.update({
             where: { id: existingSession.id },
-            data: { status: 'active' },
+            data: {
+              status: 'active',
+              current_snapshot: deviceData as any // 재개 시에도 최신 장비 데이터 반영
+            },
             include: {
               user_profiles: {
                 select: {
@@ -182,6 +194,7 @@ export async function POST(request: NextRequest) {
           inspector_id: session.user.id,
           status: 'active',
           current_step: 0,
+          current_snapshot: deviceData as any, // 장비 데이터 스냅샷 저장
           started_at: new Date()
         },
         include: {
@@ -218,6 +231,26 @@ export async function POST(request: NextRequest) {
       message: result.message
     });
   } catch (error: any) {
+    // 장비 정보 없음 에러
+    if (error instanceof Error && error.message.startsWith('NO_DEVICE|')) {
+      const parts = error.message.split('|');
+      const reason = parts[1] || '장비 정보를 찾을 수 없습니다';
+
+      logger.error('InspectionSessions:POST', 'Device not found', {
+        equipmentSerial: equipment_serial,
+        userId: session.user.id,
+        reason
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: reason
+        },
+        { status: 404 } // Not Found: 장비 정보 없음
+      );
+    }
+
     // Race Condition 감지: 다른 사용자의 활성 세션 존재
     if (error instanceof Error && error.message.startsWith('BLOCKED|')) {
       const parts = error.message.split('|');
