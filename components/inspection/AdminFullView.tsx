@@ -203,6 +203,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     const isCompleted = completedInspections.has(equipmentSerial);
     const inspectionStatus = item.inspection_status; // 우선순위 1순위
 
+
     if (viewMode === 'list') {
       // 목록 탭: 점검을 시작하기 전의 장비만 (예정중인 것만)
       // 점검중 및 점검완료된 것 제외
@@ -213,19 +214,23 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
       // 우선순위 1: inspection_sessions에서 활성 세션 확인
       if (hasActiveSession) {
+        if (equipmentSerial === '29-0001225') console.log('[AdminFullView] 29-0001225 excluded: hasActiveSession');
         return false; // active/paused 세션 있음 → 제외
       }
 
       // 우선순위 2: inspection_assignments 상태 확인
       if (inspectionStatus === 'completed' || inspectionStatus === 'in_progress') {
+        if (equipmentSerial === '29-0001225') console.log('[AdminFullView] 29-0001225 excluded: inspectionStatus', inspectionStatus);
         return false; // completed/in_progress → 제외
       }
 
       // 우선순위 3: completedInspections set 확인
       if (isCompleted) {
+        if (equipmentSerial === '29-0001225') console.log('[AdminFullView] 29-0001225 excluded: isCompleted');
         return false; // completed inspection → 제외
       }
 
+      if (equipmentSerial === '29-0001225') console.log('[AdminFullView] 29-0001225 INCLUDED in list');
       return true; // 모든 조건을 통과 → 점검대상으로 표시
     } else if (viewMode === 'completed') {
       // 점검완료 탭: 점검완료 + 점검중인 장비 모두 표시
@@ -647,8 +652,13 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               const hasActiveSession = inspectionSessions.has(equipmentSerial);
               const isCompleted = completedInspections.has(equipmentSerial);
               const isUnavailable = unavailableAssignments.has(equipmentSerial);
-              // 목록 탭: 점검 시작 전인 장비만 (점검불가 제외)
-              return !hasActiveSession && !isCompleted && !isUnavailable;
+              // ⚠️ CRITICAL: API에서 반환된 inspection_status도 확인!
+              // completedInspections는 최근 24시간만 포함하므로
+              // 더 오래된 점검 완료 데이터를 놓칠 수 있음
+              const inspectionStatus = (device as any).inspection_status;
+              const hasCompletedStatus = inspectionStatus === 'completed' || inspectionStatus === 'in_progress';
+              // 목록 탭: 점검 시작 전인 장비만 (점검불가, 완료, 진행중 제외)
+              return !hasActiveSession && !isCompleted && !isUnavailable && !hasCompletedStatus;
             }}
             showInspectionStatus={false}
             inspectionSessions={inspectionSessions}

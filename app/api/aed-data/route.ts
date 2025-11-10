@@ -379,7 +379,13 @@ export const GET = async (request: NextRequest) => {
         let paramIndex = 1;
 
         // Assignment status filter (required for inspection mode)
-        sqlConditions.push(`ia.status IN ('pending', 'in_progress', 'completed', 'unavailable')`);
+        // ⚠️ CRITICAL FIX: 모든 assignment 상태를 포함하되, NULL도 포함
+        // AdminFullView에서 클라이언트 사이드 필터링을 통해
+        // 'completed', 'in_progress', 활성 세션이 있는 장비를 제외
+        // NULL (assignment 없음) 또는 모든 할당 상태 포함
+        sqlConditions.push(`(ia.status IS NULL OR ia.status IN ('pending', 'in_progress', 'completed', 'unavailable'))`);
+        // 이렇게 하면 API는 모든 관련 데이터를 반환하고,
+        // AdminFullView의 필터링이 정확하게 작동
 
         // 지역 필터
         if (regionFiltersForQuery && regionFiltersForQuery.length > 0) {
