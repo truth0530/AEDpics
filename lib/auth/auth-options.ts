@@ -9,6 +9,8 @@ import { logger } from '@/lib/logger'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
+  trustHost: true, // Trust the Host header from nginx proxy
+  useSecureCookies: process.env.NODE_ENV === 'production', // Use secure cookies in production
   providers: [
     CredentialsProvider({
       name: "credentials",
