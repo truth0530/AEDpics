@@ -1,0 +1,26 @@
+name: Check .env.production Content
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: View Environment File
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check .env.production on server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          cd /var/www/aedpics
+          echo "=== .env.production Content ==="
+          cat .env.production
+
+          echo ""
+          echo "=== PM2 Status ==="
+          pm2 status aedpics

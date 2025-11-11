@@ -1,0 +1,20 @@
+name: Verify NEXTAUTH_URL Secret
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Verify Secret Value
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check NEXTAUTH_URL length and format
+      run: |
+        echo "NEXTAUTH_URL length: ${#NEXTAUTH_URL}"
+        echo "Starts with https: $(echo "$NEXTAUTH_URL" | grep -q '^https://' && echo 'YES' || echo 'NO')"
+        echo "Contains aed.pics: $(echo "$NEXTAUTH_URL" | grep -q 'aed.pics' && echo 'YES' || echo 'NO')"
+        echo "Contains localhost: $(echo "$NEXTAUTH_URL" | grep -q 'localhost' && echo 'YES' || echo 'NO')"
+        echo "Contains 223.130: $(echo "$NEXTAUTH_URL" | grep -q '223.130' && echo 'YES' || echo 'NO')"
+      env:
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
