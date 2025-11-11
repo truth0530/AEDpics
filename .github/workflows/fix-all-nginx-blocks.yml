@@ -1,0 +1,78 @@
+name: Fix All Nginx Server Blocks
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    name: Fix Both HTTP and HTTPS Blocks
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Comprehensive nginx fix
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== Step 1: Current Configuration ==="
+          echo "Checking all server blocks for aed.pics..."
+          cat /etc/nginx/sites-available/aedpics
+
+          echo ""
+          echo "=== Step 2: Backup Current Config ==="
+          cp /etc/nginx/sites-available/aedpics /etc/nginx/sites-available/aedpics.backup-$(date +%Y%m%d-%H%M%S)
+
+          echo ""
+          echo "=== Step 3: Apply Fix to ALL Server Blocks ==="
+          # Replace ALL instances of proxy_set_header Host $host;
+          sed -i 's/proxy_set_header Host \$host;/proxy_set_header Host "aed.pics";/g' /etc/nginx/sites-available/aedpics
+
+          echo ""
+          echo "=== Step 4: Verify Changes ==="
+          echo "Searching for any remaining \$host references..."
+          grep -n "proxy_set_header Host" /etc/nginx/sites-available/aedpics || echo "No proxy_set_header Host lines found"
+
+          echo ""
+          echo "=== Step 5: Full Updated Config ==="
+          cat /etc/nginx/sites-available/aedpics
+
+          echo ""
+          echo "=== Step 6: Test Nginx Configuration ==="
+          nginx -t
+
+          echo ""
+          echo "=== Step 7: Reload Nginx ==="
+          systemctl reload nginx
+
+          echo ""
+          echo "=== Step 8: Restart PM2 Processes ==="
+          cd /var/www/aedpics
+          pm2 restart ecosystem.config.cjs
+
+          echo ""
+          echo "=== Step 9: Wait for Services ==="
+          sleep 5
+
+          echo ""
+          echo "=== Step 10: Test HTTP Endpoint ==="
+          echo "Testing: http://localhost/api/auth/providers"
+          curl -s -H "Host: aed.pics" http://localhost/api/auth/providers | jq '.'
+
+          echo ""
+          echo "=== Step 11: Test HTTPS Endpoint (from server) ==="
+          echo "Testing: https://aed.pics/api/auth/providers"
+          curl -s https://aed.pics/api/auth/providers | jq '.'
+
+          echo ""
+          echo "=== Step 12: Verify URL Format ==="
+          SIGNIN_URL=$(curl -s https://aed.pics/api/auth/providers | jq -r '.credentials.signinUrl')
+          echo "SignIn URL: $SIGNIN_URL"
+
+          if [[ "$SIGNIN_URL" == *"aed.pics"* ]]; then
+            echo "✅ SUCCESS: URL contains aed.pics domain"
+          else
+            echo "❌ FAILED: URL still contains wrong domain"
+          fi
