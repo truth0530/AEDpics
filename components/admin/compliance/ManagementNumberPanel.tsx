@@ -242,24 +242,6 @@ export default function ManagementNumberPanel({
         </div>
       </div>
 
-      {/* 제목 */}
-      <div className="flex-shrink-0 flex items-center justify-between mb-2">
-        <div className="text-sm font-medium">
-          {selectedInstitution ? (
-            <span className="text-foreground">
-              {selectedInstitution.institution_name}과 매칭할 관리번호를 선택하세요
-            </span>
-          ) : (
-            <span className="text-muted-foreground">관리번호 리스트</span>
-          )}
-        </div>
-        {selectedInstitution && displayCount > 0 && (
-          <Badge variant="secondary" className="text-xs">
-            {displayCount}개
-          </Badge>
-        )}
-      </div>
-
       {/* 관리번호 리스트 */}
       <div className="flex-1 overflow-auto">
         {!selectedInstitution ? (
