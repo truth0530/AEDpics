@@ -983,6 +983,7 @@ export function InspectionSummaryStep() {
         {/* 10. 서명 */}
         <div className="report-section" style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #4b5563', textAlign: 'right' }}>
           <p style={{ margin: 0, marginBottom: '5px', fontSize: '11px', color: '#d1d5db' }}>{formatDate(documentation.completed_time || new Date().toISOString())}</p>
+          <p style={{ margin: 0, marginBottom: '3px', fontSize: '11px', color: '#d1d5db' }}>관리책임자: {stepData.basicInfo?.manager || deviceInfo.manager || '-'}</p>
           <p style={{ margin: 0, fontSize: '11px', color: '#d1d5db' }}>점검자: {user?.user_metadata?.name || user?.email || '-'}</p>
         </div>
 
