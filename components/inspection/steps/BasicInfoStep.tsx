@@ -449,6 +449,37 @@ export function BasicInfoStep() {
         return;
       }
 
+      // ✅ 카테고리 계층 검증 (대분류 변경 시 중분류/소분류 유효성 확인)
+      const cat1 = basicInfo.category_1 || '';
+      const cat2 = basicInfo.category_2 || '';
+      const cat3 = basicInfo.category_3 || '';
+
+      if (cat1 && Object.keys(categoryHierarchy).length > 0) {
+        // 대분류가 존재하고 계층 데이터가 있는 경우 검증
+        const validCat2Options = categoryHierarchy[cat1] ? Object.keys(categoryHierarchy[cat1]) : [];
+
+        // 중분류가 선택되어 있는데 현재 대분류에 속하지 않음
+        if (cat2 && !validCat2Options.includes(cat2)) {
+          alert(`⚠️ 카테고리 불일치\n\n대분류 "${cat1}"에 중분류 "${cat2}"가 존재하지 않습니다.\n\n중분류와 소분류를 다시 선택해주세요.`);
+          return;
+        }
+
+        // 소분류가 선택되어 있는데 현재 대분류/중분류에 속하지 않음
+        if (cat2 && cat3) {
+          const validCat3Options = categoryHierarchy[cat1]?.[cat2] || [];
+          if (!validCat3Options.includes(cat3)) {
+            alert(`⚠️ 카테고리 불일치\n\n중분류 "${cat2}"에 소분류 "${cat3}"가 존재하지 않습니다.\n\n소분류를 다시 선택해주세요.`);
+            return;
+          }
+        }
+
+        // 대분류만 선택하고 중분류/소분류가 비어있으면 경고
+        if (!cat2 || !cat3) {
+          alert(`⚠️ 필수 항목 미입력\n\n대분류를 변경하셨습니다.\n중분류와 소분류를 선택해주세요.`);
+          return;
+        }
+      }
+
       // field_changes 업데이트
       BASIC_INFO_FIELDS.forEach((field) => {
         const originalValue = deviceInfo[field.dbKey] || '';
