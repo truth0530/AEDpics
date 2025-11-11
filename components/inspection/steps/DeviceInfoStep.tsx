@@ -1434,20 +1434,21 @@ export function DeviceInfoStep() {
                         updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: 'edited' });
                       } else if (isEdited && !isActuallyMatching) {
                         updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
+                      } else if (isEdited && isActuallyMatching) {
+                        // isEdited 상태에서 원본과 일치해도 수정 모드로 전환 가능
+                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
                       } else if (isMatched || (!isEdited && !isMatched)) {
                         updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
                       }
                     }}
-                    disabled={(isEditMode && isActuallyMatching) || (isEdited && isActuallyMatching)}
+                    disabled={isEditMode && isActuallyMatching}
                     className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                       isEditMode
                         ? isActuallyMatching
                           ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
                           : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
                         : isEdited
-                        ? isActuallyMatching
-                          ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                          : 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 cursor-default shadow-lg shadow-yellow-500/20'
+                        ? 'bg-yellow-600/30 border-2 border-yellow-500 text-yellow-200 hover:bg-yellow-600/40 cursor-pointer shadow-lg shadow-yellow-500/20'
                         : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
                     }`}
                   >
