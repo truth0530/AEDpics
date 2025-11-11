@@ -24,6 +24,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
     return '2024'
   });
   const [activeTab, setActiveTab] = useState<'targets' | 'completed'>('targets');
+  const [selectedInstitutionName, setSelectedInstitutionName] = useState<string | null>(null);
 
   // AppHeader에서 년도 변경 이벤트 수신
   useEffect(() => {
@@ -35,6 +36,19 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
     window.addEventListener('complianceYearChanged', handleYearChange as EventListener)
     return () => {
       window.removeEventListener('complianceYearChanged', handleYearChange as EventListener)
+    }
+  }, [])
+
+  // ComplianceMatchingWorkflow에서 선택된 기관 정보 수신
+  useEffect(() => {
+    const handleInstitutionSelected = (e: CustomEvent) => {
+      const institution = e.detail.institution
+      setSelectedInstitutionName(institution?.institution_name || null)
+    }
+
+    window.addEventListener('institutionSelected', handleInstitutionSelected as EventListener)
+    return () => {
+      window.removeEventListener('institutionSelected', handleInstitutionSelected as EventListener)
     }
   }, [])
 
@@ -55,16 +69,31 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
       {/* 메인 컨텐츠 */}
       <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed')} className="h-full flex flex-col">
-          <TabsList className="grid w-fit grid-cols-2 mb-2">
-            <TabsTrigger value="targets" className="px-8">
-              <Target className="w-4 h-4 mr-2" />
-              의무기관
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="px-8">
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              설치확인
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-4 mb-2">
+            <TabsList className="grid w-fit grid-cols-2">
+              <TabsTrigger value="targets" className="px-8">
+                <Target className="w-4 h-4 mr-2" />
+                의무기관
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="px-8">
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                설치확인
+              </TabsTrigger>
+            </TabsList>
+
+            {/* 동적 안내 메시지 */}
+            {activeTab === 'targets' && (
+              <div className="text-sm text-muted-foreground">
+                {selectedInstitutionName ? (
+                  <span className="text-foreground font-medium">
+                    {selectedInstitutionName}과 매칭할 관리번호를 선택하세요
+                  </span>
+                ) : (
+                  <span>의무설치기관을 선택하세요</span>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="flex-1 overflow-auto">
             <TabsContent value="targets" className="mt-0 h-full">

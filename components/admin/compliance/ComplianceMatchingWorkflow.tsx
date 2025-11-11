@@ -118,6 +118,14 @@ export default function ComplianceMatchingWorkflow({
     };
   }, []);
 
+  // 선택된 기관 정보를 부모(ComplianceMainLayout)에게 알림
+  useEffect(() => {
+    const event = new CustomEvent('institutionSelected', {
+      detail: { institution: selectedInstitution }
+    });
+    window.dispatchEvent(event);
+  }, [selectedInstitution]);
+
   // 담기 박스 핸들러
   const handleAddToBasket = (item: ManagementNumberCandidate) => {
     if (!selectedInstitution) return;
