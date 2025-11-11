@@ -1,0 +1,97 @@
+name: Verify NextAuth URLs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Verify NextAuth Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Verify NextAuth URLs
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== 1. Check .env.production exists ==="
+          cd /var/www/aedpics
+          if [ -f ".env.production" ]; then
+            echo "✅ .env.production exists"
+            echo ""
+            echo "=== 2. Verify Environment Variables ==="
+            grep -E "NEXTAUTH_URL|NEXT_PUBLIC_SITE_URL" .env.production
+          else
+            echo "❌ .env.production NOT FOUND!"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== 3. PM2 Process Status ==="
+          pm2 status aedpics
+
+          echo ""
+          echo "=== 4. Recent PM2 Logs (last 20 lines) ==="
+          pm2 logs aedpics --lines 20 --nostream
+
+          echo ""
+          echo "=== 5. Test NextAuth Providers Endpoint ==="
+          echo "Testing: https://aed.pics/api/auth/providers"
+          PROVIDERS_RESPONSE=$(curl -s https://aed.pics/api/auth/providers)
+          echo "$PROVIDERS_RESPONSE" | jq '.'
+
+          echo ""
+          echo "=== 6. Extract and Verify URLs ==="
+          SIGNIN_URL=$(echo "$PROVIDERS_RESPONSE" | jq -r '.credentials.signinUrl')
+          CALLBACK_URL=$(echo "$PROVIDERS_RESPONSE" | jq -r '.credentials.callbackUrl')
+
+          echo "SignIn URL: $SIGNIN_URL"
+          echo "Callback URL: $CALLBACK_URL"
+
+          echo ""
+          echo "=== 7. URL Format Validation ==="
+
+          # Check if URLs contain aed.pics
+          if [[ "$SIGNIN_URL" == *"aed.pics"* ]]; then
+            echo "✅ SignIn URL uses correct domain (aed.pics)"
+          else
+            echo "❌ SignIn URL uses WRONG domain: $SIGNIN_URL"
+          fi
+
+          if [[ "$CALLBACK_URL" == *"aed.pics"* ]]; then
+            echo "✅ Callback URL uses correct domain (aed.pics)"
+          else
+            echo "❌ Callback URL uses WRONG domain: $CALLBACK_URL"
+          fi
+
+          # Check if URLs use HTTPS
+          if [[ "$SIGNIN_URL" == https://* ]]; then
+            echo "✅ SignIn URL uses HTTPS"
+          else
+            echo "⚠️  SignIn URL does not use HTTPS: $SIGNIN_URL"
+          fi
+
+          if [[ "$CALLBACK_URL" == https://* ]]; then
+            echo "✅ Callback URL uses HTTPS"
+          else
+            echo "⚠️  Callback URL does not use HTTPS: $CALLBACK_URL"
+          fi
+
+          echo ""
+          echo "=== 8. Test Session Endpoint ==="
+          SESSION_RESPONSE=$(curl -s https://aed.pics/api/auth/session)
+          echo "Session response: $SESSION_RESPONSE"
+
+          echo ""
+          echo "=== 9. Final Result ==="
+          if [[ "$SIGNIN_URL" == https://aed.pics* ]] && [[ "$CALLBACK_URL" == https://aed.pics* ]]; then
+            echo "✅ SUCCESS: NextAuth is correctly configured to use https://aed.pics"
+            echo "✅ Users should now be able to login and logout without infinite loading"
+          else
+            echo "❌ FAILED: NextAuth is still using incorrect URLs"
+            echo "❌ Please check .env.production and PM2 environment variables"
+            exit 1
+          fi
