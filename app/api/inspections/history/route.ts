@@ -440,6 +440,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
         pad_status: inspection.pad_status,
         operation_status: inspection.operation_status,
         overall_status: inspection.overall_status,
+        status: 'completed', // UI 필터용 상태 필드
         notes: inspection.notes,
         issues_found: inspection.issues_found,
         photos: inspection.photos,
@@ -483,6 +484,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
         pad_status: 'pending',
         operation_status: 'pending',
         overall_status: 'in_progress',
+        status: 'in_progress', // UI 필터용 상태 필드
         notes: null,
         issues_found: [],
         photos: [],

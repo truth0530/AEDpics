@@ -33,6 +33,27 @@ interface AdminFullViewProps {
   pageType?: 'inspection' | 'schedule'; // 페이지 타입 구분
 }
 
+// 상태 배지 스타일 및 텍스트 헬퍼 함수
+function getStatusBadge(status: string) {
+  switch (status) {
+    case 'in_progress':
+      return {
+        text: '점검중',
+        className: 'bg-yellow-900 text-yellow-200'
+      };
+    case 'completed':
+      return {
+        text: '점검완료',
+        className: 'bg-blue-900 text-blue-200'
+      };
+    default:
+      return {
+        text: '알 수 없음',
+        className: 'bg-gray-700 text-gray-300'
+      };
+  }
+}
+
 function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfile; pageType?: 'inspection' | 'schedule' }) {
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'completed'>('completed');
@@ -778,8 +799,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                         <div className="font-medium text-sm text-gray-200 truncate flex-1">
                           {inspection.equipment_serial}
                         </div>
-                        <span className="inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 flex-shrink-0 bg-blue-900 text-blue-200">
-                          점검완료
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ml-2 flex-shrink-0 ${getStatusBadge(inspection.status).className}`}>
+                          {getStatusBadge(inspection.status).text}
                         </span>
                       </div>
 
@@ -900,8 +921,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                             }
                           </td>
                           <td className="px-4 py-3 text-sm">
-                            <span className="inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap bg-blue-900 text-blue-200">
-                              점검완료
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getStatusBadge(inspection.status).className}`}>
+                              {getStatusBadge(inspection.status).text}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">

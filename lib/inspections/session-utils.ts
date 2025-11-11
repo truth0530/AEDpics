@@ -222,6 +222,7 @@ export interface InspectionHistory {
   pad_status: string;
   operation_status: string;
   overall_status: string;
+  status: 'in_progress' | 'completed';  // UI 필터용 상태 필드
   notes?: string;
   issues_found?: string[];
   photos?: string[];
