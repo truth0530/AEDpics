@@ -1,0 +1,37 @@
+name: Fix Nginx Server Name
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    name: Update Nginx Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Fix nginx server_name
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== Backing up current nginx config ==="
+          cp /etc/nginx/sites-available/aedpics /etc/nginx/sites-available/aedpics.backup
+
+          echo "=== Updating server_name to aed.pics ==="
+          sed -i 's/server_name 223\.130\.150\.133;/server_name aed.pics www.aed.pics;/' /etc/nginx/sites-available/aedpics
+
+          echo "=== New configuration ==="
+          cat /etc/nginx/sites-available/aedpics
+
+          echo "=== Testing nginx configuration ==="
+          nginx -t
+
+          echo "=== Reloading nginx ==="
+          systemctl reload nginx
+
+          echo "=== Verifying NextAuth URL ==="
+          sleep 2
+          curl -s http://localhost:3000/api/auth/providers | jq -r '.credentials.signinUrl'
