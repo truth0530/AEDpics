@@ -12,8 +12,10 @@ interface BasketItem {
   institution_name: string;
   address: string;
   equipment_count: number;
+  equipment_serials: string[];
   confidence: number | null;
   target_key: string;
+  selected_serials?: string[]; // 선택된 장비연번 (undefined면 전체, 배열이면 일부만)
 }
 
 interface TargetInstitution {
@@ -132,9 +134,24 @@ export default function BasketPanel({
                     <MapPin className="h-3 w-3" />
                     <span className="truncate">{item.address}</span>
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    장비 {item.equipment_count}대
-                  </Badge>
+                  {item.selected_serials ? (
+                    // 개별 장비연번이 선택된 경우
+                    <div className="space-y-1">
+                      <div className="text-xs text-muted-foreground">
+                        선택된 장비연번 ({item.selected_serials.length}개):
+                      </div>
+                      {item.selected_serials.map(serial => (
+                        <Badge key={serial} variant="outline" className="text-xs font-mono mr-1">
+                          {serial}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    // 전체 장비가 선택된 경우
+                    <Badge variant="outline" className="text-xs">
+                      장비 {item.equipment_count}대 (전체)
+                    </Badge>
+                  )}
                 </div>
               </Card>
             ))}

@@ -34,6 +34,7 @@ interface ManagementNumberPanelProps {
   selectedInstitution: TargetInstitution | null;
   onAddToBasket: (item: ManagementNumberCandidate) => void;
   onAddMultipleToBasket: (items: ManagementNumberCandidate[]) => void;
+  onAddEquipmentSerial: (item: ManagementNumberCandidate, serial: string) => void;
   basketedManagementNumbers?: string[];
 }
 
@@ -42,6 +43,7 @@ export default function ManagementNumberPanel({
   selectedInstitution,
   onAddToBasket,
   onAddMultipleToBasket,
+  onAddEquipmentSerial,
   basketedManagementNumbers = []
 }: ManagementNumberPanelProps) {
   const [autoSuggestions, setAutoSuggestions] = useState<ManagementNumberCandidate[]>([]);
@@ -234,10 +236,7 @@ export default function ManagementNumberPanel({
                               size="sm"
                               variant="outline"
                               className="h-6 text-xs px-2"
-                              onClick={() => {
-                                // TODO: 개별 장비연번 담기 기능 구현
-                                console.log('Individual serial add:', serial);
-                              }}
+                              onClick={() => onAddEquipmentSerial(item, serial)}
                             >
                               담기
                             </Button>

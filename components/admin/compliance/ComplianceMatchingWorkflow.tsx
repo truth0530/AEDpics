@@ -38,6 +38,7 @@ interface TargetInstitution {
 
 interface BasketItem extends ManagementNumberCandidate {
   target_key: string;
+  selected_serials?: string[]; // 선택된 장비연번 (undefined면 전체, 배열이면 일부만)
 }
 
 interface ComplianceMatchingWorkflowProps {
@@ -201,6 +202,53 @@ export default function ComplianceMatchingWorkflow({
     });
   };
 
+  // 개별 장비연번 담기
+  const handleAddEquipmentSerial = (item: ManagementNumberCandidate, serial: string) => {
+    if (!selectedInstitution) return;
+
+    setBasketByInstitution(prev => {
+      const targetKey = selectedInstitution.target_key;
+      const currentItems = prev[targetKey] || [];
+
+      // 같은 관리번호가 이미 basket에 있는지 확인
+      const existingItemIndex = currentItems.findIndex(i => i.management_number === item.management_number);
+
+      if (existingItemIndex >= 0) {
+        // 이미 있는 경우: selected_serials 배열에 추가
+        const existingItem = currentItems[existingItemIndex];
+        const currentSerials = existingItem.selected_serials || [];
+
+        // 중복 체크
+        if (currentSerials.includes(serial)) {
+          return prev;
+        }
+
+        const updatedItems = [...currentItems];
+        updatedItems[existingItemIndex] = {
+          ...existingItem,
+          selected_serials: [...currentSerials, serial]
+        };
+
+        return {
+          ...prev,
+          [targetKey]: updatedItems
+        };
+      } else {
+        // 없는 경우: 새 항목 추가 (단일 장비연번만)
+        const basketItem: BasketItem = {
+          ...item,
+          target_key: selectedInstitution.target_key,
+          selected_serials: [serial]
+        };
+
+        return {
+          ...prev,
+          [targetKey]: [...currentItems, basketItem]
+        };
+      }
+    });
+  };
+
   // 매칭 실행
   const handleMatchBasket = async () => {
     if (currentBasket.length === 0 || !selectedInstitution) return;
@@ -316,6 +364,7 @@ export default function ComplianceMatchingWorkflow({
                   selectedInstitution={selectedInstitution}
                   onAddToBasket={handleAddToBasket}
                   onAddMultipleToBasket={handleAddMultipleToBasket}
+                  onAddEquipmentSerial={handleAddEquipmentSerial}
                   basketedManagementNumbers={currentBasket.map(item => item.management_number)}
                 />
               </CardContent>
