@@ -1,0 +1,46 @@
+name: Force Rebuild Next.js
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rebuild:
+    name: Force Clean Rebuild
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Force rebuild on server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          cd /var/www/aedpics
+
+          echo "=== Stopping PM2 ==="
+          pm2 stop aedpics
+
+          echo "=== Cleaning all caches ==="
+          rm -rf .next
+          rm -rf node_modules/.cache
+          npm cache clean --force
+
+          echo "=== Verifying .env.production ==="
+          grep -E "NEXTAUTH_URL|NEXT_PUBLIC_SITE_URL" .env.production
+
+          echo "=== Building with clean slate ==="
+          NODE_ENV=production npm run build
+
+          echo "=== Restarting PM2 ==="
+          pm2 restart ecosystem.config.cjs
+
+          echo "=== Waiting for app to start ==="
+          sleep 10
+
+          echo "=== Verifying NextAuth URL ==="
+          curl -s http://localhost:3000/api/auth/providers | jq -r '.credentials.signinUrl'
+
+          echo "=== PM2 Status ==="
+          pm2 status aedpics
