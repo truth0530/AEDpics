@@ -269,6 +269,10 @@ jobs:
           fi
 
           echo "=== Phase 2: Update code and dependencies ==="
+          echo "Updating code from repository..."
+          git fetch origin
+          git reset --hard origin/main
+
           echo "Creating .env.production file..."
           echo "DATABASE_URL=\"$DATABASE_URL\"" > .env.production
           echo "NEXTAUTH_URL=\"$NEXTAUTH_URL\"" >> .env.production
@@ -287,10 +291,6 @@ jobs:
           echo "NCP_OBJECT_STORAGE_ACCESS_KEY=\"$NCP_OBJECT_STORAGE_ACCESS_KEY\"" >> .env.production
           echo "NCP_OBJECT_STORAGE_SECRET_KEY=\"$NCP_OBJECT_STORAGE_SECRET_KEY\"" >> .env.production
           echo "NCP_OBJECT_STORAGE_BUCKET=\"$NCP_OBJECT_STORAGE_BUCKET\"" >> .env.production
-
-          echo "Updating code from repository..."
-          git fetch origin
-          git reset --hard origin/main
 
           echo "Installing dependencies..."
           npm ci --production
