@@ -1,10 +1,11 @@
 "use client"
 
-import { memo } from "react"
-import { usePathname } from "next/navigation"
+import { memo, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { ProfileDropdown } from "@/components/layout/ProfileDropdown"
 import { RegionFilter } from "@/components/layout/RegionFilter"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import type { UserProfile } from "@/packages/types"
 
 interface AppHeaderProps {
@@ -17,12 +18,23 @@ const PAGE_TITLES: Record<string, string> = {
   "/aed-data": "일정관리",
   "/dashboard": "대시보드",
   "/admin/target-matching": "구비의무기관 매칭 관리",
+  "/admin/compliance": "의무기관매칭",
 }
 
 // 성능 최적화: 메모이제이션으로 불필요한 리렌더링 방지
 function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const pageTitle = PAGE_TITLES[pathname] || "대시보드"
+  const isCompliancePage = pathname === "/admin/compliance"
+
+  // 의무기관매칭 페이지용 년도 선택
+  const [selectedYear, setSelectedYear] = useState<'2024' | '2025'>(() => {
+    if (typeof window !== 'undefined') {
+      return (window.sessionStorage.getItem('complianceYear') as '2024' | '2025') || '2024'
+    }
+    return '2024'
+  })
 
   const handleRegionChange = (sido: string, gugun: string) => {
     // 시도/구군이 변경되면 전역 상태로 저장
@@ -35,6 +47,18 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
       window.dispatchEvent(new CustomEvent('regionSelected', {
         detail: { sido, gugun }
       }));
+    }
+  };
+
+  const handleYearChange = (year: '2024' | '2025') => {
+    if (!year) return
+    setSelectedYear(year)
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem('complianceYear', year)
+      // ComplianceMainLayout에 년도 변경 알림
+      window.dispatchEvent(new CustomEvent('complianceYearChanged', {
+        detail: { year }
+      }))
     }
   };
 
@@ -54,6 +78,23 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AED 픽스</h1>
             <p className="text-base text-gray-600 dark:text-gray-400">{pageTitle}</p>
           </div>
+
+          {/* 의무기관매칭 페이지에서만 년도 선택 버튼 표시 */}
+          {isCompliancePage && (
+            <ToggleGroup
+              type="single"
+              value={selectedYear}
+              onValueChange={handleYearChange}
+              className="ml-4"
+            >
+              <ToggleGroupItem value="2024" className="px-3 text-sm">
+                2024
+              </ToggleGroupItem>
+              <ToggleGroupItem value="2025" className="px-3 text-sm">
+                2025
+              </ToggleGroupItem>
+            </ToggleGroup>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

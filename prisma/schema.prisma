@@ -517,6 +517,28 @@ model target_list_2024 {
   @@index([management_number], map: "idx_target_list_2024_management")
 }
 
+model target_list_2025 {
+  target_key        String    @id @db.VarChar(255)
+  no                Int?
+  sido              String?   @db.VarChar(50)
+  gugun             String?   @db.VarChar(100)
+  division          String?   @db.VarChar(100)
+  sub_division      String?   @db.VarChar(100)
+  institution_name  String?   @db.VarChar(255)
+  unique_key        String?   @db.VarChar(100)
+  address           String?   @db.VarChar(500)
+  contact           String?   @db.VarChar(100)
+  target_keygroup   String?   @db.VarChar(255)
+  data_year         Int?      @default(2025)
+  imported_at       DateTime? @db.Timestamptz(6)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([target_keygroup], map: "idx_target_2025_keygroup")
+  @@index([sido, gugun], map: "idx_target_2025_location")
+  @@index([unique_key], map: "idx_target_2025_unique_key")
+}
+
 model target_list_devices {
   id                                                           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   target_list_year                                             Int
@@ -714,6 +736,7 @@ model user_profiles {
   push_subscriptions                       push_subscriptions[]
   organization_change_requests_as_user     organization_change_requests[] @relation("change_request_user")
   organization_change_requests_as_reviewer organization_change_requests[] @relation("change_request_reviewer")
+  target_list_match_logs                   target_list_match_logs[]
 
   @@index([account_type], map: "idx_user_profiles_account_type")
   @@index([email], map: "idx_user_profiles_email")
@@ -1060,4 +1083,22 @@ model organization_change_requests {
   @@index([user_id], map: "idx_org_change_requests_user")
   @@index([status], map: "idx_org_change_requests_status")
   @@index([requested_at], map: "idx_org_change_requests_requested_at")
+}
+
+model target_list_match_logs {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action               String        @db.VarChar(20) // 'match' or 'unmatch'
+  target_list_year     Int
+  target_key           String        @db.VarChar(255)
+  management_numbers   String[]      // Array of management numbers
+  user_id              String        @db.Uuid
+  reason               String?       // Required when unmatching others' matches
+  created_at           DateTime      @default(now()) @db.Timestamptz(6)
+
+  user                 user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([target_list_year, target_key], map: "idx_match_logs_target")
+  @@index([user_id], map: "idx_match_logs_user")
+  @@index([created_at(sort: Desc)], map: "idx_match_logs_created")
+  @@index([action], map: "idx_match_logs_action")
 }

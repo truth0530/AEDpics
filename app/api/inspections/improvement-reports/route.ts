@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { LRUCache } from 'lru-cache';
 import { UserRole } from '@/packages/types';
+import { normalizeGugunForDB } from '@/lib/constants/regions';
 
 // 캐시 설정: 최대 100개 항목, 5분 TTL
 const reportCache = new LRUCache<string, any>({
@@ -71,7 +72,8 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const sido = searchParams.get('sido');
-    const gugun = searchParams.get('gugun');
+    const gugunParam = searchParams.get('gugun');
+    const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
     const fieldCategory = searchParams.get('fieldCategory');
     const status = searchParams.get('status');
     const improvementStatus = searchParams.get('improvementStatus');

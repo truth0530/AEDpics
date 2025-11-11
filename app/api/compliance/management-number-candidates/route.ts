@@ -1,0 +1,441 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
+import { normalizeGugunForDB, normalizeRegionName } from '@/lib/constants/regions';
+
+/**
+ * GET /api/compliance/management-number-candidates
+ * 특정 의무설치기관에 대한 관리번호 그룹 후보 조회
+ * - 자동 추천 (신뢰도 기반)
+ * - 검색 결과
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const targetKey = searchParams.get('target_key');
+    const year = searchParams.get('year') || '2024';
+    const search = searchParams.get('search') || '';
+    const includeAllRegion = searchParams.get('include_all_region') === 'true';
+    const includeMatched = searchParams.get('include_matched') === 'true';
+
+    // target_key가 있으면 의무설치기관 정보 조회
+    let targetInstitution: { sido: string | null; gugun: string | null } | null = null;
+    let normalizedSido: string | null = null;
+    let normalizedGugun: string | null = null;
+
+    if (targetKey) {
+      targetInstitution = await prisma.target_list_2024.findUnique({
+        where: { target_key: targetKey },
+        select: { sido: true, gugun: true }
+      });
+
+      if (!targetInstitution) {
+        return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
+      }
+
+      // 지역명 정규화 (DB 저장 형식과 일치시키기)
+      normalizedSido = targetInstitution.sido ? (normalizeRegionName(targetInstitution.sido) ?? targetInstitution.sido) : null;
+      normalizedGugun = targetInstitution.gugun ? (normalizeGugunForDB(targetInstitution.gugun) ?? targetInstitution.gugun) : null;
+    }
+
+    // 자동 추천: 의무설치기관 선택 여부에 따라 다른 쿼리 실행
+    let autoSuggestionsQuery: Array<{
+      management_number: string;
+      institution_name: string;
+      address: string;
+      equipment_count: number;
+      confidence: number;
+      is_matched: boolean;
+      matched_to: string | null;
+      category_1: string | null;
+      category_2: string | null;
+    }> = [];
+
+    if (targetInstitution) {
+      // 선택된 의무설치기관 정보 조회
+      const targetInfo = await prisma.target_list_2024.findUnique({
+        where: { target_key: targetKey! },
+        select: { institution_name: true }
+      });
+      const targetName = targetInfo?.institution_name || '';
+
+      // 의무설치기관 선택 시: 실시간 유사도 계산
+      if (!includeAllRegion && normalizedGugun) {
+        // 시도 + 구군 필터
+        autoSuggestionsQuery = await prisma.$queryRaw`
+          WITH grouped_data AS (
+            SELECT DISTINCT ON (ad.management_number)
+              ad.management_number,
+              ad.installation_institution,
+              COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ad.equipment_serial,
+              ad.category_1,
+              ad.category_2,
+              EXISTS(
+                SELECT 1 FROM aedpics.target_list_devices tld
+                WHERE tld.target_list_year = ${parseInt(year)}
+                  AND ad.equipment_serial = ANY(
+                    SELECT ad2.equipment_serial
+                    FROM aedpics.aed_data ad2
+                    WHERE ad2.management_number = ad.management_number
+                  )
+              ) as is_matched,
+              (
+                SELECT t.target_key
+                FROM aedpics.target_list_devices tld
+                JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+                JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+                WHERE ad2.management_number = ad.management_number
+                  AND tld.target_list_year = ${parseInt(year)}
+                LIMIT 1
+              ) as matched_to
+            FROM aedpics.aed_data ad
+            WHERE ad.management_number IS NOT NULL
+              AND ad.sido = ${normalizedSido}
+              AND ad.gugun = ${normalizedGugun}
+            ORDER BY ad.management_number, ad.updated_at DESC
+          )
+          SELECT
+            gd.management_number,
+            gd.installation_institution as institution_name,
+            gd.address,
+            (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
+            CASE
+              WHEN gd.installation_institution = ${targetName} THEN 100
+              WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
+              WHEN ${targetName} ILIKE '%' || gd.installation_institution || '%' THEN 85
+              ELSE 60
+            END as confidence,
+            gd.is_matched,
+            gd.matched_to,
+            gd.category_1,
+            gd.category_2
+          FROM grouped_data gd
+          WHERE (
+            gd.installation_institution = ${targetName}
+            OR gd.installation_institution ILIKE '%' || ${targetName} || '%'
+            OR ${targetName} ILIKE '%' || gd.installation_institution || '%'
+          )
+          ORDER BY confidence DESC, equipment_count DESC
+          LIMIT 20
+        `;
+      } else if (!includeAllRegion) {
+        // 시도만 필터
+        autoSuggestionsQuery = await prisma.$queryRaw`
+          WITH grouped_data AS (
+            SELECT DISTINCT ON (ad.management_number)
+              ad.management_number,
+              ad.installation_institution,
+              COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ad.equipment_serial,
+              EXISTS(
+                SELECT 1 FROM aedpics.target_list_devices tld
+                WHERE tld.target_list_year = ${parseInt(year)}
+                  AND ad.equipment_serial = ANY(
+                    SELECT ad2.equipment_serial
+                    FROM aedpics.aed_data ad2
+                    WHERE ad2.management_number = ad.management_number
+                  )
+              ) as is_matched,
+              (
+                SELECT t.target_key
+                FROM aedpics.target_list_devices tld
+                JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+                JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+                WHERE ad2.management_number = ad.management_number
+                  AND tld.target_list_year = ${parseInt(year)}
+                LIMIT 1
+              ) as matched_to
+            FROM aedpics.aed_data ad
+            WHERE ad.management_number IS NOT NULL
+              AND ad.sido = ${normalizedSido}
+            ORDER BY ad.management_number, ad.updated_at DESC
+          )
+          SELECT
+            gd.management_number,
+            gd.installation_institution as institution_name,
+            gd.address,
+            (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
+            CASE
+              WHEN gd.installation_institution = ${targetName} THEN 100
+              WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
+              WHEN ${targetName} ILIKE '%' || gd.installation_institution || '%' THEN 85
+              ELSE 60
+            END as confidence,
+            gd.is_matched,
+            gd.matched_to
+          FROM grouped_data gd
+          WHERE (
+            gd.installation_institution = ${targetName}
+            OR gd.installation_institution ILIKE '%' || ${targetName} || '%'
+            OR ${targetName} ILIKE '%' || gd.installation_institution || '%'
+          )
+          ORDER BY confidence DESC, equipment_count DESC
+          LIMIT 20
+        `;
+      } else {
+        // 지역 필터 없음
+        autoSuggestionsQuery = await prisma.$queryRaw`
+          WITH grouped_data AS (
+            SELECT DISTINCT ON (ad.management_number)
+              ad.management_number,
+              ad.installation_institution,
+              COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ad.equipment_serial,
+              EXISTS(
+                SELECT 1 FROM aedpics.target_list_devices tld
+                WHERE tld.target_list_year = ${parseInt(year)}
+                  AND ad.equipment_serial = ANY(
+                    SELECT ad2.equipment_serial
+                    FROM aedpics.aed_data ad2
+                    WHERE ad2.management_number = ad.management_number
+                  )
+              ) as is_matched,
+              (
+                SELECT t.target_key
+                FROM aedpics.target_list_devices tld
+                JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+                JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+                WHERE ad2.management_number = ad.management_number
+                  AND tld.target_list_year = ${parseInt(year)}
+                LIMIT 1
+              ) as matched_to
+            FROM aedpics.aed_data ad
+            WHERE ad.management_number IS NOT NULL
+            ORDER BY ad.management_number, ad.updated_at DESC
+          )
+          SELECT
+            gd.management_number,
+            gd.installation_institution as institution_name,
+            gd.address,
+            (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
+            CASE
+              WHEN gd.installation_institution = ${targetName} THEN 100
+              WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
+              WHEN ${targetName} ILIKE '%' || gd.installation_institution || '%' THEN 85
+              ELSE 60
+            END as confidence,
+            gd.is_matched,
+            gd.matched_to
+          FROM grouped_data gd
+          WHERE (
+            gd.installation_institution = ${targetName}
+            OR gd.installation_institution ILIKE '%' || ${targetName} || '%'
+            OR ${targetName} ILIKE '%' || gd.installation_institution || '%'
+          )
+          ORDER BY confidence DESC, equipment_count DESC
+          LIMIT 20
+        `;
+      }
+    } else {
+      // 의무설치기관 미선택 시: 전체 관리번호 리스트 (최신 업데이트 순)
+      autoSuggestionsQuery = await prisma.$queryRaw`
+        SELECT DISTINCT ON (ad.management_number)
+          ad.management_number,
+          ad.installation_institution as institution_name,
+          COALESCE(ad.installation_location_address, ad.installation_address) as address,
+          COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+          0::numeric as confidence,
+          EXISTS(
+            SELECT 1 FROM aedpics.target_list_devices tld
+            WHERE tld.target_list_year = ${parseInt(year)}
+              AND ad.equipment_serial = ANY(
+                SELECT ad2.equipment_serial
+                FROM aedpics.aed_data ad2
+                WHERE ad2.management_number = ad.management_number
+              )
+          ) as is_matched,
+          (
+            SELECT t.target_key
+            FROM aedpics.target_list_devices tld
+            JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+            JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+            WHERE ad2.management_number = ad.management_number
+              AND tld.target_list_year = ${parseInt(year)}
+            LIMIT 1
+          ) as matched_to,
+          ad.category_1,
+          ad.category_2
+        FROM aedpics.aed_data ad
+        WHERE ad.management_number IS NOT NULL
+        ORDER BY ad.management_number, ad.updated_at DESC NULLS LAST
+        LIMIT 50
+      `;
+    }
+
+    // 검색 결과: 사용자 검색어로 management_number 그룹 조회
+    let searchResults: Array<{
+      management_number: string;
+      institution_name: string;
+      address: string;
+      equipment_count: number;
+      confidence: number | null;
+      is_matched: boolean;
+      matched_to: string | null;
+      category_1: string | null;
+      category_2: string | null;
+    }> = [];
+
+    if (search) {
+      if (targetInstitution && !includeAllRegion && targetInstitution.gugun) {
+        // 시도 + 구군 필터
+        searchResults = await prisma.$queryRaw`
+          SELECT DISTINCT ON (ad.management_number)
+            ad.management_number,
+            ad.installation_institution as institution_name,
+            COALESCE(ad.installation_location_address, ad.installation_address) as address,
+            COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+            NULL::numeric as confidence,
+            EXISTS(
+              SELECT 1 FROM aedpics.target_list_devices tld
+              WHERE tld.target_list_year = ${parseInt(year)}
+                AND ad.equipment_serial = ANY(
+                  SELECT ad2.equipment_serial
+                  FROM aedpics.aed_data ad2
+                  WHERE ad2.management_number = ad.management_number
+                )
+            ) as is_matched,
+            (
+              SELECT t.target_key
+              FROM aedpics.target_list_devices tld
+              JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+              JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+              WHERE ad2.management_number = ad.management_number
+                AND tld.target_list_year = ${parseInt(year)}
+              LIMIT 1
+            ) as matched_to,
+            ad.category_1,
+            ad.category_2
+          FROM aedpics.aed_data ad
+          WHERE ad.management_number IS NOT NULL
+            AND (
+              ad.installation_institution ILIKE ${`%${search}%`}
+              OR ad.installation_location_address ILIKE ${`%${search}%`}
+              OR ad.installation_address ILIKE ${`%${search}%`}
+              OR ad.management_number ILIKE ${`%${search}%`}
+            )
+            AND ad.sido = ${normalizedSido}
+            AND ad.gugun = ${normalizedGugun}
+          ORDER BY ad.management_number
+          LIMIT 50
+        `;
+      } else if (targetInstitution && !includeAllRegion && normalizedSido) {
+        // 시도만 필터
+        searchResults = await prisma.$queryRaw`
+          SELECT DISTINCT ON (ad.management_number)
+            ad.management_number,
+            ad.installation_institution as institution_name,
+            COALESCE(ad.installation_location_address, ad.installation_address) as address,
+            COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+            NULL::numeric as confidence,
+            EXISTS(
+              SELECT 1 FROM aedpics.target_list_devices tld
+              WHERE tld.target_list_year = ${parseInt(year)}
+                AND ad.equipment_serial = ANY(
+                  SELECT ad2.equipment_serial
+                  FROM aedpics.aed_data ad2
+                  WHERE ad2.management_number = ad.management_number
+                )
+            ) as is_matched,
+            (
+              SELECT t.target_key
+              FROM aedpics.target_list_devices tld
+              JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+              JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+              WHERE ad2.management_number = ad.management_number
+                AND tld.target_list_year = ${parseInt(year)}
+              LIMIT 1
+            ) as matched_to,
+            ad.category_1,
+            ad.category_2
+          FROM aedpics.aed_data ad
+          WHERE ad.management_number IS NOT NULL
+            AND (
+              ad.installation_institution ILIKE ${`%${search}%`}
+              OR ad.installation_location_address ILIKE ${`%${search}%`}
+              OR ad.installation_address ILIKE ${`%${search}%`}
+              OR ad.management_number ILIKE ${`%${search}%`}
+            )
+            AND ad.sido = ${normalizedSido}
+          ORDER BY ad.management_number
+          LIMIT 50
+        `;
+      } else {
+        // 지역 필터 없음
+        searchResults = await prisma.$queryRaw`
+          SELECT DISTINCT ON (ad.management_number)
+            ad.management_number,
+            ad.installation_institution as institution_name,
+            COALESCE(ad.installation_location_address, ad.installation_address) as address,
+            COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+            NULL::numeric as confidence,
+            EXISTS(
+              SELECT 1 FROM aedpics.target_list_devices tld
+              WHERE tld.target_list_year = ${parseInt(year)}
+                AND ad.equipment_serial = ANY(
+                  SELECT ad2.equipment_serial
+                  FROM aedpics.aed_data ad2
+                  WHERE ad2.management_number = ad.management_number
+                )
+            ) as is_matched,
+            (
+              SELECT t.target_key
+              FROM aedpics.target_list_devices tld
+              JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+              JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+              WHERE ad2.management_number = ad.management_number
+                AND tld.target_list_year = ${parseInt(year)}
+              LIMIT 1
+            ) as matched_to,
+            ad.category_1,
+            ad.category_2
+          FROM aedpics.aed_data ad
+          WHERE ad.management_number IS NOT NULL
+            AND (
+              ad.installation_institution ILIKE ${`%${search}%`}
+              OR ad.installation_location_address ILIKE ${`%${search}%`}
+              OR ad.installation_address ILIKE ${`%${search}%`}
+              OR ad.management_number ILIKE ${`%${search}%`}
+            )
+          ORDER BY ad.management_number
+          LIMIT 50
+        `;
+      }
+    }
+
+    // 매칭된 항목 필터링 (includeMatched가 false일 때)
+    const filteredAutoSuggestions = includeMatched
+      ? autoSuggestionsQuery
+      : autoSuggestionsQuery.filter(item => !item.is_matched);
+
+    const filteredSearchResults = includeMatched
+      ? searchResults
+      : searchResults.filter(item => !item.is_matched);
+
+    return NextResponse.json({
+      auto_suggestions: filteredAutoSuggestions.map(item => ({
+        ...item,
+        equipment_count: Number(item.equipment_count),
+        confidence: item.confidence ? Number(item.confidence) : null,
+      })),
+      search_results: filteredSearchResults.map(item => ({
+        ...item,
+        equipment_count: Number(item.equipment_count),
+        confidence: item.confidence ? Number(item.confidence) : null,
+      })),
+    });
+
+  } catch (error) {
+    console.error('Failed to fetch management number candidates:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch candidates', details: String(error) },
+      { status: 500 }
+    );
+  }
+}

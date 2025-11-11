@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
+import { normalizeGugunForDB } from '@/lib/constants/regions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const year = searchParams.get('year') || '2024';
     const sido = searchParams.get('sido');
-    const gugun = searchParams.get('gugun');
+    const gugunParam = searchParams.get('gugun');
+    const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
 
     const yearSuffix = year === '2025' ? '_2025' : '_2024';
 

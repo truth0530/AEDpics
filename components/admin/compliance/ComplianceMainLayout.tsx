@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, CheckCircle2, Target, ChevronRight, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import EnhancedComplianceUI from './EnhancedComplianceUI';
+import ComplianceMatchingWorkflow from './ComplianceMatchingWorkflow';
 import ComplianceCompletedList from './ComplianceCompletedList';
 import { UserProfile } from '@/packages/types';
 
@@ -16,39 +16,30 @@ interface ComplianceMainLayoutProps {
 }
 
 export default function ComplianceMainLayout({ initialProfile }: ComplianceMainLayoutProps) {
-  const [selectedYear, setSelectedYear] = useState<'2024' | '2025'>('2024');
+  // sessionStorage에서 초기값 로드
+  const [selectedYear, setSelectedYear] = useState<'2024' | '2025'>(() => {
+    if (typeof window !== 'undefined') {
+      return (window.sessionStorage.getItem('complianceYear') as '2024' | '2025') || '2024'
+    }
+    return '2024'
+  });
   const [activeTab, setActiveTab] = useState<'targets' | 'completed'>('targets');
+
+  // AppHeader에서 년도 변경 이벤트 수신
+  useEffect(() => {
+    const handleYearChange = (e: CustomEvent) => {
+      const year = e.detail.year as '2024' | '2025'
+      setSelectedYear(year)
+    }
+
+    window.addEventListener('complianceYearChanged', handleYearChange as EventListener)
+    return () => {
+      window.removeEventListener('complianceYearChanged', handleYearChange as EventListener)
+    }
+  }, [])
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* 헤더: 연도 선택 및 타이틀 */}
-      <div className="bg-white dark:bg-gray-900 border-b dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold dark:text-gray-200">의무설치기관 매칭</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              구비의무기관의 AED 설치 현황을 확인하고 관리합니다
-            </p>
-          </div>
-
-          {/* 연도 토글 */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium dark:text-gray-300">대상년도:</span>
-            </div>
-            <ToggleGroup type="single" value={selectedYear} onValueChange={(value) => value && setSelectedYear(value as '2024' | '2025')}>
-              <ToggleGroupItem value="2024" className="px-4">
-                2024년
-              </ToggleGroupItem>
-              <ToggleGroupItem value="2025" className="px-4">
-                2025년
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        </div>
-      </div>
-
       {/* 2025년 데이터 없음 알림 */}
       {selectedYear === '2025' && (
         <div className="px-6 pt-4">
@@ -62,9 +53,9 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
       )}
 
       {/* 메인 컨텐츠 */}
-      <div className="flex-1 px-6 py-4 bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed')} className="h-full flex flex-col">
-          <TabsList className="grid w-fit grid-cols-2 mb-6">
+          <TabsList className="grid w-fit grid-cols-2 mb-2">
             <TabsTrigger value="targets" className="px-8">
               <Target className="w-4 h-4 mr-2" />
               의무기관
@@ -78,7 +69,10 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
           <div className="flex-1 overflow-auto">
             <TabsContent value="targets" className="mt-0 h-full">
               {selectedYear === '2024' ? (
-                <EnhancedComplianceUI year={selectedYear} initialProfile={initialProfile} />
+                <ComplianceMatchingWorkflow
+                  year={selectedYear}
+                  initialProfile={initialProfile}
+                />
               ) : (
                 <Card className="border-dashed dark:border-gray-700">
                   <CardContent className="flex flex-col items-center justify-center py-20">

@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
-import { REGION_CODE_TO_DB_LABELS, mapCityCodeToGugun, normalizeJurisdictionName } from '@/lib/constants/regions';
+import { REGION_CODE_TO_DB_LABELS, mapCityCodeToGugun, normalizeJurisdictionName, normalizeGugunForDB } from '@/lib/constants/regions';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -136,11 +136,13 @@ export const GET = apiHandler(async (request: NextRequest) => {
         // (CLAUDE 가이드라인: 중앙 유틸 functions 사용)
         if (userProfile.organizations && userProfile.organizations.city_code) {
           const gugunName = mapCityCodeToGugun(userProfile.organizations.city_code);
-          if (gugunName) {
-            aedFilter.gugun = gugunName;
-            logger.info('InspectionHistory:GET', 'Gugun name resolved via helper', {
+          const normalizedGugun = normalizeGugunForDB(gugunName || undefined);
+          if (normalizedGugun) {
+            aedFilter.gugun = normalizedGugun;
+            logger.info('InspectionHistory:GET', 'Gugun name resolved and normalized', {
               cityCode: userProfile.organizations.city_code,
-              gugunName: gugunName
+              gugunName,
+              normalizedGugun
             });
           } else {
             logger.warn('InspectionHistory:GET', 'Failed to resolve gugun name from city_code', {

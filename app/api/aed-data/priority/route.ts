@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import type { AedDataWhereInput } from '@/lib/types/api-filters';
 import type { Prisma } from '@prisma/client';
+import { mapCityCodeToGugun, normalizeGugunForDB } from '@/lib/constants/regions';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -44,9 +45,13 @@ export async function GET(request: NextRequest) {
       if (userProfile.organizations.region_code) {
         where.sido = userProfile.organizations.region_code;
       }
-      // 구군 필터
+      // 구군 필터: city_code → gugun → 정규화
       if (userProfile.organizations.city_code) {
-        where.gugun = userProfile.organizations.city_code;
+        const gugun = mapCityCodeToGugun(userProfile.organizations.city_code);
+        const normalizedGugun = normalizeGugunForDB(gugun || undefined);
+        if (normalizedGugun) {
+          where.gugun = normalizedGugun;
+        }
       }
     } else if (userProfile.role === 'regional_admin' && userProfile.organizations) {
       // 시도청은 시도만 필터

@@ -12,7 +12,7 @@ import { reportSlowOperation } from '@/lib/monitoring/performance';
 import { apiHandler } from '@/lib/api/error-handler';
 import type { ExpiryFilter } from '@/lib/constants/aed-filters';
 import { mapCityCodesToNames } from '@/lib/constants/cities';
-import { REGION_LABEL_TO_CODE, REGION_LONG_LABELS, REGION_CODE_TO_LABEL } from '@/lib/constants/regions';
+import { REGION_LABEL_TO_CODE, REGION_LONG_LABELS, REGION_CODE_TO_LABEL, normalizeGugunForDB, normalizeRegionName } from '@/lib/constants/regions';
 import type { UserProfile } from '@/packages/types';
 import type { AEDDevice } from '@/packages/types/aed';
 import type {
@@ -296,8 +296,12 @@ export const GET = async (request: NextRequest) => {
 
     // 지역 코드를 DB에 저장된 한글 라벨로 변환 (짧은 형태 + 긴 형태 모두 포함)
     const { mapRegionCodesToDbLabels } = await import('@/lib/constants/regions');
-    const regionFiltersForQuery = mapRegionCodesToDbLabels(finalRegionCodes);
-    const cityFiltersForQuery = mapCityCodesToNames(finalCityCodes);
+    const regionFiltersForQuery = mapRegionCodesToDbLabels(finalRegionCodes)?.map(region =>
+      normalizeRegionName(region) ?? region
+    );
+    const cityFiltersForQuery = mapCityCodesToNames(finalCityCodes)?.map(city =>
+      normalizeGugunForDB(city) ?? city
+    )?.filter(Boolean) as string[] | undefined;
 
     // 커서 기반 페이지네이션 - 기본값을 30으로 설정 (클라이언트와 일치)
     const requestedLimit = filters.limit ?? 30;

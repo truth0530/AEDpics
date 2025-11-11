@@ -5,7 +5,7 @@ import { getCachedAuthUser, getCachedUserProfile } from '@/lib/auth/cached-queri
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '의무기관매칭 | AEDpics',
+  title: '의무설치기관 매칭 | AEDpics',
   description: '구비의무기관의 AED 설치 현황을 확인하고 관리합니다',
 };
 

@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { normalizeGugunForDB } from '@/lib/constants/regions';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
     // 쿼리 파라미터
     const regionCode = searchParams.get('region');
-    const cityCode = searchParams.get('city');
+    const cityCodeParam = searchParams.get('city');
+    const cityCode = cityCodeParam ? (normalizeGugunForDB(cityCodeParam) ?? cityCodeParam) : undefined;
     const bounds = searchParams.get('bounds'); // "west,south,east,north"
     const limit = parseInt(searchParams.get('limit') || '1000');
     const category1 = searchParams.get('category1');

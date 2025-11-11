@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import type { UserProfile } from '@/packages/types';
-import { REGIONS, mapCityCodeToGugun, getRegionCode, getGugunListByRegionCode } from '@/lib/constants/regions';
+import { REGIONS, mapCityCodeToGugun, getRegionCode, getGugunHierarchy } from '@/lib/constants/regions';
+import type { GugunHierarchy } from '@/lib/constants/regions';
 
 interface RegionFilterProps {
   user: UserProfile;
@@ -84,7 +85,7 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   const [selectedSido, setSelectedSido] = useState(getInitialSido());
   const [selectedGugun, setSelectedGugun] = useState(getInitialGugun());
   const fallbackRegionCode = userRegionCode || 'SEO';
-  const [gugunList, setGugunList] = useState<string[]>(['구군', ...getGugunListByRegionCode(fallbackRegionCode)]);
+  const [gugunHierarchy, setGugunHierarchy] = useState<GugunHierarchy[]>(getGugunHierarchy(fallbackRegionCode));
   const onChangeRef = useRef(onChange);
 
   // onChange ref 업데이트
@@ -150,11 +151,10 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     user.role === 'master';
 
   useEffect(() => {
-    // 시도가 변경되면 해당 시도의 구군 목록 업데이트 ('전체' 추가)
+    // 시도가 변경되면 해당 시도의 구군 계층 구조 업데이트
     const regionCode = getRegionCode(selectedSido);
-    const baseGugunList = regionCode ? getGugunListByRegionCode(regionCode) : [];
-    const newGugunList = ['전체', ...baseGugunList];
-    setGugunList(newGugunList);
+    const newHierarchy = regionCode ? getGugunHierarchy(regionCode) : [];
+    setGugunHierarchy(newHierarchy);
 
     // 기본값은 '전체'으로 설정
     setSelectedGugun('전체');
@@ -211,9 +211,24 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {gugunList.map((gugun) => (
-            <SelectItem key={gugun} value={gugun}>{gugun}</SelectItem>
-          ))}
+          <SelectItem value="전체">전체</SelectItem>
+          {gugunHierarchy.map(({ gugun, subGuguns }) => {
+            if (subGuguns.length > 0) {
+              return (
+                <SelectGroup key={gugun}>
+                  <SelectLabel className="pl-2 text-[10px] text-gray-500">{gugun}</SelectLabel>
+                  <SelectItem value={gugun}>{gugun}</SelectItem>
+                  {subGuguns.map((sub) => (
+                    <SelectItem key={sub} value={sub} className="pl-6">
+                      {sub}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              );
+            } else {
+              return <SelectItem key={gugun} value={gugun}>{gugun}</SelectItem>;
+            }
+          })}
         </SelectContent>
       </Select>
     </div>

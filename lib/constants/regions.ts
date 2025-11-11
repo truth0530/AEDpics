@@ -128,8 +128,111 @@ export const REGION_CODE_TO_GUGUNS: Record<string, string[]> = {
   JEJ: ['제주시', '서귀포시'],
 };
 
+/**
+ * 복합 행정구역 계층 구조 (시 + 구)
+ * 예: 천안시 → [동남구, 서북구]
+ */
+export interface GugunHierarchy {
+  gugun: string;
+  subGuguns: string[];
+}
+
+/**
+ * 시도별 복합 행정구역 매핑
+ * 시+구 구조를 가진 구군의 하위 구 목록
+ */
+export const COMPOSITE_GUGUNS: Record<string, Record<string, string[]>> = {
+  GYE: { // 경기도
+    '수원시': ['장안구', '권선구', '팔달구', '영통구'],
+    '성남시': ['수정구', '중원구', '분당구'],
+    '고양시': ['덕양구', '일산동구', '일산서구'],
+    '안산시': ['상록구', '단원구'],
+    '안양시': ['만안구', '동안구'],
+    '용인시': ['처인구', '기흥구', '수지구'],
+  },
+  CHB: { // 충청북도
+    '청주시': ['상당구', '서원구', '흥덕구', '청원구'],
+  },
+  CHN: { // 충청남도
+    '천안시': ['동남구', '서북구'],
+  },
+  JEB: { // 전북특별자치도
+    '전주시': ['완산구', '덕진구'],
+  },
+  GYB: { // 경상북도
+    '포항시': ['남구', '북구'],
+  },
+  GYN: { // 경상남도
+    '창원시': ['의창구', '성산구', '마산합포구', '마산회원구', '진해구'],
+  },
+};
+
 export function getGugunListByRegionCode(regionCode: string): string[] {
   return REGION_CODE_TO_GUGUNS[regionCode] || [];
+}
+
+/**
+ * 특정 구군의 하위 구 목록 가져오기
+ * @param regionCode 시도 코드 (예: 'GYE')
+ * @param gugun 구군명 (예: '천안시')
+ * @returns 하위 구 목록 (예: ['동남구', '서북구']) 또는 빈 배열
+ */
+export function getSubGuguns(regionCode: string, gugun: string): string[] {
+  return COMPOSITE_GUGUNS[regionCode]?.[gugun] || [];
+}
+
+/**
+ * 특정 구군이 하위 구를 가지고 있는지 확인
+ * @param regionCode 시도 코드
+ * @param gugun 구군명
+ * @returns 하위 구가 있으면 true
+ */
+export function hasSubGuguns(regionCode: string, gugun: string): boolean {
+  return getSubGuguns(regionCode, gugun).length > 0;
+}
+
+/**
+ * 시도별 모든 구군을 플랫하게 반환 (복합 행정구역 포함)
+ * @param regionCode 시도 코드
+ * @param includeSubGuguns 하위 구도 포함할지 여부 (기본: true)
+ * @returns 구군 목록 (복합 행정구역의 경우 시와 하위 구 모두 포함)
+ */
+export function getAllGugunsFlat(regionCode: string, includeSubGuguns: boolean = true): string[] {
+  const baseGuguns = REGION_CODE_TO_GUGUNS[regionCode] || [];
+
+  if (!includeSubGuguns) {
+    return baseGuguns;
+  }
+
+  const result: string[] = [];
+  const compositeGuguns = COMPOSITE_GUGUNS[regionCode] || {};
+
+  for (const gugun of baseGuguns) {
+    result.push(gugun);
+
+    // 하위 구가 있으면 추가
+    const subGuguns = compositeGuguns[gugun];
+    if (subGuguns) {
+      result.push(...subGuguns);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * 구군 계층 구조 가져오기
+ * @param regionCode 시도 코드
+ * @returns GugunHierarchy 배열
+ */
+export function getGugunHierarchy(regionCode: string): GugunHierarchy[] {
+  const baseGuguns = REGION_CODE_TO_GUGUNS[regionCode] || [];
+  const compositeGuguns = COMPOSITE_GUGUNS[regionCode] || {};
+
+  return baseGuguns.map(gugun => ({
+    gugun,
+    subGuguns: compositeGuguns[gugun] || [],
+  }));
 }
 
 // Supabase 원본 데이터에서 사용하는 한글 시도 라벨 매핑
@@ -415,15 +518,29 @@ export const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
 
   // 경기도
   'suwon': '수원시',
+  'suwon-jangan': '장안구',
+  'suwon-kwonseon': '권선구',
+  'suwon-paldal': '팔달구',
+  'suwon-yeongtong': '영통구',
   'seongnam': '성남시',
+  'seongnam-sujeong': '수정구',
+  'seongnam-jungwon': '중원구',
+  'seongnam-bundang': '분당구',
   'uijeongbu': '의정부시',
   'anyang': '안양시',
+  'anyang-manan': '만안구',
+  'anyang-dongan': '동안구',
   'bucheon': '부천시',
   'gwangmyeong': '광명시',
   'pyeongtaek': '평택시',
   'dongducheon': '동두천시',
   'ansan': '안산시',
+  'ansan-sangnok': '상록구',
+  'ansan-danwon': '단원구',
   'goyang': '고양시',
+  'goyang-deogyang': '덕양구',
+  'goyang-ilsandong': '일산동구',
+  'goyang-ilsanseo': '일산서구',
   'gwacheon': '과천시',
   'guri': '구리시',
   'namyangju': '남양주시',
@@ -434,6 +551,9 @@ export const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
   'uiwang': '의왕시',
   'hanam': '하남시',
   'yongin': '용인시',
+  'yongin-cheoin': '처인구',
+  'yongin-giheung': '기흥구',
+  'yongin-suji': '수지구',
   'paju': '파주시',
   'icheon': '이천시',
   'anseong': '안성시',
@@ -487,6 +607,8 @@ export const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
 
   // 충청남도
   'cheonan': '천안시',
+  'cheonan-dongnam': '동남구',
+  'cheonan-seobuk': '서북구',
   'gongju': '공주시',
   'boryeong': '보령시',
   'asan': '아산시',
@@ -504,6 +626,8 @@ export const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
 
   // 전북특별자치도
   'jeonju': '전주시',
+  'jeonju-wansan': '완산구',
+  'jeonju-deokjin': '덕진구',
   'gunsan': '군산시',
   'iksan': '익산시',
   'jeongeup': '정읍시',
@@ -568,6 +692,11 @@ export const CITY_CODE_TO_GUGUN_MAP: Record<string, string> = {
 
   // 경상남도
   'changwon': '창원시',
+  'changwon-uichang': '의창구',
+  'changwon-seongsan': '성산구',
+  'changwon-masanhappo': '마산합포구',
+  'changwon-masanhoewon': '마산회원구',
+  'changwon-jinhae': '진해구',
   'jinju': '진주시',
   'tongyeong': '통영시',
   'tongyeong_yokji': '통영시',
@@ -1005,4 +1134,143 @@ export function getRegionNamePatterns(): { fullNames: string[]; shortNames: stri
     fullNames,
     shortNames
   };
+}
+
+// =============================================================================
+// ⭐ 복합 행정구역 정규화 (2025-01-12 추가)
+// =============================================================================
+
+/**
+ * 하위 구 → 부모 시 역매핑
+ *
+ * @description
+ * 사용자가 드롭다운에서 "상당구"를 선택했을 때,
+ * 실제 DB에는 "청주시 상당구"로 저장되어 있어서
+ * 이를 자동으로 변환하기 위한 매핑 테이블입니다.
+ *
+ * @example
+ * SUB_GUGUN_TO_PARENT['상당구'] // '청주시'
+ * SUB_GUGUN_TO_PARENT['동남구'] // '천안시'
+ */
+export const SUB_GUGUN_TO_PARENT: Record<string, string> = {
+  // 경기도
+  '장안구': '수원시',
+  '권선구': '수원시',
+  '팔달구': '수원시',
+  '영통구': '수원시',
+  '수정구': '성남시',
+  '중원구': '성남시',
+  '분당구': '성남시',
+  '덕양구': '고양시',
+  '일산동구': '고양시',
+  '일산서구': '고양시',
+  '상록구': '안산시',
+  '단원구': '안산시',
+  '만안구': '안양시',
+  '동안구': '안양시',
+  '처인구': '용인시',
+  '기흥구': '용인시',
+  '수지구': '용인시',
+
+  // 충청북도
+  '상당구': '청주시',
+  '서원구': '청주시',
+  '흥덕구': '청주시',
+  '청원구': '청주시',
+
+  // 충청남도
+  '동남구': '천안시',
+  '서북구': '천안시',
+
+  // 전라북도
+  '완산구': '전주시',
+  '덕진구': '전주시',
+
+  // 경상북도
+  // NOTE: '남구', '북구'는 여러 도시에 존재하므로 매핑 불가
+  // (광주/대구/부산/울산 등)
+
+  // 경상남도
+  '의창구': '창원시',
+  '성산구': '창원시',
+  '마산합포구': '창원시',
+  '마산회원구': '창원시',
+  '진해구': '창원시',
+};
+
+/**
+ * ⭐ 하위 구를 완전한 형태로 변환
+ *
+ * @example
+ * getFullGugunName('상당구')    // '청주시 상당구'
+ * getFullGugunName('동남구')    // '천안시 동남구'
+ * getFullGugunName('수원시')    // '수원시' (이미 완전한 형태)
+ * getFullGugunName('서귀포시')  // '서귀포시' (단일 시)
+ *
+ * @description
+ * 사용자가 드롭다운에서 "상당구"를 선택했을 때,
+ * DB 검색을 위해 "청주시 상당구" 형태로 자동 변환합니다.
+ */
+export function getFullGugunName(gugun: string): string {
+  // 이미 완전한 형태인지 확인 (예: "청주시 상당구", "수원시")
+  if (gugun.includes(' ')) {
+    return gugun;
+  }
+
+  // "시" 또는 "군"으로 끝나면 그대로 반환
+  if (gugun.endsWith('시') || gugun.endsWith('군')) {
+    return gugun;
+  }
+
+  // 띄어쓰기 없는 복합 형식 처리 (예: "청주상당구" → "청주시 상당구")
+  // 부모 시를 먼저 찾고, 해당 부모 시로 시작하는지 확인
+  for (const [subGugun, parentCity] of Object.entries(SUB_GUGUN_TO_PARENT)) {
+    const cityWithoutSi = parentCity.replace('시', ''); // "청주시" → "청주"
+    if (gugun.startsWith(cityWithoutSi) && gugun.endsWith(subGugun)) {
+      // "청주상당구" → "청주시 상당구"
+      return `${parentCity} ${subGugun}`;
+    }
+  }
+
+  // 하위 구인 경우 부모 시를 찾아서 조합
+  const parentCity = SUB_GUGUN_TO_PARENT[gugun];
+  if (parentCity) {
+    return `${parentCity} ${gugun}`;
+  }
+
+  // 부모 시만 있는 경우 (예: "청주" → "청주시")
+  for (const city of Object.values(SUB_GUGUN_TO_PARENT)) {
+    const cityWithoutSi = city.replace('시', '');
+    if (gugun === cityWithoutSi) {
+      return city;
+    }
+  }
+
+  // 매핑에 없으면 원본 반환
+  return gugun;
+}
+
+/**
+ * ⭐ DB 검색용 구군 정규화 (복합 행정구역 지원)
+ *
+ * @example
+ * normalizeGugunForDB('상당구')       // '청주시 상당구'
+ * normalizeGugunForDB('청주시')       // '청주시'
+ * normalizeGugunForDB('청주시 상당구') // '청주시 상당구'
+ * normalizeGugunForDB('전체')        // undefined
+ *
+ * @description
+ * API route나 필터에서 사용자가 선택한 구군을
+ * DB 검색용 형태로 정규화합니다.
+ *
+ * - "전체" → undefined (모든 구군 조회)
+ * - 하위 구 → "부모시 + 하위구" 형태
+ * - 일반 시/군 → 그대로
+ */
+export function normalizeGugunForDB(gugun: string | undefined): string | undefined {
+  if (!gugun || gugun === '전체' || gugun === '구군') {
+    return undefined;
+  }
+
+  return getFullGugunName(gugun);
 }

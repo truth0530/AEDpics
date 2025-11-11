@@ -48,6 +48,7 @@ export interface UserProfile {
   organization?: Organization;
   region?: string;  // 한글 지역명 (예: "서울특별시")
   region_code?: string;  // 지역 코드 (예: "SEO")
+  district?: string | null;  // 시군구 (예: "강남구")
   role: UserRole;
   isActive: boolean;
   approvedBy?: string;

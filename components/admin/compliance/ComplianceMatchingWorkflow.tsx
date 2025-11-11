@@ -1,0 +1,360 @@
+'use client';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { UserProfile } from '@/packages/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { getRegionLabel } from '@/lib/constants/regions';
+import InstitutionListPanel from './InstitutionListPanel';
+import ManagementNumberPanel from './ManagementNumberPanel';
+import BasketPanel from './BasketPanel';
+
+// 타입 정의
+interface ManagementNumberCandidate {
+  management_number: string;
+  institution_name: string;
+  address: string;
+  equipment_count: number;
+  confidence: number | null;
+  is_matched: boolean;
+  matched_to: string | null;
+}
+
+interface TargetInstitution {
+  target_key: string;
+  institution_name: string;
+  sido: string;
+  gugun: string;
+  division: string;
+  sub_division: string;
+  address?: string; // 2025년 세부주소 추가 예정
+  equipment_count: number;
+  matched_count: number;
+  unmatched_count: number;
+}
+
+interface BasketItem extends ManagementNumberCandidate {
+  target_key: string;
+}
+
+interface ComplianceMatchingWorkflowProps {
+  year?: string;
+  initialProfile?: UserProfile;
+}
+
+export default function ComplianceMatchingWorkflow({
+  year = '2024',
+  initialProfile
+}: ComplianceMatchingWorkflowProps) {
+  // State 관리
+  const [selectedInstitution, setSelectedInstitution] = useState<TargetInstitution | null>(null);
+  // 기관별 basket 관리 (target_key를 키로 사용)
+  const [basketByInstitution, setBasketByInstitution] = useState<Record<string, BasketItem[]>>({});
+  const [isManagementPanelCollapsed, setIsManagementPanelCollapsed] = useState(false);
+  // 매칭 완료 후 리스트 새로고침 트리거
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // 헤더 Region Filter에서 선택한 지역 (동적으로 연결)
+  const [selectedRegion, setSelectedRegion] = useState<{ sido: string | null; gugun: string | null }>(() => {
+    // sessionStorage에서 초기값 로드
+    if (typeof window !== 'undefined') {
+      const storedSido = window.sessionStorage.getItem('selectedSido');
+      const storedGugun = window.sessionStorage.getItem('selectedGugun');
+
+      // '시도'나 '전체'는 null로 처리
+      return {
+        sido: storedSido && storedSido !== '시도' ? storedSido : null,
+        gugun: storedGugun && storedGugun !== '전체' ? storedGugun : null
+      };
+    }
+    return { sido: null, gugun: null };
+  });
+
+  // 현재 선택된 기관의 basket
+  const currentBasket = selectedInstitution
+    ? (basketByInstitution[selectedInstitution.target_key] || [])
+    : [];
+
+  // 관할지역 정보 (사용자 프로필 기반 - 참고용)
+  const userJurisdiction = useMemo(() => {
+    if (!initialProfile?.region_code) {
+      return null;
+    }
+
+    const sidoLabel = getRegionLabel(initialProfile.region_code);
+
+    // 중앙(KR)은 지역 필터 없이 전체 조회
+    if (initialProfile.region_code === 'KR') {
+      return null;
+    }
+
+    return {
+      sido: sidoLabel,
+      gugun: initialProfile.district || null
+    };
+  }, [initialProfile]);
+
+  // AppHeader의 RegionFilter 변경 이벤트 수신
+  useEffect(() => {
+    const handleRegionChange = (e: CustomEvent) => {
+      const { sido, gugun } = e.detail;
+
+      console.log('[ComplianceMatchingWorkflow] Region changed from header:', { sido, gugun });
+
+      setSelectedRegion({
+        sido: sido && sido !== '시도' ? sido : null,
+        gugun: gugun && gugun !== '전체' ? gugun : null
+      });
+
+      // 지역 변경 시 선택된 기관 초기화
+      setSelectedInstitution(null);
+    };
+
+    window.addEventListener('regionSelected', handleRegionChange as EventListener);
+    return () => {
+      window.removeEventListener('regionSelected', handleRegionChange as EventListener);
+    };
+  }, []);
+
+  // 담기 박스 핸들러
+  const handleAddToBasket = (item: ManagementNumberCandidate) => {
+    if (!selectedInstitution) return;
+
+    const basketItem: BasketItem = {
+      ...item,
+      target_key: selectedInstitution.target_key
+    };
+
+    setBasketByInstitution(prev => {
+      const targetKey = selectedInstitution.target_key;
+      const currentItems = prev[targetKey] || [];
+
+      // 중복 체크
+      if (currentItems.some(i => i.management_number === item.management_number)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [targetKey]: [...currentItems, basketItem]
+      };
+    });
+  };
+
+  const handleRemoveFromBasket = (managementNumber: string) => {
+    if (!selectedInstitution) return;
+
+    setBasketByInstitution(prev => {
+      const targetKey = selectedInstitution.target_key;
+      const currentItems = prev[targetKey] || [];
+
+      return {
+        ...prev,
+        [targetKey]: currentItems.filter(item => item.management_number !== managementNumber)
+      };
+    });
+  };
+
+  const handleClearBasket = () => {
+    if (!selectedInstitution) return;
+
+    setBasketByInstitution(prev => {
+      const targetKey = selectedInstitution.target_key;
+      return {
+        ...prev,
+        [targetKey]: []
+      };
+    });
+  };
+
+  const handleAddMultipleToBasket = (items: ManagementNumberCandidate[]) => {
+    if (!selectedInstitution) return;
+
+    const basketItems: BasketItem[] = items.map(item => ({
+      ...item,
+      target_key: selectedInstitution.target_key
+    }));
+
+    setBasketByInstitution(prev => {
+      const targetKey = selectedInstitution.target_key;
+      const currentItems = prev[targetKey] || [];
+
+      // 중복 제거
+      const existingNumbers = new Set(currentItems.map(i => i.management_number));
+      const newItems = basketItems.filter(item => !existingNumbers.has(item.management_number));
+
+      return {
+        ...prev,
+        [targetKey]: [...currentItems, ...newItems]
+      };
+    });
+  };
+
+  // 매칭 실행
+  const handleMatchBasket = async () => {
+    if (currentBasket.length === 0 || !selectedInstitution) return;
+
+    try {
+      const response = await fetch('/api/compliance/match-basket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_key: selectedInstitution.target_key,
+          year: parseInt(year),
+          management_numbers: currentBasket.map(item => item.management_number)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('매칭 실패');
+      }
+
+      const result = await response.json();
+
+      // 성공 처리 - 해당 기관의 basket만 비우기
+      setBasketByInstitution(prev => {
+        const targetKey = selectedInstitution.target_key;
+        return {
+          ...prev,
+          [targetKey]: []
+        };
+      });
+
+      // 의무설치기관 리스트 새로고침 트리거
+      setRefreshTrigger(prev => prev + 1);
+
+      // 선택된 기관 초기화 (리스트에서 사라지므로)
+      setSelectedInstitution(null);
+
+    } catch (error) {
+      console.error('매칭 실패:', error);
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-background">
+      {/* Main Content - 3단 구조 */}
+      <div className="grid grid-cols-12 gap-4 p-4" style={{ height: 'calc(100vh - 5rem)' }}>
+        {/* Column 1: 의무설치기관 리스트 (4/12) */}
+        <div className="col-span-4 flex flex-col overflow-hidden">
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Badge variant="outline">1</Badge>
+                의무설치기관
+                <span className="text-xs text-muted-foreground font-normal ml-1">
+                  미매칭만 표시
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-hidden flex flex-col">
+              <InstitutionListPanel
+                year={year}
+                sido={selectedRegion.sido}
+                gugun={selectedRegion.gugun}
+                selectedInstitution={selectedInstitution}
+                onSelect={setSelectedInstitution}
+                refreshTrigger={refreshTrigger}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Column 2: 관리번호 리스트 (4/12 또는 1/12) */}
+        <div className={`flex flex-col overflow-hidden transition-all ${isManagementPanelCollapsed ? 'col-span-1' : 'col-span-4'}`}>
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Badge variant="outline">2</Badge>
+                  {!isManagementPanelCollapsed && (
+                    <>
+                      {selectedInstitution ? (
+                        <span>
+                          {selectedInstitution.institution_name}과 매칭할 관리번호를 선택하세요
+                        </span>
+                      ) : (
+                        <>
+                          관리번호 리스트
+                          <span className="text-xs text-muted-foreground font-normal ml-1">
+                            의무설치기관을 선택하세요
+                          </span>
+                        </>
+                      )}
+                    </>
+                  )}
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsManagementPanelCollapsed(!isManagementPanelCollapsed)}
+                  className="h-8 w-8 p-0"
+                >
+                  {isManagementPanelCollapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronLeft className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            {!isManagementPanelCollapsed && (
+              <CardContent className="flex-1 overflow-hidden flex flex-col">
+                <ManagementNumberPanel
+                  year={year}
+                  selectedInstitution={selectedInstitution}
+                  onAddToBasket={handleAddToBasket}
+                  onAddMultipleToBasket={handleAddMultipleToBasket}
+                  basketedManagementNumbers={currentBasket.map(item => item.management_number)}
+                />
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
+        {/* Column 3: 담기 박스 (4/12 또는 7/12) */}
+        <div className={`flex flex-col overflow-hidden transition-all ${isManagementPanelCollapsed ? 'col-span-7' : 'col-span-4'}`}>
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Badge variant="outline">3</Badge>
+                  {selectedInstitution ? (
+                    `${selectedInstitution.institution_name}의 매칭된 관리번호`
+                  ) : (
+                    <>
+                      매칭된 관리번호
+                      <span className="text-xs text-muted-foreground font-normal ml-1">
+                        의무설치기관을 선택하세요
+                      </span>
+                    </>
+                  )}
+                </CardTitle>
+                {currentBasket.length > 0 && (
+                  <Button
+                    size="sm"
+                    onClick={handleMatchBasket}
+                    disabled={!selectedInstitution}
+                  >
+                    매칭하기
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-hidden flex flex-col">
+              <BasketPanel
+                basket={currentBasket}
+                selectedInstitution={selectedInstitution}
+                onRemove={handleRemoveFromBasket}
+                onClear={handleClearBasket}
+                onMatch={handleMatchBasket}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

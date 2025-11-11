@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { calculateMatchingScore } from '@/lib/utils/similarity-matching';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
+import { normalizeGugunForDB } from '@/lib/constants/regions';
 
 // Optimize query with pagination and limits
 const DEFAULT_PAGE_SIZE = 50;
@@ -19,7 +20,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const year = searchParams.get('year') || '2024';
     const sido = searchParams.get('sido');
-    const gugun = searchParams.get('gugun');
+    const gugunParam = searchParams.get('gugun');
+    const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
     const search = searchParams.get('search');
     const confidenceLevel = searchParams.get('confidence_level') || 'all';
 
