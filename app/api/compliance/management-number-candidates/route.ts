@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       institution_name: string;
       address: string;
       equipment_count: number;
+      equipment_serials: string[];
       confidence: number;
       is_matched: boolean;
       matched_to: string | null;
@@ -106,6 +107,9 @@ export async function GET(request: NextRequest) {
             gd.installation_institution as institution_name,
             gd.address,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
+            (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = gd.management_number) as equipment_serials,
             CASE
               WHEN gd.installation_institution = ${targetName} THEN 100
               WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
@@ -162,6 +166,9 @@ export async function GET(request: NextRequest) {
             gd.installation_institution as institution_name,
             gd.address,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
+            (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = gd.management_number) as equipment_serials,
             CASE
               WHEN gd.installation_institution = ${targetName} THEN 100
               WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
@@ -215,6 +222,9 @@ export async function GET(request: NextRequest) {
             gd.installation_institution as institution_name,
             gd.address,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
+            (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = gd.management_number) as equipment_serials,
             CASE
               WHEN gd.installation_institution = ${targetName} THEN 100
               WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
@@ -241,6 +251,9 @@ export async function GET(request: NextRequest) {
           ad.installation_institution as institution_name,
           COALESCE(ad.installation_location_address, ad.installation_address) as address,
           COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+          (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
+           FROM aedpics.aed_data ad2
+           WHERE ad2.management_number = ad.management_number) as equipment_serials,
           0::numeric as confidence,
           EXISTS(
             SELECT 1 FROM aedpics.target_list_devices tld
@@ -275,6 +288,7 @@ export async function GET(request: NextRequest) {
       institution_name: string;
       address: string;
       equipment_count: number;
+      equipment_serials: string[];
       confidence: number | null;
       is_matched: boolean;
       matched_to: string | null;
@@ -291,6 +305,9 @@ export async function GET(request: NextRequest) {
             ad.installation_institution as institution_name,
             COALESCE(ad.installation_location_address, ad.installation_address) as address,
             COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+            (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = ad.management_number) as equipment_serials,
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
@@ -333,6 +350,9 @@ export async function GET(request: NextRequest) {
             ad.installation_institution as institution_name,
             COALESCE(ad.installation_location_address, ad.installation_address) as address,
             COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+            (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = ad.management_number) as equipment_serials,
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
@@ -374,6 +394,9 @@ export async function GET(request: NextRequest) {
             ad.installation_institution as institution_name,
             COALESCE(ad.installation_location_address, ad.installation_address) as address,
             COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
+            (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = ad.management_number) as equipment_serials,
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld

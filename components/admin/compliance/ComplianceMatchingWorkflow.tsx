@@ -17,6 +17,7 @@ interface ManagementNumberCandidate {
   institution_name: string;
   address: string;
   equipment_count: number;
+  equipment_serials: string[];
   confidence: number | null;
   is_matched: boolean;
   matched_to: string | null;
