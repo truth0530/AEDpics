@@ -272,7 +272,7 @@ export function getTeamMemberStats(filter: Prisma.user_profilesWhereInput) {
 }
 
 /**
- * 장비 기반 팀원 필터 생성
+ * 장비 기반 팀원 필터 생성 (단일 장비)
  *
  * 특정 장비를 점검할 수 있는 팀원만 필터링:
  * 1. 본인(currentUserId)은 항상 포함
@@ -325,5 +325,70 @@ export function getEquipmentBasedTeamFilter(
         district: equipmentLocation.gugun,
       },
     ],
+  };
+}
+
+/**
+ * 멀티 장비 기반 팀원 필터 생성
+ *
+ * 여러 장비를 동시에 할당할 때 사용:
+ * - 모든 장비 위치의 담당자를 모두 포함
+ * - 서로 다른 구군의 장비를 선택해도 각 구군의 담당자가 모두 표시됨
+ *
+ * @param equipmentLocations 장비 위치 배열 [{ sido, gugun }, ...]
+ * @param currentUserId 현재 사용자 ID (본인 할당용)
+ * @returns Prisma 필터 조건
+ */
+export function getMultiEquipmentBasedTeamFilter(
+  equipmentLocations: Array<{ sido: string | null; gugun: string | null }>,
+  currentUserId: string
+): Prisma.user_profilesWhereInput {
+  // 유효한 위치만 필터링
+  const validLocations = equipmentLocations.filter(
+    loc => loc.sido && loc.gugun
+  ) as Array<{ sido: string; gugun: string }>;
+
+  if (validLocations.length === 0) {
+    // 유효한 장비 위치가 없으면 본인만 반환
+    return {
+      id: currentUserId,
+      is_active: true,
+      approved_at: { not: null },
+    };
+  }
+
+  // 기본 필터: 활성 + 승인된 사용자
+  const baseFilter: Prisma.user_profilesWhereInput = {
+    is_active: true,
+    approved_at: { not: null },
+  };
+
+  // 모든 위치에 대한 OR 조건 생성
+  const locationConditions: Prisma.user_profilesWhereInput[] = [];
+
+  // 본인은 항상 포함
+  locationConditions.push({ id: currentUserId });
+
+  // 각 위치별 담당자 추가
+  for (const location of validLocations) {
+    // local_admin (korea.kr)
+    locationConditions.push({
+      role: 'local_admin',
+      email: { endsWith: '@korea.kr' },
+      region_code: location.sido,
+      district: location.gugun,
+    });
+
+    // temporary_inspector
+    locationConditions.push({
+      role: 'temporary_inspector',
+      region_code: location.sido,
+      district: location.gugun,
+    });
+  }
+
+  return {
+    ...baseFilter,
+    OR: locationConditions,
   };
 }

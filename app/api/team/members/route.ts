@@ -7,6 +7,7 @@ import {
   buildTeamMemberSearchQuery,
   getOrganizationType,
   getEquipmentBasedTeamFilter,
+  getMultiEquipmentBasedTeamFilter,
 } from '@/lib/utils/team-authorization';
 
 export async function GET(request: NextRequest) {
@@ -47,23 +48,23 @@ export async function GET(request: NextRequest) {
       const equipmentSerials = equipmentSerialsParam.split(',').map(s => s.trim()).filter(Boolean);
 
       if (equipmentSerials.length > 0) {
-        // 장비 위치 정보 조회 (첫 번째 장비 기준)
-        const equipment = await prisma.aed_data.findUnique({
-          where: { equipment_serial: equipmentSerials[0] },
+        // 모든 장비 위치 정보 조회 (멀티 구군 지원)
+        const equipments = await prisma.aed_data.findMany({
+          where: { equipment_serial: { in: equipmentSerials } },
           select: {
             sido: true,
             gugun: true,
           },
         });
 
-        if (equipment && equipment.sido && equipment.gugun) {
-          // 장비 기반 필터 사용
-          memberFilter = getEquipmentBasedTeamFilter(
-            { sido: equipment.sido, gugun: equipment.gugun },
+        if (equipments.length > 0) {
+          // 멀티 장비 기반 필터 사용
+          memberFilter = getMultiEquipmentBasedTeamFilter(
+            equipments.map(e => ({ sido: e.sido, gugun: e.gugun })),
             currentUser.id
           );
         } else {
-          // 장비 위치를 찾을 수 없으면 기본 필터 사용
+          // 장비를 찾을 수 없으면 기본 필터 사용
           memberFilter = getTeamMemberFilter(currentUser);
         }
       } else {
@@ -142,18 +143,28 @@ export async function GET(request: NextRequest) {
     );
 
     // 7. 응답 데이터 구성
-    const membersWithStats = members.map((member) => ({
-      id: member.id,
-      name: member.full_name,
-      email: member.email,
-      phone: member.phone,
-      position: member.position,
-      role: member.role,
-      region_code: member.region_code,
-      district: member.district,
-      current_assigned: assignmentMap.get(member.id) || 0,
-      completed_this_month: completedMap.get(member.id) || 0,
-    }));
+    const membersWithStats = members.map((member) => {
+      // member_type 계산: role로부터 파생
+      const member_type =
+        member.role === 'temporary_inspector' ? 'temporary' :
+        member.role === 'local_admin' ? 'permanent' :
+        'permanent'; // 기본값
+
+      return {
+        id: member.id,
+        name: member.full_name,
+        email: member.email,
+        phone: member.phone,
+        position: member.position,
+        role: member.role,
+        member_type, // UI에서 기대하는 필드
+        user_profile_id: member.id, // 타입 호환성을 위해
+        region_code: member.region_code,
+        district: member.district,
+        current_assigned: assignmentMap.get(member.id) || 0,
+        completed_this_month: completedMap.get(member.id) || 0,
+      };
+    });
 
     // 8. 부서(position) 기반 그룹핑
     const groupedByDept = membersWithStats.reduce(
