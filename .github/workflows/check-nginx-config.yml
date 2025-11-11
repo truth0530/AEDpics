@@ -1,0 +1,25 @@
+name: Check Nginx Configuration
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: View Nginx Config
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check Nginx configuration
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== Nginx Sites Available ==="
+          ls -la /etc/nginx/sites-available/
+
+          echo ""
+          echo "=== AED.pics Nginx Config ==="
+          cat /etc/nginx/sites-available/aed.pics 2>/dev/null || cat /etc/nginx/sites-available/default || echo "Config file not found"
