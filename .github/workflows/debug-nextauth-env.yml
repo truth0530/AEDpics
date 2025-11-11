@@ -1,0 +1,57 @@
+name: Debug NextAuth Environment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    name: Check Environment and NextAuth Settings
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Debug NextAuth configuration
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== 1. Environment File ===" cd /var/www/aedpics
+          echo "Checking .env.production:"
+          grep -E "NEXTAUTH_URL|NEXT_PUBLIC_SITE_URL|NODE_ENV" .env.production
+
+          echo ""
+          echo "=== 2. PM2 Environment Variables ==="
+          pm2 show aedpics | grep -A 30 "env:"
+
+          echo ""
+          echo "=== 3. Process Environment Check ==="
+          pm2 exec 'console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL)'
+          pm2 exec 'console.log("NEXT_PUBLIC_SITE_URL:", process.env.NEXT_PUBLIC_SITE_URL)'
+          pm2 exec 'console.log("NODE_ENV:", process.env.NODE_ENV)'
+
+          echo ""
+          echo "=== 4. Nginx Configuration Verification ==="
+          grep -A 5 "proxy_set_header Host" /etc/nginx/sites-available/aedpics
+
+          echo ""
+          echo "=== 5. Test Request with Headers ==="
+          echo "Request headers being sent:"
+          curl -v https://aed.pics/api/auth/providers 2>&1 | grep -E "Host:|X-Forwarded"
+
+          echo ""
+          echo "=== 6. Response from NextAuth ==="
+          curl -s https://aed.pics/api/auth/providers | jq '.'
+
+          echo ""
+          echo "=== 7. Check auth-options.ts ==="
+          cd /var/www/aedpics
+          if [ -f "lib/auth/auth-options.ts" ]; then
+            echo "Checking for useSecureCookies or url configuration:"
+            grep -n "useSecureCookies\|trustHost\|url:" lib/auth/auth-options.ts || echo "No explicit URL configuration found"
+          fi
+
+          echo ""
+          echo "=== 8. Check Next.js Server Runtime ==="
+          pm2 logs aedpics --lines 20 --nostream
