@@ -130,7 +130,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     if (viewMode === 'completed' && statusFilter !== 'completed') {
       setStatusFilter('completed');
     }
-  }, [viewMode, statusFilter]);
+  }, [viewMode]); // statusFilter 제거: 필터 변경 시 재설정 방지
 
   // 점검진행목록 탭으로 전환 시 점검 이력 조회 (필터 상태 포함)
   useEffect(() => {
