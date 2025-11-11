@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { MapPin, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface BasketItem {
   management_number: string;
@@ -104,7 +105,12 @@ export default function BasketPanel({
             {basket.map((item) => (
               <Card
                 key={item.management_number}
-                className="p-3 transition-all hover:shadow-md"
+                className={cn(
+                  "p-3 transition-all hover:shadow-md",
+                  item.selected_serials && item.selected_serials.length > 0
+                    ? "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
+                    : "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                )}
               >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">

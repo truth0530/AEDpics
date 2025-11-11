@@ -9,12 +9,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface EquipmentDetail {
+  serial: string;
+  location_detail: string;
+}
+
 interface ManagementNumberCandidate {
   management_number: string;
   institution_name: string;
   address: string;
   equipment_count: number;
   equipment_serials: string[];
+  equipment_details: EquipmentDetail[];
   confidence: number | null;
   is_matched: boolean;
   matched_to: string | null;
@@ -29,6 +35,11 @@ interface TargetInstitution {
   gugun: string;
 }
 
+interface BasketItem {
+  management_number: string;
+  selected_serials?: string[];
+}
+
 interface ManagementNumberPanelProps {
   year: string;
   selectedInstitution: TargetInstitution | null;
@@ -36,6 +47,7 @@ interface ManagementNumberPanelProps {
   onAddMultipleToBasket: (items: ManagementNumberCandidate[]) => void;
   onAddEquipmentSerial: (item: ManagementNumberCandidate, serial: string) => void;
   basketedManagementNumbers?: string[];
+  basketedItems?: BasketItem[];
 }
 
 export default function ManagementNumberPanel({
@@ -44,7 +56,8 @@ export default function ManagementNumberPanel({
   onAddToBasket,
   onAddMultipleToBasket,
   onAddEquipmentSerial,
-  basketedManagementNumbers = []
+  basketedManagementNumbers = [],
+  basketedItems = []
 }: ManagementNumberPanelProps) {
   const [autoSuggestions, setAutoSuggestions] = useState<ManagementNumberCandidate[]>([]);
   const [searchResults, setSearchResults] = useState<ManagementNumberCandidate[]>([]);
@@ -138,20 +151,39 @@ export default function ManagementNumberPanel({
           const isExpanded = expandedManagementNumbers.has(item.management_number);
           const hasMultipleEquipment = item.equipment_count > 1;
 
+          // 부분 매칭 여부 확인
+          const basketItem = basketedItems.find(b => b.management_number === item.management_number);
+          const isPartiallyMatched = basketItem && basketItem.selected_serials && basketItem.selected_serials.length > 0;
+          const isFullyMatched = basketedManagementNumbers.includes(item.management_number) && !isPartiallyMatched;
+
           return (
             <Card
               key={item.management_number}
               className={cn(
                 "p-2.5 transition-all",
-                item.is_matched && "opacity-50 bg-muted"
+                item.is_matched && "opacity-50 bg-muted",
+                isPartiallyMatched && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
+                isFullyMatched && "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
               )}
             >
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="font-medium text-sm">
-                    {item.institution_name}
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-sm">
+                      {item.institution_name}
+                    </div>
+                    {isPartiallyMatched && (
+                      <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                        부분 매칭
+                      </Badge>
+                    )}
+                    {isFullyMatched && (
+                      <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                        전체 담김
+                      </Badge>
+                    )}
                   </div>
-                  {!item.is_matched ? (
+                  {!item.is_matched && !isPartiallyMatched && !isFullyMatched ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -160,13 +192,13 @@ export default function ManagementNumberPanel({
                       }}
                       className="flex-shrink-0"
                     >
-                      담기
+                      전체 담기
                     </Button>
-                  ) : (
+                  ) : item.is_matched ? (
                     <Badge variant="secondary" className="text-xs flex-shrink-0">
                       이미 매칭됨
                     </Badge>
-                  )}
+                  ) : null}
                 </div>
                 {(item.category_1 || item.category_2) && (
                   <div className="flex items-center gap-1">
@@ -200,45 +232,61 @@ export default function ManagementNumberPanel({
                     <Badge variant="outline" className="text-xs">
                       장비 {item.equipment_count}대
                     </Badge>
-                    {/* 장비가 2대 이상인 경우에만 펼치기/접기 버튼 표시 */}
-                    {hasMultipleEquipment && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => toggleExpanded(item.management_number)}
-                        className="h-6 w-6 p-0"
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
                   </div>
                 </div>
 
+                {/* 장비가 2대 이상인 경우에만 펼치기/접기 버튼 표시 (중앙 배치) */}
+                {hasMultipleEquipment && (
+                  <div className="flex justify-center mt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleExpanded(item.management_number)}
+                      className="text-xs"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="h-3 w-3 mr-1" />
+                          장비 {item.equipment_count}대 접기
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-3 w-3 mr-1" />
+                          장비 {item.equipment_count}대 펼치기
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
                 {/* 펼쳐진 경우 장비연번 목록 표시 */}
-                {isExpanded && hasMultipleEquipment && item.equipment_serials && (
+                {isExpanded && hasMultipleEquipment && item.equipment_details && (
                   <div className="mt-3 pt-3 border-t border-border">
                     <div className="text-xs font-medium text-muted-foreground mb-2">
-                      장비연번 목록 ({item.equipment_serials.length}개)
+                      장비연번 목록 ({item.equipment_details.length}개)
                     </div>
                     <div className="space-y-1.5">
-                      {item.equipment_serials.map((serial) => (
+                      {item.equipment_details.map((detail) => (
                         <div
-                          key={serial}
-                          className="flex items-center justify-between gap-2 p-2 bg-muted/50 rounded"
+                          key={detail.serial}
+                          className="flex items-start justify-between gap-2 p-2 bg-muted/50 rounded"
                         >
-                          <span className="text-xs font-mono">{serial}</span>
+                          <div className="flex-1 space-y-0.5">
+                            <div className="text-xs font-mono font-medium">{detail.serial}</div>
+                            {detail.location_detail && (
+                              <div className="text-xs text-muted-foreground">
+                                {detail.location_detail}
+                              </div>
+                            )}
+                          </div>
                           {!item.is_matched && (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-6 text-xs px-2"
-                              onClick={() => onAddEquipmentSerial(item, serial)}
+                              className="h-auto text-xs px-2 py-1 flex-shrink-0"
+                              onClick={() => onAddEquipmentSerial(item, detail.serial)}
                             >
-                              담기
+                              설치위치 담기
                             </Button>
                           )}
                         </div>

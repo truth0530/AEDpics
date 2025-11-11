@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
       address: string;
       equipment_count: number;
       equipment_serials: string[];
+      equipment_details: Array<{ serial: string; location_detail: string }>;
       confidence: number;
       is_matched: boolean;
       matched_to: string | null;
@@ -110,6 +111,14 @@ export async function GET(request: NextRequest) {
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_serials,
+            (SELECT json_agg(
+               json_build_object(
+                 'serial', ad2.equipment_serial,
+                 'location_detail', COALESCE(ad2.installation_location_detail, '')
+               ) ORDER BY ad2.equipment_serial
+             )
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
               WHEN gd.installation_institution = ${targetName} THEN 100
               WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
@@ -169,6 +178,14 @@ export async function GET(request: NextRequest) {
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_serials,
+            (SELECT json_agg(
+               json_build_object(
+                 'serial', ad2.equipment_serial,
+                 'location_detail', COALESCE(ad2.installation_location_detail, '')
+               ) ORDER BY ad2.equipment_serial
+             )
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
               WHEN gd.installation_institution = ${targetName} THEN 100
               WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
@@ -225,6 +242,14 @@ export async function GET(request: NextRequest) {
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_serials,
+            (SELECT json_agg(
+               json_build_object(
+                 'serial', ad2.equipment_serial,
+                 'location_detail', COALESCE(ad2.installation_location_detail, '')
+               ) ORDER BY ad2.equipment_serial
+             )
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
               WHEN gd.installation_institution = ${targetName} THEN 100
               WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
@@ -254,6 +279,14 @@ export async function GET(request: NextRequest) {
           (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
            FROM aedpics.aed_data ad2
            WHERE ad2.management_number = ad.management_number) as equipment_serials,
+          (SELECT json_agg(
+             json_build_object(
+               'serial', ad2.equipment_serial,
+               'location_detail', COALESCE(ad2.installation_location_detail, '')
+             ) ORDER BY ad2.equipment_serial
+           )
+           FROM aedpics.aed_data ad2
+           WHERE ad2.management_number = ad.management_number) as equipment_details,
           0::numeric as confidence,
           EXISTS(
             SELECT 1 FROM aedpics.target_list_devices tld
@@ -289,6 +322,7 @@ export async function GET(request: NextRequest) {
       address: string;
       equipment_count: number;
       equipment_serials: string[];
+      equipment_details: Array<{ serial: string; location_detail: string }>;
       confidence: number | null;
       is_matched: boolean;
       matched_to: string | null;
@@ -308,6 +342,14 @@ export async function GET(request: NextRequest) {
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = ad.management_number) as equipment_serials,
+            (SELECT json_agg(
+               json_build_object(
+                 'serial', ad2.equipment_serial,
+                 'location_detail', COALESCE(ad2.installation_location_detail, '')
+               ) ORDER BY ad2.equipment_serial
+             )
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = ad.management_number) as equipment_details,
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
@@ -353,6 +395,14 @@ export async function GET(request: NextRequest) {
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = ad.management_number) as equipment_serials,
+            (SELECT json_agg(
+               json_build_object(
+                 'serial', ad2.equipment_serial,
+                 'location_detail', COALESCE(ad2.installation_location_detail, '')
+               ) ORDER BY ad2.equipment_serial
+             )
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = ad.management_number) as equipment_details,
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
@@ -397,6 +447,14 @@ export async function GET(request: NextRequest) {
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = ad.management_number) as equipment_serials,
+            (SELECT json_agg(
+               json_build_object(
+                 'serial', ad2.equipment_serial,
+                 'location_detail', COALESCE(ad2.installation_location_detail, '')
+               ) ORDER BY ad2.equipment_serial
+             )
+             FROM aedpics.aed_data ad2
+             WHERE ad2.management_number = ad.management_number) as equipment_details,
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld

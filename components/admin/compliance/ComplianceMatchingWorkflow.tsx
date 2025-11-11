@@ -12,12 +12,18 @@ import ManagementNumberPanel from './ManagementNumberPanel';
 import BasketPanel from './BasketPanel';
 
 // 타입 정의
+interface EquipmentDetail {
+  serial: string;
+  location_detail: string;
+}
+
 interface ManagementNumberCandidate {
   management_number: string;
   institution_name: string;
   address: string;
   equipment_count: number;
   equipment_serials: string[];
+  equipment_details: EquipmentDetail[];
   confidence: number | null;
   is_matched: boolean;
   matched_to: string | null;
@@ -366,6 +372,10 @@ export default function ComplianceMatchingWorkflow({
                   onAddMultipleToBasket={handleAddMultipleToBasket}
                   onAddEquipmentSerial={handleAddEquipmentSerial}
                   basketedManagementNumbers={currentBasket.map(item => item.management_number)}
+                  basketedItems={currentBasket.map(item => ({
+                    management_number: item.management_number,
+                    selected_serials: item.selected_serials
+                  }))}
                 />
               </CardContent>
             )}
