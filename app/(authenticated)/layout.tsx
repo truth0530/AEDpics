@@ -13,6 +13,9 @@ import { getCachedAuthUser, getCachedUserProfile, getCachedPendingApprovalCount 
 import { DataRefreshBanner } from "@/components/ui/DataRefreshBanner"
 import { ErrorBoundary } from "@/components/error/ErrorBoundary"
 
+// Force dynamic rendering - this layout uses headers() for authentication
+export const dynamic = 'force-dynamic';
+
 export default async function AuthenticatedLayout({
   children,
 }: {
