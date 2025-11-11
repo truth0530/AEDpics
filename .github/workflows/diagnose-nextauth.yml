@@ -1,0 +1,46 @@
+name: Diagnose NEXTAUTH_URL Issue
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: Check Server Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check server environment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== Checking NEXTAUTH_URL Configuration ==="
+          cd /var/www/aedpics
+
+          echo ""
+          echo "1. .env.production file:"
+          if [ -f .env.production ]; then
+            echo "File exists"
+            grep -E "NEXTAUTH_URL|NEXT_PUBLIC_SITE_URL" .env.production | sed 's/=.*/@REDACTED/'
+          else
+            echo "File NOT found!"
+          fi
+
+          echo ""
+          echo "2. PM2 environment variables:"
+          pm2 show aedpics | grep -A 20 "env:" | grep -E "NEXTAUTH_URL|NEXT_PUBLIC_SITE_URL" || echo "Not found in PM2 env"
+
+          echo ""
+          echo "3. Testing NextAuth providers endpoint:"
+          curl -s http://localhost:3000/api/auth/providers | jq . || curl -s http://localhost:3000/api/auth/providers
+
+          echo ""
+          echo "4. PM2 process status:"
+          pm2 status aedpics
+
+          echo ""
+          echo "5. Recent PM2 logs:"
+          pm2 logs aedpics --lines 20 --nostream
