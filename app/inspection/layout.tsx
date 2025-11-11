@@ -35,7 +35,7 @@ export default function InspectionLayout({
       const userRole = (session.user as any).role;
 
       // 권한 확인 (점검 권한이 있는 역할만 허용)
-      const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'regional_admin', 'local_admin', 'temporary_inspector'];
+      const allowedRoles = ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'ministry_admin', 'regional_admin', 'local_admin', 'temporary_inspector'];
       if (!userRole || !allowedRoles.includes(userRole)) {
         router.push('/auth/signin?error=권한이 없습니다');
         return;
@@ -84,6 +84,7 @@ export default function InspectionLayout({
             권한: {userRole === 'master' ? '마스터 관리자' :
                   userRole === 'emergency_center_admin' ? '중앙응급의료센터' :
                   userRole === 'regional_emergency_center_admin' ? '응급의료지원센터' :
+                  userRole === 'ministry_admin' ? '보건복지부' :
                   userRole === 'regional_admin' ? '시도 관리자' :
                   userRole === 'temporary_inspector' ? '임시점검원' : '보건소 담당자'}
           </span>
