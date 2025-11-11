@@ -1,0 +1,39 @@
+name: Fix Nginx Host Header
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    name: Set Fixed Host Header
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Fix proxy Host header
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== Backing up nginx config ==="
+          cp /etc/nginx/sites-available/aedpics /etc/nginx/sites-available/aedpics.backup2
+
+          echo "=== Fixing proxy_set_header Host ==="
+          sed -i 's/proxy_set_header Host \$host;/proxy_set_header Host "aed.pics";/' /etc/nginx/sites-available/aedpics
+
+          echo "=== Updated configuration ==="
+          cat /etc/nginx/sites-available/aedpics
+
+          echo "=== Testing nginx ==="
+          nginx -t
+
+          echo "=== Reloading nginx ==="
+          systemctl reload nginx
+
+          echo "=== Waiting for changes to apply ==="
+          sleep 3
+
+          echo "=== Testing from localhost (via nginx) ==="
+          curl -s -H "Host: aed.pics" http://localhost/api/auth/providers | jq -r '.credentials.signinUrl'
