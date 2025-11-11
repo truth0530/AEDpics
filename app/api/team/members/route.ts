@@ -6,6 +6,7 @@ import {
   getTeamMemberFilter,
   buildTeamMemberSearchQuery,
   getOrganizationType,
+  getEquipmentBasedTeamFilter,
 } from '@/lib/utils/team-authorization';
 
 export async function GET(request: NextRequest) {
@@ -33,13 +34,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // 2. 권한 기반 팀원 필터 생성
-    let memberFilter = getTeamMemberFilter(currentUser);
-
-    // 3. 검색 쿼리 지원 (query 파라미터)
+    // 쿼리 파라미터 추출
     const searchUrl = new URL(request.url);
     const searchTerm = searchUrl.searchParams.get('search');
+    const equipmentSerialsParam = searchUrl.searchParams.get('equipmentSerials');
 
+    // 2. 권한 기반 팀원 필터 생성
+    let memberFilter;
+
+    // 장비 기반 필터링 (equipmentSerials 제공 시)
+    if (equipmentSerialsParam && equipmentSerialsParam.trim().length > 0) {
+      const equipmentSerials = equipmentSerialsParam.split(',').map(s => s.trim()).filter(Boolean);
+
+      if (equipmentSerials.length > 0) {
+        // 장비 위치 정보 조회 (첫 번째 장비 기준)
+        const equipment = await prisma.aed_data.findUnique({
+          where: { equipment_serial: equipmentSerials[0] },
+          select: {
+            sido: true,
+            gugun: true,
+          },
+        });
+
+        if (equipment && equipment.sido && equipment.gugun) {
+          // 장비 기반 필터 사용
+          memberFilter = getEquipmentBasedTeamFilter(
+            { sido: equipment.sido, gugun: equipment.gugun },
+            currentUser.id
+          );
+        } else {
+          // 장비 위치를 찾을 수 없으면 기본 필터 사용
+          memberFilter = getTeamMemberFilter(currentUser);
+        }
+      } else {
+        memberFilter = getTeamMemberFilter(currentUser);
+      }
+    } else {
+      // 기본 권한 기반 필터
+      memberFilter = getTeamMemberFilter(currentUser);
+    }
+
+    // 3. 검색 쿼리 지원 (query 파라미터)
     if (searchTerm && searchTerm.trim().length > 0) {
       memberFilter = buildTeamMemberSearchQuery(searchTerm, memberFilter);
     }

@@ -270,3 +270,60 @@ export function getTeamMemberStats(filter: Prisma.user_profilesWhereInput) {
     },
   };
 }
+
+/**
+ * 장비 기반 팀원 필터 생성
+ *
+ * 특정 장비를 점검할 수 있는 팀원만 필터링:
+ * 1. 본인(currentUserId)은 항상 포함
+ * 2. 장비가 속한 구군의 korea.kr 계정 보건소 담당자(local_admin)
+ * 3. 장비가 속한 구군에 소속된 임시점검원(temporary_inspector)
+ * 4. 타 시도/구군 korea.kr 계정 제외
+ *
+ * @param equipmentLocation 장비 위치 { sido, gugun }
+ * @param currentUserId 현재 사용자 ID (본인 할당용)
+ * @returns Prisma 필터 조건
+ */
+export function getEquipmentBasedTeamFilter(
+  equipmentLocation: { sido: string | null; gugun: string | null },
+  currentUserId: string
+): Prisma.user_profilesWhereInput {
+  if (!equipmentLocation.sido || !equipmentLocation.gugun) {
+    // 장비 위치가 불명확하면 본인만 반환
+    return {
+      id: currentUserId,
+      is_active: true,
+      approved_at: { not: null },
+    };
+  }
+
+  // 기본 필터: 활성 + 승인된 사용자
+  const baseFilter: Prisma.user_profilesWhereInput = {
+    is_active: true,
+    approved_at: { not: null },
+  };
+
+  // OR 조건 구성
+  return {
+    ...baseFilter,
+    OR: [
+      // 1. 본인은 항상 포함
+      { id: currentUserId },
+
+      // 2. 장비 구군의 local_admin (korea.kr)
+      {
+        role: 'local_admin',
+        email: { endsWith: '@korea.kr' },
+        region_code: equipmentLocation.sido,
+        district: equipmentLocation.gugun,
+      },
+
+      // 3. 장비 구군의 temporary_inspector
+      {
+        role: 'temporary_inspector',
+        region_code: equipmentLocation.sido,
+        district: equipmentLocation.gugun,
+      },
+    ],
+  };
+}

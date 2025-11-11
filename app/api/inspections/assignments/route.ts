@@ -15,7 +15,7 @@ import { prisma } from '@/lib/prisma';
 async function handleBulkAssignment(
   equipmentSerials: string[],
   params: {
-    assignedTo?: string;
+    assignedToUserIds?: string[] | null;
     scheduledDate?: string;
     scheduledTime?: string;
     assignmentType: string;
@@ -62,18 +62,26 @@ async function handleBulkAssignment(
       return NextResponse.json({ error: '일정추가 권한이 없습니다.' }, { status: 403 });
     }
 
-    // assignedTo 기본값 설정 (없으면 자기 자신에게 할당)
-    const finalAssignedTo = params.assignedTo || session.user.id;
+    // assignedToUserIds 기본값 설정 (없으면 자기 자신에게 할당)
+    const finalAssignedToUserIds = params.assignedToUserIds && params.assignedToUserIds.length > 0
+      ? params.assignedToUserIds
+      : [session.user.id];
 
     // 타인에게 할당하는 경우 delegation 권한 확인
-    if (finalAssignedTo !== session.user.id) {
-      const assigneeProfile = await prisma.user_profiles.findUnique({
-        where: { id: finalAssignedTo },
-        select: { organization_id: true, region_code: true }
+    const assigningToOthers = finalAssignedToUserIds.some(id => id !== session.user.id);
+
+    if (assigningToOthers) {
+      const assigneeProfiles = await prisma.user_profiles.findMany({
+        where: { id: { in: finalAssignedToUserIds.filter(id => id !== session.user.id) } },
+        select: {
+          id: true,
+          organization_id: true,
+          region_code: true
+        }
       });
 
-      if (!assigneeProfile) {
-        return NextResponse.json({ error: '할당받을 사용자를 찾을 수 없습니다.' }, { status: 404 });
+      if (assigneeProfiles.length !== finalAssignedToUserIds.filter(id => id !== session.user.id).length) {
+        return NextResponse.json({ error: '일부 할당 대상 사용자를 찾을 수 없습니다.' }, { status: 404 });
       }
 
       // Scope validation based on requester's role
@@ -82,15 +90,16 @@ async function handleBulkAssignment(
 
       if (requesterRole === 'local_admin') {
         // local_admin can only assign within their organization
-        if (assigneeProfile.organization_id !== userProfile.organization_id) {
+        const invalidAssignees = assigneeProfiles.filter(
+          profile => profile.organization_id !== userProfile.organization_id
+        );
+
+        if (invalidAssignees.length > 0) {
           return NextResponse.json({
             error: '보건소 관리자는 같은 조직 내에서만 할당할 수 있습니다.'
           }, { status: 403 });
         }
-      } else if (broadRoles.includes(requesterRole)) {
-        // Broader roles can assign across organizations (already allowed)
-        // No additional restrictions
-      } else {
+      } else if (!broadRoles.includes(requesterRole)) {
         // Other roles cannot assign to others
         return NextResponse.json({
           error: '타인에게 할당할 권한이 없습니다.'
@@ -98,22 +107,40 @@ async function handleBulkAssignment(
       }
     }
 
+    // 모든 (equipment, user) 조합 생성
+    const allCombinations: Array<{ equipment_serial: string; assigned_to: string }> = [];
+    for (const equipmentSerial of equipmentSerials) {
+      for (const userId of finalAssignedToUserIds) {
+        allCombinations.push({
+          equipment_serial: equipmentSerial,
+          assigned_to: userId
+        });
+      }
+    }
+
     // Prisma를 사용한 대량 삽입 (RPC 대체)
     // 중복 체크: pending, in_progress, completed 상태 모두 제외
-    // (completed는 이미 점검 완료되었으므로 재할당 불가)
     const existingAssignments = await prisma.inspection_assignments.findMany({
       where: {
-        equipment_serial: { in: equipmentSerials },
-        assigned_to: finalAssignedTo,
-        status: { in: ['pending', 'in_progress', 'completed'] }
+        OR: allCombinations.map(combo => ({
+          equipment_serial: combo.equipment_serial,
+          assigned_to: combo.assigned_to,
+          status: { in: ['pending', 'in_progress', 'completed'] }
+        }))
       },
-      select: { equipment_serial: true, status: true }
+      select: { equipment_serial: true, assigned_to: true, status: true }
     });
 
-    const existingSerials = new Set(existingAssignments.map(a => a.equipment_serial));
-    const newSerials = equipmentSerials.filter(s => !existingSerials.has(s));
+    // 중복 조합을 Set으로 관리
+    const existingCombos = new Set(
+      existingAssignments.map(a => `${a.equipment_serial}:${a.assigned_to}`)
+    );
 
-    if (newSerials.length === 0) {
+    const newCombinations = allCombinations.filter(
+      combo => !existingCombos.has(`${combo.equipment_serial}:${combo.assigned_to}`)
+    );
+
+    if (newCombinations.length === 0) {
       // 즉시점검의 경우 중복을 정상 케이스로 처리
       if (params.assignmentType === 'immediate') {
         return NextResponse.json({
@@ -121,9 +148,9 @@ async function handleBulkAssignment(
           alreadyAssigned: true,
           message: '모든 장비가 이미 할당되어 있습니다. 기존 할당을 사용합니다.',
           stats: {
-            total: equipmentSerials.length,
+            total: allCombinations.length,
             created: 0,
-            skipped: equipmentSerials.length,
+            skipped: allCombinations.length,
             failed: 0
           }
         });
@@ -133,9 +160,9 @@ async function handleBulkAssignment(
         success: true,
         message: '모든 장비가 이미 할당되어 있습니다.',
         stats: {
-          total: equipmentSerials.length,
+          total: allCombinations.length,
           created: 0,
-          skipped: equipmentSerials.length,
+          skipped: allCombinations.length,
           failed: 0
         }
       });
@@ -144,9 +171,9 @@ async function handleBulkAssignment(
     // 대량 생성
     try {
       const result = await prisma.inspection_assignments.createMany({
-        data: newSerials.map(serial => ({
-          equipment_serial: serial,
-          assigned_to: finalAssignedTo,
+        data: newCombinations.map(combo => ({
+          equipment_serial: combo.equipment_serial,
+          assigned_to: combo.assigned_to,
           assigned_by: session.user.id,
           assignment_type: params.assignmentType as any,
           scheduled_date: params.scheduledDate ? new Date(params.scheduledDate) : null,
@@ -162,9 +189,9 @@ async function handleBulkAssignment(
         success: true,
         message: `${result.count}개의 일정이 추가되었습니다.`,
         stats: {
-          total: equipmentSerials.length,
+          total: allCombinations.length,
           created: result.count,
-          skipped: equipmentSerials.length - result.count,
+          skipped: allCombinations.length - result.count,
           failed: 0
         }
       });
@@ -193,7 +220,8 @@ export async function POST(request: NextRequest) {
     const {
       equipmentSerial,
       equipmentSerials, // 대량 일정추가용 배열
-      assignedTo,
+      assignedTo, // 단일 할당용 (하위 호환성 유지)
+      assignedToUserIds, // 멀티 할당용 배열
       scheduledDate,
       scheduledTime,
       assignmentType = 'scheduled',
@@ -204,7 +232,7 @@ export async function POST(request: NextRequest) {
     // 대량 일정추가 처리
     if (equipmentSerials && Array.isArray(equipmentSerials) && equipmentSerials.length > 0) {
       return handleBulkAssignment(equipmentSerials, {
-        assignedTo,
+        assignedToUserIds,
         scheduledDate,
         scheduledTime,
         assignmentType,

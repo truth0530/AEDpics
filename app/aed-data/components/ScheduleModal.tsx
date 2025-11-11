@@ -18,7 +18,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<'confirm' | 'assign-member' | 'start-inspection' | 'success'>('confirm');
   const [addedEquipmentSerial, setAddedEquipmentSerial] = useState<string | null>(null);
-  const [assignedToUserId, setAssignedToUserId] = useState<string | null>(null);
+  const [assignedToUserIds, setAssignedToUserIds] = useState<string[] | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showError } = useToast();
@@ -70,7 +70,7 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
         },
         body: JSON.stringify({
           equipmentSerials,
-          assignedTo: assignedToUserId, // null = 본인, string = 팀원 user_profile_id
+          assignedToUserIds: assignedToUserIds, // null = 본인, string[] = 팀원 user_profile_ids
           scheduledDate: new Date().toISOString().split('T')[0],
           scheduledTime: null,
           assignmentType: 'scheduled',
@@ -240,9 +240,10 @@ export function ScheduleModal({ devices, onClose, onScheduled }: ScheduleModalPr
 
               <div className="max-h-[60vh] overflow-y-auto">
                 <TeamMemberSelector
-                  onSelect={setAssignedToUserId}
+                  onSelect={setAssignedToUserIds}
                   defaultValue={null}
                   showSelfOption={true}
+                  devices={deviceList}
                 />
               </div>
 

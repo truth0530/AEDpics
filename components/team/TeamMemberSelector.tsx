@@ -2,28 +2,39 @@
 
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { TeamMembersResponse, TeamMemberWithStats } from '@/lib/types/team';
+import { AEDDevice } from '@/packages/types/aed';
 
 interface TeamMemberSelectorProps {
-  onSelect: (userProfileId: string | null) => void;
-  defaultValue?: string | null;
+  onSelect: (userProfileIds: string[] | null) => void;
+  defaultValue?: string[] | null;
   showSelfOption?: boolean;
+  devices?: AEDDevice[]; // 할당할 AED 장비 정보
 }
 
 export function TeamMemberSelector({
   onSelect,
   defaultValue,
-  showSelfOption = true
+  showSelfOption = true,
+  devices = []
 }: TeamMemberSelectorProps) {
-  const [selectedId, setSelectedId] = useState<string>(defaultValue || 'self');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(defaultValue || []));
+  const [includeSelf, setIncludeSelf] = useState<boolean>(false);
 
-  // 팀원 목록 조회
+  // 장비 시리얼 번호 추출
+  const equipmentSerials = devices.map(d => d.equipment_serial).filter(Boolean).join(',');
+
+  // 팀원 목록 조회 (장비 정보 기반 필터링)
   const { data, isLoading, error } = useQuery<TeamMembersResponse>({
-    queryKey: ['team-members'],
+    queryKey: ['team-members', equipmentSerials],
     queryFn: async () => {
-      const res = await fetch('/api/team/members');
+      const url = equipmentSerials
+        ? `/api/team/members?equipmentSerials=${encodeURIComponent(equipmentSerials)}`
+        : '/api/team/members';
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch team members');
       return res.json();
     },
@@ -34,14 +45,52 @@ export function TeamMemberSelector({
   const groupedByDept = data?.data?.groupedByDept || {};
   const currentUser = data?.data?.currentUser;
 
+  // 선택 상태 변경 시 부모에게 알림
   useEffect(() => {
-    if (selectedId === 'self') {
-      onSelect(null); // null = 본인
+    if (includeSelf) {
+      // 본인 포함 시 null 반환 (본인에게 할당)
+      onSelect(null);
+    } else if (selectedIds.size > 0) {
+      // 팀원 선택 시 배열 반환
+      onSelect(Array.from(selectedIds));
     } else {
-      const member = members.find(m => m.id === selectedId);
-      onSelect(member?.user_profile_id || null);
+      // 아무것도 선택 안됨
+      onSelect(null);
     }
-  }, [selectedId, members, onSelect]);
+  }, [selectedIds, includeSelf, onSelect]);
+
+  const handleMemberToggle = (memberId: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(memberId)) {
+        newSet.delete(memberId);
+      } else {
+        newSet.add(memberId);
+      }
+      return newSet;
+    });
+    // 팀원 선택 시 본인 선택 해제
+    setIncludeSelf(false);
+  };
+
+  const handleSelfToggle = () => {
+    setIncludeSelf(prev => !prev);
+    // 본인 선택 시 팀원 선택 모두 해제
+    if (!includeSelf) {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectAll = () => {
+    const allMemberIds = members.map(m => m.id);
+    setSelectedIds(new Set(allMemberIds));
+    setIncludeSelf(false);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedIds(new Set());
+    setIncludeSelf(false);
+  };
 
   if (isLoading) {
     return (
@@ -59,7 +108,7 @@ export function TeamMemberSelector({
     );
   }
 
-  if (members.length === 0) {
+  if (members.length === 0 && !showSelfOption) {
     return (
       <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
         <p className="text-sm text-yellow-400">
@@ -82,13 +131,55 @@ export function TeamMemberSelector({
     }
   };
 
+  const allSelected = selectedIds.size === members.length && members.length > 0;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < members.length;
+
   return (
     <div className="space-y-4">
-      <RadioGroup value={selectedId} onValueChange={setSelectedId}>
+      {/* 전체 선택/해제 버튼 */}
+      {members.length > 0 && (
+        <div className="flex gap-2 pb-3 border-b border-gray-700">
+          <Button
+            type="button"
+            onClick={handleSelectAll}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            disabled={allSelected}
+          >
+            전체 선택
+          </Button>
+          <Button
+            type="button"
+            onClick={handleDeselectAll}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            disabled={selectedIds.size === 0 && !includeSelf}
+          >
+            전체 해제
+          </Button>
+          <div className="flex-1 text-right text-xs text-gray-400 flex items-center justify-end">
+            {includeSelf ? (
+              <span className="text-green-400">본인에게 할당</span>
+            ) : selectedIds.size > 0 ? (
+              <span>{selectedIds.size}명 선택됨</span>
+            ) : (
+              <span>선택된 담당자 없음</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
         {/* 본인에게 할당 (기본) */}
         {showSelfOption && (
           <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-700 bg-gray-800/50 hover:bg-gray-700/50 transition-colors">
-            <RadioGroupItem value="self" id="self" />
+            <Checkbox
+              id="self"
+              checked={includeSelf}
+              onCheckedChange={handleSelfToggle}
+            />
             <Label htmlFor="self" className="flex-1 cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
@@ -118,7 +209,11 @@ export function TeamMemberSelector({
                 key={member.id}
                 className="flex items-center space-x-2 p-3 rounded-lg border border-gray-700 bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
               >
-                <RadioGroupItem value={member.id} id={member.id} />
+                <Checkbox
+                  id={member.id}
+                  checked={selectedIds.has(member.id)}
+                  onCheckedChange={() => handleMemberToggle(member.id)}
+                />
                 <Label htmlFor={member.id} className="flex-1 cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -156,12 +251,16 @@ export function TeamMemberSelector({
             ))}
           </div>
         ))}
-      </RadioGroup>
+      </div>
 
       {/* 도움말 */}
       <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
         <p className="text-xs text-blue-300">
-          할당된 일정은 해당 팀원의 대시보드에 표시되며, 이메일 알림이 발송됩니다.
+          {includeSelf
+            ? '본인에게 할당하면 즉시 점검할 수 있습니다.'
+            : selectedIds.size > 0
+            ? `선택한 ${selectedIds.size}명의 팀원에게 일정이 할당되며, 이메일 알림이 발송됩니다.`
+            : '담당자를 선택하지 않으면 본인에게 할당됩니다.'}
         </p>
       </div>
     </div>

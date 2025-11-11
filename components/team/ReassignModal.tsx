@@ -18,6 +18,16 @@ export function ReassignModal({ assignmentIds, onClose, onSuccess }: ReassignMod
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();
 
+  // TeamMemberSelector는 이제 배열을 반환하므로 처리 필요
+  const handleUserSelection = (userIds: string[] | null) => {
+    // 재배정은 단일 사용자만 선택 (배열의 첫 번째 요소 사용)
+    if (userIds && userIds.length > 0) {
+      setSelectedUserId(userIds[0]);
+    } else {
+      setSelectedUserId(null);
+    }
+  };
+
   const handleReassign = async () => {
     if (!selectedUserId) {
       showError('담당자를 선택해주세요.');
@@ -85,7 +95,7 @@ export function ReassignModal({ assignmentIds, onClose, onSuccess }: ReassignMod
 
           <div className="max-h-[60vh] overflow-y-auto">
             <TeamMemberSelector
-              onSelect={setSelectedUserId}
+              onSelect={handleUserSelection}
               defaultValue={null}
               showSelfOption={false}
             />
