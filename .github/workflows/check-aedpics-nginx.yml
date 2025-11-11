@@ -1,0 +1,29 @@
+name: Check AEDpics Nginx Config
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Check Actual Config
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check aedpics nginx config
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.NCP_HOST }}
+        username: ${{ secrets.NCP_USERNAME }}
+        key: ${{ secrets.NCP_SSH_KEY }}
+        port: ${{ secrets.NCP_SSH_PORT }}
+        script: |
+          echo "=== AEDpics Nginx Config ==="
+          cat /etc/nginx/sites-available/aedpics
+
+          echo ""
+          echo "=== Sites Enabled ==="
+          ls -la /etc/nginx/sites-enabled/
+
+          echo ""
+          echo "=== Active Nginx Configuration ==="
+          nginx -T 2>&1 | grep -A 20 "aed.pics" || echo "aed.pics not found in active config"
