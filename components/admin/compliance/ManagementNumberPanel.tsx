@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, MapPin, TrendingUp } from 'lucide-react';
+import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ManagementNumberCandidate {
@@ -14,6 +14,7 @@ interface ManagementNumberCandidate {
   institution_name: string;
   address: string;
   equipment_count: number;
+  equipment_serials: string[];
   confidence: number | null;
   is_matched: boolean;
   matched_to: string | null;
@@ -49,6 +50,8 @@ export default function ManagementNumberPanel({
   const [searchTerm, setSearchTerm] = useState('');
   const [includeAllRegion, setIncludeAllRegion] = useState(false);
   const [includeMatched, setIncludeMatched] = useState(false);
+  // 펼쳐진 관리번호 Set (관리번호별 펼침/접힘 상태 관리)
+  const [expandedManagementNumbers, setExpandedManagementNumbers] = useState<Set<string>>(new Set());
 
   // 선택된 기관이 변경되거나 필터 옵션이 변경되면 데이터 조회
   useEffect(() => {
@@ -100,6 +103,19 @@ export default function ManagementNumberPanel({
     }
   };
 
+  // 관리번호별 펼치기/접기 토글
+  const toggleExpanded = (managementNumber: string) => {
+    setExpandedManagementNumbers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(managementNumber)) {
+        newSet.delete(managementNumber);
+      } else {
+        newSet.add(managementNumber);
+      }
+      return newSet;
+    });
+  };
+
   const renderCandidateList = (items: ManagementNumberCandidate[], showConfidence: boolean) => {
     // 이미 담긴 항목 필터링
     const filteredItems = items.filter(
@@ -116,73 +132,125 @@ export default function ManagementNumberPanel({
 
     return (
       <div className="space-y-2">
-        {filteredItems.map((item) => (
-          <Card
-            key={item.management_number}
-            className={cn(
-              "p-2.5 transition-all",
-              item.is_matched && "opacity-50 bg-muted"
-            )}
-          >
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="font-medium text-sm">
-                  {item.institution_name}
+        {filteredItems.map((item) => {
+          const isExpanded = expandedManagementNumbers.has(item.management_number);
+          const hasMultipleEquipment = item.equipment_count > 1;
+
+          return (
+            <Card
+              key={item.management_number}
+              className={cn(
+                "p-2.5 transition-all",
+                item.is_matched && "opacity-50 bg-muted"
+              )}
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-medium text-sm">
+                    {item.institution_name}
+                  </div>
+                  {!item.is_matched ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        onAddToBasket(item);
+                      }}
+                      className="flex-shrink-0"
+                    >
+                      담기
+                    </Button>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs flex-shrink-0">
+                      이미 매칭됨
+                    </Badge>
+                  )}
                 </div>
-                {!item.is_matched ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      onAddToBasket(item);
-                    }}
-                    className="flex-shrink-0"
-                  >
-                    담기
-                  </Button>
-                ) : (
-                  <Badge variant="secondary" className="text-xs flex-shrink-0">
-                    이미 매칭됨
-                  </Badge>
+                {(item.category_1 || item.category_2) && (
+                  <div className="flex items-center gap-1">
+                    {item.category_1 && (
+                      <Badge variant="outline" className="text-xs">
+                        {item.category_1}
+                      </Badge>
+                    )}
+                    {item.category_2 && (
+                      <Badge variant="outline" className="text-xs">
+                        {item.category_2}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                  <span>{item.address}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-xs text-muted-foreground">
+                    {item.management_number}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {showConfidence && item.confidence && (
+                      <Badge variant="secondary" className="text-xs">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        {item.confidence.toFixed(0)}%
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-xs">
+                      장비 {item.equipment_count}대
+                    </Badge>
+                    {/* 장비가 2대 이상인 경우에만 펼치기/접기 버튼 표시 */}
+                    {hasMultipleEquipment && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => toggleExpanded(item.management_number)}
+                        className="h-6 w-6 p-0"
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 펼쳐진 경우 장비연번 목록 표시 */}
+                {isExpanded && hasMultipleEquipment && item.equipment_serials && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="text-xs font-medium text-muted-foreground mb-2">
+                      장비연번 목록 ({item.equipment_serials.length}개)
+                    </div>
+                    <div className="space-y-1.5">
+                      {item.equipment_serials.map((serial) => (
+                        <div
+                          key={serial}
+                          className="flex items-center justify-between gap-2 p-2 bg-muted/50 rounded"
+                        >
+                          <span className="text-xs font-mono">{serial}</span>
+                          {!item.is_matched && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs px-2"
+                              onClick={() => {
+                                // TODO: 개별 장비연번 담기 기능 구현
+                                console.log('Individual serial add:', serial);
+                              }}
+                            >
+                              담기
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-              {(item.category_1 || item.category_2) && (
-                <div className="flex items-center gap-1">
-                  {item.category_1 && (
-                    <Badge variant="outline" className="text-xs">
-                      {item.category_1}
-                    </Badge>
-                  )}
-                  {item.category_2 && (
-                    <Badge variant="outline" className="text-xs">
-                      {item.category_2}
-                    </Badge>
-                  )}
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3 flex-shrink-0" />
-                <span>{item.address}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-xs text-muted-foreground">
-                  {item.management_number}
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {showConfidence && item.confidence && (
-                    <Badge variant="secondary" className="text-xs">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      {item.confidence.toFixed(0)}%
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className="text-xs">
-                    장비 {item.equipment_count}대
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
     );
   };
