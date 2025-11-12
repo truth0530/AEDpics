@@ -8,12 +8,18 @@ import { MapPin, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+interface EquipmentDetail {
+  serial: string;
+  location_detail: string;
+}
+
 interface BasketItem {
   management_number: string;
   institution_name: string;
   address: string;
   equipment_count: number;
   equipment_serials: string[];
+  equipment_details: EquipmentDetail[];
   confidence: number | null;
   target_key: string;
   selected_serials?: string[]; // 선택된 장비연번 (undefined면 전체, 배열이면 일부만)
@@ -28,6 +34,7 @@ interface BasketPanelProps {
   basket: BasketItem[];
   selectedInstitution: TargetInstitution | null;
   onRemove: (managementNumber: string) => void;
+  onRemoveEquipmentSerial: (managementNumber: string, serial: string) => void;
   onClear: () => void;
   onMatch: () => Promise<void>;
 }
@@ -36,6 +43,7 @@ export default function BasketPanel({
   basket,
   selectedInstitution,
   onRemove,
+  onRemoveEquipmentSerial,
   onClear,
   onMatch
 }: BasketPanelProps) {
@@ -142,15 +150,40 @@ export default function BasketPanel({
                   </div>
                   {item.selected_serials ? (
                     // 개별 장비연번이 선택된 경우
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="text-xs text-muted-foreground">
                         선택된 장비연번 ({item.selected_serials.length}개):
                       </div>
-                      {item.selected_serials.map(serial => (
-                        <Badge key={serial} variant="outline" className="text-xs font-mono mr-1">
-                          {serial}
-                        </Badge>
-                      ))}
+                      <div className="space-y-1">
+                        {item.selected_serials.map(serial => {
+                          // equipment_details에서 해당 serial의 설치위치 찾기
+                          const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+
+                          return (
+                            <div
+                              key={serial}
+                              className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
+                            >
+                              <div className="flex-1 space-y-0.5">
+                                <div className="text-xs font-mono font-medium">{serial}</div>
+                                {equipmentDetail?.location_detail && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {equipmentDetail.location_detail}
+                                  </div>
+                                )}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onRemoveEquipmentSerial(item.management_number, serial)}
+                                className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ) : (
                     // 전체 장비가 선택된 경우

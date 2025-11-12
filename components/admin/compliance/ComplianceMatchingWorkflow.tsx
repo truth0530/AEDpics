@@ -255,6 +255,45 @@ export default function ComplianceMatchingWorkflow({
     });
   };
 
+  // 개별 장비연번 제거
+  const handleRemoveEquipmentSerial = (managementNumber: string, serial: string) => {
+    if (!selectedInstitution) return;
+
+    setBasketByInstitution(prev => {
+      const targetKey = selectedInstitution.target_key;
+      const currentItems = prev[targetKey] || [];
+
+      const existingItemIndex = currentItems.findIndex(i => i.management_number === managementNumber);
+      if (existingItemIndex < 0) return prev;
+
+      const existingItem = currentItems[existingItemIndex];
+      const currentSerials = existingItem.selected_serials || [];
+
+      // 해당 장비연번 제거
+      const newSerials = currentSerials.filter(s => s !== serial);
+
+      // 남은 장비연번이 없으면 항목 전체 제거
+      if (newSerials.length === 0) {
+        return {
+          ...prev,
+          [targetKey]: currentItems.filter(item => item.management_number !== managementNumber)
+        };
+      }
+
+      // 남은 장비연번이 있으면 업데이트
+      const updatedItems = [...currentItems];
+      updatedItems[existingItemIndex] = {
+        ...existingItem,
+        selected_serials: newSerials
+      };
+
+      return {
+        ...prev,
+        [targetKey]: updatedItems
+      };
+    });
+  };
+
   // 매칭 실행
   const handleMatchBasket = async () => {
     if (currentBasket.length === 0 || !selectedInstitution) return;
@@ -416,6 +455,7 @@ export default function ComplianceMatchingWorkflow({
                 basket={currentBasket}
                 selectedInstitution={selectedInstitution}
                 onRemove={handleRemoveFromBasket}
+                onRemoveEquipmentSerial={handleRemoveEquipmentSerial}
                 onClear={handleClearBasket}
                 onMatch={handleMatchBasket}
               />
