@@ -74,9 +74,21 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(fallbackUrl);
     }
 
-    // /admin 접근 제어 (master, emergency_center_admin, regional_emergency_center_admin 접근 가능)
+    // /admin 접근 제어
+    // - master: 전체 관리자
+    // - emergency_center_admin, regional_emergency_center_admin: 응급센터 관리자
+    // - ministry_admin: 보건복지부 (전국 권한)
+    // - regional_admin: 시도청 (제한적 접근 - 향후 /admin 하위 세부 경로별 제어 필요)
+    // - local_admin: 보건소 (제한적 접근 - 향후 /admin 하위 세부 경로별 제어 필요)
     if (pathname.startsWith('/admin')) {
-      const adminRoles: UserRole[] = ['master', 'emergency_center_admin', 'regional_emergency_center_admin'];
+      const adminRoles: UserRole[] = [
+        'master',
+        'emergency_center_admin',
+        'regional_emergency_center_admin',
+        'ministry_admin',
+        'regional_admin',
+        'local_admin'
+      ];
       if (!adminRoles.includes(userRole)) {
         console.warn(`[Middleware] Unauthorized admin access attempt by ${userRole}`);
         const fallbackUrl = new URL(accessRights.fallbackRoute, request.url);
