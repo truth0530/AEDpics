@@ -47,22 +47,33 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Get total count for pagination metadata
-    const totalCount = await prisma.target_list_2024.count({
-      where: targetWhere
-    });
+    // Get total count for pagination metadata (dynamic table selection)
+    const totalCount = year === '2025'
+      ? await prisma.target_list_2025.count({ where: targetWhere })
+      : await prisma.target_list_2024.count({ where: targetWhere });
 
-    // 2. Get paginated target list
-    const targetList = await prisma.target_list_2024.findMany({
-      where: targetWhere,
-      orderBy: [
-        { sido: 'asc' },
-        { gugun: 'asc' },
-        { institution_name: 'asc' }
-      ],
-      skip,
-      take: limit
-    });
+    // 2. Get paginated target list (dynamic table selection)
+    const targetList = year === '2025'
+      ? await prisma.target_list_2025.findMany({
+          where: targetWhere,
+          orderBy: [
+            { sido: 'asc' },
+            { gugun: 'asc' },
+            { institution_name: 'asc' }
+          ],
+          skip,
+          take: limit
+        })
+      : await prisma.target_list_2024.findMany({
+          where: targetWhere,
+          orderBy: [
+            { sido: 'asc' },
+            { gugun: 'asc' },
+            { institution_name: 'asc' }
+          ],
+          skip,
+          take: limit
+        });
 
     if (targetList.length === 0) {
       return NextResponse.json({

@@ -138,18 +138,6 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* 2025년 데이터 없음 알림 */}
-      {selectedYear === '2025' && (
-        <div className="px-6 pt-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              2025년 의무설치기관 데이터는 준비 중입니다. 데이터가 업로드되면 사용 가능합니다.
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-
       {/* 메인 컨텐츠 */}
       <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed')} className="h-full flex flex-col">
@@ -248,52 +236,22 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
 
           <div className="flex-1 overflow-auto">
             <TabsContent value="targets" className="mt-0 h-full">
-              {selectedYear === '2024' ? (
-                <ComplianceMatchingWorkflow
-                  year={selectedYear}
-                  initialProfile={initialProfile}
-                />
-              ) : (
-                <Card className="border-dashed dark:border-gray-700">
-                  <CardContent className="flex flex-col items-center justify-center py-20">
-                    <div className="text-center space-y-3">
-                      <div className="text-6xl">📋</div>
-                      <h3 className="text-lg font-semibold dark:text-gray-200">2025년 데이터 준비 중</h3>
-                      <p className="text-sm text-muted-foreground">
-                        2025년 의무설치기관 목록이 업로드되면<br />
-                        이곳에서 확인할 수 있습니다
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <ComplianceMatchingWorkflow
+                year={selectedYear}
+                initialProfile={initialProfile}
+              />
             </TabsContent>
 
             <TabsContent value="completed" className="mt-0 h-full">
-              {selectedYear === '2024' ? (
-                <ComplianceCompletedList
-                  ref={completedListRef}
-                  year={selectedYear}
-                  sido={selectedSido}
-                  gugun={selectedGugun}
-                  statusFilter={statusFilter}
-                  subDivisionFilter={subDivisionFilter}
-                  searchTerm={searchTerm}
-                />
-              ) : (
-                <Card className="border-dashed dark:border-gray-700">
-                  <CardContent className="flex flex-col items-center justify-center py-20">
-                    <div className="text-center space-y-3">
-                      <div className="text-6xl">✅</div>
-                      <h3 className="text-lg font-semibold dark:text-gray-200">2025년 데이터 준비 중</h3>
-                      <p className="text-sm text-muted-foreground">
-                        2025년 설치확인 현황이 업로드되면<br />
-                        이곳에서 확인할 수 있습니다
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <ComplianceCompletedList
+                ref={completedListRef}
+                year={selectedYear}
+                sido={selectedSido}
+                gugun={selectedGugun}
+                statusFilter={statusFilter}
+                subDivisionFilter={subDivisionFilter}
+                searchTerm={searchTerm}
+              />
             </TabsContent>
           </div>
         </Tabs>

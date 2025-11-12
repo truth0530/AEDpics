@@ -36,18 +36,25 @@ export async function GET(request: NextRequest) {
       targetWhere.gugun = gugun;
     }
 
-    // 2. Count total target institutions
-    const totalCount = await prisma.target_list_2024.count({
-      where: targetWhere
-    });
+    // 2. Count total target institutions (dynamic table selection)
+    const totalCount = year === '2025'
+      ? await prisma.target_list_2025.count({ where: targetWhere })
+      : await prisma.target_list_2024.count({ where: targetWhere });
 
-    // 3. Get all target keys for this region
-    const targetKeys = await prisma.target_list_2024.findMany({
-      where: targetWhere,
-      select: {
-        target_key: true
-      }
-    });
+    // 3. Get all target keys for this region (dynamic table selection)
+    const targetKeys = year === '2025'
+      ? await prisma.target_list_2025.findMany({
+          where: targetWhere,
+          select: {
+            target_key: true
+          }
+        })
+      : await prisma.target_list_2024.findMany({
+          where: targetWhere,
+          select: {
+            target_key: true
+          }
+        });
 
     const targetKeyList = targetKeys.map(t => t.target_key);
 
