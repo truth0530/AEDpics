@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -85,9 +86,79 @@ export default function ImprovedDashboard({
   selectedSido = '전체',
   selectedGugun = '전체'
 }: ImprovedDashboardProps) {
+  // 의무기관매칭 통계 상태
+  const [complianceStats, setComplianceStats] = useState({
+    total: 0,
+    installed: 0,
+    notInstalled: 0
+  });
+  const [complianceLoading, setComplianceLoading] = useState(false);
+
+  // RegionFilter에서 선택된 지역 상태 (AppHeader의 regionSelected 이벤트 수신)
+  const [headerSelectedSido, setHeaderSelectedSido] = useState<string | null>(null);
+  const [headerSelectedGugun, setHeaderSelectedGugun] = useState<string | null>(null);
+
   const formatNumber = (num: number): string => {
     return num.toLocaleString('ko-KR');
   };
+
+  // AppHeader의 RegionFilter에서 지역 변경 이벤트 수신
+  useEffect(() => {
+    const handleRegionChange = (e: CustomEvent) => {
+      const { sido, gugun } = e.detail;
+      console.log('[ImprovedDashboard] Region changed from header:', { sido, gugun });
+      setHeaderSelectedSido(sido || null);
+      setHeaderSelectedGugun(gugun || null);
+    };
+
+    window.addEventListener('regionSelected', handleRegionChange as EventListener);
+    return () => {
+      window.removeEventListener('regionSelected', handleRegionChange as EventListener);
+    };
+  }, []);
+
+  // 의무기관매칭 통계 로드 (경량 통계 전용 엔드포인트 사용)
+  const loadComplianceStats = async () => {
+    try {
+      setComplianceLoading(true);
+
+      // header에서 선택된 지역 우선 사용, 없으면 dashboard props의 selectedSido/Gugun 사용
+      const effectiveSido = headerSelectedSido || selectedSido;
+      const effectiveGugun = headerSelectedGugun || selectedGugun;
+
+      const params = new URLSearchParams({
+        year: '2024'
+      });
+
+      if (effectiveSido && effectiveSido !== '전체' && effectiveSido !== '시도') {
+        params.append('sido', effectiveSido);
+      }
+      if (effectiveGugun && effectiveGugun !== '전체' && effectiveGugun !== '구군') {
+        params.append('gugun', effectiveGugun);
+      }
+
+      // 통계 전용 경량 API 사용 (similarity matching 없이 빠른 집계)
+      const response = await fetch(`/api/compliance/stats?${params}`);
+      const data = await response.json();
+
+      if (data.success && data.stats) {
+        setComplianceStats({
+          total: data.stats.total,
+          installed: data.stats.installed,
+          notInstalled: data.stats.notInstalled
+        });
+      }
+    } catch (error) {
+      console.error('[ImprovedDashboard] Failed to load compliance stats:', error);
+    } finally {
+      setComplianceLoading(false);
+    }
+  };
+
+  // 지역 변경 시 의무기관매칭 통계 다시 로드
+  useEffect(() => {
+    loadComplianceStats();
+  }, [headerSelectedSido, headerSelectedGugun, selectedSido, selectedGugun]);
 
   // 날짜 범위에 따른 차트 설명 텍스트
   const getChartDescription = (range: string) => {
@@ -254,11 +325,46 @@ export default function ImprovedDashboard({
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">{dashboardData.title}</h1>
           <p className="text-sm text-gray-300 mt-1">실시간 AED 점검 현황을 확인하세요</p>
         </div>
+
+        {/* 의무기관매칭 현황 통계 */}
+        <div className="flex items-center gap-3">
+          {complianceLoading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+          ) : (
+            <>
+              <Link href="/admin/compliance">
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2 py-1 cursor-pointer hover:bg-muted transition-colors"
+                >
+                  의무시설: <span className="font-semibold ml-1">{formatNumber(complianceStats.total)}</span>
+                </Badge>
+              </Link>
+              <Link href="/admin/compliance">
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2 py-1 border-green-500 text-green-700 dark:text-green-400 cursor-pointer hover:bg-muted transition-colors"
+                >
+                  매칭완료: <span className="font-semibold ml-1">{formatNumber(complianceStats.installed)}</span>
+                </Badge>
+              </Link>
+              <Link href="/admin/compliance">
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2 py-1 border-amber-500 text-amber-700 dark:text-amber-400 cursor-pointer hover:bg-muted transition-colors"
+                >
+                  미완료: <span className="font-semibold ml-1">{formatNumber(complianceStats.notInstalled)}</span>
+                </Badge>
+              </Link>
+            </>
+          )}
+        </div>
+
         <Select value={dateRange} onValueChange={onDateRangeChange}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="기간 선택" />

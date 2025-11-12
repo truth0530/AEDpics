@@ -48,6 +48,12 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canAccessI
       show: canAccessInspection,
     },
     {
+      title: "의무기관매칭",
+      icon: GitMerge as any,
+      href: "/admin/compliance",
+      show: canAccessAedData,
+    },
+    {
       title: "대시보드",
       icon: Home as any,
       href: "/dashboard",
@@ -58,12 +64,6 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canAccessI
       icon: TrendingUp as any,
       href: "/inspection-effect",
       show: canAccessInspectionEffect,
-    },
-    {
-      title: "의무기관매칭",
-      icon: GitMerge as any,
-      href: "/admin/compliance",
-      show: canAccessAedData,
     },
     {
       title: "사용자관리",

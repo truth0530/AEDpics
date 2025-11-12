@@ -126,6 +126,43 @@ export default function ComplianceMatchingWorkflow({
     };
   }, []);
 
+  // 매칭결과 탭에서 매칭하기로 이동 시 기관 자동 선택
+  useEffect(() => {
+    const handleSelectInstitution = (e: CustomEvent) => {
+      const institution = e.detail.institution;
+      console.log('[ComplianceMatchingWorkflow] Auto-selecting institution:', institution);
+
+      if (institution) {
+        // TargetInstitution 형식으로 변환하여 선택
+        const targetInstitution: TargetInstitution = {
+          target_key: institution.target_key,
+          institution_name: institution.institution_name,
+          sido: institution.sido,
+          gugun: institution.gugun,
+          division: institution.division || '',
+          sub_division: institution.sub_division || '',
+          address: institution.address,
+          equipment_count: 0,
+          matched_count: 0,
+          unmatched_count: 0
+        };
+
+        setSelectedInstitution(targetInstitution);
+
+        // 해당 기관의 지역으로 필터 설정
+        setSelectedRegion({
+          sido: institution.sido,
+          gugun: institution.gugun
+        });
+      }
+    };
+
+    window.addEventListener('selectInstitutionFromResult', handleSelectInstitution as EventListener);
+    return () => {
+      window.removeEventListener('selectInstitutionFromResult', handleSelectInstitution as EventListener);
+    };
+  }, []);
+
   // 선택된 기관 정보를 부모(ComplianceMainLayout)에게 알림
   useEffect(() => {
     const event = new CustomEvent('institutionSelected', {

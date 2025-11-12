@@ -169,14 +169,14 @@ export default function InstitutionListPanel({
             의무설치기관이 없습니다
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3 px-0.5">
             {institutions.map((institution) => (
               <Card
                 key={institution.target_key}
                 className={cn(
-                  "p-2.5 cursor-pointer transition-all hover:shadow-md",
+                  "p-2.5 cursor-pointer transition-all",
                   selectedInstitution?.target_key === institution.target_key
-                    ? "border-primary bg-primary/5"
+                    ? "border-2 border-white bg-white/80 dark:bg-white/10"
                     : "hover:border-primary/50"
                 )}
                 onClick={() => onSelect(institution)}
@@ -212,11 +212,15 @@ export default function InstitutionListPanel({
                       {institution.address}
                     </div>
                   )}
-                  <div className="flex items-center justify-end gap-2">
-                    <Badge variant={institution.unmatched_count > 0 ? "destructive" : "secondary"} className="text-xs flex-shrink-0">
-                      {institution.unmatched_count > 0 ? `미매칭 ${institution.unmatched_count}대` : '완료'}
-                    </Badge>
-                  </div>
+                  {!showOnlyUnmatched && (
+                    <div className="flex items-center justify-end gap-2">
+                      {institution.matched_count > 0 && (
+                        <Badge variant="secondary" className="text-xs flex-shrink-0">
+                          매칭완료
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}

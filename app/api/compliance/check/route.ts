@@ -7,7 +7,7 @@ import { normalizeGugunForDB } from '@/lib/constants/regions';
 
 // Optimize query with pagination and limits
 const DEFAULT_PAGE_SIZE = 50;
-const MAX_PAGE_SIZE = 200;
+const MAX_PAGE_SIZE = 10000; // 대시보드 통계 등 전체 데이터 조회를 위해 증가
 const MAX_AED_MATCHES_PER_TARGET = 5;
 
 export async function GET(request: NextRequest) {

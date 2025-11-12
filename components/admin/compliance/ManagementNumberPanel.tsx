@@ -33,6 +33,12 @@ interface TargetInstitution {
   institution_name: string;
   sido: string;
   gugun: string;
+  division: string;
+  sub_division: string;
+  address?: string; // 2025년 세부주소 추가 예정
+  equipment_count: number;
+  matched_count: number;
+  unmatched_count: number;
 }
 
 interface BasketItem {
@@ -68,12 +74,22 @@ export default function ManagementNumberPanel({
   // 펼쳐진 관리번호 Set (관리번호별 펼침/접힘 상태 관리)
   const [expandedManagementNumbers, setExpandedManagementNumbers] = useState<Set<string>>(new Set());
 
+  // 선택된 기관이 변경될 때 초기 설정
+  useEffect(() => {
+    if (selectedInstitution) {
+      setSearchTerm('');
+      // 매칭된 기관인 경우 "매칭된 항목 표시" 자동 체크, 미매칭 기관은 체크 해제
+      if (selectedInstitution.matched_count > 0) {
+        setIncludeMatched(true);
+      } else {
+        setIncludeMatched(false);
+      }
+    }
+  }, [selectedInstitution]);
+
   // 선택된 기관이 변경되거나 필터 옵션이 변경되면 데이터 조회
   useEffect(() => {
     fetchCandidates();
-    if (selectedInstitution) {
-      setSearchTerm('');
-    }
   }, [selectedInstitution, includeAllRegion, includeMatched]);
 
   // 검색어 변경 시 검색 실행 (디바운싱)
@@ -169,8 +185,24 @@ export default function ManagementNumberPanel({
 
     if (filteredItems.length === 0) {
       return (
-        <div className="text-center py-8 text-muted-foreground text-sm">
-          {searchTerm ? '검색 결과가 없습니다' : '후보가 없습니다'}
+        <div className="text-center py-8 text-muted-foreground text-sm space-y-2">
+          {searchTerm ? (
+            <>
+              <div className="font-medium">검색 결과가 없습니다</div>
+              <div className="text-xs">다른 검색어를 입력하거나 필터 옵션을 변경해보세요</div>
+            </>
+          ) : (
+            <>
+              <div className="font-medium">매칭 가능한 관리번호가 없습니다</div>
+              <div className="text-xs space-y-1">
+                <div>• 선택한 지역에 등록된 AED 장비가 없거나</div>
+                <div>• 모든 장비가 이미 다른 기관과 매칭되었습니다</div>
+                <div className="pt-2 text-muted-foreground/80">
+                  "전지역 조회"를 체크하거나 검색창을 이용해보세요
+                </div>
+              </div>
+            </>
+          )}
         </div>
       );
     }
@@ -207,17 +239,16 @@ export default function ManagementNumberPanel({
               key={item.management_number}
               className={cn(
                 "p-2.5 transition-all",
+                hasMultipleEquipment && remainingEquipmentCount > 0 && "cursor-pointer hover:shadow-md",
                 item.is_matched && "opacity-50 bg-muted",
                 isPartiallyMatched && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
                 isFullyMatched && "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
               )}
+              onClick={() => hasMultipleEquipment && remainingEquipmentCount > 0 && toggleExpanded(item.management_number)}
             >
               <div className="space-y-1.5">
-                {/* 카드 상단 영역 - 클릭 시 펼치기/접기 */}
-                <div
-                  className="flex items-center justify-between gap-2 cursor-pointer hover:bg-muted/30 -m-2.5 p-2.5 rounded-t transition-colors"
-                  onClick={() => hasMultipleEquipment && remainingEquipmentCount > 0 && toggleExpanded(item.management_number)}
-                >
+                {/* 카드 상단 영역 */}
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <div className="font-medium text-sm">
                       {item.institution_name}
@@ -243,7 +274,7 @@ export default function ManagementNumberPanel({
                       }}
                       className="flex-shrink-0"
                     >
-                      전체 담기
+                      모든장비매칭
                     </Button>
                   ) : item.is_matched ? (
                     <Badge variant="secondary" className="text-xs flex-shrink-0">
@@ -255,13 +286,19 @@ export default function ManagementNumberPanel({
                 {(item.category_1 || item.category_2) && (
                   <div className="flex items-center gap-1">
                     {item.category_1 && (
-                      <Badge variant="outline" className="text-xs">
-                        {item.category_1}
+                      <Badge
+                        variant={item.category_1 === '구비의무기관외' ? 'destructive' : 'outline'}
+                        className="text-xs"
+                      >
+                        {item.category_1 === '구비의무기관' ? '의무' : item.category_1}
                       </Badge>
                     )}
                     {item.category_2 && (
-                      <Badge variant="outline" className="text-xs">
-                        {item.category_2}
+                      <Badge
+                        variant={item.category_2 === '구비의무기관외' ? 'destructive' : 'outline'}
+                        className="text-xs"
+                      >
+                        {item.category_2 === '구비의무기관' ? '의무' : item.category_2}
                       </Badge>
                     )}
                   </div>
@@ -287,30 +324,22 @@ export default function ManagementNumberPanel({
                   </div>
                 </div>
 
-                {/* 장비가 2대 이상인 경우에만 펼치기/접기 버튼 표시 (중앙 배치) */}
+                {/* 장비가 2대 이상인 경우 시각적 힌트 표시 */}
                 {hasMultipleEquipment && remainingEquipmentCount > 0 && (
                   <div className="flex justify-center mt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
-                        toggleExpanded(item.management_number);
-                      }}
-                      className="text-xs"
-                    >
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
                       {isExpanded ? (
                         <>
-                          <ChevronUp className="h-3 w-3 mr-1" />
+                          <ChevronUp className="h-3 w-3" />
                           장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대 접기
                         </>
                       ) : (
                         <>
-                          <ChevronDown className="h-3 w-3 mr-1" />
+                          <ChevronDown className="h-3 w-3" />
                           장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대 펼치기
                         </>
                       )}
-                    </Button>
+                    </div>
                   </div>
                 )}
 
@@ -350,7 +379,7 @@ export default function ManagementNumberPanel({
                                   onAddEquipmentSerial(item, detail.serial);
                                 }}
                               >
-                                설치위치 담기
+                                단독매칭
                               </Button>
                             )}
                           </div>
@@ -394,19 +423,22 @@ export default function ManagementNumberPanel({
                 전지역 조회
               </label>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="include-matched"
-                checked={includeMatched}
-                onCheckedChange={(checked) => setIncludeMatched(checked === true)}
-              />
-              <label
-                htmlFor="include-matched"
-                className="text-sm font-medium leading-none whitespace-nowrap"
-              >
-                매칭된 항목 표시
-              </label>
-            </div>
+            {/* 매칭된 기관을 선택한 경우에만 표시 */}
+            {selectedInstitution && selectedInstitution.matched_count > 0 && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-matched"
+                  checked={includeMatched}
+                  onCheckedChange={(checked) => setIncludeMatched(checked === true)}
+                />
+                <label
+                  htmlFor="include-matched"
+                  className="text-sm font-medium leading-none whitespace-nowrap"
+                >
+                  매칭된 항목 표시
+                </label>
+              </div>
+            )}
           </div>
 
           {/* 검색창 */}

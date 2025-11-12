@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, CheckCircle2, Target, ChevronRight, AlertCircle } from 'lucide-react';
+import { Calendar, CheckCircle2, Target, ChevronRight, AlertCircle, Download, Search } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ComplianceMatchingWorkflow from './ComplianceMatchingWorkflow';
-import ComplianceCompletedList from './ComplianceCompletedList';
+import ComplianceCompletedList, { ComplianceCompletedListRef } from './ComplianceCompletedList';
 import { UserProfile } from '@/packages/types';
 
 interface ComplianceMainLayoutProps {
@@ -26,6 +29,37 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
   const [activeTab, setActiveTab] = useState<'targets' | 'completed'>('targets');
   const [selectedInstitutionName, setSelectedInstitutionName] = useState<string | null>(null);
 
+  // 지역 선택 상태 - sessionStorage에서 초기값 로드
+  const [selectedSido, setSelectedSido] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return window.sessionStorage.getItem('selectedSido') || null
+    }
+    return null
+  });
+  const [selectedGugun, setSelectedGugun] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return window.sessionStorage.getItem('selectedGugun') || null
+    }
+    return null
+  });
+
+  // Ref for ComplianceCompletedList to call export function
+  const completedListRef = useRef<ComplianceCompletedListRef>(null);
+
+  // 통계 상태
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    installed: 0,
+    notInstalled: 0,
+    avgConfidence: 0
+  });
+
+  // 필터 상태
+  const [statusFilter, setStatusFilter] = useState<'all' | 'installed' | 'not_installed'>('not_installed');
+  const [subDivisionFilter, setSubDivisionFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [availableSubDivisions, setAvailableSubDivisions] = useState<string[]>([]);
+
   // AppHeader에서 년도 변경 이벤트 수신
   useEffect(() => {
     const handleYearChange = (e: CustomEvent) => {
@@ -36,6 +70,21 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
     window.addEventListener('complianceYearChanged', handleYearChange as EventListener)
     return () => {
       window.removeEventListener('complianceYearChanged', handleYearChange as EventListener)
+    }
+  }, [])
+
+  // AppHeader의 RegionFilter에서 지역 변경 이벤트 수신
+  useEffect(() => {
+    const handleRegionChange = (e: CustomEvent) => {
+      const { sido, gugun } = e.detail
+      console.log('[ComplianceMainLayout] Region changed:', { sido, gugun })
+      setSelectedSido(sido || null)
+      setSelectedGugun(gugun || null)
+    }
+
+    window.addEventListener('regionSelected', handleRegionChange as EventListener)
+    return () => {
+      window.removeEventListener('regionSelected', handleRegionChange as EventListener)
     }
   }, [])
 
@@ -51,6 +100,41 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
       window.removeEventListener('institutionSelected', handleInstitutionSelected as EventListener)
     }
   }, [])
+
+  // 매칭결과 탭에서 매칭하기로 이동 요청 수신
+  useEffect(() => {
+    const handleOpenMatching = (e: CustomEvent) => {
+      const institution = e.detail.institution
+      console.log('[ComplianceMainLayout] Opening matching workflow for:', institution)
+
+      // 매칭하기 탭으로 전환
+      setActiveTab('targets')
+
+      // 기관 선택 이벤트 발송 (ComplianceMatchingWorkflow에서 수신)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('selectInstitutionFromResult', {
+          detail: { institution }
+        }))
+      }, 100) // 탭 전환 후 이벤트 발송
+    }
+
+    window.addEventListener('openMatchingWorkflow', handleOpenMatching as EventListener)
+    return () => {
+      window.removeEventListener('openMatchingWorkflow', handleOpenMatching as EventListener)
+    }
+  }, [])
+
+  // 통계 및 availableSubDivisions 업데이트 (ComplianceCompletedList에서 가져오기)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (completedListRef.current && activeTab === 'completed') {
+        setStatistics(completedListRef.current.statistics)
+        setAvailableSubDivisions(completedListRef.current.availableSubDivisions)
+      }
+    }, 500) // 0.5초마다 업데이트
+
+    return () => clearInterval(interval)
+  }, [activeTab])
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -69,19 +153,17 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
       {/* 메인 컨텐츠 */}
       <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed')} className="h-full flex flex-col">
-          <div className="flex items-center gap-4 mb-2">
+          <div className="flex items-center gap-3 mb-2">
             <TabsList className="grid w-fit grid-cols-2">
               <TabsTrigger value="targets" className="px-8">
-                <Target className="w-4 h-4 mr-2" />
-                의무기관
+                매칭하기
               </TabsTrigger>
               <TabsTrigger value="completed" className="px-8">
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                설치확인
+                매칭결과
               </TabsTrigger>
             </TabsList>
 
-            {/* 동적 안내 메시지 */}
+            {/* 동적 안내 메시지 - 매칭하기 탭 */}
             {activeTab === 'targets' && (
               <div className="text-sm text-muted-foreground">
                 {selectedInstitutionName ? (
@@ -92,6 +174,75 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                   <span>의무설치기관을 선택하세요</span>
                 )}
               </div>
+            )}
+
+            {/* 필터 및 통계 뱃지 - 매칭결과 탭 */}
+            {activeTab === 'completed' && selectedYear === '2024' && (
+              <>
+                {/* 클릭 가능한 통계 뱃지 (필터 기능) */}
+                <Badge
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
+                  className="text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setStatusFilter('all')}
+                >
+                  의무시설: <span className="font-semibold ml-1">{statistics.total}</span>
+                </Badge>
+                <Badge
+                  variant={statusFilter === 'installed' ? 'default' : 'outline'}
+                  className={`text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity ${
+                    statusFilter === 'installed' ? 'bg-green-600 hover:bg-green-700' : 'border-green-500 text-green-700'
+                  }`}
+                  onClick={() => setStatusFilter('installed')}
+                >
+                  매칭완료: <span className="font-semibold ml-1">{statistics.installed}</span>
+                </Badge>
+                <Badge
+                  variant={statusFilter === 'not_installed' ? 'default' : 'outline'}
+                  className={`text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity ${
+                    statusFilter === 'not_installed' ? 'bg-amber-600 hover:bg-amber-700' : 'border-amber-500 text-amber-700'
+                  }`}
+                  onClick={() => setStatusFilter('not_installed')}
+                >
+                  미완료: <span className="font-semibold ml-1">{statistics.total - statistics.installed}</span>
+                </Badge>
+
+                {/* 구분 드롭다운 */}
+                <Select value={subDivisionFilter} onValueChange={setSubDivisionFilter}>
+                  <SelectTrigger className="w-[150px] h-8 text-xs">
+                    <SelectValue placeholder="구분 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체</SelectItem>
+                    {availableSubDivisions.map((subDivision) => (
+                      <SelectItem key={subDivision} value={subDivision}>
+                        {subDivision}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* 기관명 검색 */}
+                <div className="relative w-[200px]">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3" />
+                  <Input
+                    placeholder="기관명 검색..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-7 h-8 text-xs"
+                  />
+                </div>
+
+                {/* 엑셀 다운로드 버튼 */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => completedListRef.current?.exportToExcel()}
+                  className="ml-auto h-8"
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  엑셀 다운로드
+                </Button>
+              </>
             )}
           </div>
 
@@ -120,7 +271,15 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
 
             <TabsContent value="completed" className="mt-0 h-full">
               {selectedYear === '2024' ? (
-                <ComplianceCompletedList year={selectedYear} />
+                <ComplianceCompletedList
+                  ref={completedListRef}
+                  year={selectedYear}
+                  sido={selectedSido}
+                  gugun={selectedGugun}
+                  statusFilter={statusFilter}
+                  subDivisionFilter={subDivisionFilter}
+                  searchTerm={searchTerm}
+                />
               ) : (
                 <Card className="border-dashed dark:border-gray-700">
                   <CardContent className="flex flex-col items-center justify-center py-20">

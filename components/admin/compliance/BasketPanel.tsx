@@ -48,7 +48,8 @@ export default function BasketPanel({
   onMatch
 }: BasketPanelProps) {
   const [matching, setMatching] = useState(false);
-  const [expandedBasketItems, setExpandedBasketItems] = useState<Set<string>>(new Set());
+  // 기본값이 펼쳐진 상태이므로 접힌 항목만 추적
+  const [collapsedBasketItems, setCollapsedBasketItems] = useState<Set<string>>(new Set());
 
   const handleMatch = async () => {
     if (basket.length === 0) {
@@ -73,8 +74,8 @@ export default function BasketPanel({
     }
   };
 
-  const toggleExpanded = (managementNumber: string) => {
-    setExpandedBasketItems(prev => {
+  const toggleCollapsed = (managementNumber: string) => {
+    setCollapsedBasketItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(managementNumber)) {
         newSet.delete(managementNumber);
@@ -182,26 +183,26 @@ export default function BasketPanel({
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => toggleExpanded(item.management_number)}
+                              onClick={() => toggleCollapsed(item.management_number)}
                               className="text-xs"
                             >
-                              {expandedBasketItems.has(item.management_number) ? (
-                                <>
-                                  <ChevronUp className="h-3 w-3 mr-1" />
-                                  장비 {item.selected_serials.length}대 접기
-                                </>
-                              ) : (
+                              {collapsedBasketItems.has(item.management_number) ? (
                                 <>
                                   <ChevronDown className="h-3 w-3 mr-1" />
                                   장비 {item.selected_serials.length}대 펼치기
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronUp className="h-3 w-3 mr-1" />
+                                  장비 {item.selected_serials.length}대 접기
                                 </>
                               )}
                             </Button>
                           </div>
                         )}
 
-                        {/* 펼쳐진 경우 또는 장비가 1개인 경우에만 장비연번 목록 표시 */}
-                        {(expandedBasketItems.has(item.management_number) || item.selected_serials.length === 1) && (
+                        {/* 기본 펼쳐진 상태, 접기 버튼을 누른 경우만 숨김 */}
+                        {(!collapsedBasketItems.has(item.management_number) || item.selected_serials.length === 1) && (
                           <div className="space-y-1 mt-2">
                             {item.selected_serials.map(serial => {
                               const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);

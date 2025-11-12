@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   CheckCircle2,
   XCircle,
@@ -53,13 +54,35 @@ interface CompletedTarget {
 
 interface ComplianceCompletedListProps {
   year?: string;
+  sido?: string | null;
+  gugun?: string | null;
+  statusFilter?: 'all' | 'installed' | 'not_installed';
+  subDivisionFilter?: string;
+  searchTerm?: string;
 }
 
-export default function ComplianceCompletedList({ year = '2024' }: ComplianceCompletedListProps) {
+export interface ComplianceCompletedListRef {
+  exportToExcel: () => void;
+  statistics: {
+    total: number;
+    installed: number;
+    notInstalled: number;
+    avgConfidence: number;
+  };
+  availableSubDivisions: string[];
+}
+
+const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, ComplianceCompletedListProps>(
+  ({
+    year = '2024',
+    sido,
+    gugun,
+    statusFilter = 'not_installed',
+    subDivisionFilter = 'all',
+    searchTerm = ''
+  }, ref) => {
   const { data: session } = useSession();
   const [selectedYear, setSelectedYear] = useState(year);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'installed' | 'not_installed'>('all');
   const [loading, setLoading] = useState(false);
   const [completedTargets, setCompletedTargets] = useState<CompletedTarget[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<CompletedTarget | null>(null);
@@ -71,6 +94,7 @@ export default function ComplianceCompletedList({ year = '2024' }: ComplianceCom
     notInstalled: 0,
     avgConfidence: 0
   });
+  const [availableSubDivisions, setAvailableSubDivisions] = useState<string[]>([]);
 
   // year prop이 변경되면 selectedYear 업데이트
   useEffect(() => {
@@ -102,39 +126,66 @@ export default function ComplianceCompletedList({ year = '2024' }: ComplianceCom
   const loadCompletedTargets = async () => {
     setLoading(true);
     try {
+      // props로 받은 sido/gugun 우선 사용, 없으면 userJurisdiction 사용
+      const effectiveSido = sido !== undefined ? sido : userJurisdiction?.sido;
+      const effectiveGugun = gugun !== undefined ? gugun : userJurisdiction?.gugun;
+
       const params = new URLSearchParams({
         year: selectedYear,
-        ...(userJurisdiction?.sido && { sido: userJurisdiction.sido }),
-        ...(userJurisdiction?.gugun && { gugun: userJurisdiction.gugun }),
+        limit: '10000', // API MAX_PAGE_SIZE와 일치 (전체 데이터 가져오기)
+        ...(effectiveSido && { sido: effectiveSido }),
+        ...(effectiveGugun && { gugun: effectiveGugun }),
         ...(searchTerm && { search: searchTerm })
       });
 
       const response = await fetch(`/api/compliance/check?${params}`);
       const data = await response.json();
 
-      // 완료된 항목만 필터링
-      const completed = (data.matches || []).filter((m: CompletedTarget) =>
-        m.status === 'installed' || m.status === 'not_installed'
-      );
+      const allMatches = data.matches || [];
+
+      // sub_division 목록 추출
+      const subDivisions = Array.from(new Set(
+        allMatches
+          .map((m: any) => m.targetInstitution?.sub_division)
+          .filter((sd: string) => sd) // 빈 값 제거
+      )) as string[];
+      setAvailableSubDivisions(subDivisions);
 
       // 상태 필터 적용
-      const filtered = statusFilter === 'all'
-        ? completed
-        : completed.filter((m: CompletedTarget) => m.status === statusFilter);
+      let filtered;
+      if (statusFilter === 'installed') {
+        // 매칭완료: status가 'installed'인 항목
+        filtered = allMatches.filter((m: any) => m.status === 'installed');
+      } else if (statusFilter === 'not_installed') {
+        // 미완료: status가 없거나 확인되지 않은 항목
+        filtered = allMatches.filter((m: any) =>
+          !m.status || m.status === 'pending' || m.requiresMatching === true
+        );
+      } else {
+        // all: 모든 항목
+        filtered = allMatches;
+      }
+
+      // 구분 필터 적용
+      if (subDivisionFilter !== 'all') {
+        filtered = filtered.filter((m: any) =>
+          m.targetInstitution?.sub_division === subDivisionFilter
+        );
+      }
 
       setCompletedTargets(filtered);
 
-      // 통계 계산
-      const installed = completed.filter((m: CompletedTarget) => m.status === 'installed');
+      // 통계 계산 (전체 데이터 기준)
+      const installed = allMatches.filter((m: any) => m.status === 'installed');
       const avgConfidence = installed.length > 0
-        ? installed.reduce((acc: number, curr: CompletedTarget) =>
-            acc + (curr.matches[0]?.confidence || 0), 0) / installed.length
+        ? installed.reduce((acc: number, curr: any) =>
+            acc + (curr.matches?.[0]?.confidence || 0), 0) / installed.length
         : 0;
 
       setStatistics({
-        total: completed.length,
+        total: allMatches.length,
         installed: installed.length,
-        notInstalled: completed.filter((m: CompletedTarget) => m.status === 'not_installed').length,
+        notInstalled: allMatches.filter((m: any) => !m.status || m.status === 'pending' || m.requiresMatching === true).length,
         avgConfidence
       });
     } catch (error) {
@@ -145,10 +196,17 @@ export default function ComplianceCompletedList({ year = '2024' }: ComplianceCom
   };
 
   useEffect(() => {
-    if (userJurisdiction !== null) {
+    if (userJurisdiction !== null || sido !== undefined) {
       loadCompletedTargets();
     }
-  }, [selectedYear, searchTerm, statusFilter, userJurisdiction]);
+  }, [selectedYear, searchTerm, statusFilter, subDivisionFilter, userJurisdiction, sido, gugun]);
+
+  // Expose export function, statistics, and availableSubDivisions to parent via ref
+  useImperativeHandle(ref, () => ({
+    exportToExcel: handleExportCSV,
+    statistics,
+    availableSubDivisions
+  }), [statistics, availableSubDivisions]);
 
   // 상태 변경
   const handleStatusChange = async (targetKey: string, newStatus: 'installed' | 'not_installed') => {
@@ -222,155 +280,88 @@ export default function ComplianceCompletedList({ year = '2024' }: ComplianceCom
   }
 
   return (
-    <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">
-            {userJurisdiction.isNational
-              ? '전국 의무설치기관 설치확인 현황'
-              : `${userJurisdiction.sido} ${userJurisdiction.gugun} 설치확인 현황`}
-          </h3>
-          <p className="text-muted-foreground text-sm mt-1">
-            처리 완료된 항목을 검토하고 수정할 수 있습니다
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="px-3 py-1">
-            {selectedYear}년 완료
-          </Badge>
-          <Button variant="outline" size="sm" onClick={handleExportCSV}>
-            <Download className="w-4 h-4 mr-2" />
-            CSV 다운로드
-          </Button>
-        </div>
-      </div>
-
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">처리 완료</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statistics.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">설치 확인</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{statistics.installed}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">미설치 확인</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{statistics.notInstalled}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">평균 신뢰도</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statistics.avgConfidence.toFixed(1)}%</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 필터 및 검색 */}
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="기관명 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-          <TabsList>
-            <TabsTrigger value="all">
-              전체 ({statistics.total})
-            </TabsTrigger>
-            <TabsTrigger value="installed">
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              설치 ({statistics.installed})
-            </TabsTrigger>
-            <TabsTrigger value="not_installed">
-              <XCircle className="w-4 h-4 mr-2" />
-              미설치 ({statistics.notInstalled})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* 완료 목록 */}
-      <div className="space-y-4">
-        {completedTargets.map((target) => (
-          <Card key={target.targetInstitution.target_key}>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-7 gap-4 items-center">
-                <div className="col-span-2">
-                  <div className="font-medium">{target.targetInstitution.institution_name}</div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {target.targetInstitution.sido} {target.targetInstitution.gugun}
-                  </div>
-                </div>
-
-                <div>
-                  <Badge variant="outline">
+    <div className="space-y-4">
+      {/* 완료 목록 테이블 */}
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>시도</TableHead>
+              <TableHead>구군</TableHead>
+              <TableHead>구분</TableHead>
+              <TableHead>의무설치기관명</TableHead>
+              <TableHead>매칭된 기관명</TableHead>
+              <TableHead>매칭된 관리번호</TableHead>
+              <TableHead>매칭된 장비연번</TableHead>
+              <TableHead>주소</TableHead>
+              <TableHead className="text-right">작업</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {completedTargets.map((target) => (
+              <TableRow key={target.targetInstitution.target_key}>
+                <TableCell>{target.targetInstitution.sido}</TableCell>
+                <TableCell>{target.targetInstitution.gugun}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
                     {target.targetInstitution.sub_division}
                   </Badge>
-                </div>
-
-                <div>
-                  <Badge
-                    variant={target.status === 'installed' ? 'default' : 'destructive'}
-                    className={target.status === 'installed' ? 'bg-green-600' : ''}
-                  >
-                    {target.status === 'installed' ? '설치' : '미설치'}
-                  </Badge>
-                </div>
-
-                <div className="col-span-2">
+                </TableCell>
+                <TableCell className="font-medium">
+                  {target.targetInstitution.institution_name}
+                </TableCell>
+                <TableCell>
                   {target.status === 'installed' && target.matches[0] ? (
-                    <div className="text-sm">
-                      <div>{target.matches[0].institution_name}</div>
-                      <div className="text-muted-foreground">
-                        관리번호: {target.matches[0].management_number} ({target.matches[0].confidence}%)
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span>{target.matches[0].institution_name}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {target.matches[0].confidence}%
+                      </Badge>
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">매칭 없음</span>
+                    <span className="text-muted-foreground">매칭 없음</span>
                   )}
-                </div>
-
-                <div className="flex items-center gap-2 justify-end">
-                  {target.confirmedAt && (
-                    <div className="text-sm text-right mr-2">
-                      <div>{new Date(target.confirmedAt).toLocaleDateString()}</div>
-                      <div className="text-muted-foreground text-xs">
-                        {new Date(target.confirmedAt).toLocaleTimeString()}
-                      </div>
-                    </div>
+                </TableCell>
+                <TableCell>
+                  {target.status === 'installed' && target.matches[0] ? (
+                    <span className="font-mono text-sm">{target.matches[0].management_number}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
                   )}
-                  <div className="flex gap-2">
+                </TableCell>
+                <TableCell>
+                  {target.status === 'installed' && target.matches[0] ? (
+                    <span className="text-sm">{target.matches[0].equipment_count}대</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="max-w-xs">
+                  {target.status === 'installed' && target.matches[0] ? (
+                    <span className="text-sm truncate">{target.matches[0].address}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex gap-2 justify-end">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setSelectedTarget(target);
-                        setEditNote(target.note || '');
-                        setShowEditDialog(true);
+                        if (target.status === 'installed') {
+                          // 매칭완료: 수정 다이얼로그 표시
+                          setSelectedTarget(target);
+                          setEditNote(target.note || '');
+                          setShowEditDialog(true);
+                        } else {
+                          // 미완료: 매칭하기 탭으로 전환 + 해당 기관 자동 선택
+                          window.dispatchEvent(new CustomEvent('openMatchingWorkflow', {
+                            detail: { institution: target.targetInstitution }
+                          }));
+                        }
                       }}
+                      title={target.status === 'installed' ? '매칭 정보 수정' : '매칭하기'}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
@@ -384,11 +375,11 @@ export default function ComplianceCompletedList({ year = '2024' }: ComplianceCom
                       </Button>
                     )}
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
       {completedTargets.length === 0 && (
@@ -464,4 +455,8 @@ export default function ComplianceCompletedList({ year = '2024' }: ComplianceCom
       </Dialog>
     </div>
   );
-}
+});
+
+ComplianceCompletedList.displayName = 'ComplianceCompletedList';
+
+export default ComplianceCompletedList;
