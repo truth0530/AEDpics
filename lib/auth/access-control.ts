@@ -621,8 +621,9 @@ export function canAccessAEDData(user: UserRole | UserProfile): boolean {
       organizations: (user as any).organizations
     });
 
+    // 지역 제한 역할만 추가 도메인 검증 (전국 권한 역할은 resolveAccessScope에서 검증)
     const allowedDomains = new Set(['korea.kr', 'nmc.or.kr']);
-    const domainRestrictedRoles: UserRole[] = ['ministry_admin', 'regional_admin', 'local_admin'];
+    const domainRestrictedRoles: UserRole[] = ['regional_admin', 'local_admin'];
     const userDomain = user.email?.split('@')[1]?.toLowerCase();
 
     if (domainRestrictedRoles.includes(role)) {
