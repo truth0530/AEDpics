@@ -412,7 +412,7 @@ export default function ComplianceMatchingWorkflow({
                     <>
                       {selectedInstitution ? (
                         <span>
-                          {selectedInstitution.institution_name}과 매칭할 관리번호를 선택하세요
+                          {selectedInstitution.institution_name} 매칭대상
                         </span>
                       ) : (
                         <>

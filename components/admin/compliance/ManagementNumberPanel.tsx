@@ -239,16 +239,22 @@ export default function ManagementNumberPanel({
               key={item.management_number}
               className={cn(
                 "p-2.5 transition-all",
-                hasMultipleEquipment && remainingEquipmentCount > 0 && "cursor-pointer hover:shadow-md",
                 item.is_matched && "opacity-50 bg-muted",
                 isPartiallyMatched && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
                 isFullyMatched && "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
               )}
-              onClick={() => hasMultipleEquipment && remainingEquipmentCount > 0 && toggleExpanded(item.management_number)}
             >
               <div className="space-y-1.5">
-                {/* 카드 상단 영역 */}
-                <div className="flex items-center justify-between gap-2">
+                {/* 카드 클릭 가능 영역 (장비 목록 제외) */}
+                <div
+                  className={cn(
+                    "space-y-1.5",
+                    hasMultipleEquipment && remainingEquipmentCount > 0 && "cursor-pointer"
+                  )}
+                  onClick={() => hasMultipleEquipment && remainingEquipmentCount > 0 && toggleExpanded(item.management_number)}
+                >
+                  {/* 카드 상단 헤더 */}
+                  <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <div className="font-medium text-sm">
                       {item.institution_name}
@@ -282,7 +288,8 @@ export default function ManagementNumberPanel({
                     </Badge>
                   ) : null}
                 </div>
-                {/* 카드 상단 영역 끝 */}
+                {/* 카드 상단 헤더 끝 */}
+
                 {(item.category_1 || item.category_2) && (
                   <div className="flex items-center gap-1">
                     {item.category_1 && (
@@ -342,8 +349,10 @@ export default function ManagementNumberPanel({
                     </div>
                   </div>
                 )}
+              </div>
+              {/* 클릭 가능 영역 끝 */}
 
-                {/* 펼쳐진 경우 장비연번 목록 표시 (담기지 않은 장비만) */}
+              {/* 펼쳐진 경우 장비연번 목록 표시 (담기지 않은 장비만) - 클릭해도 접히지 않음 */}
                 {isExpanded && hasMultipleEquipment && item.equipment_details && (() => {
                   // 담기지 않은 장비연번만 필터링
                   const remainingEquipmentDetails = item.equipment_details.filter(
