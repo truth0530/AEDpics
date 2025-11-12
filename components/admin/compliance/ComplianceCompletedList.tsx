@@ -96,6 +96,11 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
   });
   const [availableSubDivisions, setAvailableSubDivisions] = useState<string[]>([]);
 
+  // 페이지네이션 상태
+  const [pageSize, setPageSize] = useState(30); // 기본 30개
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   // year prop이 변경되면 selectedYear 업데이트
   useEffect(() => {
     setSelectedYear(year);
@@ -130,9 +135,20 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       const effectiveSido = sido !== undefined ? sido : userJurisdiction?.sido;
       const effectiveGugun = gugun !== undefined ? gugun : userJurisdiction?.gugun;
 
+      // 통계는 별도 API로 조회 (빠른 응답)
+      const statsParams = new URLSearchParams({
+        year: selectedYear,
+        ...(effectiveSido && { sido: effectiveSido }),
+        ...(effectiveGugun && { gugun: effectiveGugun })
+      });
+      const statsResponse = await fetch(`/api/compliance/stats?${statsParams}`);
+      const statsData = await statsResponse.json();
+
+      // 페이지 데이터 조회
       const params = new URLSearchParams({
         year: selectedYear,
-        limit: '10000', // API MAX_PAGE_SIZE와 일치 (전체 데이터 가져오기)
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
         ...(effectiveSido && { sido: effectiveSido }),
         ...(effectiveGugun && { gugun: effectiveGugun }),
         ...(searchTerm && { search: searchTerm })
@@ -142,28 +158,27 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       const data = await response.json();
 
       const allMatches = data.matches || [];
-      const totalCount = data.totalCount || 0; // API가 반환하는 전체 의무시설 수 (target_list_2025 기준)
 
-      // sub_division 목록 추출
+      // 페이지 정보 업데이트
+      setTotalPages(data.totalPages || 1);
+
+      // sub_division 목록 추출 (현재 페이지 기준)
       const subDivisions = Array.from(new Set(
         allMatches
           .map((m: any) => m.targetInstitution?.sub_division)
-          .filter((sd: string) => sd) // 빈 값 제거
+          .filter((sd: string) => sd)
       )) as string[];
       setAvailableSubDivisions(subDivisions);
 
-      // 상태 필터 적용
+      // 상태 필터 적용 (현재 페이지 데이터만)
       let filtered;
       if (statusFilter === 'installed') {
-        // 매칭완료: status가 'installed'인 항목
         filtered = allMatches.filter((m: any) => m.status === 'installed');
       } else if (statusFilter === 'not_installed') {
-        // 미완료: status가 없거나 확인되지 않은 항목
         filtered = allMatches.filter((m: any) =>
           !m.status || m.status === 'pending' || m.requiresMatching === true
         );
       } else {
-        // all: 모든 항목
         filtered = allMatches;
       }
 
@@ -176,18 +191,12 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
 
       setCompletedTargets(filtered);
 
-      // 통계 계산 (전체 데이터 기준)
-      const installed = allMatches.filter((m: any) => m.status === 'installed');
-      const avgConfidence = installed.length > 0
-        ? installed.reduce((acc: number, curr: any) =>
-            acc + (curr.matches?.[0]?.confidence || 0), 0) / installed.length
-        : 0;
-
+      // 통계는 stats API 결과 사용
       setStatistics({
-        total: totalCount, // target_list_2025에서 가져온 전체 의무시설 수
-        installed: installed.length,
-        notInstalled: totalCount - installed.length, // 전체 - 매칭완료 = 미완료
-        avgConfidence
+        total: statsData.stats?.total || 0,
+        installed: statsData.stats?.installed || 0,
+        notInstalled: statsData.stats?.notInstalled || 0,
+        avgConfidence: 0 // TODO: stats API에 추가 가능
       });
     } catch (error) {
       console.error('Failed to load completed targets:', error);
@@ -200,7 +209,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
     if (userJurisdiction !== null || sido !== undefined) {
       loadCompletedTargets();
     }
-  }, [selectedYear, searchTerm, statusFilter, subDivisionFilter, userJurisdiction, sido, gugun]);
+  }, [selectedYear, searchTerm, statusFilter, subDivisionFilter, userJurisdiction, sido, gugun, currentPage, pageSize]);
 
   // Expose export function, statistics, and availableSubDivisions to parent via ref
   useImperativeHandle(ref, () => ({
@@ -282,6 +291,84 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
 
   return (
     <div className="space-y-4">
+      {/* 페이지 크기 선택 및 페이지네이션 컨트롤 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">페이지당</span>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => {
+              setPageSize(parseInt(value));
+              setCurrentPage(1); // 페이지 크기 변경 시 첫 페이지로
+            }}
+          >
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="15">15개</SelectItem>
+              <SelectItem value="30">30개</SelectItem>
+              <SelectItem value="100">100개</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">보기</span>
+        </div>
+
+        {/* 페이지네이션 컨트롤 */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1 || loading}
+          >
+            이전
+          </Button>
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              // 현재 페이지 근처의 페이지 번호만 표시
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  disabled={loading}
+                  className="w-10"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages || loading}
+          >
+            다음
+          </Button>
+
+          <span className="text-sm text-muted-foreground ml-2">
+            {currentPage} / {totalPages} 페이지
+          </span>
+        </div>
+      </div>
+
       {/* 완료 목록 테이블 */}
       <div className="border rounded-lg overflow-hidden">
         <Table>

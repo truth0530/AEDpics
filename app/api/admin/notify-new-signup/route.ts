@@ -6,6 +6,7 @@ import { sendSmartEmail } from '@/lib/email/ncp-email';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { UserRole } from '@/packages/types';
+import { getRegionCode } from '@/lib/constants/regions';
 
 import { prisma } from '@/lib/prisma';
 
@@ -38,52 +39,61 @@ export async function POST(request: NextRequest) {
     // Master 관리자 이메일 목록 가져오기
     const masterEmails = new Set(getMasterAdminEmails());
 
+    // 지역 코드 정규화 (통합 관리 시스템 활용)
+    // signup에서 이미 getRegionCode를 거쳤지만, 안전을 위해 한 번 더 검증
+    const normalizedRegionCode = regionCode ? getRegionCode(region) || regionCode : undefined;
+
+    logger.info('API:notifyNewSignup', 'Region code normalization', {
+      originalRegion: region,
+      receivedRegionCode: regionCode,
+      normalizedRegionCode: normalizedRegionCode,
+      changed: regionCode !== normalizedRegionCode
+    });
+
     // 실제 승인 권한이 있는 사용자만 조회
-    // - master / emergency_center_admin: 지역 제약 없음
-    // - regional_emergency_center_admin: regionCode와 일치하는 지역의 관리자만
+    // 2025-11-13 개선: 지역별 알림 수신자 최적화
+    // - master: 전국 알림 (최소 인원만)
+    // - regional_emergency_center_admin: 해당 지역만 알림
+    // - emergency_center_admin: 제외 (중앙센터는 모든 지역 알림 불필요)
     // - 상태: is_active = true
     // - 권한: canApproveUsers(role) = true
 
-    // regional_emergency_center_admin 조회 필터
     let adminProfiles;
 
-    if (regionCode) {
-      // regionCode가 제공된 경우: master, emergency_center_admin, 해당 지역의 regional_emergency_center_admin
+    if (normalizedRegionCode) {
+      // regionCode가 제공된 경우: master + 해당 지역의 regional_emergency_center_admin만
       adminProfiles = await prisma.user_profiles.findMany({
         where: {
           is_active: true,
-          AND: [
+          OR: [
+            // master는 전국 알림 (최소 인원)
+            { role: 'master' },
+            // regional_emergency_center_admin은 해당 지역만
             {
-              OR: [
-                // master와 emergency_center_admin은 지역 제약 없음
-                { role: 'master' },
-                { role: 'emergency_center_admin' },
-                // regional_emergency_center_admin은 해당 지역만
-                {
-                  role: 'regional_emergency_center_admin',
-                  region_code: regionCode
-                }
-              ]
+              role: 'regional_emergency_center_admin',
+              region_code: normalizedRegionCode
             }
           ]
         },
         select: {
           email: true,
           full_name: true,
-          role: true
+          role: true,
+          region_code: true
         },
       });
     } else {
-      // regionCode 없으면 master와 emergency_center_admin만
+      // regionCode 없으면 master만 (안전 장치)
       adminProfiles = await prisma.user_profiles.findMany({
         where: {
           is_active: true,
-          role: { in: ['master', 'emergency_center_admin'] }
+          role: 'master'
         },
         select: {
           email: true,
           full_name: true,
-          role: true
+          role: true,
+          region_code: true
         },
       });
     }
@@ -94,9 +104,9 @@ export async function POST(request: NextRequest) {
     logger.info('API:notifyNewSignup', 'Admin profile filtering', {
       newUser: email,
       region: region,
-      regionCode: regionCode,
+      normalizedRegionCode: normalizedRegionCode,
       totalAdminsFound: adminProfiles?.length || 0,
-      admins: adminProfiles?.map(p => ({ email: p.email, role: p.role })) || []
+      admins: adminProfiles?.map(p => ({ email: p.email, role: p.role, region_code: p.region_code })) || []
     });
 
     for (const profile of adminProfiles || []) {
@@ -115,7 +125,7 @@ export async function POST(request: NextRequest) {
     logger.info('API:notifyNewSignup', 'Filtered admin emails for notification', {
       newUser: email,
       region: region,
-      regionCode: regionCode,
+      normalizedRegionCode: normalizedRegionCode,
       notificationRecipients: Array.from(adminEmailMap.keys())
     });
 
