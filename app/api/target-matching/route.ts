@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     if (sido) {
       filteredData = data.filter(item => {
         // Extract sido from auto_suggested or management_number
-        const suggested = item[`auto_suggested${yearSuffix}`] || '';
+        const suggested = (item[`auto_suggested${yearSuffix}` as keyof typeof item] as string) || '';
         return suggested.includes(sido);
       });
     }
