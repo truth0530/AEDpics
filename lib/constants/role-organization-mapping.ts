@@ -9,7 +9,7 @@
  *   - regional_emergency_center_admin: emergency_center
  *
  * @korea.kr (정부 담당자)
- *   - ministry_admin: province
+ *   - ministry_admin: ministry
  *   - regional_admin: province
  *   - local_admin: health_center
  *
@@ -19,7 +19,7 @@
 
 import { UserRole } from '@/packages/types';
 
-export type OrganizationType = 'health_center' | 'province' | 'emergency_center';
+export type OrganizationType = 'health_center' | 'province' | 'ministry' | 'emergency_center';
 
 /**
  * 역할에 따른 선택 가능한 조직 타입
@@ -27,11 +27,11 @@ export type OrganizationType = 'health_center' | 'province' | 'emergency_center'
 export const ROLE_ORGANIZATION_TYPE_MAP: Record<UserRole, OrganizationType[]> = {
   'emergency_center_admin': ['emergency_center'],
   'regional_emergency_center_admin': ['emergency_center'],
-  'ministry_admin': ['province'],
+  'ministry_admin': ['ministry'],
   'regional_admin': ['province'],
   'local_admin': ['health_center'],
   'temporary_inspector': ['health_center'],
-  'master': ['province', 'health_center', 'emergency_center'], // master는 모든 조직 선택 가능
+  'master': ['province', 'ministry', 'health_center', 'emergency_center'], // master는 모든 조직 선택 가능
   // 다음은 임시 상태로 조직 접근 권한이 없음
   'pending_approval': [],
   'email_verified': [],
@@ -64,6 +64,7 @@ export function isValidRoleOrganizationMatch(role: UserRole, organizationType: O
 export const ORGANIZATION_TYPE_DISPLAY: Record<OrganizationType, string> = {
   'health_center': '보건소',
   'province': '시도',
+  'ministry': '정부부처',
   'emergency_center': '응급의료센터'
 };
 
