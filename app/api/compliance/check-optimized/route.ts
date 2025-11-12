@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { normalizeGugunForDB } from '@/lib/constants/regions';
+import { normalizeGugunForDB, normalizeSidoForDB } from '@/lib/constants/regions';
 
 // Ultra-optimized version with minimal data loading
 const MINIMAL_PAGE_SIZE = 10; // Start with very small pages
@@ -22,8 +22,12 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const year = searchParams.get('year') || '2024';
-    const sido = searchParams.get('sido');
+    const year = searchParams.get('year') || '2025';
+    const sidoParam = searchParams.get('sido');
+    // 2024년: 짧은 형식 ("대구"), 2025년: 긴 형식 ("대구광역시")
+    const sido = sidoParam
+      ? (year === '2025' ? (normalizeSidoForDB(sidoParam) ?? sidoParam) : sidoParam)
+      : undefined;
     const gugunParam = searchParams.get('gugun');
     const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
     const search = searchParams.get('search');
@@ -58,10 +62,10 @@ export async function GET(request: NextRequest) {
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       totalCount = cached.value;
     } else {
-      // Count with timeout
-      const countPromise = prisma.target_list_2024.count({
-        where: targetWhere
-      });
+      // Count with timeout (dynamic table selection)
+      const countPromise = year === '2025'
+        ? prisma.target_list_2025.count({ where: targetWhere })
+        : prisma.target_list_2024.count({ where: targetWhere });
 
       // Set a timeout for the count query
       const timeoutPromise = new Promise<number>((_, reject) =>
@@ -77,25 +81,46 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get minimal target list
-    const targetList = await prisma.target_list_2024.findMany({
-      where: targetWhere,
-      select: {
-        target_key: true,
-        institution_name: true,
-        sido: true,
-        gugun: true,
-        division: true,
-        sub_division: true,
-      },
-      orderBy: [
-        { sido: 'asc' },
-        { gugun: 'asc' },
-        { institution_name: 'asc' }
-      ],
-      skip,
-      take: limit
-    });
+    // Get minimal target list (dynamic table selection)
+    const targetList = year === '2025'
+      ? await prisma.target_list_2025.findMany({
+          where: targetWhere,
+          select: {
+            target_key: true,
+            institution_name: true,
+            sido: true,
+            gugun: true,
+            division: true,
+            sub_division: true,
+            unique_key: true,
+            address: true,
+          },
+          orderBy: [
+            { sido: 'asc' },
+            { gugun: 'asc' },
+            { institution_name: 'asc' }
+          ],
+          skip,
+          take: limit
+        })
+      : await prisma.target_list_2024.findMany({
+          where: targetWhere,
+          select: {
+            target_key: true,
+            institution_name: true,
+            sido: true,
+            gugun: true,
+            division: true,
+            sub_division: true,
+          },
+          orderBy: [
+            { sido: 'asc' },
+            { gugun: 'asc' },
+            { institution_name: 'asc' }
+          ],
+          skip,
+          take: limit
+        });
 
     if (targetList.length === 0) {
       return NextResponse.json({
@@ -138,7 +163,10 @@ export async function GET(request: NextRequest) {
           sido: target.sido,
           gugun: target.gugun,
           division: target.division,
-          sub_division: target.sub_division
+          sub_division: target.sub_division,
+          // 2025년 전용 필드
+          unique_key: 'unique_key' in target ? target.unique_key : undefined,
+          address: 'address' in target ? target.address : undefined,
         },
         matches: [], // Don't load AED data unless specifically requested
         status: mapping ? 'confirmed' : 'pending',
@@ -200,13 +228,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'target_key required' }, { status: 400 });
     }
 
-    // Get target details
-    const target = await prisma.target_list_2024.findFirst({
-      where: {
-        target_key,
-        data_year: parseInt(year)
-      }
-    });
+    // Get target details (dynamic table selection)
+    const target = year === '2025'
+      ? await prisma.target_list_2025.findFirst({
+          where: {
+            target_key,
+            data_year: parseInt(year)
+          }
+        })
+      : await prisma.target_list_2024.findFirst({
+          where: {
+            target_key,
+            data_year: parseInt(year)
+          }
+        });
 
     if (!target) {
       return NextResponse.json({ error: 'Target not found' }, { status: 404 });

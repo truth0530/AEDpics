@@ -16,7 +16,8 @@ interface TargetInstitution {
   gugun: string;
   division: string;
   sub_division: string;
-  address?: string; // 2025년 세부주소 추가 예정
+  unique_key?: string; // 2025년 고유키
+  address?: string; // 2025년 세부주소
   equipment_count: number;
   matched_count: number;
   unmatched_count: number;
@@ -76,7 +77,8 @@ export default function InstitutionListPanel({
       // matches 배열을 TargetInstitution 형식으로 변환
       const transformedInstitutions: TargetInstitution[] = (data.matches || []).map((item: any) => {
         const target = item.targetInstitution;
-        const isMatched = item.status === 'confirmed' || !item.requiresMatching;
+        const isMatched = item.status === 'confirmed';
+        const requiresMatching = item.requiresMatching !== false; // 매칭이 필요한 경우
 
         return {
           target_key: target.target_key,
@@ -85,9 +87,11 @@ export default function InstitutionListPanel({
           gugun: target.gugun || '',
           division: target.division || '',
           sub_division: target.sub_division || '',
-          equipment_count: isMatched ? 1 : 0,
+          unique_key: target.unique_key || undefined,
+          address: target.address || undefined,
+          equipment_count: requiresMatching ? 1 : 0,
           matched_count: isMatched ? 1 : 0,
-          unmatched_count: isMatched ? 0 : 1
+          unmatched_count: requiresMatching && !isMatched ? 1 : 0
         };
       });
 
@@ -185,14 +189,19 @@ export default function InstitutionListPanel({
                   <div className="font-medium text-sm">
                     {institution.institution_name}
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     {institution.sub_division && (
                       <Badge variant="outline" className="text-xs">
                         {institution.sub_division}
                       </Badge>
                     )}
-                    {(() => {
-                      // target_key 마지막 번호 추출 (예: "대구_남구_119 및 의료기관 구급차_10" → "10")
+                    {institution.unique_key && (
+                      <Badge variant="secondary" className="text-xs">
+                        고유키: {institution.unique_key}
+                      </Badge>
+                    )}
+                    {!institution.unique_key && (() => {
+                      // unique_key가 없는 경우 (2024년) target_key 마지막 번호 추출
                       const match = institution.target_key.match(/_(\d+)$/);
                       const number = match ? match[1] : null;
                       // 번호가 1이 아닌 경우에만 표시 (1은 기본값으로 간주)
@@ -203,13 +212,17 @@ export default function InstitutionListPanel({
                       ) : null;
                     })()}
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span>{institution.sido} {institution.gugun}</span>
-                  </div>
-                  {institution.address && (
-                    <div className="text-xs text-muted-foreground pl-5">
-                      {institution.address}
+                  {institution.address ? (
+                    // 2025년: address가 있으면 address만 표시 (sido/gugun은 데이터 오류가 있을 수 있음)
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span>{institution.address}</span>
+                    </div>
+                  ) : (
+                    // 2024년: address가 없으면 sido/gugun 표시
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span>{institution.sido} {institution.gugun}</span>
                     </div>
                   )}
                   {!showOnlyUnmatched && (

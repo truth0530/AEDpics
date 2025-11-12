@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { target_key, status, management_numbers, year = '2024', note } = body;
+    const { target_key, status, management_numbers, year = '2025', note } = body;
 
     if (!target_key || !status) {
       return NextResponse.json(

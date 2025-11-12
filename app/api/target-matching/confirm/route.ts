@@ -6,20 +6,13 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { managementNumber, year = '2024' } = body;
+    const { managementNumber, year = '2025' } = body;
+    const yearSuffix = year === '2025' ? '_2025' : '_2024';
 
     if (!managementNumber) {
       return NextResponse.json(
         { error: 'Management number is required' },
         { status: 400 }
-      );
-    }
-
-    // 2025년은 아직 준비 중
-    if (year === '2025') {
-      return NextResponse.json(
-        { error: '2025년 데이터는 준비 중입니다' },
-        { status: 404 }
       );
     }
 
@@ -38,9 +31,9 @@ export async function POST(request: NextRequest) {
         management_number: managementNumber,
       },
       data: {
-        confirmed_2024: true,
-        confirmed_by_2024: session.user.id,
-        confirmed_at_2024: new Date(),
+        [`confirmed${yearSuffix}`]: true,
+        [`confirmed_by${yearSuffix}`]: session.user.id,
+        [`confirmed_at${yearSuffix}`]: new Date(),
         updated_at: new Date(),
       },
     });

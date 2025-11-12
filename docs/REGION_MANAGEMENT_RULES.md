@@ -88,6 +88,49 @@ normalizeRegionName('서울시');     // '서울'
 normalizeRegionName('서울');      // '서울'
 ```
 
+## 🐍 Python 스크립트에서 사용
+
+Python 스크립트(예: `upload_to_ncp.py`)는 TypeScript를 직접 import할 수 없으므로, JSON 중간 파일을 사용합니다.
+
+### 1. JSON 파일 생성 (최초 1회 또는 regions.ts 업데이트 시)
+
+```bash
+npm run export:regions
+```
+
+이 명령은 `scripts/regions_data.json` 파일을 생성합니다.
+
+### 2. Python에서 사용
+
+```python
+import json
+from pathlib import Path
+
+# JSON 파일 로드
+regions_json_path = Path(__file__).parent / 'regions_data.json'
+with open(regions_json_path, 'r', encoding='utf-8') as f:
+    regions_data = json.load(f)
+    sido_mapping = regions_data['sido_mapping']  # 약어 → 정식명칭
+    composite_guguns = regions_data['composite_guguns']  # 통합시 하위 구
+    region_guguns = regions_data['region_guguns']  # 시도별 구군 목록
+
+# 사용 예시
+for sido_key in sorted(sido_mapping.keys(), key=len, reverse=True):
+    if address.startswith(sido_key):
+        sido = sido_mapping[sido_key]  # "경북" → "경상북도"
+        break
+```
+
+### 3. 자동화
+
+`lib/constants/regions.ts`를 업데이트한 후 반드시 실행:
+
+```bash
+npm run export:regions
+```
+
+**중요**: Python 스크립트 실행 전 regions_data.json이 최신 상태인지 확인하세요.
+
 ## ⚠️ 레거시 코드 정리 대상
 
 다음 파일들은 즉시 수정 필요:
@@ -113,4 +156,4 @@ grep -r "city_code.*['\"]" --include="*.ts" --include="*.tsx" | grep -v "lib/con
 ---
 
 *이 규칙은 CLAUDE.md와 README.md에도 반영되어야 합니다.*
-*마지막 업데이트: 2025-11-08*
+*마지막 업데이트: 2025-11-12*

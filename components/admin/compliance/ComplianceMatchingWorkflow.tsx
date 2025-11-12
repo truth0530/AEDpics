@@ -53,7 +53,7 @@ interface ComplianceMatchingWorkflowProps {
 }
 
 export default function ComplianceMatchingWorkflow({
-  year = '2024',
+  year = '2025',
   initialProfile
 }: ComplianceMatchingWorkflowProps) {
   // State 관리

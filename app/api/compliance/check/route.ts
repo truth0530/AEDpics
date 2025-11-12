@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { calculateMatchingScore } from '@/lib/utils/similarity-matching';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { normalizeGugunForDB } from '@/lib/constants/regions';
+import { normalizeGugunForDB, normalizeSidoForDB } from '@/lib/constants/regions';
 
 // Optimize query with pagination and limits
 const DEFAULT_PAGE_SIZE = 50;
@@ -18,12 +18,21 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const year = searchParams.get('year') || '2024';
-    const sido = searchParams.get('sido');
+    const year = searchParams.get('year') || '2025';
+    const sidoParam = searchParams.get('sido');
+    const sido = sidoParam ? normalizeSidoForDB(sidoParam) : undefined;
     const gugunParam = searchParams.get('gugun');
-    const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
+    const gugun = gugunParam ? normalizeGugunForDB(gugunParam) : undefined;
     const search = searchParams.get('search');
     const confidenceLevel = searchParams.get('confidence_level') || 'all';
+
+    console.log('[compliance/check] Request params:', {
+      sidoParam,
+      sido,
+      gugunParam,
+      gugun,
+      year
+    });
 
     // Pagination parameters
     const page = parseInt(searchParams.get('page') || '1');
@@ -89,8 +98,12 @@ export async function GET(request: NextRequest) {
     // 3. Get existing mappings for current page targets only
     const targetKeys = targetList.map(t => t.target_key);
     const existingMappings = await prisma.management_number_group_mapping.findMany({
-      where: {
-        [`target_key_${year}`]: {
+      where: year === '2025' ? {
+        target_key_2025: {
+          in: targetKeys
+        }
+      } : {
+        target_key_2024: {
           in: targetKeys
         }
       }
@@ -278,7 +291,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { targetKeys, year = '2024', operation } = body;
+    const { targetKeys, year = '2025', operation } = body;
 
     if (!targetKeys || !Array.isArray(targetKeys) || targetKeys.length === 0) {
       return NextResponse.json({ error: 'Invalid target keys' }, { status: 400 });
@@ -296,16 +309,27 @@ export async function POST(request: NextRequest) {
     // Process batch operations
     if (operation === 'confirm') {
       // Batch confirm implementation
-      const results = await prisma.management_number_group_mapping.updateMany({
-        where: {
-          [`target_key_${year}`]: { in: targetKeys }
-        },
-        data: {
-          [`confirmed_${year}`]: true,
-          [`confirmed_by_${year}`]: session.user?.email,
-          [`confirmed_at_${year}`]: new Date()
-        }
-      });
+      const results = year === '2025'
+        ? await prisma.management_number_group_mapping.updateMany({
+            where: {
+              target_key_2025: { in: targetKeys }
+            },
+            data: {
+              confirmed_2025: true,
+              confirmed_by_2025: session.user?.email,
+              confirmed_at_2025: new Date()
+            }
+          })
+        : await prisma.management_number_group_mapping.updateMany({
+            where: {
+              target_key_2024: { in: targetKeys }
+            },
+            data: {
+              confirmed_2024: true,
+              confirmed_by_2024: session.user?.email,
+              confirmed_at_2024: new Date()
+            }
+          });
 
       return NextResponse.json({
         success: true,

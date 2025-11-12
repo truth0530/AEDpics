@@ -6,15 +6,8 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { year = '2024' } = body || {};
-
-    // 2025년은 아직 준비 중
-    if (year === '2025') {
-      return NextResponse.json(
-        { error: '2025년 데이터는 준비 중입니다' },
-        { status: 404 }
-      );
-    }
+    const { year = '2025' } = body || {};
+    const yearSuffix = year === '2025' ? '_2025' : '_2024';
 
     // Get current user
     const session = await getServerSession(authOptions);
@@ -25,11 +18,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get all high confidence (>=90) unconfirmed mappings (2024년 데이터)
+    // Get all high confidence (>=90) unconfirmed mappings
     const highConfidenceMappings = await prisma.management_number_group_mapping.findMany({
       where: {
-        auto_confidence_2024: { gte: 90 },
-        confirmed_2024: false,
+        [`auto_confidence${yearSuffix}`]: { gte: 90 },
+        [`confirmed${yearSuffix}`]: false,
       },
       select: {
         management_number: true,
@@ -45,12 +38,12 @@ export async function POST(request: NextRequest) {
       const result = await prisma.management_number_group_mapping.updateMany({
         where: {
           management_number: { in: managementNumbers },
-          confirmed_2024: false,
+          [`confirmed${yearSuffix}`]: false,
         },
         data: {
-          confirmed_2024: true,
-          confirmed_by_2024: session.user.id,
-          confirmed_at_2024: new Date(),
+          [`confirmed${yearSuffix}`]: true,
+          [`confirmed_by${yearSuffix}`]: session.user.id,
+          [`confirmed_at${yearSuffix}`]: new Date(),
         },
       });
 

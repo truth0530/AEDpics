@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeGugunForDB, normalizeRegionName } from '@/lib/constants/regions';
@@ -19,10 +20,19 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const targetKey = searchParams.get('target_key');
-    const year = searchParams.get('year') || '2024';
+    const year = searchParams.get('year') || '2025';
     const search = searchParams.get('search') || '';
     const includeAllRegion = searchParams.get('include_all_region') === 'true';
     const includeMatched = searchParams.get('include_matched') === 'true';
+
+    // year 값 검증 (SQL injection 방지)
+    if (year !== '2024' && year !== '2025') {
+      return NextResponse.json({ error: 'Invalid year parameter' }, { status: 400 });
+    }
+
+    // 동적 테이블명 (SQL 쿼리용)
+    const targetTable = year === '2025' ? 'target_list_2025' : 'target_list_2024';
+    const targetTableRaw = Prisma.raw(`aedpics.${targetTable}`);
 
     // target_key가 있으면 의무설치기관 정보 조회
     let targetInstitution: { sido: string | null; gugun: string | null } | null = null;
@@ -30,10 +40,16 @@ export async function GET(request: NextRequest) {
     let normalizedGugun: string | null = null;
 
     if (targetKey) {
-      targetInstitution = await prisma.target_list_2024.findUnique({
-        where: { target_key: targetKey },
-        select: { sido: true, gugun: true }
-      });
+      // 동적 테이블 선택 (2024 or 2025)
+      targetInstitution = year === '2025'
+        ? await prisma.target_list_2025.findUnique({
+            where: { target_key: targetKey },
+            select: { sido: true, gugun: true }
+          })
+        : await prisma.target_list_2024.findUnique({
+            where: { target_key: targetKey },
+            select: { sido: true, gugun: true }
+          });
 
       if (!targetInstitution) {
         return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
@@ -60,11 +76,16 @@ export async function GET(request: NextRequest) {
     }> = [];
 
     if (targetInstitution) {
-      // 선택된 의무설치기관 정보 조회
-      const targetInfo = await prisma.target_list_2024.findUnique({
-        where: { target_key: targetKey! },
-        select: { institution_name: true }
-      });
+      // 선택된 의무설치기관 정보 조회 (동적 테이블 선택)
+      const targetInfo = year === '2025'
+        ? await prisma.target_list_2025.findUnique({
+            where: { target_key: targetKey! },
+            select: { institution_name: true }
+          })
+        : await prisma.target_list_2024.findUnique({
+            where: { target_key: targetKey! },
+            select: { institution_name: true }
+          });
       const targetName = targetInfo?.institution_name || '';
 
       // 의무설치기관 선택 시: 실시간 유사도 계산
@@ -92,7 +113,7 @@ export async function GET(request: NextRequest) {
                 SELECT t.target_key
                 FROM aedpics.target_list_devices tld
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-                JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+                JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
                   AND tld.target_list_year = ${parseInt(year)}
                 LIMIT 1
@@ -120,9 +141,9 @@ export async function GET(request: NextRequest) {
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
-              WHEN gd.installation_institution = ${targetName} THEN 100
-              WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
-              WHEN ${targetName} ILIKE '%' || gd.installation_institution || '%' THEN 85
+              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
+              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
+              WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
               ELSE 60
             END as confidence,
             gd.is_matched,
@@ -131,9 +152,9 @@ export async function GET(request: NextRequest) {
             gd.category_2
           FROM grouped_data gd
           WHERE (
-            gd.installation_institution = ${targetName}
-            OR gd.installation_institution ILIKE '%' || ${targetName} || '%'
-            OR ${targetName} ILIKE '%' || gd.installation_institution || '%'
+            REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '')
+            OR REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%'
+            OR REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%'
           )
           ORDER BY confidence DESC, equipment_count DESC
           LIMIT 20
@@ -160,7 +181,7 @@ export async function GET(request: NextRequest) {
                 SELECT t.target_key
                 FROM aedpics.target_list_devices tld
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-                JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+                JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
                   AND tld.target_list_year = ${parseInt(year)}
                 LIMIT 1
@@ -187,18 +208,18 @@ export async function GET(request: NextRequest) {
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
-              WHEN gd.installation_institution = ${targetName} THEN 100
-              WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
-              WHEN ${targetName} ILIKE '%' || gd.installation_institution || '%' THEN 85
+              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
+              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
+              WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
               ELSE 60
             END as confidence,
             gd.is_matched,
             gd.matched_to
           FROM grouped_data gd
           WHERE (
-            gd.installation_institution = ${targetName}
-            OR gd.installation_institution ILIKE '%' || ${targetName} || '%'
-            OR ${targetName} ILIKE '%' || gd.installation_institution || '%'
+            REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '')
+            OR REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%'
+            OR REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%'
           )
           ORDER BY confidence DESC, equipment_count DESC
           LIMIT 20
@@ -225,7 +246,7 @@ export async function GET(request: NextRequest) {
                 SELECT t.target_key
                 FROM aedpics.target_list_devices tld
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-                JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+                JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
                   AND tld.target_list_year = ${parseInt(year)}
                 LIMIT 1
@@ -251,18 +272,18 @@ export async function GET(request: NextRequest) {
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
-              WHEN gd.installation_institution = ${targetName} THEN 100
-              WHEN gd.installation_institution ILIKE '%' || ${targetName} || '%' THEN 90
-              WHEN ${targetName} ILIKE '%' || gd.installation_institution || '%' THEN 85
+              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
+              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
+              WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
               ELSE 60
             END as confidence,
             gd.is_matched,
             gd.matched_to
           FROM grouped_data gd
           WHERE (
-            gd.installation_institution = ${targetName}
-            OR gd.installation_institution ILIKE '%' || ${targetName} || '%'
-            OR ${targetName} ILIKE '%' || gd.installation_institution || '%'
+            REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '')
+            OR REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%'
+            OR REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%'
           )
           ORDER BY confidence DESC, equipment_count DESC
           LIMIT 20

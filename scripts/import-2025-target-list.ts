@@ -18,13 +18,43 @@ interface Target2025Record {
   data_year: string;
 }
 
+function parseArgs(): { inputFile: string } {
+  const args = process.argv.slice(2);
+  let inputFile = 'scripts/data/target_list_2025_fixed.csv';
+
+  for (const arg of args) {
+    if (arg.startsWith('--input=')) {
+      inputFile = arg.split('=')[1];
+    } else if (arg === '--help' || arg === '-h') {
+      console.log('Usage: npx tsx scripts/import-2025-target-list.ts [OPTIONS]');
+      console.log('\nOptions:');
+      console.log('  --input=<file>    CSV 파일 경로 (기본값: scripts/data/target_list_2025_fixed.csv)');
+      console.log('  --help, -h        도움말 표시');
+      console.log('\nExample:');
+      console.log('  npx tsx scripts/import-2025-target-list.ts --input=scripts/data/target_list_2025_fixed.csv');
+      process.exit(0);
+    }
+  }
+
+  return { inputFile };
+}
+
 async function importTargetList2025() {
-  const csvFilePath = path.join(process.cwd(), 'scripts/data/target_list_2025_normalized.csv');
+  const { inputFile } = parseArgs();
+  const csvFilePath = path.join(process.cwd(), inputFile);
 
   console.log('='.repeat(80));
   console.log('2025년 의무설치기관 데이터 Import 시작');
   console.log('='.repeat(80));
   console.log(`\nCSV 파일: ${csvFilePath}`);
+
+  // 파일 존재 확인
+  if (!fs.existsSync(csvFilePath)) {
+    console.error(`\n❌ 파일을 찾을 수 없습니다: ${csvFilePath}`);
+    console.error('파일 경로를 확인하거나 --input 옵션으로 파일을 지정하세요.');
+    console.error('예: npx tsx scripts/import-2025-target-list.ts --input=scripts/data/your_file.csv');
+    process.exit(1);
+  }
 
   // 1. CSV 파일 읽기
   console.log('\n[1단계] CSV 파일 읽기...');

@@ -127,7 +127,7 @@ export default function ImprovedDashboard({
       const effectiveGugun = headerSelectedGugun || selectedGugun;
 
       const params = new URLSearchParams({
-        year: '2024'
+        year: '2025'
       });
 
       if (effectiveSido && effectiveSido !== '전체' && effectiveSido !== '시도') {

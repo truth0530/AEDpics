@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { normalizeGugunForDB } from '@/lib/constants/regions';
+import { normalizeGugunForDB, normalizeSidoForDB } from '@/lib/constants/regions';
 
 /**
  * Lightweight statistics-only endpoint for compliance matching
@@ -19,10 +19,19 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const year = searchParams.get('year') || '2024';
-    const sido = searchParams.get('sido');
+    const year = searchParams.get('year') || '2025';
+    const sidoParam = searchParams.get('sido');
+    const sido = sidoParam ? normalizeSidoForDB(sidoParam) : undefined;
     const gugunParam = searchParams.get('gugun');
-    const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
+    const gugun = gugunParam ? normalizeGugunForDB(gugunParam) : undefined;
+
+    console.log('[compliance/stats] Request params:', {
+      sidoParam,
+      sido,
+      gugunParam,
+      gugun,
+      year
+    });
 
     // 1. Build WHERE clause for target institutions
     const targetWhere: any = {
@@ -59,28 +68,50 @@ export async function GET(request: NextRequest) {
     const targetKeyList = targetKeys.map(t => t.target_key);
 
     // 4. Count confirmed mappings (installed)
-    const installedCount = await prisma.management_number_group_mapping.count({
-      where: {
-        [`target_key_${year}`]: {
-          in: targetKeyList
-        },
-        [`confirmed_${year}`]: true,
-        management_number: {
-          not: null
-        }
-      }
-    });
+    const installedCount = year === '2025'
+      ? await prisma.management_number_group_mapping.count({
+          where: {
+            target_key_2025: {
+              in: targetKeyList
+            },
+            confirmed_2025: true,
+            management_number: {
+              not: null
+            }
+          }
+        })
+      : await prisma.management_number_group_mapping.count({
+          where: {
+            target_key_2024: {
+              in: targetKeyList
+            },
+            confirmed_2024: true,
+            management_number: {
+              not: null
+            }
+          }
+        });
 
     // 5. Count not installed (confirmed but no management_number)
-    const confirmedNotInstalledCount = await prisma.management_number_group_mapping.count({
-      where: {
-        [`target_key_${year}`]: {
-          in: targetKeyList
-        },
-        [`confirmed_${year}`]: true,
-        management_number: null
-      }
-    });
+    const confirmedNotInstalledCount = year === '2025'
+      ? await prisma.management_number_group_mapping.count({
+          where: {
+            target_key_2025: {
+              in: targetKeyList
+            },
+            confirmed_2025: true,
+            management_number: null
+          }
+        })
+      : await prisma.management_number_group_mapping.count({
+          where: {
+            target_key_2024: {
+              in: targetKeyList
+            },
+            confirmed_2024: true,
+            management_number: null
+          }
+        });
 
     // 6. Calculate pending (not yet confirmed)
     const notInstalledCount = totalCount - installedCount;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeGugunForDB } from '@/lib/constants/regions';
@@ -12,10 +13,15 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const year = searchParams.get('year') || '2024';
+    const year = searchParams.get('year') || '2025';
     const sido = searchParams.get('sido');
     const gugunParam = searchParams.get('gugun');
     const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
+
+    // year 값 검증 (SQL injection 방지)
+    if (year !== '2024' && year !== '2025') {
+      return NextResponse.json({ error: 'Invalid year parameter' }, { status: 400 });
+    }
 
     const yearSuffix = year === '2025' ? '_2025' : '_2024';
 
@@ -26,9 +32,9 @@ export async function GET(request: NextRequest) {
     if (sido) targetWhere.sido = sido;
     if (gugun) targetWhere.gugun = gugun;
 
-    const totalTargets = await prisma.target_list_2024.count({
-      where: targetWhere
-    });
+    const totalTargets = year === '2025'
+      ? await prisma.target_list_2025.count({ where: targetWhere })
+      : await prisma.target_list_2024.count({ where: targetWhere });
 
     // 확인된 설치 기관 수
     const confirmedMappings = await prisma.management_number_group_mapping.findMany({
@@ -47,43 +53,75 @@ export async function GET(request: NextRequest) {
     const installedCount = uniqueConfirmedTargets.size;
 
     // 미설치 확인 수 (명시적으로 미설치로 표시된 것)
-    const notInstalledTargets = await prisma.target_list_2024.findMany({
-      where: {
-        ...targetWhere,
-        target_key: {
-          notIn: Array.from(uniqueConfirmedTargets).filter(Boolean) as string[]
-        }
-      },
-      select: { target_key: true }
-    });
+    const notInstalledTargets = year === '2025'
+      ? await prisma.target_list_2025.findMany({
+          where: {
+            ...targetWhere,
+            target_key: {
+              notIn: Array.from(uniqueConfirmedTargets).filter(Boolean) as string[]
+            }
+          },
+          select: { target_key: true }
+        })
+      : await prisma.target_list_2024.findMany({
+          where: {
+            ...targetWhere,
+            target_key: {
+              notIn: Array.from(uniqueConfirmedTargets).filter(Boolean) as string[]
+            }
+          },
+          select: { target_key: true }
+        });
 
     // 지역별 통계
     const regionStats = [];
+
     if (!sido && !gugun) {
       // 전국 시도별 통계
-      const sidoList = await prisma.target_list_2024.findMany({
-        where: { data_year: parseInt(year) },
-        select: { sido: true },
-        distinct: ['sido']
-      });
+      const sidoList = year === '2025'
+        ? await prisma.target_list_2025.findMany({
+            where: { data_year: parseInt(year) },
+            select: { sido: true },
+            distinct: ['sido']
+          })
+        : await prisma.target_list_2024.findMany({
+            where: { data_year: parseInt(year) },
+            select: { sido: true },
+            distinct: ['sido']
+          });
 
       for (const { sido: sidoName } of sidoList) {
         if (!sidoName) continue;
 
-        const sidoTotal = await prisma.target_list_2024.count({
-          where: {
-            data_year: parseInt(year),
-            sido: sidoName
-          }
-        });
+        const sidoTotal = year === '2025'
+          ? await prisma.target_list_2025.count({
+              where: {
+                data_year: parseInt(year),
+                sido: sidoName
+              }
+            })
+          : await prisma.target_list_2024.count({
+              where: {
+                data_year: parseInt(year),
+                sido: sidoName
+              }
+            });
 
-        const sidoTargets = await prisma.target_list_2024.findMany({
-          where: {
-            data_year: parseInt(year),
-            sido: sidoName
-          },
-          select: { target_key: true }
-        });
+        const sidoTargets = year === '2025'
+          ? await prisma.target_list_2025.findMany({
+              where: {
+                data_year: parseInt(year),
+                sido: sidoName
+              },
+              select: { target_key: true }
+            })
+          : await prisma.target_list_2024.findMany({
+              where: {
+                data_year: parseInt(year),
+                sido: sidoName
+              },
+              select: { target_key: true }
+            });
 
         const sidoTargetKeys = sidoTargets.map(t => t.target_key);
 
@@ -106,34 +144,60 @@ export async function GET(request: NextRequest) {
       }
     } else if (sido && !gugun) {
       // 특정 시도의 시군구별 통계
-      const gugunList = await prisma.target_list_2024.findMany({
-        where: {
-          data_year: parseInt(year),
-          sido: sido
-        },
-        select: { gugun: true },
-        distinct: ['gugun']
-      });
+      const gugunList = year === '2025'
+        ? await prisma.target_list_2025.findMany({
+            where: {
+              data_year: parseInt(year),
+              sido: sido
+            },
+            select: { gugun: true },
+            distinct: ['gugun']
+          })
+        : await prisma.target_list_2024.findMany({
+            where: {
+              data_year: parseInt(year),
+              sido: sido
+            },
+            select: { gugun: true },
+            distinct: ['gugun']
+          });
 
       for (const { gugun: gugunName } of gugunList) {
         if (!gugunName) continue;
 
-        const gugunTotal = await prisma.target_list_2024.count({
-          where: {
-            data_year: parseInt(year),
-            sido: sido,
-            gugun: gugunName
-          }
-        });
+        const gugunTotal = year === '2025'
+          ? await prisma.target_list_2025.count({
+              where: {
+                data_year: parseInt(year),
+                sido: sido,
+                gugun: gugunName
+              }
+            })
+          : await prisma.target_list_2024.count({
+              where: {
+                data_year: parseInt(year),
+                sido: sido,
+                gugun: gugunName
+              }
+            });
 
-        const gugunTargets = await prisma.target_list_2024.findMany({
-          where: {
-            data_year: parseInt(year),
-            sido: sido,
-            gugun: gugunName
-          },
-          select: { target_key: true }
-        });
+        const gugunTargets = year === '2025'
+          ? await prisma.target_list_2025.findMany({
+              where: {
+                data_year: parseInt(year),
+                sido: sido,
+                gugun: gugunName
+              },
+              select: { target_key: true }
+            })
+          : await prisma.target_list_2024.findMany({
+              where: {
+                data_year: parseInt(year),
+                sido: sido,
+                gugun: gugunName
+              },
+              select: { target_key: true }
+            });
 
         const gugunTargetKeys = gugunTargets.map(t => t.target_key);
 
@@ -158,16 +222,20 @@ export async function GET(request: NextRequest) {
 
     // 기관 분류별 통계
     let divisionStats: any[] = [];
+    const targetTable = year === '2025' ? 'target_list_2025' : 'target_list_2024';
+    const targetTableRaw = Prisma.raw(`aedpics.${targetTable}`);
+    const targetKeyCol = year === '2025' ? 'target_key_2025' : 'target_key_2024';
+    const confirmedCol = year === '2025' ? 'confirmed_2025' : 'confirmed_2024';
 
     if (sido && gugun) {
       divisionStats = await prisma.$queryRaw`
         SELECT
           sub_division,
           COUNT(*)::int as total,
-          COUNT(CASE WHEN m.confirmed_2024 = true THEN 1 END)::int as installed
-        FROM target_list_2024 t
-        LEFT JOIN management_number_group_mapping m
-          ON t.target_key = m.target_key_2024
+          COUNT(CASE WHEN m.${Prisma.raw(confirmedCol)} = true THEN 1 END)::int as installed
+        FROM ${targetTableRaw} t
+        LEFT JOIN aedpics.management_number_group_mapping m
+          ON t.target_key = m.${Prisma.raw(targetKeyCol)}
         WHERE t.data_year = ${parseInt(year)}
           AND t.sido = ${sido}
           AND t.gugun = ${gugun}
@@ -179,10 +247,10 @@ export async function GET(request: NextRequest) {
         SELECT
           sub_division,
           COUNT(*)::int as total,
-          COUNT(CASE WHEN m.confirmed_2024 = true THEN 1 END)::int as installed
-        FROM target_list_2024 t
-        LEFT JOIN management_number_group_mapping m
-          ON t.target_key = m.target_key_2024
+          COUNT(CASE WHEN m.${Prisma.raw(confirmedCol)} = true THEN 1 END)::int as installed
+        FROM ${targetTableRaw} t
+        LEFT JOIN aedpics.management_number_group_mapping m
+          ON t.target_key = m.${Prisma.raw(targetKeyCol)}
         WHERE t.data_year = ${parseInt(year)}
           AND t.sido = ${sido}
         GROUP BY sub_division
@@ -193,10 +261,10 @@ export async function GET(request: NextRequest) {
         SELECT
           sub_division,
           COUNT(*)::int as total,
-          COUNT(CASE WHEN m.confirmed_2024 = true THEN 1 END)::int as installed
-        FROM target_list_2024 t
-        LEFT JOIN management_number_group_mapping m
-          ON t.target_key = m.target_key_2024
+          COUNT(CASE WHEN m.${Prisma.raw(confirmedCol)} = true THEN 1 END)::int as installed
+        FROM ${targetTableRaw} t
+        LEFT JOIN aedpics.management_number_group_mapping m
+          ON t.target_key = m.${Prisma.raw(targetKeyCol)}
         WHERE t.data_year = ${parseInt(year)}
         GROUP BY sub_division
         ORDER BY total DESC

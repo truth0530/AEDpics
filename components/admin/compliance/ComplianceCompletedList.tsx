@@ -74,7 +74,7 @@ export interface ComplianceCompletedListRef {
 
 const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, ComplianceCompletedListProps>(
   ({
-    year = '2024',
+    year = '2025',
     sido,
     gugun,
     statusFilter = 'not_installed',
@@ -142,6 +142,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       const data = await response.json();
 
       const allMatches = data.matches || [];
+      const totalCount = data.totalCount || 0; // API가 반환하는 전체 의무시설 수 (target_list_2025 기준)
 
       // sub_division 목록 추출
       const subDivisions = Array.from(new Set(
@@ -183,9 +184,9 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
         : 0;
 
       setStatistics({
-        total: allMatches.length,
+        total: totalCount, // target_list_2025에서 가져온 전체 의무시설 수
         installed: installed.length,
-        notInstalled: allMatches.filter((m: any) => !m.status || m.status === 'pending' || m.requiresMatching === true).length,
+        notInstalled: totalCount - installed.length, // 전체 - 매칭완료 = 미완료
         avgConfidence
       });
     } catch (error) {

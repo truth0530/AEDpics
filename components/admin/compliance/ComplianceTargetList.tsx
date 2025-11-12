@@ -65,7 +65,7 @@ interface ComplianceTargetListProps {
   year?: string;
 }
 
-export default function ComplianceTargetList({ year = '2024' }: ComplianceTargetListProps) {
+export default function ComplianceTargetList({ year = '2025' }: ComplianceTargetListProps) {
   const { data: session } = useSession();
   const [selectedYear, setSelectedYear] = useState(year);
   const [searchTerm, setSearchTerm] = useState('');

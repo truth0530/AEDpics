@@ -19,32 +19,32 @@ interface ComplianceMainLayoutProps {
 }
 
 export default function ComplianceMainLayout({ initialProfile }: ComplianceMainLayoutProps) {
-  // sessionStorage에서 초기값 로드
-  const [selectedYear, setSelectedYear] = useState<'2024' | '2025'>(() => {
-    if (typeof window !== 'undefined') {
-      return (window.sessionStorage.getItem('complianceYear') as '2024' | '2025') || '2024'
-    }
-    return '2024'
-  });
+  // 2025년으로 고정
+  const selectedYear = '2025' as const;
   const [activeTab, setActiveTab] = useState<'targets' | 'completed'>('targets');
   const [selectedInstitutionName, setSelectedInstitutionName] = useState<string | null>(null);
 
-  // 지역 선택 상태 - sessionStorage에서 초기값 로드
-  const [selectedSido, setSelectedSido] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return window.sessionStorage.getItem('selectedSido') || null
-    }
-    return null
-  });
-  const [selectedGugun, setSelectedGugun] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return window.sessionStorage.getItem('selectedGugun') || null
-    }
-    return null
-  });
+  // 지역 선택 상태
+  const [selectedSido, setSelectedSido] = useState<string | null>(null);
+  const [selectedGugun, setSelectedGugun] = useState<string | null>(null);
 
   // Ref for ComplianceCompletedList to call export function
   const completedListRef = useRef<ComplianceCompletedListRef>(null);
+
+  // sessionStorage에서 지역 초기값 로드 (hydration 후 클라이언트에서만)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedSido = window.sessionStorage.getItem('selectedSido');
+      if (storedSido) {
+        setSelectedSido(storedSido);
+      }
+
+      const storedGugun = window.sessionStorage.getItem('selectedGugun');
+      if (storedGugun) {
+        setSelectedGugun(storedGugun);
+      }
+    }
+  }, []);
 
   // 통계 상태
   const [statistics, setStatistics] = useState({
@@ -59,19 +59,6 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
   const [subDivisionFilter, setSubDivisionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [availableSubDivisions, setAvailableSubDivisions] = useState<string[]>([]);
-
-  // AppHeader에서 년도 변경 이벤트 수신
-  useEffect(() => {
-    const handleYearChange = (e: CustomEvent) => {
-      const year = e.detail.year as '2024' | '2025'
-      setSelectedYear(year)
-    }
-
-    window.addEventListener('complianceYearChanged', handleYearChange as EventListener)
-    return () => {
-      window.removeEventListener('complianceYearChanged', handleYearChange as EventListener)
-    }
-  }, [])
 
   // AppHeader의 RegionFilter에서 지역 변경 이벤트 수신
   useEffect(() => {
@@ -165,7 +152,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
             )}
 
             {/* 필터 및 통계 뱃지 - 매칭결과 탭 */}
-            {activeTab === 'completed' && selectedYear === '2024' && (
+            {activeTab === 'completed' && (
               <>
                 {/* 클릭 가능한 통계 뱃지 (필터 기능) */}
                 <Badge

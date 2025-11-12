@@ -6,22 +6,15 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const year = searchParams.get('year') || '2024';
+    const year = searchParams.get('year') || '2025';
+    const yearSuffix = year === '2025' ? '_2025' : '_2024';
 
-    // 2025년은 아직 준비 중
-    if (year === '2025') {
-      return NextResponse.json(
-        { error: '2025년 데이터는 준비 중입니다' },
-        { status: 404 }
-      );
-    }
-
-    // Get overall statistics (2024년 데이터) in parallel
+    // Get overall statistics in parallel
     const [mappings, aedCount] = await Promise.all([
       prisma.management_number_group_mapping.findMany({
         select: {
-          auto_confidence_2024: true,
-          confirmed_2024: true,
+          [`auto_confidence${yearSuffix}`]: true,
+          [`confirmed${yearSuffix}`]: true,
           management_number: true,
         },
       }),
@@ -29,26 +22,26 @@ export async function GET(request: NextRequest) {
     ]);
 
     const totalMappings = mappings.length;
-    const confirmedCount = mappings.filter(m => m.confirmed_2024).length;
+    const confirmedCount = mappings.filter(m => m[`confirmed${yearSuffix}`]).length;
     const pendingCount = totalMappings - confirmedCount;
 
     const highConfidence = mappings.filter(m => {
-      const confidence = m.auto_confidence_2024 ? Number(m.auto_confidence_2024) : 0;
+      const confidence = m[`auto_confidence${yearSuffix}`] ? Number(m[`auto_confidence${yearSuffix}`]) : 0;
       return confidence >= 90;
     }).length;
 
     const mediumConfidence = mappings.filter(m => {
-      const confidence = m.auto_confidence_2024 ? Number(m.auto_confidence_2024) : 0;
+      const confidence = m[`auto_confidence${yearSuffix}`] ? Number(m[`auto_confidence${yearSuffix}`]) : 0;
       return confidence >= 70 && confidence < 90;
     }).length;
 
     const lowConfidence = mappings.filter(m => {
-      const confidence = m.auto_confidence_2024 ? Number(m.auto_confidence_2024) : 0;
+      const confidence = m[`auto_confidence${yearSuffix}`] ? Number(m[`auto_confidence${yearSuffix}`]) : 0;
       return confidence < 70;
     }).length;
 
     const avgConfidence = totalMappings > 0
-      ? mappings.reduce((sum, m) => sum + (m.auto_confidence_2024 ? Number(m.auto_confidence_2024) : 0), 0) / totalMappings
+      ? mappings.reduce((sum, m) => sum + (m[`auto_confidence${yearSuffix}`] ? Number(m[`auto_confidence${yearSuffix}`]) : 0), 0) / totalMappings
       : 0;
 
     const stats = {

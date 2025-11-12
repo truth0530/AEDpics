@@ -1274,3 +1274,41 @@ export function normalizeGugunForDB(gugun: string | undefined): string | undefin
 
   return getFullGugunName(gugun);
 }
+
+/**
+ * ⭐ DB 검색용 시도 정규화 (짧은 이름 → 긴 공식 명칭)
+ *
+ * @example
+ * normalizeSidoForDB('대구')    // '대구광역시'
+ * normalizeSidoForDB('서울')    // '서울특별시'
+ * normalizeSidoForDB('충남')    // '충청남도'
+ * normalizeSidoForDB('전체')    // undefined
+ * normalizeSidoForDB('대구광역시') // '대구광역시' (이미 긴 형태)
+ *
+ * @description
+ * API route에서 사용자가 선택한 시도를
+ * DB 검색용 공식 명칭으로 정규화합니다.
+ *
+ * - "전체" / "시도" → undefined (모든 시도 조회)
+ * - 짧은 형태 → 긴 공식 명칭 (예: "대구" → "대구광역시")
+ * - 이미 긴 형태 → 그대로 반환
+ */
+export function normalizeSidoForDB(sido: string | undefined): string | undefined {
+  if (!sido || sido === '전체' || sido === '시도') {
+    return undefined;
+  }
+
+  // 짧은 형태 → 코드 변환
+  const code = getRegionCode(sido);
+  if (!code) {
+    return sido; // 매핑에 없으면 원본 반환
+  }
+
+  // 코드 → 첫 번째 DB 라벨 (공식 명칭)
+  const dbLabels = REGION_CODE_TO_DB_LABELS[code];
+  if (dbLabels && dbLabels.length > 0) {
+    return dbLabels[0]; // 첫 번째가 항상 공식 긴 이름 (예: "대구" → "대구광역시")
+  }
+
+  return sido; // 매핑에 없으면 원본 반환
+}
