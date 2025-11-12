@@ -150,8 +150,18 @@ export default function ManagementNumberPanel({
     // 완전 매칭된 항목만 필터링 (부분 매칭은 유지)
     const filteredItems = items.filter(item => {
       const basketItem = basketedItems.find(b => b.management_number === item.management_number);
-      const isPartiallyMatched = basketItem && basketItem.selected_serials && basketItem.selected_serials.length > 0;
-      const isFullyMatched = basketedManagementNumbers.includes(item.management_number) && !isPartiallyMatched;
+
+      // 개별 장비가 모두 담긴 경우도 완전 매칭으로 취급
+      const isFullyMatchedByIndividual = basketItem &&
+        basketItem.selected_serials &&
+        basketItem.selected_serials.length === item.equipment_count;
+
+      const isPartiallyMatched = basketItem &&
+        basketItem.selected_serials &&
+        basketItem.selected_serials.length > 0 &&
+        basketItem.selected_serials.length < item.equipment_count;
+
+      const isFullyMatched = (basketedManagementNumbers.includes(item.management_number) && !basketItem?.selected_serials) || isFullyMatchedByIndividual;
 
       // 완전 매칭된 항목만 제외, 부분 매칭은 표시
       return !isFullyMatched;
@@ -173,8 +183,18 @@ export default function ManagementNumberPanel({
 
           // 부분 매칭 여부 확인
           const basketItem = basketedItems.find(b => b.management_number === item.management_number);
-          const isPartiallyMatched = basketItem && basketItem.selected_serials && basketItem.selected_serials.length > 0;
-          const isFullyMatched = basketedManagementNumbers.includes(item.management_number) && !isPartiallyMatched;
+
+          // 개별 장비가 모두 담긴 경우도 완전 매칭으로 취급
+          const isFullyMatchedByIndividual = basketItem &&
+            basketItem.selected_serials &&
+            basketItem.selected_serials.length === item.equipment_count;
+
+          const isPartiallyMatched = basketItem &&
+            basketItem.selected_serials &&
+            basketItem.selected_serials.length > 0 &&
+            basketItem.selected_serials.length < item.equipment_count;
+
+          const isFullyMatched = (basketedManagementNumbers.includes(item.management_number) && !basketItem?.selected_serials) || isFullyMatchedByIndividual;
 
           // 이미 담긴 장비연번 목록
           const basketedSerials = basketItem?.selected_serials || [];
@@ -193,7 +213,11 @@ export default function ManagementNumberPanel({
               )}
             >
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
+                {/* 카드 상단 영역 - 클릭 시 펼치기/접기 */}
+                <div
+                  className="flex items-center justify-between gap-2 cursor-pointer hover:bg-muted/30 -m-2.5 p-2.5 rounded-t transition-colors"
+                  onClick={() => hasMultipleEquipment && remainingEquipmentCount > 0 && toggleExpanded(item.management_number)}
+                >
                   <div className="flex items-center gap-2">
                     <div className="font-medium text-sm">
                       {item.institution_name}
@@ -213,7 +237,8 @@ export default function ManagementNumberPanel({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
                         onAddToBasket(item);
                       }}
                       className="flex-shrink-0"
@@ -226,6 +251,7 @@ export default function ManagementNumberPanel({
                     </Badge>
                   ) : null}
                 </div>
+                {/* 카드 상단 영역 끝 */}
                 {(item.category_1 || item.category_2) && (
                   <div className="flex items-center gap-1">
                     {item.category_1 && (
@@ -267,7 +293,10 @@ export default function ManagementNumberPanel({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => toggleExpanded(item.management_number)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+                        toggleExpanded(item.management_number);
+                      }}
                       className="text-xs"
                     >
                       {isExpanded ? (
@@ -316,7 +345,10 @@ export default function ManagementNumberPanel({
                                 size="sm"
                                 variant="outline"
                                 className="h-auto text-xs px-2 py-1 flex-shrink-0"
-                                onClick={() => onAddEquipmentSerial(item, detail.serial)}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+                                  onAddEquipmentSerial(item, detail.serial);
+                                }}
                               >
                                 설치위치 담기
                               </Button>

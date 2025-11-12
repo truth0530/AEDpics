@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { MapPin, X } from 'lucide-react';
+import { MapPin, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +48,7 @@ export default function BasketPanel({
   onMatch
 }: BasketPanelProps) {
   const [matching, setMatching] = useState(false);
+  const [expandedBasketItems, setExpandedBasketItems] = useState<Set<string>>(new Set());
 
   const handleMatch = async () => {
     if (basket.length === 0) {
@@ -70,6 +71,18 @@ export default function BasketPanel({
     } finally {
       setMatching(false);
     }
+  };
+
+  const toggleExpanded = (managementNumber: string) => {
+    setExpandedBasketItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(managementNumber)) {
+        newSet.delete(managementNumber);
+      } else {
+        newSet.add(managementNumber);
+      }
+      return newSet;
+    });
   };
 
   const totalEquipment = basket.reduce((sum, item) => sum + item.equipment_count, 0);
@@ -110,90 +123,125 @@ export default function BasketPanel({
           </div>
         ) : (
           <div className="space-y-2">
-            {basket.map((item) => (
-              <Card
-                key={item.management_number}
-                className={cn(
-                  "p-3 transition-all hover:shadow-md",
-                  item.selected_serials && item.selected_serials.length > 0
-                    ? "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
-                    : "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
-                )}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">
-                        {item.management_number}
-                        {item.confidence && (
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            {item.confidence.toFixed(0)}%
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {item.institution_name}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onRemove(item.management_number)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    <span className="truncate">{item.address}</span>
-                  </div>
-                  {item.selected_serials ? (
-                    // 개별 장비연번이 선택된 경우
-                    <div className="space-y-1.5">
-                      <div className="text-xs text-muted-foreground">
-                        선택된 장비연번 ({item.selected_serials.length}개):
-                      </div>
-                      <div className="space-y-1">
-                        {item.selected_serials.map(serial => {
-                          // equipment_details에서 해당 serial의 설치위치 찾기
-                          const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+            {basket.map((item) => {
+              // 개별 장비가 모두 담긴 경우 완전 매칭으로 취급
+              const isFullyMatchedByIndividual = item.selected_serials &&
+                item.selected_serials.length === item.equipment_count;
 
-                          return (
-                            <div
-                              key={serial}
-                              className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
-                            >
-                              <div className="flex-1 space-y-0.5">
-                                <div className="text-xs font-mono font-medium">{serial}</div>
-                                {equipmentDetail?.location_detail && (
-                                  <div className="text-xs text-muted-foreground">
-                                    {equipmentDetail.location_detail}
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => onRemoveEquipmentSerial(item.management_number, serial)}
-                                className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    // 전체 장비가 선택된 경우
-                    <Badge variant="outline" className="text-xs">
-                      장비 {item.equipment_count}대 (전체)
-                    </Badge>
+              const isPartiallyMatched = item.selected_serials &&
+                item.selected_serials.length > 0 &&
+                item.selected_serials.length < item.equipment_count;
+
+              return (
+                <Card
+                  key={item.management_number}
+                  className={cn(
+                    "p-3 transition-all hover:shadow-md",
+                    isPartiallyMatched
+                      ? "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
+                      : "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
                   )}
-                </div>
-              </Card>
-            ))}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">
+                          {item.management_number}
+                          {item.confidence && (
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              {item.confidence.toFixed(0)}%
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {item.institution_name}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onRemove(item.management_number)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate">{item.address}</span>
+                    </div>
+                    {item.selected_serials ? (
+                      <>
+                        <div className="text-xs text-muted-foreground">
+                          선택된 장비연번 ({item.selected_serials.length}개):
+                        </div>
+
+                        {/* 장비가 2개 이상인 경우에만 펼치기/접기 버튼 표시 */}
+                        {item.selected_serials.length > 1 && (
+                          <div className="flex justify-center mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => toggleExpanded(item.management_number)}
+                              className="text-xs"
+                            >
+                              {expandedBasketItems.has(item.management_number) ? (
+                                <>
+                                  <ChevronUp className="h-3 w-3 mr-1" />
+                                  장비 {item.selected_serials.length}대 접기
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-3 w-3 mr-1" />
+                                  장비 {item.selected_serials.length}대 펼치기
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* 펼쳐진 경우 또는 장비가 1개인 경우에만 장비연번 목록 표시 */}
+                        {(expandedBasketItems.has(item.management_number) || item.selected_serials.length === 1) && (
+                          <div className="space-y-1 mt-2">
+                            {item.selected_serials.map(serial => {
+                              const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+
+                              return (
+                                <div
+                                  key={serial}
+                                  className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
+                                >
+                                  <div className="flex-1 space-y-0.5">
+                                    <div className="text-xs font-mono font-medium">{serial}</div>
+                                    {equipmentDetail?.location_detail && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {equipmentDetail.location_detail}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => onRemoveEquipmentSerial(item.management_number, serial)}
+                                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        장비 {item.equipment_count}대 (전체)
+                      </Badge>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
