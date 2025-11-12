@@ -86,6 +86,21 @@ export default function ManagementNumberPanel({
     }
   }, [searchTerm]);
 
+  // 부분 매칭된 카드 자동 펼치기
+  useEffect(() => {
+    const partiallyMatchedNumbers = basketedItems
+      .filter(item => item.selected_serials && item.selected_serials.length > 0)
+      .map(item => item.management_number);
+
+    if (partiallyMatchedNumbers.length > 0) {
+      setExpandedManagementNumbers(prev => {
+        const newSet = new Set(prev);
+        partiallyMatchedNumbers.forEach(num => newSet.add(num));
+        return newSet;
+      });
+    }
+  }, [basketedItems]);
+
   const fetchCandidates = async () => {
 
     setLoading(true);
@@ -132,10 +147,15 @@ export default function ManagementNumberPanel({
   };
 
   const renderCandidateList = (items: ManagementNumberCandidate[], showConfidence: boolean) => {
-    // 이미 담긴 항목 필터링
-    const filteredItems = items.filter(
-      item => !basketedManagementNumbers.includes(item.management_number)
-    );
+    // 완전 매칭된 항목만 필터링 (부분 매칭은 유지)
+    const filteredItems = items.filter(item => {
+      const basketItem = basketedItems.find(b => b.management_number === item.management_number);
+      const isPartiallyMatched = basketItem && basketItem.selected_serials && basketItem.selected_serials.length > 0;
+      const isFullyMatched = basketedManagementNumbers.includes(item.management_number) && !isPartiallyMatched;
+
+      // 완전 매칭된 항목만 제외, 부분 매칭은 표시
+      return !isFullyMatched;
+    });
 
     if (filteredItems.length === 0) {
       return (
@@ -155,6 +175,12 @@ export default function ManagementNumberPanel({
           const basketItem = basketedItems.find(b => b.management_number === item.management_number);
           const isPartiallyMatched = basketItem && basketItem.selected_serials && basketItem.selected_serials.length > 0;
           const isFullyMatched = basketedManagementNumbers.includes(item.management_number) && !isPartiallyMatched;
+
+          // 이미 담긴 장비연번 목록
+          const basketedSerials = basketItem?.selected_serials || [];
+
+          // 남은 장비 개수 (담기지 않은 장비)
+          const remainingEquipmentCount = item.equipment_count - basketedSerials.length;
 
           return (
             <Card
@@ -230,13 +256,13 @@ export default function ManagementNumberPanel({
                       </Badge>
                     )}
                     <Badge variant="outline" className="text-xs">
-                      장비 {item.equipment_count}대
+                      장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대
                     </Badge>
                   </div>
                 </div>
 
                 {/* 장비가 2대 이상인 경우에만 펼치기/접기 버튼 표시 (중앙 배치) */}
-                {hasMultipleEquipment && (
+                {hasMultipleEquipment && remainingEquipmentCount > 0 && (
                   <div className="flex justify-center mt-2">
                     <Button
                       size="sm"
@@ -247,53 +273,60 @@ export default function ManagementNumberPanel({
                       {isExpanded ? (
                         <>
                           <ChevronUp className="h-3 w-3 mr-1" />
-                          장비 {item.equipment_count}대 접기
+                          장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대 접기
                         </>
                       ) : (
                         <>
                           <ChevronDown className="h-3 w-3 mr-1" />
-                          장비 {item.equipment_count}대 펼치기
+                          장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대 펼치기
                         </>
                       )}
                     </Button>
                   </div>
                 )}
 
-                {/* 펼쳐진 경우 장비연번 목록 표시 */}
-                {isExpanded && hasMultipleEquipment && item.equipment_details && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <div className="text-xs font-medium text-muted-foreground mb-2">
-                      장비연번 목록 ({item.equipment_details.length}개)
-                    </div>
-                    <div className="space-y-1.5">
-                      {item.equipment_details.map((detail) => (
-                        <div
-                          key={detail.serial}
-                          className="flex items-start justify-between gap-2 p-2 bg-muted/50 rounded"
-                        >
-                          <div className="flex-1 space-y-0.5">
-                            <div className="text-xs font-mono font-medium">{detail.serial}</div>
-                            {detail.location_detail && (
-                              <div className="text-xs text-muted-foreground">
-                                {detail.location_detail}
-                              </div>
+                {/* 펼쳐진 경우 장비연번 목록 표시 (담기지 않은 장비만) */}
+                {isExpanded && hasMultipleEquipment && item.equipment_details && (() => {
+                  // 담기지 않은 장비연번만 필터링
+                  const remainingEquipmentDetails = item.equipment_details.filter(
+                    detail => !basketedSerials.includes(detail.serial)
+                  );
+
+                  return remainingEquipmentDetails.length > 0 ? (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">
+                        장비연번 목록 ({remainingEquipmentDetails.length}개)
+                      </div>
+                      <div className="space-y-1.5">
+                        {remainingEquipmentDetails.map((detail) => (
+                          <div
+                            key={detail.serial}
+                            className="flex items-start justify-between gap-2 p-2 bg-muted/50 rounded"
+                          >
+                            <div className="flex-1 space-y-0.5">
+                              <div className="text-xs font-mono font-medium">{detail.serial}</div>
+                              {detail.location_detail && (
+                                <div className="text-xs text-muted-foreground">
+                                  {detail.location_detail}
+                                </div>
+                              )}
+                            </div>
+                            {!item.is_matched && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-auto text-xs px-2 py-1 flex-shrink-0"
+                                onClick={() => onAddEquipmentSerial(item, detail.serial)}
+                              >
+                                설치위치 담기
+                              </Button>
                             )}
                           </div>
-                          {!item.is_matched && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-auto text-xs px-2 py-1 flex-shrink-0"
-                              onClick={() => onAddEquipmentSerial(item, detail.serial)}
-                            >
-                              설치위치 담기
-                            </Button>
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : null;
+                })()}
               </div>
             </Card>
           );
