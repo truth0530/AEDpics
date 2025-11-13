@@ -35,7 +35,8 @@ interface TargetInstitution {
   gugun: string;
   division: string;
   sub_division: string;
-  address?: string; // 2025년 세부주소 추가 예정
+  unique_key?: string; // 2025년 고유키
+  address?: string; // 2025년 세부주소
   equipment_count: number;
   matched_count: number;
   unmatched_count: number;
@@ -54,6 +55,24 @@ interface ManagementNumberPanelProps {
   onAddEquipmentSerial: (item: ManagementNumberCandidate, serial: string) => void;
   basketedManagementNumbers?: string[];
   basketedItems?: BasketItem[];
+}
+
+// 고유키 매칭 유틸리티 함수
+function extractValuesFromParentheses(text: string): string[] {
+  const matches = text.match(/\(([^)]+)\)/g);
+  if (!matches) return [];
+  return matches.map(match => match.replace(/[()]/g, ''));
+}
+
+function hasUniqueKeyMatch(locationDetail: string, uniqueKey: string | undefined): boolean {
+  if (!uniqueKey || !locationDetail) return false;
+
+  // 1. 설치위치 텍스트에 직접 포함 여부
+  if (locationDetail.includes(uniqueKey)) return true;
+
+  // 2. 괄호 안의 값과 비교
+  const valuesInParentheses = extractValuesFromParentheses(locationDetail);
+  return valuesInParentheses.some(value => value === uniqueKey);
 }
 
 export default function ManagementNumberPanel({
@@ -102,20 +121,34 @@ export default function ManagementNumberPanel({
     }
   }, [searchTerm]);
 
-  // 부분 매칭된 카드 자동 펼치기
+  // 부분 매칭된 카드 및 고유키 매칭 카드 자동 펼치기
   useEffect(() => {
     const partiallyMatchedNumbers = basketedItems
       .filter(item => item.selected_serials && item.selected_serials.length > 0)
       .map(item => item.management_number);
 
-    if (partiallyMatchedNumbers.length > 0) {
+    // 고유키 매칭된 관리번호 찾기
+    const uniqueKey = selectedInstitution?.unique_key;
+    const uniqueKeyMatchedNumbers = uniqueKey
+      ? [...autoSuggestions, ...searchResults]
+          .filter(item =>
+            item.equipment_details?.some(detail =>
+              hasUniqueKeyMatch(detail.location_detail, uniqueKey)
+            )
+          )
+          .map(item => item.management_number)
+      : [];
+
+    const allNumbersToExpand = [...partiallyMatchedNumbers, ...uniqueKeyMatchedNumbers];
+
+    if (allNumbersToExpand.length > 0) {
       setExpandedManagementNumbers(prev => {
         const newSet = new Set(prev);
-        partiallyMatchedNumbers.forEach(num => newSet.add(num));
+        allNumbersToExpand.forEach(num => newSet.add(num));
         return newSet;
       });
     }
-  }, [basketedItems]);
+  }, [basketedItems, autoSuggestions, searchResults, selectedInstitution]);
 
   const fetchCandidates = async () => {
 
@@ -234,6 +267,12 @@ export default function ManagementNumberPanel({
           // 남은 장비 개수 (담기지 않은 장비)
           const remainingEquipmentCount = item.equipment_count - basketedSerials.length;
 
+          // 고유키 매칭 여부 확인
+          const uniqueKey = selectedInstitution?.unique_key;
+          const hasUniqueKeyInEquipment = uniqueKey && item.equipment_details?.some(detail =>
+            hasUniqueKeyMatch(detail.location_detail, uniqueKey)
+          );
+
           return (
             <Card
               key={item.management_number}
@@ -241,7 +280,8 @@ export default function ManagementNumberPanel({
                 "p-2.5 transition-all",
                 item.is_matched && "opacity-50 bg-muted",
                 isPartiallyMatched && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
-                isFullyMatched && "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                isFullyMatched && "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20",
+                hasUniqueKeyInEquipment && !isPartiallyMatched && !isFullyMatched && "border-2 border-purple-400 bg-purple-50/50 dark:bg-purple-950/20"
               )}
             >
               <div className="space-y-1.5">
@@ -255,10 +295,15 @@ export default function ManagementNumberPanel({
                 >
                   {/* 카드 상단 헤더 */}
                   <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <div className="font-medium text-sm">
                       {item.institution_name}
                     </div>
+                    {hasUniqueKeyInEquipment && !isPartiallyMatched && !isFullyMatched && (
+                      <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-300">
+                        고유키 일치
+                      </Badge>
+                    )}
                     {isPartiallyMatched && (
                       <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
                         부분 매칭
@@ -365,19 +410,31 @@ export default function ManagementNumberPanel({
                         장비연번 목록 ({remainingEquipmentDetails.length}개)
                       </div>
                       <div className="space-y-1.5">
-                        {remainingEquipmentDetails.map((detail) => (
-                          <div
-                            key={detail.serial}
-                            className="flex items-start justify-between gap-2 p-2 bg-muted/50 rounded"
-                          >
-                            <div className="flex-1 space-y-0.5">
-                              <div className="text-xs font-mono font-medium">{detail.serial}</div>
-                              {detail.location_detail && (
-                                <div className="text-xs text-muted-foreground">
-                                  {detail.location_detail}
-                                </div>
+                        {remainingEquipmentDetails.map((detail) => {
+                          // 고유키 매칭 여부 확인
+                          const isUniqueKeyMatched = uniqueKey && hasUniqueKeyMatch(detail.location_detail, uniqueKey);
+
+                          return (
+                            <div
+                              key={detail.serial}
+                              className={cn(
+                                "flex items-start justify-between gap-2 p-2 rounded",
+                                isUniqueKeyMatched
+                                  ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700"
+                                  : "bg-muted/50"
                               )}
-                            </div>
+                            >
+                              <div className="flex-1 space-y-0.5">
+                                <div className="text-xs font-mono font-medium">{detail.serial}</div>
+                                {detail.location_detail && (
+                                  <div className={cn(
+                                    "text-xs",
+                                    isUniqueKeyMatched ? "text-purple-700 dark:text-purple-300 font-medium" : "text-muted-foreground"
+                                  )}>
+                                    {detail.location_detail}
+                                  </div>
+                                )}
+                              </div>
                             {!item.is_matched && (
                               <Button
                                 size="sm"
@@ -392,7 +449,8 @@ export default function ManagementNumberPanel({
                               </Button>
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ) : null;
