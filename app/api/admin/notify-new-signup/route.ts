@@ -21,15 +21,21 @@ const APPROVER_ROLES: UserRole[] = ['master', 'emergency_center_admin', 'regiona
  *
  * DMARC 정책 준수:
  * - @nmc.or.kr 수신자 → noreply@nmc.or.kr (도메인 일치)
- * - 기타 도메인 → noreply@nmc.or.kr (2025-11-07: @aed.pics DMARC 미설정으로 일시 비활성화)
+ * - 기타 도메인 → noreply@aed.pics (네이버, Gmail 등)
  *
- * TODO: @aed.pics DMARC 설정 완료 후 활성화
+ * 변경 이력:
+ * - 2025-11-07: 비활성화 (잘못된 가정)
+ * - 2025-11-13: 재활성화 (과거 검증된 성공 패턴 복구)
+ *
+ * 참고: lib/email/ncp-email.ts의 selectSenderEmail과 동기화
+ * 상세: docs/troubleshooting/SENDER_SELECTION_POLICY_ANALYSIS_2025-11-13.md
  */
 function selectNotificationSender(recipientEmail: string): string {
-  // 현재: 모든 도메인에 noreply@nmc.or.kr 사용
-  // 이유: @aed.pics는 DMARC 설정이 완료될 때까지 대기
-  // 참고: lib/email/ncp-email.ts의 selectSenderEmail과 동기화
-  return 'noreply@nmc.or.kr';
+  // 2025-11-13 재활성화: 네이버 DMARC 차단 문제 해결
+  // lib/email/ncp-email.ts의 selectSenderEmail과 동일한 로직
+  const domain = recipientEmail.split('@')[1]?.toLowerCase();
+  if (domain === 'nmc.or.kr') return 'noreply@nmc.or.kr';
+  return 'noreply@aed.pics';
 }
 
 export async function POST(request: NextRequest) {
