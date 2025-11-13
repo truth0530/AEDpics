@@ -1,0 +1,210 @@
+/**
+ * String Similarity Utilities for Fuzzy Matching
+ * TEMPORARY: This will be replaced by TNMS standard_code based matching
+ *
+ * 2025-11-14: Created for temporary institution name matching improvement
+ * Solves: "광주남구보건소" vs "광주광역시남구보건소" matching problem
+ */
+
+/**
+ * Levenshtein Distance (Edit Distance)
+ * 한 문자열을 다른 문자열로 변환하기 위해 필요한 최소 편집 작업 수
+ * @param str1 첫 번째 문자열
+ * @param str2 두 번째 문자열
+ * @returns 편집 거리 (낮을수록 유사도 높음)
+ */
+export function levenshteinDistance(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+
+  // 동적 프로그래밍 행렬
+  const dp: number[][] = Array(len1 + 1)
+    .fill(null)
+    .map(() => Array(len2 + 1).fill(0));
+
+  // 초기값 설정
+  for (let i = 0; i <= len1; i++) dp[i][0] = i;
+  for (let j = 0; j <= len2; j++) dp[0][j] = j;
+
+  // 행렬 채우기
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(
+          dp[i - 1][j],    // 삭제
+          dp[i][j - 1],    // 삽입
+          dp[i - 1][j - 1] // 치환
+        );
+      }
+    }
+  }
+
+  return dp[len1][len2];
+}
+
+/**
+ * Normalized Similarity Score (0-100)
+ * Levenshtein 거리를 정규화된 유사도 점수로 변환
+ * @param str1 첫 번째 문자열
+ * @param str2 두 번째 문자열
+ * @returns 유사도 점수 (0-100, 100이 완전 일치)
+ */
+export function getSimilarityScore(str1: string, str2: string): number {
+  if (str1 === str2) return 100;
+
+  const maxLen = Math.max(str1.length, str2.length);
+  if (maxLen === 0) return 100;
+
+  const distance = levenshteinDistance(str1, str2);
+  const similarity = 100 - (distance / maxLen) * 100;
+
+  return Math.round(similarity);
+}
+
+/**
+ * 한글 특수 문자 정규화 (e.g., "광역시" 처리)
+ * 행정구역 약칭화 + 공통 접사 제거로 기관명 동치 비교 개선
+ * @param text 입력 텍스트
+ * @returns 정규화된 텍스트
+ */
+export function normalizeKoreanText(text: string): string {
+  return text
+    // 행정구역 약칭화
+    .replace(/광역시/g, '광시')
+    .replace(/특별시/g, '특시')
+    .replace(/자치도/g, '도')
+
+    // 공통 기관 접사 제거 (기관명 동일성 판단 시)
+    // "광주남구보건소" vs "광주광역시남구보건소" → "광주남구" vs "광주광시남구" → Levenshtein 개선
+    .replace(/보건소$/g, '')           // 보건소
+    .replace(/보건지소$/g, '')         // 보건지소
+    .replace(/센터$/g, '')             // 센터
+    .replace(/지소$/g, '')             // 지소
+    .replace(/의료원$/g, '')           // 의료원
+    .replace(/병원$/g, '')             // 병원
+    .replace(/의원$/g, '')             // 의원
+    .replace(/주민센터$/g, '')         // 주민센터
+    .replace(/행정복지센터$/g, '')     // 행정복지센터
+
+    // 공백 제거
+    .replace(/\s+/g, '')
+
+    // 특수문자 제거 (괄호, 쉼표 등)
+    .replace(/[()(),.\-·]/g, '');
+}
+
+/**
+ * 주소 유사도 비교 (가중치 계산용)
+ * @param aedAddress AED 설치 주소
+ * @param targetAddress 의무설치기관 주소
+ * @returns 주소 매칭 점수 (0-100)
+ */
+export function compareAddresses(aedAddress: string, targetAddress: string): number {
+  if (!aedAddress || !targetAddress) return 0;
+
+  const aedNorm = aedAddress.replace(/\s+/g, '');
+  const targetNorm = targetAddress.replace(/\s+/g, '');
+
+  // 정확 일치
+  if (aedNorm === targetNorm) return 100;
+
+  // 부분 일치 (포함 관계)
+  if (aedNorm.includes(targetNorm) || targetNorm.includes(aedNorm)) return 90;
+
+  // Levenshtein 기반 유사도 (주소는 이름보다 엄격함)
+  const similarity = getSimilarityScore(aedNorm, targetNorm);
+
+  // 주소가 80% 이상 유사하면 인정
+  return similarity >= 80 ? similarity : 0;
+}
+
+/**
+ * 임시 퍼지 매칭 (TEMPORARY) - 가중치 기반 신뢰도 계산
+ * 기관명 + 주소 + 지역 정보를 종합하여 신뢰도 산출
+ *
+ * TNMS 도입 후 이 함수는 제거되고 standard_code 기반 매칭으로 대체됨
+ * @param aedInstitution AED 데이터의 기관명
+ * @param targetInstitution 의무설치기관의 기관명
+ * @param aedAddress AED 설치 주소
+ * @param targetAddress 의무설치기관 주소
+ * @param aedSido AED 시도 (주소 기반)
+ * @param targetSido 의무설치기관 시도
+ * @returns 매칭 신뢰도 (0-100, null = 매칭 불가)
+ */
+export function calculateInstitutionMatchConfidence(
+  aedInstitution: string,
+  targetInstitution: string,
+  aedAddress?: string,
+  targetAddress?: string,
+  aedSido?: string,
+  targetSido?: string
+): number | null {
+  if (!aedInstitution || !targetInstitution) return null;
+
+  // === 단계 1: 이름 유사도 계산 ===
+  const aedNormalized = aedInstitution.replace(/\s+/g, '');
+  const targetNormalized = targetInstitution.replace(/\s+/g, '');
+
+  let nameScore = 0;
+
+  if (aedNormalized === targetNormalized) {
+    nameScore = 100; // 정확 일치
+  } else if (aedNormalized.includes(targetNormalized) || targetNormalized.includes(aedNormalized)) {
+    nameScore = 90; // 부분 일치
+  } else {
+    // 한글 정규화 후 유사도 계산
+    const aedKoreanNormalized = normalizeKoreanText(aedInstitution);
+    const targetKoreanNormalized = normalizeKoreanText(targetInstitution);
+
+    if (aedKoreanNormalized === targetKoreanNormalized) {
+      nameScore = 95; // 정규화 후 정확 일치
+    } else {
+      // Levenshtein 거리 기반 유사도
+      nameScore = getSimilarityScore(aedKoreanNormalized, targetKoreanNormalized);
+    }
+  }
+
+  // === 단계 2: 주소 유사도 계산 ===
+  const addressScore = aedAddress && targetAddress
+    ? compareAddresses(aedAddress, targetAddress)
+    : 0;
+
+  // === 단계 3: 지역 매칭 (시도) ===
+  const regionScore = aedSido && targetSido && aedSido === targetSido
+    ? 100
+    : 0;
+
+  // === 단계 4: 가중치 기반 최종 신뢰도 계산 ===
+  // 이름 50% + 주소 30% + 지역 20%
+  const weightedConfidence = Math.round(
+    (nameScore * 0.5) +
+    (addressScore * 0.3) +
+    (regionScore * 0.2)
+  );
+
+  // 최소 임계값: 50% (이름 30% + 주소 20% 정도)
+  // 하지만 주소가 0이면 이름만 사용 (이전 호환성)
+  if (addressScore === 0 && nameScore >= 70) {
+    // 주소 정보 없으면 이름 기반만 사용
+    return nameScore;
+  }
+
+  return weightedConfidence >= 50 ? weightedConfidence : null;
+}
+
+/**
+ * 단순 일치 여부 판단 (TRUE/FALSE만 반환)
+ * 매칭/미매칭 필터링용
+ * @param aedInstitution AED 데이터의 기관명
+ * @param targetInstitution 의무설치기관의 기관명
+ * @returns 매칭 여부
+ */
+export function shouldIncludeInMatch(
+  aedInstitution: string,
+  targetInstitution: string
+): boolean {
+  const confidence = calculateInstitutionMatchConfidence(aedInstitution, targetInstitution);
+  return confidence !== null && confidence >= 70; // 임시 임계값: 70%
+}

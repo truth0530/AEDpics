@@ -370,9 +370,15 @@ export default function ManagementNumberPanel({
                         {item.confidence.toFixed(0)}%
                       </Badge>
                     )}
-                    <Badge variant="outline" className="text-xs">
-                      장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대
-                    </Badge>
+                    {isPartiallyMatched ? (
+                      <Badge variant="outline" className="text-xs">
+                        관리번호 1개, 장비 {item.equipment_count}대중 {basketedSerials.length}대
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        장비 {item.equipment_count}대
+                      </Badge>
+                    )}
                   </div>
                 </div>
 

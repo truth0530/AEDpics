@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { normalizeGugunForDB, normalizeRegionName } from '@/lib/constants/regions';
+import { normalizeGugunForDB } from '@/lib/constants/regions';
+import { calculateInstitutionMatchConfidence } from '@/lib/utils/string-similarity';
 
 /**
  * GET /api/compliance/management-number-candidates
@@ -55,8 +56,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
       }
 
-      // 지역명 정규화 (DB 저장 형식과 일치시키기)
-      normalizedSido = targetInstitution.sido ? (normalizeRegionName(targetInstitution.sido) ?? targetInstitution.sido) : null;
+      // 2025-11-14: DB가 이제 정식 지역명을 사용하므로 정규화 제거
+      // 예: aed_data.sido = "광주광역시" (이전: "광주")
+      // normalizeRegionName()은 정식→축약명 변환이므로 사용 금지
+      normalizedSido = targetInstitution.sido;
       normalizedGugun = targetInstitution.gugun ? (normalizeGugunForDB(targetInstitution.gugun) ?? targetInstitution.gugun) : null;
     }
 
@@ -65,6 +68,7 @@ export async function GET(request: NextRequest) {
       management_number: string;
       institution_name: string;
       address: string;
+      sido: string;
       equipment_count: number;
       equipment_serials: string[];
       equipment_details: Array<{ serial: string; location_detail: string }>;
@@ -97,6 +101,7 @@ export async function GET(request: NextRequest) {
               ad.management_number,
               ad.installation_institution,
               COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ad.sido,
               ad.equipment_serial,
               ad.category_1,
               ad.category_2,
@@ -128,6 +133,7 @@ export async function GET(request: NextRequest) {
             gd.management_number,
             gd.installation_institution as institution_name,
             gd.address,
+            gd.sido,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -151,11 +157,6 @@ export async function GET(request: NextRequest) {
             gd.category_1,
             gd.category_2
           FROM grouped_data gd
-          WHERE (
-            REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '')
-            OR REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%'
-            OR REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%'
-          )
           ORDER BY confidence DESC, equipment_count DESC
           LIMIT 20
         `;
@@ -167,6 +168,7 @@ export async function GET(request: NextRequest) {
               ad.management_number,
               ad.installation_institution,
               COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ad.sido,
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
@@ -195,6 +197,7 @@ export async function GET(request: NextRequest) {
             gd.management_number,
             gd.installation_institution as institution_name,
             gd.address,
+            gd.sido,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -232,6 +235,7 @@ export async function GET(request: NextRequest) {
               ad.management_number,
               ad.installation_institution,
               COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ad.sido,
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
@@ -259,6 +263,7 @@ export async function GET(request: NextRequest) {
             gd.management_number,
             gd.installation_institution as institution_name,
             gd.address,
+            gd.sido,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -511,10 +516,58 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // TEMPORARY: 퍼지 매칭으로 신뢰도 재계산 (자동 추천 결과만)
+    // TNMS 도입 시 이 로직은 제거되고 standard_code 기반 매칭으로 대체됨
+    let improvedAutoSuggestions = autoSuggestionsQuery;
+    if (targetInstitution && !search) {
+      const targetInfo = year === '2025'
+        ? await prisma.target_list_2025.findUnique({
+            where: { target_key: targetKey! },
+            select: { institution_name: true, sido: true, gugun: true, division: true, sub_division: true }
+          })
+        : await prisma.target_list_2024.findUnique({
+            where: { target_key: targetKey! },
+            select: { institution_name: true, sido: true, gugun: true, division: true, sub_division: true }
+          });
+
+      const targetName = targetInfo?.institution_name || '';
+      // 의무설치기관의 위치 정보 (address 필드 없으므로 sido + gugun + division으로 구성)
+      const targetAddress = [targetInfo?.sido, targetInfo?.gugun, targetInfo?.division]
+        .filter(Boolean)
+        .join(' ');
+      const targetSido = targetInfo?.sido || '';
+
+      // 각 후보의 신뢰도를 퍼지 매칭으로 재계산 (주소 + 지역 정보 포함)
+      improvedAutoSuggestions = autoSuggestionsQuery.map(item => {
+        const fuzzyConfidence = calculateInstitutionMatchConfidence(
+          item.institution_name,
+          targetName,
+          item.address,        // AED 설치 주소
+          targetAddress,       // 의무설치기관 주소
+          item.sido,           // AED 시도
+          targetSido           // 의무설치기관 시도
+        );
+
+        // 퍼지 매칭이 더 나은 점수를 제공하면 사용
+        if (fuzzyConfidence !== null && fuzzyConfidence > Number(item.confidence || 0)) {
+          return {
+            ...item,
+            confidence: fuzzyConfidence
+          };
+        }
+
+        return item;
+      }).sort((a, b) => {
+        // 재정렬: 신뢰도 높은 순, 같으면 장비 수 많은 순
+        const confDiff = Number(b.confidence || 0) - Number(a.confidence || 0);
+        return confDiff !== 0 ? confDiff : Number(b.equipment_count) - Number(a.equipment_count);
+      });
+    }
+
     // 매칭된 항목 필터링 (includeMatched가 false일 때)
     const filteredAutoSuggestions = includeMatched
-      ? autoSuggestionsQuery
-      : autoSuggestionsQuery.filter(item => !item.is_matched);
+      ? improvedAutoSuggestions
+      : improvedAutoSuggestions.filter(item => !item.is_matched);
 
     const filteredSearchResults = includeMatched
       ? searchResults
