@@ -88,6 +88,17 @@ export default function BasketPanel({
 
   const totalEquipment = basket.reduce((sum, item) => sum + item.equipment_count, 0);
 
+  // 선택된 장비 개수 계산 (부분 매칭된 항목들의 선택된 장비만 카운트)
+  const selectedEquipment = basket.reduce((sum, item) => {
+    if (item.selected_serials) {
+      return sum + item.selected_serials.length;
+    }
+    return sum;
+  }, 0);
+
+  // 부분 매칭 여부 (선택된 장비가 전체 장비보다 적음)
+  const hasPartialMatch = selectedEquipment > 0 && selectedEquipment < totalEquipment;
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* 통계 정보 - 상단 고정 */}
@@ -99,7 +110,9 @@ export default function BasketPanel({
           </Card>
           <Card className="p-3">
             <div className="text-xs text-muted-foreground">총 장비</div>
-            <div className="text-2xl font-bold">{totalEquipment}대</div>
+            <div className="text-2xl font-bold">
+              {hasPartialMatch ? `${totalEquipment}대중 ${selectedEquipment}대` : `${totalEquipment}대`}
+            </div>
           </Card>
         </div>
       )}
