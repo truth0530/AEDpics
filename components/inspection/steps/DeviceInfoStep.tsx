@@ -1250,7 +1250,11 @@ export function DeviceInfoStep() {
           {(() => {
             const originalValue = sessionDeviceInfo.operation_status || '';
             const currentValue = deviceInfo.operation_status || originalValue;
-            const matchedState = deviceInfo.operation_status_matched;
+
+            // ✅ 원본 값이 "정상"이나 "불량"이 아니면 자동으로 편집 모드 시작
+            const isValidOriginalValue = originalValue === '정상' || originalValue === '불량';
+            const matchedState = deviceInfo.operation_status_matched ?? (isValidOriginalValue ? undefined : false);
+
             const isEditMode = matchedState === false;
             const isMatched = matchedState === true;
             const isEdited = matchedState === 'edited';
@@ -1349,10 +1353,14 @@ export function DeviceInfoStep() {
                       <button
                         type="button"
                         onClick={() => {
-                          handleChange('operation_status', '정상');
-                          // 정상 선택 시 사유 필드 초기화
-                          handleChange('operation_failure_reason', '');
-                          handleChange('operation_custom_reason', '');
+                          // ✅ 정상 선택 시 모든 불량 사유 필드 초기화 (배열은 updateStepData로 직접 처리)
+                          updateStepData('deviceInfo', {
+                            ...deviceInfo,
+                            operation_status: '정상',
+                            operation_failure_reason: '',
+                            operation_custom_reason: '',
+                            operation_failure_reasons: []
+                          });
                         }}
                         className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                           currentValue === '정상'

@@ -539,13 +539,30 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
   // ✅ Issue #6: PDF 출력 핸들러 (점검 완료 없이 PDF 미리보기)
   const handlePdfOutput = async () => {
-    // 현재 진행 상태 저장 (status는 'in_progress'로 유지)
+    // ✅ 최종 검증: 모든 단계의 필수 항목 체크
+    const allMissingFields: string[] = [];
+
+    for (let step = 0; step < STEP_COMPONENTS.length - 1; step++) { // 마지막 단계(documentation) 제외
+      const missing = checkRequiredFields(step);
+      if (missing.length > 0) {
+        allMissingFields.push(`[Step ${step + 1}] ${missing.join(', ')}`);
+      }
+    }
+
+    if (allMissingFields.length > 0) {
+      setMissingFields(allMissingFields);
+      setShowRequiredFieldsModal(true);
+      setError('필수 항목이 입력되지 않았습니다. 해당 단계로 돌아가서 입력해주세요.');
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
     try {
-      await saveProgressMutation.mutateAsync();
-      showSaveSuccess('PDF 미리보기를 위해 저장되었습니다');
+      // PDF 출력을 위해 점검을 완료 상태로 저장
+      await completeSessionMutation.mutateAsync();
+      showSaveSuccess('점검이 완료되었습니다. PDF 미리보기로 이동합니다.');
 
       // PDF 미리보기 페이지로 이동
       if (deviceSerial) {
@@ -554,7 +571,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         setError('장비 시리얼 번호를 찾을 수 없습니다.');
       }
     } catch (error) {
-      console.error('Failed to save for PDF:', error);
+      console.error('Failed to complete for PDF:', error);
       const message = error instanceof Error ? error.message : 'PDF 저장에 실패했습니다.';
       setError(message);
       showSaveError(error instanceof Error ? error : new Error(message));
