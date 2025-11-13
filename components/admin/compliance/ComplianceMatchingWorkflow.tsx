@@ -466,10 +466,10 @@ export default function ComplianceMatchingWorkflow({
                 <CardTitle className="text-base flex items-center gap-2">
                   <Badge variant="outline">3</Badge>
                   {selectedInstitution ? (
-                    `${selectedInstitution.institution_name}의 매칭된 관리번호`
+                    `${selectedInstitution.institution_name}과 매칭할 관리번호`
                   ) : (
                     <>
-                      매칭된 관리번호
+                      매칭할 관리번호
                       <span className="text-xs text-muted-foreground font-normal ml-1">
                         의무설치기관을 선택하세요
                       </span>
