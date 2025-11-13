@@ -173,8 +173,15 @@ export default function BasketPanel({
                     </div>
                     {item.selected_serials ? (
                       <>
-                        <div className="text-xs text-muted-foreground">
-                          선택된 장비연번 ({item.selected_serials.length}개):
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground">
+                            장비 {item.equipment_count}대중 {item.selected_serials.length}대:
+                          </div>
+                          {isPartiallyMatched && (
+                            <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                              부분 매칭
+                            </Badge>
+                          )}
                         </div>
 
                         {/* 장비가 2개 이상인 경우에만 펼치기/접기 버튼 표시 */}
