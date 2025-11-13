@@ -117,11 +117,9 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
       showSuccess('점검이 완료되었습니다');
 
-      if (deviceSerial) {
-        router.push(`/inspection/complete?serial=${deviceSerial}`);
-      } else {
-        router.push('/inspection');
-      }
+      // ✅ Issue #6: 완료 후 PDF 화면으로 강제 이동 제거
+      // 사용자가 원하는 경로로 자유롭게 이동 가능
+      router.push('/inspection');
     },
     onError: (error) => {
       console.error('Failed to complete inspection:', error);
@@ -552,6 +550,32 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
     } catch (error) {
       console.error('Save failed:', error);
       const message = error instanceof Error ? error.message : '저장에 실패했습니다.';
+      setError(message);
+      showSaveError(error instanceof Error ? error : new Error(message));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ✅ Issue #6: PDF 출력 핸들러 (점검 완료 없이 PDF 미리보기)
+  const handlePdfOutput = async () => {
+    // 현재 진행 상태 저장 (status는 'in_progress'로 유지)
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      await saveProgressMutation.mutateAsync();
+      showSaveSuccess('PDF 미리보기를 위해 저장되었습니다');
+
+      // PDF 미리보기 페이지로 이동
+      if (deviceSerial) {
+        router.push(`/inspection/complete?serial=${deviceSerial}`);
+      } else {
+        setError('장비 시리얼 번호를 찾을 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to save for PDF:', error);
+      const message = error instanceof Error ? error.message : 'PDF 저장에 실패했습니다.';
       setError(message);
       showSaveError(error instanceof Error ? error : new Error(message));
     } finally {
@@ -995,6 +1019,18 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           >
             {isSaving ? '저장 중...' : '중간저장'}
           </button>
+
+          {/* ✅ Issue #6: PDF 출력 버튼 추가 (마지막 단계에서만 표시) */}
+          {isLastStep && (
+            <button
+              type="button"
+              onClick={handlePdfOutput}
+              disabled={isBusy}
+              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isSaving ? '저장 중...' : 'PDF 출력'}
+            </button>
+          )}
 
           {isLastStep ? (
             <button

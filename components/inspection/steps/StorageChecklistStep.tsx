@@ -18,8 +18,8 @@ interface StepData {
 
 const STORAGE_TYPES = [
   { id: 'none', label: '보관함 없음' },
-  { id: 'wall_mounted', label: '벽걸이' },
-  { id: 'standalone', label: '스탠드' },
+  { id: 'working', label: '정상작동' },
+  { id: 'not_working', label: '미작동' },
 ];
 
 const CHECKLIST_ITEMS = [
@@ -163,14 +163,14 @@ export function StorageChecklistStep() {
       {/* 안내 메시지 */}
       <div className="rounded-lg bg-green-900/10 border border-green-600/20 p-3">
         <p className="text-xs sm:text-sm text-green-300">
-          💡 보관함 형태를 먼저 선택해주세요. 보관함이 있는 경우 체크리스트와 안내표지를 점검합니다.
+          💡 보관함 도난경보장치 작동 여부를 먼저 선택해주세요.
         </p>
       </div>
 
-      {/* 보관함 형태 선택 (라디오 버튼 스타일) */}
+      {/* 보관함 도난경보장치 작동 여부 선택 (라디오 버튼 스타일) */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">
         <div className="flex items-center gap-2 mb-3">
-          <h4 className="font-semibold text-white text-sm">보관함 형태</h4>
+          <h4 className="font-semibold text-white text-sm">보관함 도난경보장치 작동 여부</h4>
           {!storageType && (
             <span className="text-xs text-yellow-400 animate-pulse">← 선택 필요</span>
           )}
@@ -193,7 +193,8 @@ export function StorageChecklistStep() {
         </div>
       </div>
 
-      {/* 보관함 체크리스트 (조건부 활성화) */}
+      {/* 보관함 체크리스트 (주석처리 - 향후 복구 가능하도록 보관) */}
+      {/*
       {hasStorage && (
         <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">
           <h4 className="font-semibold text-white text-sm mb-3">보관함 체크리스트</h4>
@@ -229,7 +230,7 @@ export function StorageChecklistStep() {
                       );
                     })}
                   </div>
-                  {/* 개선필요 선택 시 상세 내용 입력 필드 표시 */}
+                  // 개선필요 선택 시 상세 내용 입력 필드 표시
                   {status === 'needs_improvement' && (
                     <div className="mt-2">
                       <textarea
@@ -247,6 +248,7 @@ export function StorageChecklistStep() {
           </div>
         </div>
       )}
+      */}
 
       {/* 안내표지 설치 (다중선택) */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">

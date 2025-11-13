@@ -1257,8 +1257,8 @@ export function DeviceInfoStep() {
             const isUnchecked = matchedState === undefined;
             const isActuallyMatching = currentValue === originalValue && currentValue.trim() !== '';
 
-            // 불량 사유 필드
-            const failureReason = deviceInfo.operation_failure_reason || '';
+            // ✅ Issue #2: 불량 사유 필드를 배열로 변경 (다중 선택 지원)
+            const failureReasons = deviceInfo.operation_failure_reasons || [];
             const customReason = deviceInfo.operation_custom_reason || '';
 
             return (
@@ -1280,30 +1280,51 @@ export function DeviceInfoStep() {
                     {/* 일치 확인했지만 불량 상태면 조치계획 필수 */}
                     {currentValue === '불량' && (
                       <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                        <div className="text-xs text-red-400 font-medium">불량 확인 - 조치계획</div>
-                        <select
-                          value={failureReason}
-                          onChange={(e) => {
-                            handleChange('operation_failure_reason', e.target.value);
-                            if (e.target.value !== '기타') {
-                              handleChange('operation_custom_reason', '');
-                            }
-                          }}
-                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-                        >
-                          <option value="">조치계획 선택</option>
-                          <option value="AS 요청">AS 요청</option>
-                          <option value="장비 교체 예정">장비 교체 예정</option>
-                          <option value="현장 점검자에게 권고조치">현장 점검자에게 권고조치</option>
-                          <option value="기타">기타</option>
-                        </select>
+                        <div className="text-xs text-red-400 font-medium">불량 확인 - 불량 사유 (다중선택 가능)</div>
+                        <div className="space-y-2">
+                          {/* ✅ Issue #2: 다중 선택 체크박스로 변경 */}
+                          {[
+                            { value: '배터리 부족', label: '배터리 부족' },
+                            { value: '패드 만료', label: '패드 만료' },
+                            { value: '외관 손상', label: '외관 손상' },
+                            { value: '작동 불가', label: '작동 불가' },
+                            { value: 'AS 요청', label: 'AS 요청' },
+                            { value: '장비 교체 예정', label: '장비 교체 예정' },
+                            { value: '기타', label: '기타' }
+                          ].map((reason) => (
+                            <label
+                              key={reason.value}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-gray-700/30 hover:border-gray-500 cursor-pointer transition-all"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={failureReasons.includes(reason.value)}
+                                onChange={(e) => {
+                                  const newReasons = e.target.checked
+                                    ? [...failureReasons, reason.value]
+                                    : failureReasons.filter((r: string) => r !== reason.value);
 
-                        {failureReason === '기타' && (
+                                  handleChange('operation_failure_reasons', newReasons);
+
+                                  // 기타가 선택 해제되면 커스텀 사유 초기화
+                                  if (reason.value === '기타' && !e.target.checked) {
+                                    handleChange('operation_custom_reason', '');
+                                  }
+                                }}
+                                className="w-4 h-4 rounded border-gray-600 text-red-600 focus:ring-red-500 focus:ring-offset-gray-800"
+                              />
+                              <span className="text-sm text-gray-300">{reason.label}</span>
+                            </label>
+                          ))}
+                        </div>
+
+                        {/* 기타 선택 시 텍스트 입력 */}
+                        {failureReasons.includes('기타') && (
                           <input
                             type="text"
                             value={customReason}
                             onChange={(e) => handleChange('operation_custom_reason', e.target.value)}
-                            placeholder="기타 조치계획을 입력하세요"
+                            placeholder="기타 사유를 입력하세요"
                             className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                           />
                         )}
@@ -1354,40 +1375,48 @@ export function DeviceInfoStep() {
                       </button>
                     </div>
 
-                    {/* 불량 선택 시 사유 버튼들 */}
+                    {/* ✅ Issue #2: 불량 선택 시 다중 선택 체크박스 */}
                     {currentValue === '불량' && (
                       <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                        <div className="text-xs text-red-400 font-medium">불량 사유</div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="text-xs text-red-400 font-medium">불량 사유 (다중선택 가능)</div>
+                        <div className="space-y-2">
                           {[
-                            { value: '전원 안켜짐', label: '전원 안켜짐' },
-                            { value: '안내 음성 불량', label: '안내 음성 불량' },
-                            { value: '배터리 경고음', label: '배터리 경고음' },
+                            { value: '배터리 부족', label: '배터리 부족' },
+                            { value: '패드 만료', label: '패드 만료' },
+                            { value: '외관 손상', label: '외관 손상' },
+                            { value: '작동 불가', label: '작동 불가' },
+                            { value: 'AS 요청', label: 'AS 요청' },
+                            { value: '장비 교체 예정', label: '장비 교체 예정' },
                             { value: '기타', label: '기타' }
                           ].map((reason) => (
-                            <button
+                            <label
                               key={reason.value}
-                              type="button"
-                              onClick={() => {
-                                handleChange('operation_failure_reason', reason.value);
-                                // 기타 아닌 경우 커스텀 사유 초기화
-                                if (reason.value !== '기타') {
-                                  handleChange('operation_custom_reason', '');
-                                }
-                              }}
-                              className={`py-2 px-3 rounded-lg border text-xs font-medium transition-all ${
-                                failureReason === reason.value
-                                  ? 'border-red-500 bg-red-600/20 text-red-300'
-                                  : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
-                              }`}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-gray-700/30 hover:border-gray-500 cursor-pointer transition-all"
                             >
-                              {reason.label}
-                            </button>
+                              <input
+                                type="checkbox"
+                                checked={failureReasons.includes(reason.value)}
+                                onChange={(e) => {
+                                  const newReasons = e.target.checked
+                                    ? [...failureReasons, reason.value]
+                                    : failureReasons.filter((r: string) => r !== reason.value);
+
+                                  handleChange('operation_failure_reasons', newReasons);
+
+                                  // 기타가 선택 해제되면 커스텀 사유 초기화
+                                  if (reason.value === '기타' && !e.target.checked) {
+                                    handleChange('operation_custom_reason', '');
+                                  }
+                                }}
+                                className="w-4 h-4 rounded border-gray-600 text-red-600 focus:ring-red-500 focus:ring-offset-gray-800"
+                              />
+                              <span className="text-sm text-gray-300">{reason.label}</span>
+                            </label>
                           ))}
                         </div>
 
                         {/* 기타 선택 시 텍스트 입력 */}
-                        {failureReason === '기타' && (
+                        {failureReasons.includes('기타') && (
                           <input
                             type="text"
                             value={customReason}
@@ -1420,13 +1449,13 @@ export function DeviceInfoStep() {
                           updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: true });
                           return;
                         }
-                        // 불량 상태이지만 사유가 없으면 경고
+                        // ✅ Issue #2: 불량 상태이지만 사유가 없으면 경고 (배열 체크)
                         if (currentValue === '불량') {
-                          if (!failureReason) {
-                            alert('불량 사유를 선택해주세요.');
+                          if (!failureReasons || failureReasons.length === 0) {
+                            alert('불량 사유를 최소 1개 이상 선택해주세요.');
                             return;
                           }
-                          if (failureReason === '기타' && !customReason.trim()) {
+                          if (failureReasons.includes('기타') && !customReason.trim()) {
                             alert('기타 사유를 입력해주세요.');
                             return;
                           }
@@ -1482,14 +1511,14 @@ export function DeviceInfoStep() {
                     type="button"
                     onClick={() => {
                       if (isActuallyMatching) {
-                        // 일치 확인 시 불량 상태면 조치계획 필수
+                        // ✅ Issue #2: 일치 확인 시 불량 상태면 불량 사유 필수 (배열 체크)
                         if (currentValue === '불량') {
-                          if (!failureReason) {
-                            alert('불량 상태에 대한 조치계획을 선택해주세요.');
+                          if (!failureReasons || failureReasons.length === 0) {
+                            alert('불량 사유를 최소 1개 이상 선택해주세요.');
                             return;
                           }
-                          if (failureReason === '기타' && !customReason.trim()) {
-                            alert('기타 조치계획을 입력해주세요.');
+                          if (failureReasons.includes('기타') && !customReason.trim()) {
+                            alert('기타 사유를 입력해주세요.');
                             return;
                           }
                         }
@@ -1524,13 +1553,15 @@ export function DeviceInfoStep() {
           })()}
         </div>
 
-        {/* 사진 촬영 (선택) */}
+        {/* 사진 촬영 (선택) - 주석처리 (향후 복구 가능하도록 보관) */}
+        {/*
         <div className="mt-4 pt-4 border-t border-gray-700/50 space-y-2">
           <div className="text-xs font-medium text-gray-400">
             사진 촬영 <span className="text-gray-500">(선택사항)</span>
           </div>
 
           {/* 시리얼번호 사진 */}
+          {/*
           <div className="space-y-1">
             <PhotoCaptureInput
               label="1. 시리얼번호"
@@ -1542,8 +1573,10 @@ export function DeviceInfoStep() {
               photoType="serial_number"
             />
           </div>
+          */}
 
           {/* 배터리 제조일자 사진 */}
+          {/*
           <div className="space-y-1">
             <PhotoCaptureInput
               label="2. 배터리 제조일자"
@@ -1555,8 +1588,10 @@ export function DeviceInfoStep() {
               photoType="battery_date"
             />
           </div>
+          */}
 
           {/* 본체 제조일자 사진 */}
+          {/*
           <div className="space-y-1">
             <PhotoCaptureInput
               label="3. 본체 제조일자"
@@ -1568,7 +1603,10 @@ export function DeviceInfoStep() {
               photoType="device_date"
             />
           </div>
+          */}
+        {/*
         </div>
+        */}
       </div>
       </div>
 

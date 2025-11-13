@@ -58,7 +58,7 @@ export function ManagerEducationStep() {
                   : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
               }`}
             >
-              관리책임자 교육
+              관리책임자 교육(100분)
             </button>
 
             <button
@@ -79,7 +79,7 @@ export function ManagerEducationStep() {
                   : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
               }`}
             >
-              법정의무교육
+              법정의무교육(4시간)
             </button>
 
             <button

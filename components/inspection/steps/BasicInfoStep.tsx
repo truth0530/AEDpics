@@ -47,6 +47,9 @@ export function BasicInfoStep() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLocationEditMode, setIsLocationEditMode] = useState(false);
 
+  // ✅ SSR-safe: Roadview 기본 상태는 false로 시작, 클라이언트에서 화면 크기에 따라 설정
+  const [showRoadview, setShowRoadview] = useState(false);
+
   // ✅ 카테고리 상태 (API에서 동적 로드)
   const [category1Options, setCategory1Options] = useState<Category[]>([]);
   const [category2Options, setCategory2Options] = useState<Category[]>([]);
@@ -62,7 +65,6 @@ export function BasicInfoStep() {
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [mapError, setMapError] = useState<string>('');
-  const [showRoadview, setShowRoadview] = useState(false);
   const [roadviewError, setRoadviewError] = useState<string>('');
 
   // GPS 좌표
@@ -71,6 +73,15 @@ export function BasicInfoStep() {
   const [currentLat, setCurrentLat] = useState(initialLat);
   const [currentLng, setCurrentLng] = useState(initialLng);
   const [hasMovedMarker, setHasMovedMarker] = useState(false);
+
+  // ✅ SSR-safe: 클라이언트에서 화면 크기에 따라 Roadview 기본 상태 설정
+  // PC (>= 1024px): expanded, Mobile (< 1024px): collapsed
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isDesktop = window.innerWidth >= 1024;
+      setShowRoadview(isDesktop);
+    }
+  }, []);
 
   // 초기 데이터 설정
   useEffect(() => {
