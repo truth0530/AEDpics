@@ -160,13 +160,6 @@ export function StorageChecklistStep() {
 
   return (
     <div className="space-y-4">
-      {/* 안내 메시지 */}
-      <div className="rounded-lg bg-green-900/10 border border-green-600/20 p-3">
-        <p className="text-xs sm:text-sm text-green-300">
-          💡 보관함 도난경보장치 작동 여부를 먼저 선택해주세요.
-        </p>
-      </div>
-
       {/* 보관함 도난경보장치 작동 여부 선택 (라디오 버튼 스타일) */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">
         <div className="flex items-center gap-2 mb-3">

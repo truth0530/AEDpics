@@ -385,36 +385,16 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
       case 2: // StorageChecklistStep
         const storage = stepData.storage as Record<string, any> | undefined;
-        
+
+        // 필수: 보관함 도난경보장치 작동 여부 선택
         if (!storage?.storage_type) {
-          missing.push('보관함 형태');
-          break;
+          missing.push('보관함 도난경보장치 작동 여부를 선택해주세요');
         }
-        
-        // ✅ 보관함이 있는 경우, 체크리스트 항목 검증
-        if (storage.storage_type !== 'none') {
-          const checklistItems = storage.checklist_items || {};
-          const checklistKeys = Object.keys(checklistItems);
-          
-          if (checklistKeys.length === 0) {
-            missing.push('보관함 점검 체크리스트 항목 입력 필요');
-          } else {
-            // 응답되지 않은 항목 확인 (값이 undefined, null, '' 인 경우)
-            const unansweredItems = checklistKeys.filter(key => {
-              const value = checklistItems[key];
-              return value === undefined || value === null || value === '';
-            });
-            
-            if (unansweredItems.length > 0) {
-              missing.push(`보관함 체크리스트 미응답 항목: ${unansweredItems.length}개`);
-            }
-          }
-          
-          // 안내표지 선택 검증
-          const signageSelected = storage.signage_selected || [];
-          if (!Array.isArray(signageSelected) || signageSelected.length === 0) {
-            missing.push('보관함 안내표지 선택 필요');
-          }
+
+        // 필수: 안내표지 선택 (보관함 유무와 관계없이 항상 필수)
+        const signageSelected = storage?.signage_selected || [];
+        if (!Array.isArray(signageSelected) || signageSelected.length === 0) {
+          missing.push('안내표지 설치를 선택해주세요');
         }
         break;
 
