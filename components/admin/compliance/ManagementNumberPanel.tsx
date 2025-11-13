@@ -289,9 +289,21 @@ export default function ManagementNumberPanel({
                 <div
                   className={cn(
                     "space-y-1.5",
-                    hasMultipleEquipment && remainingEquipmentCount > 0 && "cursor-pointer"
+                    (!item.is_matched && !isPartiallyMatched && !isFullyMatched) && "cursor-pointer"
                   )}
-                  onClick={() => hasMultipleEquipment && remainingEquipmentCount > 0 && toggleExpanded(item.management_number)}
+                  onClick={() => {
+                    if (!item.is_matched && !isPartiallyMatched && !isFullyMatched) {
+                      // 미담긴 경우: 모든 장비 추가
+                      onAddToBasket(item);
+                    } else if (isPartiallyMatched && remainingEquipmentCount > 0) {
+                      // 부분 담긴 경우: 남은 장비들을 개별적으로 추가
+                      item.equipment_details?.forEach(detail => {
+                        if (!basketedSerials.includes(detail.serial)) {
+                          onAddEquipmentSerial(item, detail.serial);
+                        }
+                      });
+                    }
+                  }}
                 >
                   {/* 카드 상단 헤더 */}
                   <div className="flex items-center justify-between gap-2">

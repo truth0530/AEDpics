@@ -242,11 +242,11 @@ export default function BasketPanel({
                                   </div>
                                   <Button
                                     size="sm"
-                                    variant="ghost"
+                                    variant="outline"
                                     onClick={() => onRemoveEquipmentSerial(item.management_number, serial)}
-                                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                                    className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
                                   >
-                                    <X className="h-3 w-3" />
+                                    매칭취소하기
                                   </Button>
                                 </div>
                               );
