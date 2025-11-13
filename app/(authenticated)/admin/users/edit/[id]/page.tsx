@@ -195,21 +195,8 @@ export default function EditUserPage() {
         throw new Error(error.error || '저장에 실패했습니다');
       }
 
-      toast.success('사용자 정보가 성공적으로 업데이트되었습니다');
-
-      // 임시점검원이고 조직이 변경된 경우 장비 재할당 필요 알림
-      if (formData.role === 'temporary_inspector' && selectedOrg) {
-        if (!selectedOrg.hasAdmin) {
-          toast.warning('선택한 보건소에 담당자가 없어 장비 할당이 필요합니다');
-        } else {
-          toast.info('조직이 변경되어 장비 재할당이 필요할 수 있습니다');
-        }
-      }
-
-      // 목록으로 돌아가기
-      setTimeout(() => {
-        router.push('/admin/users');
-      }, 1500);
+      // 목록으로 돌아가기 (성공 메시지는 목록 페이지에서 표시)
+      router.push('/admin/users?updated=success');
     } catch (error) {
       console.error('Failed to update user:', error);
       toast.error(error instanceof Error ? error.message : '저장에 실패했습니다');

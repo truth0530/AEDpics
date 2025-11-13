@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import { logger } from '@/lib/logger';
+import { hasNationalAccess } from '@/lib/utils/user-roles';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     select: { role: true }
   });
 
-  const isAdmin = profile?.role && ['master', 'emergency_center_admin', 'ministry_admin'].includes(profile.role);
+  // ✅ ROLE_INFO 기반 동적 판단: 전국 권한 관리자
+  const isAdmin = profile?.role && hasNationalAccess(profile.role);
   const isOwner = inspection.inspector_id === session.user.id;
 
   if (!isOwner && !isAdmin) {

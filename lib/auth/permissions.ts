@@ -18,13 +18,13 @@ export const PERMISSION_GROUPS = {
   // 시스템 전체 관리 권한 (Master만)
   SYSTEM_ADMIN: [ROLES.MASTER],
 
-  // 고급 관리 권한 (Master, 중앙응급의료센터, 지역응급의료지원센터, 보건복지부)
+  // 고급 관리 권한 (Master, 중앙응급의료센터, 응급의료지원센터, 보건복지부)
   HIGH_ADMIN: [ROLES.MASTER, ROLES.EMERGENCY_CENTER_ADMIN, ROLES.REGIONAL_EMERGENCY_CENTER_ADMIN, ROLES.MINISTRY_ADMIN],
 
-  // 일반 관리 권한 (고급 관리 + 지역응급의료지원센터 + 지역 관리자)
+  // 일반 관리 권한 (고급 관리 + 응급의료지원센터 + 지역 관리자)
   ADMIN: [ROLES.MASTER, ROLES.EMERGENCY_CENTER_ADMIN, ROLES.REGIONAL_EMERGENCY_CENTER_ADMIN, ROLES.MINISTRY_ADMIN, ROLES.REGIONAL_ADMIN],
 
-  // 모든 관리자 (지역응급의료지원센터 + 지역 관리자 + 로컬 관리자)
+  // 모든 관리자 (응급의료지원센터 + 지역 관리자 + 로컬 관리자)
   ALL_ADMIN: [ROLES.MASTER, ROLES.EMERGENCY_CENTER_ADMIN, ROLES.REGIONAL_EMERGENCY_CENTER_ADMIN, ROLES.MINISTRY_ADMIN, ROLES.REGIONAL_ADMIN, ROLES.LOCAL_ADMIN],
 
   // 활성 사용자 (승인된 사용자들)

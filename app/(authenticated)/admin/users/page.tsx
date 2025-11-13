@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { user_role as UserRole } from '@prisma/client';
 import { Search, User, CheckCircle, XCircle, AlertCircle, Shield, Building2, Edit } from 'lucide-react';
@@ -97,6 +98,27 @@ export default function AdminUsersPage() {
 
   const router = useRouter();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+
+  // 수정 성공 메시지 표시
+  useEffect(() => {
+    if (searchParams.get('updated') === 'success') {
+      // Toast 표시 (약간의 지연을 두어 페이지가 완전히 로드된 후 표시)
+      const showToast = setTimeout(() => {
+        toast.success('사용자 정보가 수정되었습니다');
+      }, 100);
+
+      // Toast가 충분히 표시된 후 URL 정리
+      const cleanupUrl = setTimeout(() => {
+        window.history.replaceState(null, '', '/admin/users');
+      }, 1000);
+
+      return () => {
+        clearTimeout(showToast);
+        clearTimeout(cleanupUrl);
+      };
+    }
+  }, [searchParams]);
 
   // 현재 로그인한 사용자 정보 조회
   const { data: currentUserData } = useQuery({

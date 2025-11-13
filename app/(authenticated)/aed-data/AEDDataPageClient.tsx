@@ -191,34 +191,8 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
 
   // ✅ 일정추가된 장비 목록은 useQuery로 자동 관리됨 (useEffect 제거)
 
-  // AEDDataContent 레벨에서 mapRegionChanged 이벤트 리스닝
-  useEffect(() => {
-    const handleMapRegionChanged = (event: CustomEvent) => {
-      const { sido, gugun } = event.detail;
-      console.log('[AEDDataPageClient] 🗺️ mapRegionChanged received:', { sido, gugun });
-
-      // 지역 변경 시작 플래그 설정 (자동 접기 방지)
-      isRegionChangeInProgress.current = true;
-
-      // 필터 업데이트
-      setFilters({
-        regionCodes: [sido],
-        cityCodes: [gugun],
-        queryCriteria: 'address',
-      });
-
-      // 1초 후 플래그 해제
-      setTimeout(() => {
-        isRegionChangeInProgress.current = false;
-      }, 1000);
-    };
-
-    window.addEventListener('mapRegionChanged', handleMapRegionChanged as EventListener);
-
-    return () => {
-      window.removeEventListener('mapRegionChanged', handleMapRegionChanged as EventListener);
-    };
-  }, [setFilters]);
+  // ✅ mapRegionChanged 이벤트 제거 - MapView가 더 이상 이 이벤트를 발송하지 않음
+  // 드롭다운 선택만 필터 업데이트 (RegionFilter의 regionSelected 이벤트로 처리)
 
   // 페이지 로드 시 초기화: 전체목록/추가된목록 탭 = 관할지역 고정, 지도 탭 = 위치 기반
   useEffect(() => {
@@ -360,9 +334,9 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
 
                       setFilters(newFilters);
 
-                      // 필터바에 알림 (드롭다운 업데이트용)
+                      // ✅ 필터바에 알림 (드롭다운 업데이트용) - regionSelected 이벤트 사용
                       setTimeout(() => {
-                        window.dispatchEvent(new CustomEvent('mapRegionChanged', {
+                        window.dispatchEvent(new CustomEvent('regionSelected', {
                           detail: { sido: sidoShort, gugun }
                         }));
                       }, 100);

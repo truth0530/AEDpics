@@ -113,9 +113,6 @@ export function MapView({
   // 초기 범위 조정 완료 여부 추적
   const initialBoundsSetRef = useRef(false);
 
-  // Geolocation 완료 여부 추적
-  const geolocationCompleteRef = useRef(false);
-
   // 사이드 패널 상태
   const [showSidePanel, setShowSidePanel] = useState(true);
 
@@ -315,12 +312,6 @@ export function MapView({
         }
 
         idleTimeoutRef.current = setTimeout(() => {
-          // Geolocation 완료 전까지 idle 이벤트 무시
-          if (useMapBasedLoading && !geolocationCompleteRef.current) {
-            console.log('[MapView] ⏸️ Waiting for geolocation to complete');
-            return;
-          }
-
           const center = mapInstance.getCenter();
           const lat = center.getLat();
           const lng = center.getLng();
@@ -348,7 +339,7 @@ export function MapView({
                   }
 
                   console.log('[MapView] ✅ Same region, reloading data only');
-                  if (useMapBasedLoading && geolocationCompleteRef.current) {
+                  if (useMapBasedLoading) {
                     fetchAEDByMapCenter();
                   }
                   return;
@@ -359,134 +350,29 @@ export function MapView({
                   console.log('[MapView] 🔄 Filter-triggered move completed, reloading data');
                   lastRegionRef.current = { sido: sidoShort, gugun };
                   changeSourceRef.current = null;
-                  if (useMapBasedLoading && geolocationCompleteRef.current) {
+                  if (useMapBasedLoading) {
                     fetchAEDByMapCenter();
                   }
                   return;
                 }
 
-                // 사용자가 직접 지도를 이동한 경우: 필터 업데이트
-                console.log('[MapView] 🗺️ User moved map, updating filter:', { sido: sidoShort, gugun });
+                // ✅ 필터 자동 업데이트 제거 (사용자 명시적 선택만 존중)
+                // 지도 이동 시에는 드롭다운 필터를 변경하지 않음
+                // 향후 확장: 여기에 지도 기반 특정 기능 추가 가능
+                console.log('[MapView] 📍 Map moved to:', { sido: sidoShort, gugun });
                 lastRegionRef.current = { sido: sidoShort, gugun };
-                changeSourceRef.current = 'map';
 
-                // sessionStorage 업데이트
-                if (typeof window !== 'undefined') {
-                  window.sessionStorage.setItem('selectedSido', sidoShort);
-                  window.sessionStorage.setItem('selectedGugun', gugun);
-
-                  // 필터바에 알림
-                  console.log('[MapView] 📢 Dispatching mapRegionChanged event:', { sido: sidoShort, gugun });
-                  window.dispatchEvent(new CustomEvent('mapRegionChanged', {
-                    detail: { sido: sidoShort, gugun }
-                  }));
-                }
-
-                // 데이터 재로드 (geolocation 완료 후에만)
-                if (useMapBasedLoading && geolocationCompleteRef.current) {
+                // 데이터 재로드 (useMapBasedLoading=true일 때만)
+                if (useMapBasedLoading) {
                   fetchAEDByMapCenter();
                 }
-
-                // 플래그 리셋
-                setTimeout(() => {
-                  if (changeSourceRef.current === 'map') {
-                    changeSourceRef.current = null;
-                  }
-                }, 100);
               }
             }
           });
         }, 1000);
       });
 
-      // 현재 위치 가져오기 및 자동 필터 설정
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const locPosition = new window.kakao.maps.LatLng(lat, lng);
-
-            setCurrentPosition({ lat, lng });
-            mapInstance.setCenter(locPosition);
-            mapInstance.setLevel(5);
-
-            // 현재 위치 마커 표시
-            const currentLocationSvg = `
-              <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="15" cy="15" r="10" fill="#4285F4" stroke="white" stroke-width="3"/>
-                <circle cx="15" cy="15" r="3" fill="white"/>
-              </svg>
-            `;
-            const markerImage = new window.kakao.maps.MarkerImage(
-              'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(currentLocationSvg))),
-              new window.kakao.maps.Size(30, 30),
-              { offset: new window.kakao.maps.Point(15, 15) }
-            );
-
-            new window.kakao.maps.Marker({
-              position: locPosition,
-              map: mapInstance,
-              image: markerImage,
-              title: '내 위치',
-              zIndex: 999
-            });
-
-            // 현재 위치의 행정구역으로 필터 자동 설정
-            changeSourceRef.current = 'initial'; // 초기 설정으로 표시
-            geocoder.coord2RegionCode(lng, lat, function(result: any, status: any) {
-              if (status === window.kakao.maps.services.Status.OK) {
-                const region = result.find((r: any) => r.region_type === 'H');
-                if (region) {
-                  const sidoFull = region.region_1depth_name;
-                  const gugun = region.region_2depth_name;
-                  const sidoShort = normalizeRegionName(sidoFull);
-
-                  console.log('[MapView] 🎯 Initial location detected, setting filter:', { sido: sidoShort, gugun });
-
-                  lastRegionRef.current = { sido: sidoShort, gugun };
-
-                  // sessionStorage 업데이트
-                  if (typeof window !== 'undefined') {
-                    window.sessionStorage.setItem('selectedSido', sidoShort);
-                    window.sessionStorage.setItem('selectedGugun', gugun);
-
-                    // 필터바에 알림
-                    window.dispatchEvent(new CustomEvent('mapRegionChanged', {
-                      detail: { sido: sidoShort, gugun }
-                    }));
-                  }
-
-                  // Geolocation 완료 플래그 설정
-                  geolocationCompleteRef.current = true;
-
-                  // 초기 위치 설정 후 데이터 로드 (useMapBasedLoading=true일 때만)
-                  if (useMapBasedLoading) {
-                    setTimeout(() => {
-                      console.log('[MapView] 🚀 Initial data load after geolocation');
-                      fetchAEDByMapCenter();
-                    }, 500);
-                  }
-
-                  // 플래그 리셋
-                  setTimeout(() => {
-                    changeSourceRef.current = null;
-                  }, 100);
-                }
-              }
-            });
-          },
-          (error) => {
-            console.error('Error getting location:', error);
-            // Geolocation 실패 시에도 플래그 설정 (기본 위치에서 진행)
-            geolocationCompleteRef.current = true;
-          }
-        );
-      } else {
-        // Geolocation API 미지원 시에도 플래그 설정
-        geolocationCompleteRef.current = true;
-      }
-
+      // ✅ 자동 위치 감지 제거 - 사용자가 명시적으로 "현위치" 버튼을 눌렀을 때만 실행
       setIsMapLoaded(true);
 
       // 지도 컨테이너 크기 재계산 및 타일 재로드 (부분 로딩 방지)
@@ -848,13 +734,128 @@ export function MapView({
     };
   }, [map]);
 
-  // 현재 위치로 이동
+  // 현위치 버튼 - 명시적 동의 후 드롭다운 업데이트
   const moveToCurrentLocation = () => {
-    if (map && currentPosition) {
-      const moveLatLng = new window.kakao.maps.LatLng(currentPosition.lat, currentPosition.lng);
-      map.setCenter(moveLatLng);
-      map.setLevel(5);
+    if (!map) return;
+
+    // 1. 권한 확인 - 구군 권한은 현위치 기능 차단
+    if (userProfile?.role === 'local_admin') {
+      alert('보건소 담당자는 관할 지역만 조회 가능합니다.\n현위치 기능을 사용할 수 없습니다.');
+      return;
     }
+
+    // 2. 명시적 동의 확인
+    const confirmed = window.confirm(
+      '현재 위치로 이동하시겠습니까?\n\n' +
+      '위치 접근 권한이 필요하며, 선택한 지역 필터가 현재 위치로 변경됩니다.'
+    );
+    if (!confirmed) return;
+
+    // 3. Geolocation API 지원 확인
+    if (!navigator.geolocation) {
+      alert('이 브라우저는 위치 서비스를 지원하지 않습니다.');
+      return;
+    }
+
+    // 4. 위치 정보 가져오기
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const locPosition = new window.kakao.maps.LatLng(lat, lng);
+
+        // 5. 현재 위치 저장
+        setCurrentPosition({ lat, lng });
+
+        // 6. 지도 이동
+        map.setCenter(locPosition);
+        map.setLevel(5);
+
+        // 7. Geocoder로 행정구역 파악
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        geocoder.coord2RegionCode(lng, lat, function(result: any, status: any) {
+          if (status === window.kakao.maps.services.Status.OK) {
+            const region = result.find((r: any) => r.region_type === 'H');
+            if (region) {
+              const sidoFull = region.region_1depth_name;
+              const gugun = region.region_2depth_name;
+              const sidoShort = normalizeRegionName(sidoFull);
+
+              console.log('[MapView] 📍 Current location detected:', { sido: sidoShort, gugun });
+
+              // 8. 권한별 제한 확인
+              // 시도 권한: 자신의 시도 내에서만 허용
+              if (userProfile?.role === 'regional_admin') {
+                const userRegionCode = (userProfile.organization as any)?.region_code || userProfile.region_code;
+                const userRegionLabel = userRegionCode ? REGIONS.find(r => r.code === userRegionCode)?.label : null;
+
+                if (userRegionLabel && sidoShort !== userRegionLabel) {
+                  alert(`시도 담당자는 소속 지역(${userRegionLabel})만 조회 가능합니다.\n현재 위치(${sidoShort})는 조회할 수 없습니다.`);
+                  return;
+                }
+              }
+
+              // 9. regionSelected 이벤트 발송 (드롭다운 업데이트)
+              window.dispatchEvent(new CustomEvent('regionSelected', {
+                detail: { sido: sidoShort, gugun }
+              }));
+
+              console.log('[MapView] ✅ Region filter updated to current location');
+            }
+          } else {
+            console.warn('[MapView] ⚠️ Geocoder failed:', status);
+            alert('현재 위치의 행정구역을 확인할 수 없습니다.');
+          }
+        });
+
+        // 10. 현위치 마커 표시
+        const currentLocationSvg = `
+          <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="15" cy="15" r="10" fill="#4285F4" stroke="white" stroke-width="3"/>
+            <circle cx="15" cy="15" r="3" fill="white"/>
+          </svg>
+        `;
+        const markerImage = new window.kakao.maps.MarkerImage(
+          'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(currentLocationSvg))),
+          new window.kakao.maps.Size(30, 30),
+          { offset: new window.kakao.maps.Point(15, 15) }
+        );
+
+        // 기존 마커 제거 (중복 방지)
+        // TODO: 마커 관리 로직 추가 필요
+
+        new window.kakao.maps.Marker({
+          position: locPosition,
+          map: map,
+          image: markerImage,
+          title: '내 위치',
+          zIndex: 999
+        });
+      },
+      (error) => {
+        console.error('[MapView] Geolocation error:', error);
+        let errorMessage = '위치 정보를 가져올 수 없습니다.';
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = '위치 접근 권한이 거부되었습니다.\n브라우저 설정에서 위치 권한을 허용해주세요.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = '위치 정보를 사용할 수 없습니다.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = '위치 정보 요청이 시간 초과되었습니다.';
+            break;
+        }
+
+        alert(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   // 장비 선택 시 지도에서 해당 위치로 이동
@@ -1162,11 +1163,27 @@ export function MapView({
           <div className="absolute bottom-8 left-4 z-10 space-y-2">
             <button
               onClick={moveToCurrentLocation}
-              className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-colors group"
-              title="내 위치로 이동"
-              disabled={!currentPosition}
+              disabled={userProfile?.role === 'local_admin'}
+              className={`rounded-full p-3 shadow-lg transition-colors group ${
+                userProfile?.role === 'local_admin'
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-white hover:bg-gray-100'
+              }`}
+              title={
+                userProfile?.role === 'local_admin'
+                  ? '보건소 담당자는 현위치 기능을 사용할 수 없습니다'
+                  : '현위치로 이동 (위치 권한 필요)'
+              }
             >
-              <svg className="w-6 h-6 text-gray-700 group-hover:text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg
+                className={`w-6 h-6 transition-colors ${
+                  userProfile?.role === 'local_admin'
+                    ? 'text-gray-500'
+                    : 'text-gray-700 group-hover:text-blue-500'
+                }`}
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
               </svg>
             </button>

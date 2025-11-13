@@ -38,9 +38,9 @@ export const ROLE_INFO: Record<UserRole, RoleInfo> = {
   },
   regional_emergency_center_admin: {
     value: 'regional_emergency_center_admin',
-    label: '시도응급의료지원센터',
-    description: '해당 시도 AED 조회 및 관리 권한 (@nmc.or.kr)',
-    accessLevel: 'regional',
+    label: '응급의료지원센터',
+    description: '전국 AED 조회 및 관리 권한 (@nmc.or.kr)',
+    accessLevel: 'national',
     color: 'cyan',
     canApproveUsers: true
   },
@@ -190,4 +190,80 @@ export function getRegionDisplay(regionCode: string | null): string {
 
   // 3. 매핑 실패 시 원본 코드 반환
   return regionCode;
+}
+
+/**
+ * 권한 체크 헬퍼 함수들
+ * 하드코딩된 권한 배열 대신 ROLE_INFO의 accessLevel을 기반으로 동적 판단
+ */
+
+/**
+ * 전국 권한 여부 확인
+ * master, emergency_center_admin, regional_emergency_center_admin, ministry_admin
+ */
+export function hasNationalAccess(role: UserRole): boolean {
+  return ROLE_INFO[role]?.accessLevel === 'national';
+}
+
+/**
+ * 시도 권한 여부 확인
+ * regional_admin
+ */
+export function hasRegionalAccess(role: UserRole): boolean {
+  return ROLE_INFO[role]?.accessLevel === 'regional';
+}
+
+/**
+ * 시군구 권한 여부 확인
+ * local_admin, temporary_inspector 등
+ */
+export function hasLocalAccess(role: UserRole): boolean {
+  return ROLE_INFO[role]?.accessLevel === 'local';
+}
+
+/**
+ * 사용자 승인 권한 여부 확인
+ */
+export function canApprove(role: UserRole): boolean {
+  return ROLE_INFO[role]?.canApproveUsers || false;
+}
+
+/**
+ * 전국 권한 역할 목록 반환
+ * 동적으로 accessLevel === 'national'인 역할들을 필터링
+ */
+export function getNationalRoles(): UserRole[] {
+  return Object.keys(ROLE_INFO).filter(
+    role => ROLE_INFO[role as UserRole].accessLevel === 'national'
+  ) as UserRole[];
+}
+
+/**
+ * 시도 권한 역할 목록 반환
+ * 동적으로 accessLevel === 'regional'인 역할들을 필터링
+ */
+export function getRegionalRoles(): UserRole[] {
+  return Object.keys(ROLE_INFO).filter(
+    role => ROLE_INFO[role as UserRole].accessLevel === 'regional'
+  ) as UserRole[];
+}
+
+/**
+ * 시군구 권한 역할 목록 반환
+ * 동적으로 accessLevel === 'local'인 역할들을 필터링
+ */
+export function getLocalRoles(): UserRole[] {
+  return Object.keys(ROLE_INFO).filter(
+    role => ROLE_INFO[role as UserRole].accessLevel === 'local'
+  ) as UserRole[];
+}
+
+/**
+ * 승인 가능 역할 목록 반환
+ * 동적으로 canApproveUsers === true인 역할들을 필터링
+ */
+export function getApproverRoles(): UserRole[] {
+  return Object.keys(ROLE_INFO).filter(
+    role => ROLE_INFO[role as UserRole].canApproveUsers
+  ) as UserRole[];
 }

@@ -360,7 +360,7 @@ export function getRoleDisplayName(role: UserRole): string {
   const names: Record<UserRole, string> = {
     master: 'Master',
     emergency_center_admin: '중앙응급의료센터',
-    regional_emergency_center_admin: '지역응급의료지원센터',
+    regional_emergency_center_admin: '응급의료지원센터',
     ministry_admin: '보건복지부',
     regional_admin: '시도 관리자',
     local_admin: '보건소 담당자',

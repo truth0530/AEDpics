@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     // 응급센터 역할인 경우 organizationId 필수
     if (role === 'regional_emergency_center_admin' && !organizationId) {
       return NextResponse.json(
-        { error: '지역응급의료지원센터는 소속기관 ID가 필수입니다. 소속기관을 선택해주세요.' },
+        { error: '응급의료지원센터는 소속기관 ID가 필수입니다. 소속기관을 선택해주세요.' },
         { status: 400 }
       );
     }
@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
       const roleNames: Record<string, string> = {
         'master': 'Master 관리자',
         'emergency_center_admin': '중앙응급의료센터 관리자',
-        'regional_emergency_center_admin': '지역응급의료지원센터 관리자',
+        'regional_emergency_center_admin': '응급의료지원센터 관리자',
         'ministry_admin': '보건복지부 관리자',
         'regional_admin': '시도 관리자',
         'local_admin': '보건소 담당자',
@@ -433,7 +433,7 @@ export async function POST(request: NextRequest) {
       const roleLabels: Record<string, string> = {
         'master': '최고 관리자',
         'emergency_center_admin': '중앙응급의료센터 관리자',
-        'regional_emergency_center_admin': '지역응급의료지원센터 관리자',
+        'regional_emergency_center_admin': '응급의료지원센터 관리자',
         'local_admin': '보건소 담당자',
         'health_center_admin': '보건소 관리자'
       };

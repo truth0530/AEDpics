@@ -2,6 +2,7 @@
 
 import { UserRole } from '@/packages/types';
 import { env } from '@/lib/env';
+import { hasNationalAccess as checkNationalAccess, canApprove } from '@/lib/utils/user-roles';
 
 // 공공기관 이메일 도메인
 export const PUBLIC_EMAIL_DOMAINS = ['korea.kr', 'nmc.or.kr'];
@@ -121,24 +122,28 @@ export const isMasterAdmin = (email: string): boolean => {
 // - 중앙응급의료센터 계정 (emergency_center_admin): 일반 사용자 및 신규 NMC 직원 승인 가능
 // - 응급의료지원센터 계정 (regional_emergency_center_admin): 해당 지역 사용자 승인 가능
 // - 이를 통해 NMC 직원간 상호 검증 및 승인 체계 구성
+// ✅ ROLE_INFO.canApproveUsers를 기반으로 동적 판단
 export const canApproveUsers = (role: UserRole): boolean => {
-  return role === 'master' || role === 'emergency_center_admin' || role === 'regional_emergency_center_admin';
+  return canApprove(role);
 };
 
 // 지역 권한 체크
+// ✅ ROLE_INFO.accessLevel을 기반으로 동적 판단
 export const hasRegionalAccess = (
   userRole: UserRole,
   userRegionCode: string | undefined,
   targetRegionCode: string
 ): boolean => {
-  if (userRole === 'master' || userRole === 'emergency_center_admin' || userRole === 'ministry_admin') {
-    return true; // 전국 권한
+  // 전국 권한: accessLevel === 'national'
+  if (checkNationalAccess(userRole)) {
+    return true;
   }
-  
-  if (userRole === 'regional_admin' && userRegionCode) {
+
+  // 시도 권한: accessLevel === 'regional', region_code 일치 확인
+  if (userRegionCode) {
     return userRegionCode === targetRegionCode;
   }
-  
+
   return false;
 };
 

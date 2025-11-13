@@ -9,6 +9,7 @@ import { InspectionFilterBar } from './InspectionFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
 import { REGION_CODE_TO_DB_LABELS } from '@/lib/constants/regions';
+import { hasNationalAccess } from '@/lib/utils/user-roles';
 import {
   getActiveInspectionSessions,
   getCompletedInspections,
@@ -188,10 +189,14 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         })));
 
         // 필터 상태에 따라 클라이언트 사이드 필터링 적용
-        // ⚠️ CRITICAL: local_admin은 API가 이미 권한 기반 필터링했으므로 건너뜀
-        // 전국 권한 사용자만 클라이언트 필터링 적용
-        console.log('[AdminFullView Debug] local_admin 체크:', user?.role !== 'local_admin');
-        if (user?.role !== 'local_admin' && filters.regionCodes && filters.regionCodes.length > 0) {
+        // ⚠️ CRITICAL: API가 이미 권한 기반 필터링했으므로 전국 권한 사용자만 클라이언트 필터링 적용
+        // 전국 권한: accessLevel === 'national' (동적 판단)
+        // 시도 권한: accessLevel === 'regional' (API 필터링만 사용)
+        // 시군구 권한: accessLevel === 'local' (API 필터링만 사용)
+        const hasNationalAccessFlag = user?.role ? hasNationalAccess(user.role) : false;
+        console.log('[AdminFullView Debug] hasNationalAccess 체크:', hasNationalAccessFlag);
+
+        if (hasNationalAccessFlag && filters.regionCodes && filters.regionCodes.length > 0) {
           // 코드를 한글 라벨로 변환 (예: 'SEO' → '서울특별시')
           const regionLabels = filters.regionCodes
             .flatMap(code => REGION_CODE_TO_DB_LABELS[code] || [])
@@ -205,10 +210,9 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           });
         }
 
-        // ⚠️ CRITICAL: cityCodes 필터는 API가 이미 권한 기반으로 필터링했으므로
-        // 클라이언트에서 추가 필터링하지 않음 (이중 필터링 방지)
-        // local_admin이 아닌 경우에만 클라이언트 필터링 적용
-        if (user?.role !== 'local_admin' && filters.cityCodes && filters.cityCodes.length > 0) {
+        // ⚠️ CRITICAL: cityCodes 필터는 전국 권한 사용자만 클라이언트 필터링 적용
+        // 시도/시군구 권한은 API가 이미 권한 기반으로 필터링했으므로 클라이언트 필터링 하지 않음
+        if (hasNationalAccessFlag && filters.cityCodes && filters.cityCodes.length > 0) {
           history = history.filter(item => {
             const itemGugun = (item as any).aed_data?.gugun;
             if (!itemGugun) return true;
@@ -226,26 +230,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     loadInspectionHistory();
   }, [viewMode, statusFilter, filterMode, user?.role, filters.regionCodes, filters.cityCodes]);
 
-  // AdminFullView 레벨에서 mapRegionChanged 이벤트 리스닝
-  useEffect(() => {
-    const handleMapRegionChanged = (event: CustomEvent) => {
-      const { sido, gugun } = event.detail;
-      console.log('[AdminFullView] 🗺️ mapRegionChanged received:', { sido, gugun });
-
-      // 필터 업데이트 (AEDFilterBar의 이벤트와 동일한 동작)
-      setFilters({
-        regionCodes: [sido],
-        cityCodes: [gugun],
-        queryCriteria: 'address',
-      });
-    };
-
-    window.addEventListener('mapRegionChanged', handleMapRegionChanged as EventListener);
-
-    return () => {
-      window.removeEventListener('mapRegionChanged', handleMapRegionChanged as EventListener);
-    };
-  }, [setFilters]);
+  // ✅ mapRegionChanged 이벤트 제거 - 드롭다운 선택만 필터 업데이트
 
   // 데이터 필터링: viewMode에 따라
   // 🔴 Phase A: 상태 우선순위 로직 - inspection_status 기반 필터링

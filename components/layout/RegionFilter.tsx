@@ -38,42 +38,18 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   // regional_emergency_center_admin는 자신의 관할 지역을 기본값으로 설정
   // ministry_admin, emergency_center_admin, master는 '시도' (전체)를 기본값으로 설정
   const getInitialSido = () => {
-    // sessionStorage 값이 있으면 우선 사용 (위치 기반)
-    if (typeof window !== 'undefined') {
-      const storedSido = window.sessionStorage.getItem('selectedSido');
-      if (storedSido && storedSido !== '시도') {
-        // 권한 체크: 시도 변경 불가능한 사용자는 자신의 지역만
-        if (!canChangeSidoRole && storedSido !== userRegionLabel) {
-          console.log('[RegionFilter] User cannot change sido, using user region:', userRegionLabel);
-          return userRegionLabel;
-        }
-        return storedSido;
-      }
-    }
-
+    // ✅ sessionStorage 제거 - 순수하게 사용자 프로필 기반 초기화
     if (user.role === 'regional_emergency_center_admin') {
-      return userRegionLabel; // 자신의 관할 지역
+      return userRegionLabel; // 자신의 관할 지역 (변경 가능)
     } else if (canChangeSidoRole) {
-      return '시도'; // 전체
+      return '시도'; // 전국 권한: 전체
     } else {
-      return userRegionLabel; // 자신의 지역
+      return userRegionLabel; // 시도/구군 권한: 자신의 지역 (고정)
     }
   };
 
   const getInitialGugun = () => {
-    // sessionStorage 값이 있으면 우선 사용 (위치 기반)
-    if (typeof window !== 'undefined') {
-      const storedGugun = window.sessionStorage.getItem('selectedGugun');
-      if (storedGugun && storedGugun !== '전체') {
-        // 보건소 담당자: 자신의 구군만 허용
-        if (isHealthCenterStaff && storedGugun !== userCity) {
-          console.log('[RegionFilter] Health center staff can only view their city:', userCity);
-          return userCity;
-        }
-        return storedGugun;
-      }
-    }
-
+    // ✅ sessionStorage 제거 - 순수하게 사용자 프로필 기반 초기화
     // 보건소 담당자는 자신의 구군으로 고정
     if (isHealthCenterStaff) {
       return userCity;
@@ -93,12 +69,12 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // sessionStorage 값 변경 감지 (지도에서 위치 이동 시)
+  // ✅ regionSelected 이벤트 구독 (사용자가 드롭다운에서 선택하거나 현위치 버튼 클릭 시)
   useEffect(() => {
-    const handleStorageChange = (e: CustomEvent) => {
+    const handleRegionSelected = (e: CustomEvent) => {
       const { sido, gugun } = e.detail;
 
-      console.log('[RegionFilter] Map region changed:', { sido, gugun });
+      console.log('[RegionFilter] Region selected:', { sido, gugun });
 
       // 시도 체크 및 업데이트
       if (sido && sido !== '시도') {
@@ -121,8 +97,8 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
       }
     };
 
-    window.addEventListener('mapRegionChanged', handleStorageChange as EventListener);
-    return () => window.removeEventListener('mapRegionChanged', handleStorageChange as EventListener);
+    window.addEventListener('regionSelected', handleRegionSelected as EventListener);
+    return () => window.removeEventListener('regionSelected', handleRegionSelected as EventListener);
   }, [canChangeSidoRole, userRegionLabel, isHealthCenterStaff, userCity]);
 
   // 권한 체크:

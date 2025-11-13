@@ -6,6 +6,12 @@ import { UserRole, UserProfile } from '@/packages/types';
 // from '@/lib/supabase/client';
 import { getRegionCode, mapCityCodeToGugun, extractRegionFromOrgName, normalizeJurisdictionName } from '@/lib/constants/regions';
 import { logger } from '@/lib/logger';
+import {
+  hasNationalAccess,
+  canApprove as canApproveUsers,
+  getNationalRoles,
+  ROLE_INFO
+} from '@/lib/utils/user-roles';
 
 function deriveOrganizationName(profile: UserProfile): string | null {
   return profile.organization?.name || profile.organization_name || null;
@@ -236,8 +242,10 @@ export function canPerformInspection(context: AccessContext): boolean {
   }
 
   // Public account users with appropriate roles
+  // ✅ ROLE_INFO 기반 동적 판단: 전국/시도/시군구 관리자 (상태 역할 제외)
   if (context.accountType === 'public') {
-    return ['master', 'emergency_center_admin', 'regional_emergency_center_admin', 'ministry_admin', 'regional_admin', 'local_admin'].includes(context.role);
+    const excludedRoles: UserRole[] = ['pending_approval', 'email_verified', 'rejected', 'temporary_inspector'];
+    return !excludedRoles.includes(context.role);
   }
 
   return false;
@@ -246,8 +254,10 @@ export function canPerformInspection(context: AccessContext): boolean {
 // Check if user can view reports
 export function canViewReports(context: AccessContext): boolean {
   // Public account users with appropriate roles
+  // ✅ ROLE_INFO 기반 동적 판단: 전국/시도/시군구 관리자 (temporary_inspector 및 상태 역할 제외)
   if (context.accountType === 'public') {
-    return ['master', 'emergency_center_admin', 'ministry_admin', 'regional_admin', 'local_admin'].includes(context.role);
+    const excludedRoles: UserRole[] = ['temporary_inspector', 'pending_approval', 'email_verified', 'rejected'];
+    return !excludedRoles.includes(context.role);
   }
 
   // Temporary inspectors cannot view reports
@@ -257,8 +267,9 @@ export function canViewReports(context: AccessContext): boolean {
 // Check if user can manage other users
 export function canManageUsers(context: AccessContext): boolean {
   // Only public account users with admin roles
+  // ✅ ROLE_INFO.canApproveUsers 기반 동적 판단
   if (context.accountType === 'public') {
-    return ['master', 'emergency_center_admin', 'regional_emergency_center_admin'].includes(context.role);
+    return canApproveUsers(context.role);
   }
 
   return false;
@@ -267,8 +278,9 @@ export function canManageUsers(context: AccessContext): boolean {
 // Check if user can approve pending accounts
 export function canApproveAccounts(context: AccessContext): boolean {
   // Only public account users with admin roles
+  // ✅ ROLE_INFO.canApproveUsers 기반 동적 판단
   if (context.accountType === 'public') {
-    return ['master', 'emergency_center_admin', 'regional_emergency_center_admin'].includes(context.role);
+    return canApproveUsers(context.role);
   }
 
   return false;
@@ -528,14 +540,11 @@ export function resolveAccessScope(userProfile: UserProfile): UserAccessScope {
   const isNMC = emailDomain === 'nmc.or.kr';
   const isKorea = emailDomain === 'korea.kr';
 
-  // 전국 권한: @nmc.or.kr 또는 보건복지부(@korea.kr의 ministry_admin)
-  const hasNationalAccess = isNMC ||
-    (isKorea && userProfile.role === 'ministry_admin') ||
-    userProfile.role === 'master' ||
-    userProfile.role === 'emergency_center_admin' ||
-    userProfile.role === 'regional_emergency_center_admin';
+  // 전국 권한: ROLE_INFO.accessLevel === 'national' 기반 동적 판단
+  // ✅ @nmc.or.kr 또는 보건복지부(@korea.kr의 ministry_admin) 또는 master
+  const hasNationalAccessCheck = hasNationalAccess(userProfile.role);
 
-  if (hasNationalAccess) {
+  if (hasNationalAccessCheck) {
     // 전국 접근 가능: NULL로 제한 없음 표시
     allowedRegionCodes = null;
     allowedCityCodes = null;
