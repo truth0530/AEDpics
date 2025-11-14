@@ -1,0 +1,56 @@
+[
+  {
+    "name": "POST /api/tnms/recommend - Unauthenticated",
+    "endpoint": "/api/tnms/recommend",
+    "method": "POST",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "timestamp": "2025-11-14T07:29:58.460Z"
+  },
+  {
+    "name": "GET /api/tnms/recommend - Unauthenticated",
+    "endpoint": "/api/tnms/recommend?institution_name=test",
+    "method": "GET",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "timestamp": "2025-11-14T07:29:58.706Z"
+  },
+  {
+    "name": "GET /api/tnms/validate - Unauthenticated",
+    "endpoint": "/api/tnms/validate?validation_run_id=test",
+    "method": "GET",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "timestamp": "2025-11-14T07:29:59.053Z"
+  },
+  {
+    "name": "POST /api/tnms/validate - Unauthenticated",
+    "endpoint": "/api/tnms/validate",
+    "method": "POST",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "timestamp": "2025-11-14T07:29:59.300Z"
+  },
+  {
+    "name": "GET /api/tnms/metrics - Unauthenticated",
+    "endpoint": "/api/tnms/metrics",
+    "method": "GET",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "timestamp": "2025-11-14T07:29:59.703Z"
+  },
+  {
+    "name": "POST /api/tnms/metrics - Unauthenticated",
+    "endpoint": "/api/tnms/metrics",
+    "method": "POST",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "timestamp": "2025-11-14T07:29:59.958Z"
+  }
+]
