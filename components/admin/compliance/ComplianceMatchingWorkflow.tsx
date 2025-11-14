@@ -304,7 +304,12 @@ export default function ComplianceMatchingWorkflow({
       if (existingItemIndex < 0) return prev;
 
       const existingItem = currentItems[existingItemIndex];
-      const currentSerials = existingItem.selected_serials || [];
+
+      // 전체 매칭 상태 (selected_serials가 undefined)이면,
+      // equipment_serials 배열을 기준으로 해당 serial 제외
+      const currentSerials = existingItem.selected_serials !== undefined
+        ? existingItem.selected_serials
+        : existingItem.equipment_serials;
 
       // 해당 장비연번 제거
       const newSerials = currentSerials.filter(s => s !== serial);

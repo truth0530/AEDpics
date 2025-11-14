@@ -243,7 +243,10 @@ export default function BasketPanel({
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => onRemoveEquipmentSerial(item.management_number, serial)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onRemoveEquipmentSerial(item.management_number, serial);
+                                    }}
                                     className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
                                   >
                                     매칭취소하기
@@ -255,9 +258,77 @@ export default function BasketPanel({
                         )}
                       </>
                     ) : (
-                      <Badge variant="outline" className="text-xs">
-                        장비 {item.equipment_count}대 (전체)
-                      </Badge>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="text-xs cursor-pointer hover:bg-muted transition-colors"
+                            onClick={() => toggleCollapsed(item.management_number)}
+                          >
+                            장비 {item.equipment_count}대 (클릭시 부분제외 가능)
+                          </Badge>
+                        </div>
+
+                        {/* 전체 매칭된 상태에서 장비가 2개 이상인 경우 펼치기/접기 버튼 표시 */}
+                        {item.equipment_count > 1 && (
+                          <div className="flex justify-center mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => toggleCollapsed(item.management_number)}
+                              className="text-xs"
+                            >
+                              {collapsedBasketItems.has(item.management_number) ? (
+                                <>
+                                  <ChevronDown className="h-3 w-3 mr-1" />
+                                  장비 {item.equipment_count}대 펼치기
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronUp className="h-3 w-3 mr-1" />
+                                  장비 {item.equipment_count}대 접기
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* 전체 매칭된 상태의 장비 리스트 (펼쳐진 경우만 표시) */}
+                        {(!collapsedBasketItems.has(item.management_number) || item.equipment_count === 1) && (
+                          <div className="space-y-1 mt-2">
+                            {item.equipment_serials.map(serial => {
+                              const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+
+                              return (
+                                <div
+                                  key={serial}
+                                  className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
+                                >
+                                  <div className="flex-1 space-y-0.5">
+                                    <div className="text-xs font-mono font-medium">{serial}</div>
+                                    {equipmentDetail?.location_detail && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {equipmentDetail.location_detail}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onRemoveEquipmentSerial(item.management_number, serial);
+                                    }}
+                                    className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                                  >
+                                    매칭취소하기
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </Card>

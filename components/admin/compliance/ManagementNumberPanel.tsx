@@ -287,23 +287,7 @@ export default function ManagementNumberPanel({
               <div className="space-y-1.5">
                 {/* 카드 클릭 가능 영역 (장비 목록 제외) */}
                 <div
-                  className={cn(
-                    "space-y-1.5",
-                    (!item.is_matched && !isPartiallyMatched && !isFullyMatched) && "cursor-pointer"
-                  )}
-                  onClick={() => {
-                    if (!item.is_matched && !isPartiallyMatched && !isFullyMatched) {
-                      // 미담긴 경우: 모든 장비 추가
-                      onAddToBasket(item);
-                    } else if (isPartiallyMatched && remainingEquipmentCount > 0) {
-                      // 부분 담긴 경우: 남은 장비들을 개별적으로 추가
-                      item.equipment_details?.forEach(detail => {
-                        if (!basketedSerials.includes(detail.serial)) {
-                          onAddEquipmentSerial(item, detail.serial);
-                        }
-                      });
-                    }
-                  }}
+                  className="space-y-1.5"
                 >
                   {/* 카드 상단 헤더 */}
                   <div className="flex items-center justify-between gap-2">
@@ -382,13 +366,9 @@ export default function ManagementNumberPanel({
                         {item.confidence.toFixed(0)}%
                       </Badge>
                     )}
-                    {isPartiallyMatched ? (
+                    {isPartiallyMatched && (
                       <Badge variant="outline" className="text-xs">
                         관리번호 1개, 장비 {item.equipment_count}대중 {basketedSerials.length}대
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs">
-                        장비 {item.equipment_count}대
                       </Badge>
                     )}
                   </div>
@@ -397,7 +377,13 @@ export default function ManagementNumberPanel({
                 {/* 장비가 2대 이상인 경우 시각적 힌트 표시 */}
                 {hasMultipleEquipment && remainingEquipmentCount > 0 && (
                   <div className="flex justify-center mt-2">
-                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <div
+                      className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpanded(item.management_number);
+                      }}
+                    >
                       {isExpanded ? (
                         <>
                           <ChevronUp className="h-3 w-3" />
@@ -436,11 +422,17 @@ export default function ManagementNumberPanel({
                             <div
                               key={detail.serial}
                               className={cn(
-                                "flex items-start justify-between gap-2 p-2 rounded",
+                                "flex items-start justify-between gap-2 p-2 rounded transition-colors",
+                                !item.is_matched && "cursor-pointer hover:opacity-80",
                                 isUniqueKeyMatched
                                   ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700"
                                   : "bg-muted/50"
                               )}
+                              onClick={() => {
+                                if (!item.is_matched) {
+                                  onAddEquipmentSerial(item, detail.serial);
+                                }
+                              }}
                             >
                               <div className="flex-1 space-y-0.5">
                                 <div className="text-xs font-mono font-medium">{detail.serial}</div>
