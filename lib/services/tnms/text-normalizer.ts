@@ -76,8 +76,10 @@ export class TextNormalizer {
 
   /**
    * 한글 숫자 정규화 (한글 -> 아라비아 숫자)
+   * 주의: "구"는 행정구역명으로 자주 사용되므로 단독으로만 변환
    */
   private normalizeKoreanNumerals(text: string): string {
+    // 행정구역 "구" 충돌 방지: 단독 한글 숫자만 변환
     const koreanToArabic: Record<string, string> = {
       '영': '0', '공': '0',
       '일': '1', '한': '1',
@@ -88,7 +90,7 @@ export class TextNormalizer {
       '육': '6', '여섯': '6',
       '칠': '7', '일곱': '7',
       '팔': '8', '여덟': '8',
-      '구': '9', '아홉': '9',
+      '아홉': '9', // '구'는 제외 (행정구역 "강서구" 등과 충돌)
     };
 
     let result = text;

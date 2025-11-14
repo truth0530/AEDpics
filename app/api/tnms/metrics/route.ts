@@ -1,14 +1,31 @@
 /**
- * TNMS 메트릭 조회 API
- * GET /api/tnms/metrics
- *
- * 일일 매칭 성공률, 신호 기여도, 커버리지 등 메트릭 조회
+ * TNMS 메트릭 조회 및 기록 API
+ * GET /api/tnms/metrics - 메트릭 조회 (모든 인증된 사용자)
+ * POST /api/tnms/metrics - 메트릭 기록 (관리자 전용)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * 관리자 권한 확인
+ */
+function isAdmin(session: any): boolean {
+  return session?.user?.role === 'admin' || session?.user?.email?.endsWith('@nmc.or.kr');
+}
+
 export async function GET(request: NextRequest) {
+  // 인증 검사
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json(
+      { error: 'Unauthorized', message: 'Authentication required' },
+      { status: 401 }
+    );
+  }
   try {
     const searchParams = request.nextUrl.searchParams;
     const start_date = searchParams.get('start_date');
@@ -202,6 +219,27 @@ export async function GET(request: NextRequest) {
  * (관리자용 - 수동 메트릭 계산)
  */
 export async function POST(request: NextRequest) {
+  // 인증 검사
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json(
+      { error: 'Unauthorized', message: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  // 관리자 권한 검사 (메트릭 기록은 관리자만 가능)
+  if (!isAdmin(session)) {
+    return NextResponse.json(
+      {
+        error: 'Forbidden',
+        message: 'Only administrators can record metrics',
+      },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { metric_date } = body;

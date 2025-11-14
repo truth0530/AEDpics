@@ -1,14 +1,31 @@
 /**
- * TNMS 검증 결과 조회 API
- * GET /api/tnms/validate
- *
- * 기관명에 대한 검증 로그 및 상세 정보 조회
+ * TNMS 검증 결과 조회 및 수정 API
+ * GET /api/tnms/validate - 검증 로그 조회 (모든 인증된 사용자)
+ * POST /api/tnms/validate - 검증 로그 수정 (관리자 전용)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/auth-options';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * 관리자 권한 확인
+ */
+function isAdmin(session: any): boolean {
+  return session?.user?.role === 'admin' || session?.user?.email?.endsWith('@nmc.or.kr');
+}
+
 export async function GET(request: NextRequest) {
+  // 인증 검사
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json(
+      { error: 'Unauthorized', message: 'Authentication required' },
+      { status: 401 }
+    );
+  }
   try {
     const searchParams = request.nextUrl.searchParams;
     const validation_run_id = searchParams.get('validation_run_id');
@@ -101,6 +118,27 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // 인증 검사
+  const session = await getServerSession(authOptions);
+
+  if (!session || !session.user) {
+    return NextResponse.json(
+      { error: 'Unauthorized', message: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  // 관리자 권한 검사 (수동 검토는 관리자만 가능)
+  if (!isAdmin(session)) {
+    return NextResponse.json(
+      {
+        error: 'Forbidden',
+        message: 'Only administrators can update validation logs',
+      },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await request.json();
     const {
@@ -127,13 +165,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 로그 업데이트
+    // 로그 업데이트 (reviewed_by는 세션의 이메일로 자동 설정)
     const updated = await prisma.institution_validation_log.update({
       where: { log_id: BigInt(log_id) },
       data: {
         manual_review_status,
         manual_review_notes: manual_review_notes || null,
-        reviewed_by: reviewed_by || null,
+        reviewed_by: session.user?.email || reviewed_by || null,
       },
     });
 
