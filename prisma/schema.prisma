@@ -1102,3 +1102,149 @@ model target_list_match_logs {
   @@index([created_at(sort: Desc)], map: "idx_match_logs_created")
   @@index([action], map: "idx_match_logs_action")
 }
+
+model administrative_regions {
+  region_code        String   @id @db.VarChar(20)
+  region_type        String?  @db.VarChar(20)
+  korean_name        String   @db.VarChar(100)
+  short_name         String?  @db.VarChar(50)
+  parent_code        String?  @db.VarChar(20)
+  level              Int?
+  is_active          Boolean  @default(true)
+  source_url         String?  @db.VarChar(500)
+  last_verified_date DateTime? @db.Date
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  parent       administrative_regions?  @relation("RegionHierarchy", fields: [parent_code], references: [region_code])
+  children     administrative_regions[] @relation("RegionHierarchy")
+  institutions institution_registry[]
+
+  @@index([korean_name], map: "idx_administrative_regions_name")
+  @@index([parent_code], map: "idx_administrative_regions_parent")
+}
+
+model institution_registry {
+  standard_code        String   @id @db.VarChar(50)
+  canonical_name       String   @db.VarChar(255)
+  region_code          String?  @db.VarChar(20)
+  category             String?  @db.VarChar(50)
+  sub_category         String?  @db.VarChar(100)
+  road_address         String?  @db.VarChar(255)
+  lot_address          String?  @db.VarChar(255)
+  postal_code          String?  @db.VarChar(10)
+  latitude             Decimal? @db.Decimal(10, 7)
+  longitude            Decimal? @db.Decimal(10, 7)
+  address_hash         String?  @db.VarChar(64)
+  is_active            Boolean  @default(true)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by           String?  @db.VarChar(255)
+  last_modified_by     String?  @db.VarChar(255)
+  last_modified_reason String?  @db.Text
+
+  region administrative_regions? @relation(fields: [region_code], references: [region_code])
+  aliases institution_aliases[]
+
+  @@index([canonical_name], map: "idx_institution_registry_name")
+  @@index([region_code], map: "idx_institution_registry_region")
+  @@index([address_hash], map: "idx_institution_registry_address_hash")
+  @@index([is_active], map: "idx_institution_registry_active")
+}
+
+model institution_aliases {
+  id                    BigInt   @id @default(autoincrement())
+  standard_code         String   @db.VarChar(50)
+  alias_name            String   @db.VarChar(255)
+  alias_source          String?  @db.VarChar(50)
+  source_road_address   String?  @db.VarChar(255)
+  source_lot_address    String?  @db.VarChar(255)
+  source_postal_code    String?  @db.VarChar(10)
+  match_score           Int      @default(100)
+  normalization_applied Boolean  @default(false)
+  address_match         Boolean  @default(false)
+  is_active             Boolean  @default(true)
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  reviewed_by           String?  @db.VarChar(255)
+  reviewed_at           DateTime? @db.Timestamptz(6)
+
+  institution institution_registry @relation(fields: [standard_code], references: [standard_code], onDelete: Cascade)
+
+  @@index([alias_name], map: "idx_institution_aliases_name")
+  @@index([alias_source], map: "idx_institution_aliases_source")
+  @@index([standard_code], map: "idx_institution_aliases_standard_code")
+  @@index([source_road_address], map: "idx_institution_aliases_address")
+}
+
+model normalization_rules {
+  rule_id     Int      @id @default(autoincrement())
+  rule_name   String   @unique @db.VarChar(100)
+  rule_type   String?  @db.VarChar(50)
+  rule_spec   Json
+  priority    Int      @default(100)
+  is_active   Boolean  @default(true)
+  description String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updated_by  String?  @db.VarChar(255)
+
+  @@index([priority], map: "idx_normalization_rules_priority")
+  @@index([is_active], map: "idx_normalization_rules_active")
+}
+
+model institution_validation_log {
+  log_id                BigInt    @id @default(autoincrement())
+  validation_run_id     String?   @db.VarChar(100)
+  run_type              String?   @db.VarChar(50)
+  source_table          String?   @db.VarChar(100)
+  source_name           String    @db.VarChar(255)
+  matched_standard_code String?   @db.VarChar(50)
+  match_confidence      Int?
+  is_successful         Boolean?
+  error_reason          String?   @db.VarChar(500)
+  manual_review_status  String?   @db.VarChar(50)
+  manual_review_notes   String?   @db.Text
+  reviewed_by           String?   @db.VarChar(255)
+  reviewed_at           DateTime? @db.Timestamptz(6)
+  debug_signals         Json?
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([validation_run_id], map: "idx_institution_validation_run")
+  @@index([is_successful], map: "idx_institution_validation_success")
+  @@index([manual_review_status], map: "idx_institution_validation_status")
+}
+
+model institution_audit_log {
+  audit_id      BigInt   @id @default(autoincrement())
+  table_name    String   @db.VarChar(100)
+  record_id     String   @db.VarChar(64)
+  action        String   @db.VarChar(50)
+  changed_fields Json?
+  actor_id      String?  @db.VarChar(255)
+  actor_role    String?  @db.VarChar(50)
+  reason        String?  @db.Text
+  ip_address    String?  @db.Inet
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([table_name, record_id], map: "idx_institution_audit_record")
+  @@index([actor_id], map: "idx_institution_audit_actor")
+  @@index([action], map: "idx_institution_audit_action")
+}
+
+model institution_metrics {
+  metric_id                   BigInt   @id @default(autoincrement())
+  metric_date                 DateTime @db.Date
+  total_institutions          Int?
+  total_aliases               Int?
+  matched_count               Int?
+  unmatched_count             Int?
+  match_success_rate          Decimal? @db.Decimal(5, 2)
+  auto_recommend_success_rate Decimal? @db.Decimal(5, 2)
+  search_hit_rate             Decimal? @db.Decimal(5, 2)
+  address_match_rate          Decimal? @db.Decimal(5, 2)
+  validation_run_count        Int?
+  created_at                  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([metric_date], map: "idx_institution_metrics_date")
+}
