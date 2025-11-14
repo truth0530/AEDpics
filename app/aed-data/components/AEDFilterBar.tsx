@@ -537,8 +537,9 @@ export function AEDFilterBar() {
 
     console.log('[AEDFilterBar] 📍 Initial sessionStorage sync:', { selectedSido, selectedGugun });
 
-    // 라벨 → 코드 변환
-    const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === selectedSido)?.[0];
+    // selectedSido는 이미 RegionFilter.tsx에서 지역코드로 변환되어 저장됨 (예: "DAE")
+    // 따라서 직접 사용하면 됨
+    const regionCode = selectedSido;
 
     if (!regionCode) {
       console.warn('[AEDFilterBar] Region code not found for:', selectedSido);
@@ -616,19 +617,18 @@ export function AEDFilterBar() {
     const selectedSido = typeof window !== 'undefined' ? window.sessionStorage.getItem('selectedSido') : null;
     const selectedGugun = typeof window !== 'undefined' ? window.sessionStorage.getItem('selectedGugun') : null;
 
-    // 라벨 → 코드 변환 (sessionStorage는 라벨('대구')을 저장)
+    // selectedSido는 이미 RegionFilter.tsx에서 지역코드로 변환되어 저장됨 (예: "DAE")
     let regionCodesToUse = draftFilters.regions;
     if (selectedSido && selectedSido !== '시도') {
-      const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === selectedSido)?.[0];
-      if (regionCode) {
-        // 권한 체크: 시도 접근 권한 검증
-        if (accessScope?.allowedRegionCodes && !accessScope.allowedRegionCodes.includes(regionCode)) {
-          console.error('[AEDFilterBar] Access denied: User cannot access region:', selectedSido);
-          alert(`접근 권한이 없는 지역입니다: ${selectedSido}`);
-          return;
-        }
-        regionCodesToUse = [regionCode];
+      // 직접 지역코드로 사용
+      const regionCode = selectedSido;
+      // 권한 체크: 시도 접근 권한 검증
+      if (accessScope?.allowedRegionCodes && !accessScope.allowedRegionCodes.includes(regionCode)) {
+        console.error('[AEDFilterBar] Access denied: User cannot access region:', selectedSido);
+        alert(`접근 권한이 없는 지역입니다: ${selectedSido}`);
+        return;
       }
+      regionCodesToUse = [regionCode];
     }
 
     // 코드 → 라벨 배열로 변환 (API route는 라벨 배열을 기대: ['서울'], ['대구'] 등)

@@ -150,7 +150,9 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   // 시도 또는 구군이 변경될 때 onChange 콜백 호출
   useEffect(() => {
     if (onChangeRef.current && selectedSido && selectedGugun) {
-      onChangeRef.current(selectedSido, selectedGugun);
+      // ✅ 한글 시도명을 지역코드로 변환 (예: "대구" → "DAE")
+      const regionCode = getRegionCode(selectedSido);
+      onChangeRef.current(regionCode || selectedSido, selectedGugun);
     }
   }, [selectedSido, selectedGugun]);
 
