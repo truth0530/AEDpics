@@ -21,37 +21,36 @@ export function validatePasswordStrength(password: string): PasswordStrength {
   if (password.length >= 12) score++;
   if (password.length >= 16) score++;
 
-  // 대문자 포함 체크
-  const hasUpperCase = /[A-Z]/.test(password);
-  if (hasUpperCase) {
-    score++;
-  } else {
-    suggestions.push('대문자를 포함하면 더 안전합니다.');
-  }
-
-  // 소문자 포함 체크 (필수로 변경)
+  // 소문자 포함 체크 (필수)
   const hasLowerCase = /[a-z]/.test(password);
   if (!hasLowerCase) {
     feedback.push('소문자는 필수입니다.');
     return { isValid: false, score: 0, feedback, suggestions: ['소문자를 반드시 포함하세요.'] };
   }
 
-  // 숫자 포함 체크 (필수로 변경)
+  // 대문자 포함 체크 (필수)
+  const hasUpperCase = /[A-Z]/.test(password);
+  if (!hasUpperCase) {
+    feedback.push('대문자는 필수입니다.');
+    return { isValid: false, score: 0, feedback, suggestions: ['대문자를 반드시 포함하세요.'] };
+  }
+  score++;
+
+  // 숫자 포함 체크 (필수)
   const hasNumber = /[0-9]/.test(password);
-  if (hasNumber) {
-    score++;
-  } else {
+  if (!hasNumber) {
     feedback.push('숫자는 필수입니다.');
     return { isValid: false, score: 0, feedback, suggestions: ['숫자를 반드시 포함하세요.'] };
   }
+  score++;
 
-  // 특수문자 포함 체크
+  // 특수문자 포함 체크 (필수)
   const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-  if (hasSpecialChar) {
-    score++;
-  } else {
-    suggestions.push('특수문자(!@#$ 등)를 포함하면 더 안전합니다.');
+  if (!hasSpecialChar) {
+    feedback.push('특수문자는 필수입니다.');
+    return { isValid: false, score: 0, feedback, suggestions: ['특수문자(!@#$ 등)를 반드시 포함하세요.'] };
   }
+  score++;
 
   // 연속된 문자 체크
   const hasSequential = /(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|123|234|345|456|567|678|789)/i.test(password);

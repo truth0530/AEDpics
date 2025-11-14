@@ -977,7 +977,7 @@ export default function ImprovedSignUpPage() {
                       setPasswordStrength(strength);
                     }}
                     className="w-full px-4 py-3 bg-gray-800/50 backdrop-blur-xl border border-gray-700 rounded-xl text-white focus:outline-none focus:border-green-500 transition-colors"
-                    placeholder="영문 소문자, 숫자 필수 포함 10자 이상"
+                    placeholder="대소문자, 숫자, 특수문자 포함 10자 이상"
                     minLength={10}
                     required
                   />
