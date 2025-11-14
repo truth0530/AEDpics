@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import Script from "next/script";
 import { KAKAO_MAP_CONFIG } from "@/lib/constants/kakao";
 import "./globals.css";
@@ -32,12 +31,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: '#22c55e',
 };
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
-  subsets: ["latin"],
-});
 
 export default function RootLayout({
   children,
@@ -92,7 +85,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className="antialiased">
         <Script
           id="kakao-map-sdk"
           data-kakao-sdk="true"
