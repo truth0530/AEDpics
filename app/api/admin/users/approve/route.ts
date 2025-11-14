@@ -181,48 +181,100 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // NMC 계정 자동 역할 및 지역 코드 설정
+    // NMC 계정 자동 역할 및 지역 코드 설정 (데이터베이스 기반)
     let finalRole: UserRole = role;
     let finalRegionCode = regionCode;
     const masterEmails = getMasterAdminEmails();
 
-    // 조직명-지역 코드 매핑 (17개 지역 응급의료지원센터)
-    const organizationToRegionMap: Record<string, string> = {
-      '중앙응급의료센터': 'KR',
-      '서울응급의료지원센터': 'SEO',
-      '부산응급의료지원센터': 'BUS',
-      '대구응급의료지원센터': 'DAE',
-      '인천응급의료지원센터': 'INC',
-      '광주응급의료지원센터': 'GWA',
-      '대전응급의료지원센터': 'DAJ',
-      '울산응급의료지원센터': 'ULS',
-      '세종응급의료지원센터': 'SEJ',
-      '경기응급의료지원센터': 'GYE',
-      '강원응급의료지원센터': 'GAN',
-      '충북응급의료지원센터': 'CHB',
-      '충남응급의료지원센터': 'CHN',
-      '전북응급의료지원센터': 'JEB',
-      '전남응급의료지원센터': 'JEN',
-      '경북응급의료지원센터': 'GYB',
-      '경남응급의료지원센터': 'GYN',
-      '제주응급의료지원센터': 'JEJ'
-    };
-
     if (targetUser.email.endsWith('@nmc.or.kr') && !masterEmails.includes(targetUser.email)) {
-      // organizationName으로 지역 코드 자동 결정
-      if (organizationName && organizationToRegionMap[organizationName]) {
-        finalRegionCode = organizationToRegionMap[organizationName];
+      // organizationId가 있으면 데이터베이스에서 조직 정보 조회
+      if (organizationId) {
+        try {
+          const organization = await prisma.organizations.findUnique({
+            where: { id: organizationId },
+            select: {
+              name: true,
+              region_code: true,
+              type: true
+            }
+          });
 
-        // 중앙응급의료센터면 emergency_center_admin
-        if (organizationName === '중앙응급의료센터') {
-          finalRole = 'emergency_center_admin';
-        } else {
-          // 17개 지역 응급의료지원센터면 regional_emergency_center_admin
-          finalRole = 'regional_emergency_center_admin';
+          if (organization) {
+            logger.info('API:approve', 'Organization lookup from database', {
+              organizationId: organizationId,
+              organizationName: organization.name,
+              regionCode: organization.region_code,
+              type: organization.type
+            });
+
+            // 데이터베이스에서 조회한 정보로 지역 코드 설정
+            if (organization.region_code) {
+              finalRegionCode = organization.region_code;
+            }
+
+            // 조직 이름으로 역할 자동 결정
+            if (organization.name === '중앙응급의료센터') {
+              finalRole = 'emergency_center_admin';
+            } else if (organization.type === 'emergency_center') {
+              // 응급의료센터 타입이면서 중앙이 아니면 지역 센터
+              finalRole = 'regional_emergency_center_admin';
+            }
+          } else {
+            // 조직을 찾을 수 없음
+            logger.error('API:approve', 'Organization not found in database', {
+              organizationId: organizationId
+            });
+          }
+        } catch (orgError) {
+          logger.error('API:approve', 'Failed to lookup organization from database', {
+            organizationId: organizationId,
+            error: orgError instanceof Error ? orgError.message : String(orgError)
+          });
         }
-      } else {
-        // organizationName이 없거나 매핑되지 않으면 기본값
-        finalRole = 'emergency_center_admin';
+      } else if (organizationName) {
+        // organizationId가 없지만 organizationName이 있으면 이름으로 검색
+        try {
+          const organization = await prisma.organizations.findFirst({
+            where: {
+              name: organizationName
+            },
+            select: {
+              name: true,
+              region_code: true,
+              type: true
+            }
+          });
+
+          if (organization) {
+            logger.info('API:approve', 'Organization lookup by name from database', {
+              organizationName: organizationName,
+              regionCode: organization.region_code,
+              type: organization.type
+            });
+
+            // 데이터베이스에서 조회한 정보로 지역 코드 설정
+            if (organization.region_code) {
+              finalRegionCode = organization.region_code;
+            }
+
+            // 조직 이름으로 역할 자동 결정
+            if (organization.name === '중앙응급의료센터') {
+              finalRole = 'emergency_center_admin';
+            } else if (organization.type === 'emergency_center') {
+              // 응급의료센터 타입이면서 중앙이 아니면 지역 센터
+              finalRole = 'regional_emergency_center_admin';
+            }
+          } else {
+            logger.warn('API:approve', 'Organization not found by name in database', {
+              organizationName: organizationName
+            });
+          }
+        } catch (orgError) {
+          logger.error('API:approve', 'Failed to lookup organization by name from database', {
+            organizationName: organizationName,
+            error: orgError instanceof Error ? orgError.message : String(orgError)
+          });
+        }
       }
     }
 
