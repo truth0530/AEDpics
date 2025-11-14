@@ -26,16 +26,21 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
   const router = useRouter()
   const pageTitle = PAGE_TITLES[pathname] || "대시보드"
 
-  const handleRegionChange = (sido: string, gugun: string) => {
+  const handleRegionChange = (sidoCode: string, gugun: string, sidoLabel: string) => {
     // 시도/구군이 변경되면 전역 상태로 저장
     if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('selectedSido', sido);
+      window.sessionStorage.setItem('selectedSido', sidoLabel);
+      if (sidoCode && sidoCode !== '시도') {
+        window.sessionStorage.setItem('selectedSidoCode', sidoCode);
+      } else {
+        window.sessionStorage.removeItem('selectedSidoCode');
+      }
       window.sessionStorage.setItem('selectedGugun', gugun);
 
       // inspection 페이지를 위해 regionSelected 이벤트 발송
-      console.log('[AppHeader] 📍 Region changed in header, dispatching event:', { sido, gugun });
+      console.log('[AppHeader] 📍 Region changed in header, dispatching event:', { regionCode: sidoCode, sidoLabel, gugun });
       window.dispatchEvent(new CustomEvent('regionSelected', {
-        detail: { sido, gugun }
+        detail: { sido: sidoLabel, gugun, regionCode: sidoCode }
       }));
     }
   };

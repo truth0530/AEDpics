@@ -8,7 +8,7 @@ import type { GugunHierarchy } from '@/lib/constants/regions';
 
 interface RegionFilterProps {
   user: UserProfile;
-  onChange?: (sido: string, gugun: string) => void;
+  onChange?: (sidoCode: string, gugun: string, sidoLabel: string) => void;
 }
 
 // 시도 목록 (짧은 이름 사용: "서울", "부산" 등)
@@ -152,7 +152,7 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     if (onChangeRef.current && selectedSido && selectedGugun) {
       // ✅ 한글 시도명을 지역코드로 변환 (예: "대구" → "DAE")
       const regionCode = getRegionCode(selectedSido);
-      onChangeRef.current(regionCode || selectedSido, selectedGugun);
+      onChangeRef.current(regionCode || selectedSido, selectedGugun, selectedSido);
     }
   }, [selectedSido, selectedGugun]);
 

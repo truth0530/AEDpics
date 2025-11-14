@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
-import { REGIONS, normalizeRegionName } from '@/lib/constants/regions';
+import { REGIONS, normalizeRegionName, getRegionCode } from '@/lib/constants/regions';
 import { useAEDData } from '@/app/aed-data/components/AEDDataProvider';
 
 interface AEDMapLocation {
@@ -796,8 +796,9 @@ export function MapView({
               }
 
               // 9. regionSelected 이벤트 발송 (드롭다운 업데이트)
+              const regionCode = getRegionCode(sidoShort);
               window.dispatchEvent(new CustomEvent('regionSelected', {
-                detail: { sido: sidoShort, gugun }
+                detail: { sido: sidoShort, gugun, regionCode }
               }));
 
               console.log('[MapView] ✅ Region filter updated to current location');

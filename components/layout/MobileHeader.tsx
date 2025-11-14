@@ -34,11 +34,16 @@ function MobileHeaderComponent({ user }: MobileHeaderProps) {
     }
   };
 
-  const handleRegionChange = (sido: string, gugun: string) => {
+  const handleRegionChange = (sidoCode: string, gugun: string, sidoLabel: string) => {
     // 시도/구군이 변경되면 전역 상태로 저장 (이벤트 없이)
     // 실제 조회는 각 페이지의 '조회' 버튼을 통해서만 수행됨
     if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('selectedSido', sido);
+      window.sessionStorage.setItem('selectedSido', sidoLabel);
+      if (sidoCode && sidoCode !== '시도') {
+        window.sessionStorage.setItem('selectedSidoCode', sidoCode);
+      } else {
+        window.sessionStorage.removeItem('selectedSidoCode');
+      }
       window.sessionStorage.setItem('selectedGugun', gugun);
     }
   };

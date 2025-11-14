@@ -10,7 +10,7 @@ import { MapView } from '@/components/inspection/MapView';
 import { ScheduleModal } from '@/app/aed-data/components/ScheduleModal';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
 import type { UserProfile } from '@/packages/types';
-import { normalizeRegionName } from '@/lib/constants/regions';
+import { normalizeRegionName, getRegionCode } from '@/lib/constants/regions';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
 import { useAEDDataFreshness } from '@/lib/hooks/use-aed-data-cache';
 import { getActiveInspectionSessions, getCompletedInspections, InspectionSession } from '@/lib/inspections/session-utils';
@@ -336,8 +336,9 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
 
                       // ✅ 필터바에 알림 (드롭다운 업데이트용) - regionSelected 이벤트 사용
                       setTimeout(() => {
+                        const regionCode = getRegionCode(sidoShort);
                         window.dispatchEvent(new CustomEvent('regionSelected', {
-                          detail: { sido: sidoShort, gugun }
+                          detail: { sido: sidoShort, gugun, regionCode }
                         }));
                       }, 100);
 

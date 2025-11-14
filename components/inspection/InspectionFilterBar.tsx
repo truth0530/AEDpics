@@ -27,7 +27,7 @@ export function InspectionFilterBar() {
   // 헤더의 RegionFilter에서 발송하는 이벤트 수신
   useEffect(() => {
     const handleRegionSelected = (e: CustomEvent) => {
-      const { sido, gugun } = e.detail;
+      const { sido, gugun, regionCode } = e.detail;
       console.log('[InspectionFilterBar] Region selected from header:', { sido, gugun });
 
       setRegionFilter({ sido, gugun });
@@ -35,6 +35,11 @@ export function InspectionFilterBar() {
       // sessionStorage에도 저장 (페이지 새로고침 시 유지)
       if (typeof window !== 'undefined') {
         window.sessionStorage.setItem('selectedSido', sido);
+        if (regionCode && regionCode !== '시도') {
+          window.sessionStorage.setItem('selectedSidoCode', regionCode);
+        } else {
+          window.sessionStorage.removeItem('selectedSidoCode');
+        }
         window.sessionStorage.setItem('selectedGugun', gugun);
       }
     };

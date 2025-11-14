@@ -28,6 +28,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { REGION_LABELS } from '@/lib/constants/filter-labels';
+import { getRegionCode } from '@/lib/constants/regions';
 import type { ExpiryFilter, ExternalDisplayFilter } from '@/lib/constants/aed-filters';
 import type { QueryCriteria } from '@/lib/constants/query-criteria';
 import { cn } from '@/lib/utils';
@@ -214,12 +215,15 @@ export function AEDFilterBar() {
   // AppHeader에서 발송하는 regionSelected 이벤트 리스너 (Header -> FilterBar)
   useEffect(() => {
     const handleRegionSelected = (event: CustomEvent) => {
-      const { sido, gugun } = event.detail;
-      console.log('[AEDFilterBar] 📍 regionSelected received from header:', { sido, gugun });
+      const { sido: regionLabel, gugun, regionCode: eventRegionCode } = event.detail;
+      console.log('[AEDFilterBar] 📍 regionSelected received from header:', {
+        regionLabel,
+        regionCode: eventRegionCode,
+        gugun,
+      });
 
       // "시도"는 전체 선택을 의미함
-      if (sido === '시도') {
-        // 전체 시도 선택 - 필터 초기화
+      if (regionLabel === '시도') {
         setDraftFilters(prev => ({
           ...prev,
           regions: [],
@@ -234,25 +238,24 @@ export function AEDFilterBar() {
         return;
       }
 
-      // 지역 라벨 → 코드 변환
-      const regionCode = Object.entries(REGION_LABELS).find(([_, label]) => label === sido)?.[0];
+      const normalizedRegionCode = eventRegionCode && eventRegionCode !== '시도'
+        ? eventRegionCode
+        : getRegionCode(regionLabel);
 
-      if (!regionCode) {
-        console.warn('[AEDFilterBar] Region code not found for:', sido);
+      if (!normalizedRegionCode || normalizedRegionCode === '시도') {
+        console.warn('[AEDFilterBar] Region code not found for:', regionLabel);
         return;
       }
 
-      // draftFilters 업데이트 (드롭다운 UI 동기화)
       setDraftFilters(prev => ({
         ...prev,
-        regions: [regionCode],
+        regions: [normalizedRegionCode],
         cities: gugun === '구군' ? [] : [gugun]
       }) as any);
 
-      // 필터 즉시 적용 (API 호출) - 기존 필터 유지하면서 지역만 업데이트
       (setFilters as any)((prev: any) => ({
         ...prev,
-        regionCodes: [sido],
+        regionCodes: [normalizedRegionCode],
         cityCodes: gugun === '구군' ? undefined : [gugun],
       }));
     };
@@ -532,19 +535,15 @@ export function AEDFilterBar() {
 
     const selectedSido = window.sessionStorage.getItem('selectedSido');
     const selectedGugun = window.sessionStorage.getItem('selectedGugun');
+    const storedRegionCode = window.sessionStorage.getItem('selectedSidoCode');
 
-    if (!selectedSido || selectedSido === '시도') return;
+    const regionCode = storedRegionCode && storedRegionCode !== '시도'
+      ? storedRegionCode
+      : (selectedSido && selectedSido !== '시도' ? getRegionCode(selectedSido) : undefined);
 
-    console.log('[AEDFilterBar] 📍 Initial sessionStorage sync:', { selectedSido, selectedGugun });
+    if (!regionCode) return;
 
-    // selectedSido는 이미 RegionFilter.tsx에서 지역코드로 변환되어 저장됨 (예: "DAE")
-    // 따라서 직접 사용하면 됨
-    const regionCode = selectedSido;
-
-    if (!regionCode) {
-      console.warn('[AEDFilterBar] Region code not found for:', selectedSido);
-      return;
-    }
+    console.log('[AEDFilterBar] 📍 Initial sessionStorage sync:', { selectedSido, selectedGugun, regionCode });
 
     // 권한 체크: 허용되지 않은 지역이면 무시
     if (accessScope?.allowedRegionCodes && !accessScope.allowedRegionCodes.includes(regionCode)) {
@@ -614,25 +613,25 @@ export function AEDFilterBar() {
     }
 
     // sessionStorage에서 시도/구군 값 읽기 (헤더의 RegionFilter에서 설정한 값)
-    const selectedSido = typeof window !== 'undefined' ? window.sessionStorage.getItem('selectedSido') : null;
+    const selectedSidoLabel = typeof window !== 'undefined' ? window.sessionStorage.getItem('selectedSido') : null;
+    const selectedSidoCode = typeof window !== 'undefined' ? window.sessionStorage.getItem('selectedSidoCode') : null;
     const selectedGugun = typeof window !== 'undefined' ? window.sessionStorage.getItem('selectedGugun') : null;
 
-    // selectedSido는 이미 RegionFilter.tsx에서 지역코드로 변환되어 저장됨 (예: "DAE")
     let regionCodesToUse = draftFilters.regions;
-    if (selectedSido && selectedSido !== '시도') {
-      // 직접 지역코드로 사용
-      const regionCode = selectedSido;
+    const resolvedHeaderRegionCode = selectedSidoCode && selectedSidoCode !== '시도'
+      ? selectedSidoCode
+      : (selectedSidoLabel && selectedSidoLabel !== '시도' ? getRegionCode(selectedSidoLabel) : undefined);
+
+    if (resolvedHeaderRegionCode) {
+      const regionCode = resolvedHeaderRegionCode;
       // 권한 체크: 시도 접근 권한 검증
       if (accessScope?.allowedRegionCodes && !accessScope.allowedRegionCodes.includes(regionCode)) {
-        console.error('[AEDFilterBar] Access denied: User cannot access region:', selectedSido);
-        alert(`접근 권한이 없는 지역입니다: ${selectedSido}`);
+        console.error('[AEDFilterBar] Access denied: User cannot access region:', selectedSidoLabel);
+        alert(`접근 권한이 없는 지역입니다: ${selectedSidoLabel}`);
         return;
       }
       regionCodesToUse = [regionCode];
     }
-
-    // 코드 → 라벨 배열로 변환 (API route는 라벨 배열을 기대: ['서울'], ['대구'] 등)
-    const regionLabels = regionCodesToUse?.map(code => REGION_LABELS[code]).filter(Boolean);
 
     // 구군 필터링 ('구군' 기본값 및 '전체' 제거)
     const cityToUse = (selectedGugun && selectedGugun !== '구군' && selectedGugun !== '전체')
@@ -651,9 +650,8 @@ export function AEDFilterBar() {
     }
 
     console.log('[AEDFilterBar] handleApply - Region conversion:', {
-      selectedSido,
-      regionCode: regionCodesToUse?.[0],
-      regionLabels,
+      selectedSidoLabel,
+      regionCodesToUse,
       selectedGugun,
       cityToUse,
       accessScope: {
@@ -664,7 +662,7 @@ export function AEDFilterBar() {
 
     // 헤더에서 선택한 값이 있으면 우선 사용, 없으면 draftFilters 사용
     const finalFilters = {
-      regionCodes: regionLabels,
+      regionCodes: regionCodesToUse,
       cityCodes: cityToUse,
       battery_expiry_date: normalizeExpiryFilter(draftFilters.battery_expiry_date),
       patch_expiry_date: normalizeExpiryFilter(draftFilters.patch_expiry_date),
