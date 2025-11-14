@@ -294,11 +294,10 @@ export const GET = async (request: NextRequest) => {
     const finalRegionCodes = enforcedFilters.regionCodes;
     const finalCityCodes = enforcedFilters.cityCodes;
 
-    // 지역 코드를 DB에 저장된 한글 라벨로 변환 (짧은 형태 + 긴 형태 모두 포함)
+    // 지역 코드를 DB에 저장된 한글 라벨로 변환 (정식명칭: 대구광역시, 경기도 등)
+    // ✅ mapRegionCodesToDbLabels가 이미 정확한 DB 값을 반환하므로 normalizeRegionName 제거
     const { mapRegionCodesToDbLabels } = await import('@/lib/constants/regions');
-    const regionFiltersForQuery = mapRegionCodesToDbLabels(finalRegionCodes)?.map(region =>
-      normalizeRegionName(region) ?? region
-    );
+    const regionFiltersForQuery = mapRegionCodesToDbLabels(finalRegionCodes);
     const cityFiltersForQuery = mapCityCodesToNames(finalCityCodes)?.map(city =>
       normalizeGugunForDB(city) ?? city
     )?.filter(Boolean) as string[] | undefined;
