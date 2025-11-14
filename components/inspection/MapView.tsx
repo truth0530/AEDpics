@@ -288,8 +288,25 @@ export function MapView({
     if (!container) return;
 
     try {
+      // 선택된 지역의 중심 좌표로 지도 초기화
+      const getInitialCenter = () => {
+        console.log('[MapView] 📍 getInitialCenter called, filters:', JSON.stringify(filters));
+        const regionCode = filters?.regionCodes?.[0];
+        console.log('[MapView] 📍 Extracted regionCode:', regionCode);
+        if (regionCode) {
+          const region = REGIONS.find(r => r.code === regionCode);
+          console.log('[MapView] 📍 Found region:', region);
+          if (region) {
+            console.log('[MapView] 📍 Initializing map with selected region:', { code: regionCode, label: region.label, lat: region.latitude, lng: region.longitude });
+            return new window.kakao.maps.LatLng(region.latitude, region.longitude);
+          }
+        }
+        console.log('[MapView] 📍 Initializing map with default (Seoul)');
+        return new window.kakao.maps.LatLng(37.5665, 126.9780);
+      };
+
       const options = {
-        center: new window.kakao.maps.LatLng(37.5665, 126.9780),
+        center: getInitialCenter(),
         level: 7,
       };
 
@@ -386,7 +403,43 @@ export function MapView({
       console.error('Error initializing map:', error);
       setMapError('지도 초기화 중 오류가 발생했습니다.');
     }
-  }, [useMapBasedLoading, fetchAEDByMapCenter]);
+  }, [useMapBasedLoading, fetchAEDByMapCenter, filters]);
+
+  // filters 변경 시 지도 중심 이동
+  useEffect(() => {
+    console.log('[MapView] 📍 Filters change useEffect triggered:', {
+      hasMap: !!map,
+      filters: JSON.stringify(filters),
+      regionCode: filters?.regionCodes?.[0]
+    });
+
+    if (!map) {
+      console.log('[MapView] 📍 No map yet, skipping center update');
+      return;
+    }
+
+    if (!filters?.regionCodes?.[0]) {
+      console.log('[MapView] 📍 No regionCode in filters, skipping center update');
+      return;
+    }
+
+    const regionCode = filters.regionCodes[0];
+    const region = REGIONS.find(r => r.code === regionCode);
+
+    if (region) {
+      const newCenter = new window.kakao.maps.LatLng(region.latitude, region.longitude);
+      console.log('[MapView] 📍 Moving map to selected region:', {
+        code: regionCode,
+        label: region.label,
+        lat: region.latitude,
+        lng: region.longitude
+      });
+      map.setCenter(newCenter);
+      setMapCenter({ lat: region.latitude, lng: region.longitude });
+    } else {
+      console.log('[MapView] 📍 Region not found for code:', regionCode);
+    }
+  }, [map, filters]);
 
   // 마커 추가
   const addMarkers = useCallback(() => {

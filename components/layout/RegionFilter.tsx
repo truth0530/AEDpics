@@ -76,6 +76,9 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
 
       console.log('[RegionFilter] Region selected:', { sido, gugun });
 
+      // 시도가 변경되는 경우인지 확인
+      const isSidoChanging = sido && sido !== '시도' && sido !== selectedSido;
+
       // 시도 체크 및 업데이트
       if (sido && sido !== '시도') {
         // 권한 체크: 시도 변경 불가능한 사용자는 자신의 지역만
@@ -87,7 +90,11 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
       }
 
       // 구군 체크 및 업데이트
-      if (gugun && gugun !== '구군') {
+      // 시도가 변경되는 경우에는 구군을 무시하고 '전체'로 리셋
+      if (isSidoChanging) {
+        console.log('[RegionFilter] Sido changed, resetting gugun to 전체');
+        setSelectedGugun('전체');
+      } else if (gugun && gugun !== '구군') {
         // 보건소 담당자: 자신의 구군만 허용
         if (isHealthCenterStaff && gugun !== userCity) {
           console.log('[RegionFilter] Health center staff cannot view other cities');
@@ -99,7 +106,7 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
 
     window.addEventListener('regionSelected', handleRegionSelected as EventListener);
     return () => window.removeEventListener('regionSelected', handleRegionSelected as EventListener);
-  }, [canChangeSidoRole, userRegionLabel, isHealthCenterStaff, userCity]);
+  }, [canChangeSidoRole, userRegionLabel, isHealthCenterStaff, userCity, selectedSido]);
 
   // 권한 체크:
   // - local_admin(보건소) + 비정부 이메일: 필터 숨김 (자신의 조직 지역만 조회)

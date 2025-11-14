@@ -959,6 +959,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               useMapBasedLoading={false}
               userProfile={undefined}
               viewMode="inspection"
+              filters={filters}
               onQuickInspect={(location) => {
                 // 즉시 점검 페이지로 이동
                 const serial = location.equipment_serial;

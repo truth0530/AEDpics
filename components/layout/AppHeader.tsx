@@ -29,18 +29,30 @@ function AppHeaderComponent({ user, pendingApprovalCount = 0 }: AppHeaderProps) 
   const handleRegionChange = (sidoCode: string, gugun: string, sidoLabel: string) => {
     // 시도/구군이 변경되면 전역 상태로 저장
     if (typeof window !== 'undefined') {
+      // 이전 시도 확인
+      const previousSido = window.sessionStorage.getItem('selectedSido');
+      const isSidoChanged = previousSido !== sidoLabel;
+
       window.sessionStorage.setItem('selectedSido', sidoLabel);
       if (sidoCode && sidoCode !== '시도') {
         window.sessionStorage.setItem('selectedSidoCode', sidoCode);
       } else {
         window.sessionStorage.removeItem('selectedSidoCode');
       }
-      window.sessionStorage.setItem('selectedGugun', gugun);
+
+      // 시도가 변경된 경우 구군을 강제로 '전체'로 리셋
+      const finalGugun = isSidoChanged ? '전체' : gugun;
+      window.sessionStorage.setItem('selectedGugun', finalGugun);
 
       // inspection 페이지를 위해 regionSelected 이벤트 발송
-      console.log('[AppHeader] 📍 Region changed in header, dispatching event:', { regionCode: sidoCode, sidoLabel, gugun });
+      console.log('[AppHeader] 📍 Region changed in header, dispatching event:', {
+        regionCode: sidoCode,
+        sidoLabel,
+        gugun: finalGugun,
+        isSidoChanged
+      });
       window.dispatchEvent(new CustomEvent('regionSelected', {
-        detail: { sido: sidoLabel, gugun, regionCode: sidoCode }
+        detail: { sido: sidoLabel, gugun: finalGugun, regionCode: sidoCode }
       }));
     }
   };
