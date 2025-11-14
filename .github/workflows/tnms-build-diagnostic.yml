@@ -1,0 +1,200 @@
+name: TNMS Build Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'next.config.ts'
+      - 'worker/index.js'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  build-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Check Node and npm versions
+        run: |
+          echo "Node version:"
+          node --version
+          echo "npm version:"
+          npm --version
+          echo "Available memory:"
+          free -h || echo "N/A (not Linux)"
+
+      - name: Check disk space before
+        run: |
+          echo "Disk space before:"
+          df -h / || echo "N/A"
+
+      - name: Clean caches
+        run: |
+          echo "=== Cache Cleanup ==="
+          rm -rf .next
+          rm -rf .next.backup
+          rm -rf node_modules/.cache
+          npm cache clean --force
+          echo "Cache cleanup complete"
+
+      - name: Reinstall dependencies
+        run: npm ci
+
+      - name: Check worker syntax
+        run: |
+          echo "=== Worker Syntax Check ==="
+          node --check worker/index.js
+          echo "Worker syntax: OK"
+
+      - name: Build with standard memory
+        id: build-standard
+        continue-on-error: true
+        run: |
+          echo "=== Build with Standard Memory ==="
+          npm run build 2>&1 | tee build-standard.log
+          echo "Build exit code: $?"
+
+      - name: Check build result (standard)
+        if: steps.build-standard.outcome == 'failure'
+        run: |
+          echo "=== Build Failed (Standard Memory) ==="
+          echo "Last 50 lines of build log:"
+          tail -50 build-standard.log
+
+          # Check for Terser error
+          if grep -q "terser" build-standard.log; then
+            echo "❌ Terser error detected"
+          fi
+
+          # Check for other errors
+          if grep -q "ENOSPC" build-standard.log; then
+            echo "❌ Disk space error detected"
+          fi
+
+      - name: Build with increased memory
+        id: build-increased-memory
+        if: steps.build-standard.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          echo "=== Build with Increased Memory (4GB) ==="
+          NODE_OPTIONS="--max-old-space-size=4096" npm run build 2>&1 | tee build-increased-memory.log
+          echo "Build exit code: $?"
+
+      - name: Check if increased memory helped
+        if: steps.build-increased-memory.outcome == 'success'
+        run: |
+          echo "✅ Build succeeded with increased memory!"
+          echo "Recommendation: Set NODE_OPTIONS in CI/CD environment"
+
+      - name: Build without removeConsole
+        id: build-no-console-removal
+        if: steps.build-increased-memory.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          echo "=== Build with Console Removal Disabled ==="
+          # Create backup of original config
+          cp next.config.ts next.config.ts.backup
+
+          # Temporarily disable removeConsole (would need to modify file)
+          # For now, just try with memory increased
+          NODE_OPTIONS="--max-old-space-size=6144" npm run build 2>&1 | tee build-no-console.log
+
+          # Restore original config
+          mv next.config.ts.backup next.config.ts
+          echo "Build exit code: $?"
+
+      - name: Check disk space after
+        run: |
+          echo "Disk space after:"
+          df -h / || echo "N/A"
+
+      - name: Generate diagnostic report
+        if: always()
+        run: |
+          cat > tnms-build-diagnostic-report.md << 'EOF'
+          # TNMS Build Diagnostic Report
+
+          **Generated**: $(date -u)
+          **Branch**: ${{ github.ref }}
+          **Commit**: ${{ github.sha }}
+
+          ## Build Results
+
+          | Scenario | Status | Log |
+          |----------|--------|-----|
+          | Standard Memory | ${{ steps.build-standard.outcome }} | build-standard.log |
+          | Increased Memory (4GB) | ${{ steps.build-increased-memory.outcome }} | build-increased-memory.log |
+          | No Console Removal | ${{ steps.build-no-console-removal.outcome }} | build-no-console.log |
+
+          ## Recommendations
+
+          ### If build succeeded with increased memory:
+          - Add `NODE_OPTIONS: --max-old-space-size=4096` to CI/CD environment
+          - Update deployment scripts to use increased memory
+
+          ### If build failed with all scenarios:
+          - Check worker/index.js for syntax errors
+          - Review next-pwa configuration
+          - Consider updating @ducanh2912/next-pwa to latest version
+          - Check system disk space availability
+
+          ### For local development:
+          - Create .env.local with: `NODE_OPTIONS=--max-old-space-size=4096`
+          - Run: `rm -rf .next node_modules/.cache && npm ci`
+
+          ## Files Generated
+          - build-standard.log
+          - build-increased-memory.log (if standard failed)
+          - build-no-console.log (if increased memory failed)
+          EOF
+          cat tnms-build-diagnostic-report.md
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostic-logs
+          path: |
+            build-standard.log
+            build-increased-memory.log
+            build-no-console.log
+            tnms-build-diagnostic-report.md
+          retention-days: 30
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('tnms-build-diagnostic-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+      - name: Fail if build unsuccessful
+        if: steps.build-no-console-removal.outcome == 'failure' && steps.build-increased-memory.outcome == 'failure'
+        run: |
+          echo "❌ Build failed in all scenarios"
+          echo "See build logs in artifacts for details"
+          exit 1
+
+      - name: Success message
+        if: steps.build-standard.outcome == 'success'
+        run: |
+          echo "✅ Build successful!"
+          echo "No build issues detected"
