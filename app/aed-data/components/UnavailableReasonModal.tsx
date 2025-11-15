@@ -19,7 +19,7 @@ interface UnavailableReasonModalProps {
   onSuccess: () => void;
 }
 
-type UnavailableReason = 'disposed' | 'broken' | 'lost' | 'other';
+type UnavailableReason = 'disposed' | 'broken' | 'lost' | 'transferred' | 'other';
 
 const REASON_OPTIONS: { value: UnavailableReason; label: string; description: string }[] = [
   {
@@ -38,6 +38,11 @@ const REASON_OPTIONS: { value: UnavailableReason; label: string; description: st
     description: '장비가 분실되어 찾을 수 없는 경우',
   },
   {
+    value: 'transferred',
+    label: '양도',
+    description: '다른 기관으로 양도된 경우',
+  },
+  {
     value: 'other',
     label: '기타',
     description: '기타 사유 (직접 입력)',
@@ -48,6 +53,7 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
   const { showSuccess, showError } = useToast();
   const [selectedReason, setSelectedReason] = useState<UnavailableReason | null>(null);
   const [customNote, setCustomNote] = useState('');
+  const [transferredInstitution, setTransferredInstitution] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -58,6 +64,11 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
 
     if (selectedReason === 'other' && !customNote.trim()) {
       showError('기타 사유를 입력해주세요.', { message: '상세 사유는 필수입니다.' });
+      return;
+    }
+
+    if (selectedReason === 'transferred' && !transferredInstitution.trim()) {
+      showError('양도한 기관명을 입력해주세요.', { message: '양도한 기관명은 필수입니다.' });
       return;
     }
 
@@ -78,7 +89,7 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
         body: JSON.stringify({
           equipment_serial: serial,
           reason: selectedReason,
-          note: selectedReason === 'other' ? customNote.trim() : undefined,
+          note: selectedReason === 'other' ? customNote.trim() : selectedReason === 'transferred' ? transferredInstitution.trim() : undefined,
         }),
       });
 
@@ -169,6 +180,27 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
               </label>
             ))}
           </div>
+
+          {/* 양도 기관명 입력 */}
+          {selectedReason === 'transferred' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">
+                양도한 기관명 <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={transferredInstitution}
+                onChange={(e) => setTransferredInstitution(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="양도한 기관명을 입력해주세요..."
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:opacity-50"
+                maxLength={100}
+              />
+              <div className="text-xs text-gray-500 text-right">
+                {transferredInstitution.length} / 100
+              </div>
+            </div>
+          )}
 
           {/* 기타 사유 입력 */}
           {selectedReason === 'other' && (
