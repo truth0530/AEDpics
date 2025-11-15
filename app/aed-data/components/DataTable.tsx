@@ -257,8 +257,8 @@ const DesktopTableRow = memo(({
 
       {/* 8. 주소 - 폰트 축소 */}
       <div className="min-w-0 pl-2">
-        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-100 truncate" title={device.installation_address || device.installation_address || '주소 미등록'}>
-          {shortenSidoInAddress(device.installation_address || device.installation_address || device.installation_location_address || '주소 미등록')}
+        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-100 truncate" title={device.installation_address || device.installation_location_address || '주소 미등록'}>
+          {shortenSidoInAddress(device.installation_address || device.installation_location_address || '주소 미등록')}
         </div>
       </div>
 
