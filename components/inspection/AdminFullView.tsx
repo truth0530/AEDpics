@@ -15,6 +15,7 @@ import {
   REGION_LABEL_TO_CODE
 } from '@/lib/constants/regions';
 import { hasNationalAccess } from '@/lib/utils/user-roles';
+import { shortenSidoGugun } from '@/lib/utils/address-formatter';
 import {
   getActiveInspectionSessions,
   getCompletedInspections,
@@ -1036,7 +1037,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                         >
                           <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
                             {inspection.aed_data
-                              ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
+                              ? shortenSidoGugun(`${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`)
                               : '-'
                             }
                           </td>

@@ -25,6 +25,7 @@ import { getRegionLabel } from '@/lib/constants/regions';
 import { cn } from '@/lib/utils';
 import { HealthCenterMatcher } from '@/utils/healthCenterMatcher';
 import { Pagination } from '@/components/Pagination';
+import { shortenSidoInAddress } from '@/lib/utils/address-formatter';
 
 function getDeviceId(device: AEDDevice): string {
   return (
@@ -257,7 +258,7 @@ const DesktopTableRow = memo(({
       {/* 8. 주소 - 폰트 축소 */}
       <div className="min-w-0 pl-2">
         <div className="text-[10px] lg:text-xs xl:text-sm text-gray-100 truncate" title={device.installation_address || device.installation_address || '주소 미등록'}>
-          {device.installation_address || device.installation_address || device.installation_location_address || '주소 미등록'}
+          {shortenSidoInAddress(device.installation_address || device.installation_address || device.installation_location_address || '주소 미등록')}
         </div>
       </div>
 
@@ -670,7 +671,7 @@ const MobileCard = memo(({
           {/* 셋째 줄: 주소 + 최종점검일 */}
           <div className="flex items-center justify-between gap-1.5 text-[10px]">
             <span className="text-gray-400 truncate flex-1">
-              {device.installation_address || device.installation_location_address || '주소 미등록'}
+              {shortenSidoInAddress(device.installation_address || device.installation_location_address || '주소 미등록')}
             </span>
             {device.last_inspection_date && (
               <span className="text-gray-500 flex-shrink-0 text-[9px]">

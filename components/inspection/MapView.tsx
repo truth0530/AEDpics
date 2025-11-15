@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
 import { REGIONS, normalizeRegionName, getRegionCode } from '@/lib/constants/regions';
 import { useAEDData } from '@/app/aed-data/components/AEDDataProvider';
+import { shortenSidoInAddress } from '@/lib/utils/address-formatter';
 
 interface AEDMapLocation {
   equipment_serial: string;
@@ -1146,7 +1147,7 @@ export function MapView({
                     {/* 둘째 줄: 주소 + 최종점검일 */}
                     <div className="flex items-center justify-between gap-1.5 text-[10px]">
                       <span className="text-gray-400 truncate flex-1">
-                        {location.installation_address || '주소 미등록'}
+                        {shortenSidoInAddress(location.installation_address || '주소 미등록')}
                       </span>
                       {location.last_inspection_date && (
                         <span className="text-gray-500 flex-shrink-0 text-[9px]">
@@ -1426,7 +1427,7 @@ export function MapView({
                   </div>
                   <div className="col-span-2 flex items-baseline gap-0.5">
                     <span className="text-gray-500 flex-shrink-0">주소:</span>
-                    <span className="text-gray-800 line-clamp-1 text-[8px]">{selectedAED.installation_address || selectedAED.address || '-'}</span>
+                    <span className="text-gray-800 line-clamp-1 text-[8px]">{shortenSidoInAddress(selectedAED.installation_address || selectedAED.address || '-')}</span>
                   </div>
                   {selectedAED.installation_position && (
                     <div className="col-span-2 flex items-baseline gap-0.5">
@@ -1645,7 +1646,7 @@ export function MapView({
                     {/* 둘째 줄: 주소 + 최종점검일 */}
                     <div className="flex items-center justify-between gap-1.5 text-[10px]">
                       <span className="text-gray-400 truncate flex-1">
-                        {location.installation_address || '주소 미등록'}
+                        {shortenSidoInAddress(location.installation_address || '주소 미등록')}
                       </span>
                       {location.last_inspection_date && (
                         <span className="text-gray-500 flex-shrink-0 text-[9px]">

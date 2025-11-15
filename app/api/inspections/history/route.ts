@@ -181,6 +181,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
 
     let inspections: any[] = [];
     let inProgressSessions: any[] = [];
+    let unavailableAssignments: any[] = [];
 
     // 점검완료 조회 (completed 또는 all)
     if (statusFilter === 'completed' || statusFilter === 'all') {
@@ -196,6 +197,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
           aed_data: {
             select: {
               installation_institution: true,
+              management_number: true,
               sido: true,
               gugun: true,
               installation_address: true,
@@ -210,6 +212,54 @@ export const GET = apiHandler(async (request: NextRequest) => {
         },
         orderBy: {
           inspection_date: 'desc'
+        }
+      });
+    }
+
+    // 점검불가 조회 (all 또는 unavailable)
+    if (statusFilter === 'all' || statusFilter === 'unavailable') {
+      const unavailableWhere: any = {
+        status: 'unavailable',
+        updated_at: {
+          gte: cutoffDate
+        }
+      };
+
+      if (equipmentSerial) {
+        unavailableWhere.equipment_serial = equipmentSerial;
+      }
+
+      // 권한별 필터링 (equipment_serial 기반)
+      if (userProfile.role === 'local_admin' && userProfile.organizations && Object.keys(aedFilter).length > 0) {
+        // aedFilter로 허용된 equipment_serial 추출
+        const allowedAeds = await prisma.aed_data.findMany({
+          where: aedFilter,
+          select: { equipment_serial: true }
+        });
+        const allowedEquipmentSerials = allowedAeds.map(aed => aed.equipment_serial);
+
+        if (allowedEquipmentSerials.length > 0) {
+          unavailableWhere.equipment_serial = { in: allowedEquipmentSerials };
+        } else {
+          // 권한 범위에 해당하는 AED가 없으면 빈 배열 반환
+          unavailableWhere.equipment_serial = { in: [] };
+        }
+      } else if (userProfile.role === 'temporary_inspector') {
+        unavailableWhere.assigned_by = session.user.id;
+      }
+
+      unavailableAssignments = await prisma.inspection_assignments.findMany({
+        where: unavailableWhere,
+        include: {
+          user_profiles_inspection_assignments_assigned_byTouser_profiles: {
+            select: {
+              full_name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          updated_at: 'desc'
         }
       });
     }
@@ -249,6 +299,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
           aed_data: {
             select: {
               installation_institution: true,
+              management_number: true,
               sido: true,
               gugun: true,
               installation_address: true,
@@ -378,7 +429,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
       }
     }
 
-    logger.info('InspectionHistory:GET', `Found ${inspections.length} completed inspections and ${inProgressSessions.length} in-progress sessions`, {
+    logger.info('InspectionHistory:GET', `Found ${inspections.length} completed inspections, ${inProgressSessions.length} in-progress sessions, and ${unavailableAssignments.length} unavailable assignments`, {
       userEmail: userProfile.email,
       userRole: userProfile.role,
       organization: userProfile.organizations?.name,
@@ -450,6 +501,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
         original_data: inspection.original_data || {},  // 원본 데이터도 포함
         aed_data: inspection.aed_data ? {
           installation_institution: inspection.aed_data.installation_institution,
+          management_number: inspection.aed_data.management_number,
           sido: inspection.aed_data.sido,
           gugun: inspection.aed_data.gugun,
           installation_address: inspection.aed_data.installation_address,
@@ -494,6 +546,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
         original_data: {},
         aed_data: session.aed_data ? {
           installation_institution: session.aed_data.installation_institution,
+          management_number: session.aed_data.management_number,
           sido: session.aed_data.sido,
           gugun: session.aed_data.gugun,
           installation_address: session.aed_data.installation_address,
@@ -512,8 +565,73 @@ export const GET = apiHandler(async (request: NextRequest) => {
       };
     });
 
-    // 두 배열 병합 (점검중 + 점검완료)
-    const allRecords = [...formattedSessions, ...formattedInspections];
+    // 점검불가 데이터 포맷팅
+    const formattedUnavailable = await Promise.all(
+      unavailableAssignments.map(async (assignment: any) => {
+        // equipment_serial로 AED 데이터 조회
+        const aedData = await prisma.aed_data.findFirst({
+          where: { equipment_serial: assignment.equipment_serial },
+          select: {
+            installation_institution: true,
+            management_number: true,
+            sido: true,
+            gugun: true,
+            installation_address: true,
+            last_inspection_date: true,
+            jurisdiction_health_center: true,
+            battery_expiry_date: true,
+            patch_expiry_date: true,
+            manufacturing_date: true,
+            operation_status: true
+          }
+        });
+
+        return {
+          id: assignment.id,
+          equipment_serial: assignment.equipment_serial,
+          inspector_id: assignment.assigned_by,
+          inspector_name: assignment.user_profiles_inspection_assignments_assigned_byTouser_profiles?.full_name || '알 수 없음',
+          inspector_email: assignment.user_profiles_inspection_assignments_assigned_byTouser_profiles?.email,
+          // 점검불가 처리한 날짜
+          inspection_date: assignment.updated_at,
+          last_inspection_date_egen: aedData?.last_inspection_date || null,
+          data_source: 'aedpics',
+          inspection_type: 'unavailable',
+          // 점검불가 상태
+          visual_status: 'unavailable',
+          battery_status: 'unavailable',
+          pad_status: 'unavailable',
+          operation_status: 'unavailable',
+          overall_status: 'unavailable',
+          status: 'unavailable', // UI 필터용 상태 필드
+          notes: assignment.notes,
+          issues_found: [],
+          photos: [],
+          inspection_latitude: null,
+          inspection_longitude: null,
+          step_data: {},
+          original_data: {},
+          aed_data: aedData ? {
+            installation_institution: aedData.installation_institution,
+            management_number: aedData.management_number,
+            sido: aedData.sido,
+            gugun: aedData.gugun,
+            installation_address: aedData.installation_address,
+            jurisdiction_health_center: aedData.jurisdiction_health_center,
+            battery_expiry_date: aedData.battery_expiry_date,
+            patch_expiry_date: aedData.patch_expiry_date,
+            manufacturing_date: aedData.manufacturing_date,
+            operation_status: aedData.operation_status
+          } : null,
+          created_at: assignment.created_at,
+          updated_at: assignment.updated_at,
+          completed_at: null,
+        };
+      })
+    );
+
+    // 세 배열 병합 (점검중 + 점검완료 + 점검불가)
+    const allRecords = [...formattedSessions, ...formattedInspections, ...formattedUnavailable];
 
     // inspection_date 기준 내림차순 정렬
     allRecords.sort((a, b) => {

@@ -18,11 +18,12 @@ export interface InspectionPermissionResult {
  * 점검 기록에 대한 권한 체크
  *
  * 권한 규칙:
- * - temporary_inspector: 본인의 점검 기록만 수정 가능
- * - local_admin: 관할지역의 점검기록 모두 수정 가능
- * - ministry_admin, regional_admin: 열람만 가능 (뷰어 모드)
+ * - master: 모든 점검 기록 수정/삭제 가능
  * - emergency_center_admin, regional_emergency_center_admin: 모든 지역 수정 가능
- * - master: 삭제 가능
+ * - local_admin: 관할지역의 점검기록 모두 수정 가능
+ * - ministry_admin: 본인의 점검 기록만 수정 가능
+ * - temporary_inspector: 본인의 점검 기록만 수정 가능
+ * - regional_admin: 열람만 가능 (뷰어 모드)
  */
 export function checkInspectionPermission(
   userRole: UserRole,
@@ -49,8 +50,20 @@ export function checkInspectionPermission(
     };
   }
 
-  // 보건복지부, 시도청: 열람만 가능 (뷰어 모드)
-  if (userRole === 'ministry_admin' || userRole === 'regional_admin') {
+  // 보건복지부: 본인의 점검 기록만 수정 가능
+  if (userRole === 'ministry_admin') {
+    const isOwnInspection = userId === inspectorId;
+
+    return {
+      canView: true,
+      canEdit: isOwnInspection,
+      canDelete: false,
+      reason: isOwnInspection ? undefined : '본인의 점검 기록만 수정할 수 있습니다',
+    };
+  }
+
+  // 시도청: 열람만 가능 (뷰어 모드)
+  if (userRole === 'regional_admin') {
     return {
       canView: true,
       canEdit: false,

@@ -1,6 +1,7 @@
 'use client';
 
 import type { InspectionHistory } from '@/lib/inspections/session-utils';
+import { shortenSidoInAddress } from '@/lib/utils/address-formatter';
 
 interface ReadOnlyBasicInfoStepProps {
   stepData: Record<string, any>;
@@ -134,7 +135,7 @@ export function ReadOnlyBasicInfoStep({ stepData, inspection }: ReadOnlyBasicInf
           <div className="space-y-1">
             <div className="text-[10px] font-medium text-gray-400">주소</div>
             <div className="text-xs font-medium text-gray-100">
-              {getDisplayValue('address')}
+              {shortenSidoInAddress(getDisplayValue('address'))}
             </div>
           </div>
 
