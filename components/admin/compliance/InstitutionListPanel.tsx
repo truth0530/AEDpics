@@ -169,7 +169,7 @@ export default function InstitutionListPanel({
             setSubDivisionFilter(value);
             setCurrentPage(1);
           }}>
-            <SelectTrigger className="w-[180px] h-9">
+            <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="전체" />
             </SelectTrigger>
             <SelectContent className="max-h-[300px]">

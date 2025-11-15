@@ -439,7 +439,7 @@ export default function ComplianceMatchingWorkflow({
                     <>
                       {selectedInstitution ? (
                         <span>
-                          <span className="text-yellow-600 dark:text-yellow-400">{selectedInstitution.institution_name}</span> 을(를) 선택하세요
+                          <span className="text-yellow-600 dark:text-yellow-400">{selectedInstitution.institution_name}</span> 을(를) 매칭함에 담아주세요
                         </span>
                       ) : (
                         <span>새올-인트라넷 등록현황</span>
