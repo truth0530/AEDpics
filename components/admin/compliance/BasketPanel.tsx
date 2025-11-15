@@ -133,7 +133,7 @@ export default function BasketPanel({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="font-medium text-sm">
-                          {item.management_number}
+                          관리번호 {item.management_number}
                           {item.confidence && (
                             <Badge variant="secondary" className="ml-2 text-xs">
                               {item.confidence.toFixed(0)}%

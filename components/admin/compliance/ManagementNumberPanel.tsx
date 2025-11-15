@@ -640,7 +640,7 @@ export default function ManagementNumberPanel({
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-xs text-muted-foreground">
-                    {item.management_number}
+                    관리번호 {item.management_number}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {showConfidence && item.confidence && (
