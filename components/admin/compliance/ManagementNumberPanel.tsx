@@ -55,6 +55,7 @@ interface ManagementNumberPanelProps {
   onAddEquipmentSerial: (item: ManagementNumberCandidate, serial: string) => void;
   basketedManagementNumbers?: string[];
   basketedItems?: BasketItem[];
+  isCollapsed?: boolean;
 }
 
 // 고유키 매칭 유틸리티 함수
@@ -361,7 +362,8 @@ export default function ManagementNumberPanel({
   onAddMultipleToBasket,
   onAddEquipmentSerial,
   basketedManagementNumbers = [],
-  basketedItems = []
+  basketedItems = [],
+  isCollapsed = false
 }: ManagementNumberPanelProps) {
   const [autoSuggestions, setAutoSuggestions] = useState<ManagementNumberCandidate[]>([]);
   const [searchResults, setSearchResults] = useState<ManagementNumberCandidate[]>([]);
@@ -673,7 +675,7 @@ export default function ManagementNumberPanel({
                       {isExpanded ? (
                         <>
                           <ChevronUp className="h-3 w-3" />
-                          일부만 보기
+                          장비연번 접기
                         </>
                       ) : (
                         <>
@@ -694,10 +696,10 @@ export default function ManagementNumberPanel({
                     detail => !basketedSerials.includes(detail.serial)
                   );
 
-                  // 접힌 상태일 때는 절반만, 펼쳐진 상태일 때는 전체 표시
+                  // 접힌 상태일 때는 완전히 숨김, 펼쳐진 상태일 때는 전체 표시
                   const displayCount = isExpanded
                     ? remainingEquipmentDetails.length
-                    : Math.ceil(remainingEquipmentDetails.length / 2);
+                    : 0;
 
                   const displayedEquipmentDetails = remainingEquipmentDetails.slice(0, displayCount);
 

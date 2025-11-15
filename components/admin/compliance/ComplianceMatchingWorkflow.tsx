@@ -428,8 +428,8 @@ export default function ComplianceMatchingWorkflow({
           </Card>
         </div>
 
-        {/* Column 2: 관리번호 리스트 (4/12 또는 1/12) */}
-        <div className={`flex flex-col overflow-hidden border-r transition-all ${isManagementPanelCollapsed ? 'col-span-1' : 'col-span-4'}`}>
+        {/* Column 2: 관리번호 리스트 (4/12 또는 2/12) */}
+        <div className={`flex flex-col overflow-hidden border-r transition-all ${isManagementPanelCollapsed ? 'col-span-2' : 'col-span-4'}`}>
           <Card className="flex-1 flex flex-col overflow-hidden bg-green-900/[0.06] border-0 shadow-none">
             <CardHeader className="pb-2 pt-2 px-2">
               <div className="flex items-center justify-between">
@@ -461,27 +461,26 @@ export default function ComplianceMatchingWorkflow({
                 </Button>
               </div>
             </CardHeader>
-            {!isManagementPanelCollapsed && (
-              <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
-                <ManagementNumberPanel
-                  year={year}
-                  selectedInstitution={selectedInstitution}
-                  onAddToBasket={handleAddToBasket}
-                  onAddMultipleToBasket={handleAddMultipleToBasket}
-                  onAddEquipmentSerial={handleAddEquipmentSerial}
-                  basketedManagementNumbers={currentBasket.map(item => item.management_number)}
-                  basketedItems={currentBasket.map(item => ({
-                    management_number: item.management_number,
-                    selected_serials: item.selected_serials
-                  }))}
-                />
-              </CardContent>
-            )}
+            <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
+              <ManagementNumberPanel
+                year={year}
+                selectedInstitution={selectedInstitution}
+                onAddToBasket={handleAddToBasket}
+                onAddMultipleToBasket={handleAddMultipleToBasket}
+                onAddEquipmentSerial={handleAddEquipmentSerial}
+                basketedManagementNumbers={currentBasket.map(item => item.management_number)}
+                basketedItems={currentBasket.map(item => ({
+                  management_number: item.management_number,
+                  selected_serials: item.selected_serials
+                }))}
+                isCollapsed={isManagementPanelCollapsed}
+              />
+            </CardContent>
           </Card>
         </div>
 
-        {/* Column 3: 담기 박스 (4/12 또는 7/12) */}
-        <div className={`flex flex-col overflow-hidden transition-all ${isManagementPanelCollapsed ? 'col-span-7' : 'col-span-4'}`}>
+        {/* Column 3: 담기 박스 (4/12 또는 6/12) */}
+        <div className={`flex flex-col overflow-hidden transition-all ${isManagementPanelCollapsed ? 'col-span-6' : 'col-span-4'}`}>
           <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
             <CardHeader className="pb-2 pt-2 px-2">
               <div className="flex items-center justify-between">
