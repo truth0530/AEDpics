@@ -365,7 +365,7 @@ export default function BasketPanel({
                         onClick={() => onRemove(item.management_number)}
                         className="text-xs px-2 py-1"
                       >
-                        비우기
+                        {item.equipment_count > 1 ? '모두비우기' : '비우기'}
                       </Button>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -430,17 +430,19 @@ export default function BasketPanel({
                                       )}
                                     </div>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onRemoveEquipmentSerial(item.management_number, serial);
-                                    }}
-                                    className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
-                                  >
-                                    비우기
-                                  </Button>
+                                  {item.selected_serials.length > 1 && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveEquipmentSerial(item.management_number, serial);
+                                      }}
+                                      className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                                    >
+                                      비우기
+                                    </Button>
+                                  )}
                                 </div>
                               );
                             })}
@@ -507,17 +509,19 @@ export default function BasketPanel({
                                       )}
                                     </div>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onRemoveEquipmentSerial(item.management_number, serial);
-                                    }}
-                                    className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
-                                  >
-                                    비우기
-                                  </Button>
+                                  {item.equipment_count > 1 && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveEquipmentSerial(item.management_number, serial);
+                                      }}
+                                      className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                                    >
+                                      비우기
+                                    </Button>
+                                  )}
                                 </div>
                               );
                             })}
