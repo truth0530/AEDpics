@@ -48,6 +48,7 @@ export async function GET(request: Request) {
       where.OR = [
         { installation_institution: { contains: search, mode: 'insensitive' } },
         { installation_address: { contains: search, mode: 'insensitive' } },
+        { installation_location_address: { contains: search, mode: 'insensitive' } },
         { installation_position: { contains: search, mode: 'insensitive' } },
       ];
     }

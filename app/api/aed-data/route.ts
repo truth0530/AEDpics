@@ -509,7 +509,8 @@ export const GET = async (request: NextRequest) => {
             a.management_number ILIKE $${paramIndex} OR
             a.equipment_serial ILIKE $${paramIndex} OR
             a.installation_institution ILIKE $${paramIndex} OR
-            a.installation_address ILIKE $${paramIndex}
+            a.installation_address ILIKE $${paramIndex} OR
+            a.installation_location_address ILIKE $${paramIndex}
           )`);
           sqlParams.push(`%${filters.search}%`);
           paramIndex++;
@@ -786,7 +787,8 @@ export const GET = async (request: NextRequest) => {
               { management_number: { contains: filters.search, mode: 'insensitive' } },
               { equipment_serial: { contains: filters.search, mode: 'insensitive' } },
               { installation_institution: { contains: filters.search, mode: 'insensitive' } },
-              { installation_address: { contains: filters.search, mode: 'insensitive' } }
+              { installation_address: { contains: filters.search, mode: 'insensitive' } },
+              { installation_location_address: { contains: filters.search, mode: 'insensitive' } }
             ];
           }
 
