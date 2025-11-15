@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { MapPin, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EquipmentDetail {
@@ -361,11 +361,11 @@ export default function BasketPanel({
                       </div>
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => onRemove(item.management_number)}
-                        className="h-8 w-8 p-0"
+                        className="text-xs px-2 py-1"
                       >
-                        <X className="h-4 w-4" />
+                        비우기
                       </Button>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
