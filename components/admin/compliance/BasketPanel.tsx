@@ -224,7 +224,7 @@ export default function BasketPanel({
                                     }}
                                     className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
                                   >
-                                    매칭취소하기
+                                    비우기
                                   </Button>
                                 </div>
                               );
@@ -298,7 +298,7 @@ export default function BasketPanel({
                                     }}
                                     className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
                                   >
-                                    매칭취소하기
+                                    비우기
                                   </Button>
                                 </div>
                               );

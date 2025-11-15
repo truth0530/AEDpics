@@ -727,16 +727,21 @@ export default function ManagementNumberPanel({
                                 }
                               }}
                             >
-                              <div className="flex-1 space-y-0.5">
-                                <div className="text-xs font-mono font-medium">{detail.serial}</div>
-                                {detail.location_detail && (
-                                  <div className={cn(
-                                    "text-xs",
-                                    isUniqueKeyMatched ? "text-purple-700 dark:text-purple-300 font-medium" : "text-muted-foreground"
-                                  )}>
-                                    {highlightVehicleText(detail.location_detail)}
-                                  </div>
-                                )}
+                              <div className="flex-1">
+                                <div className={cn(
+                                  "text-xs",
+                                  isUniqueKeyMatched ? "text-purple-700 dark:text-purple-300 font-medium" : ""
+                                )}>
+                                  <span className="font-mono font-medium">{detail.serial}</span>
+                                  {detail.location_detail && (
+                                    <span className={cn(
+                                      "ml-1.5",
+                                      !isUniqueKeyMatched && "text-muted-foreground"
+                                    )}>
+                                      {highlightVehicleText(detail.location_detail)}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             {!item.is_matched && (
                               <Button
@@ -748,7 +753,7 @@ export default function ManagementNumberPanel({
                                   onAddEquipmentSerial(item, detail.serial);
                                 }}
                               >
-                                단독매칭
+                                담기
                               </Button>
                             )}
                           </div>
