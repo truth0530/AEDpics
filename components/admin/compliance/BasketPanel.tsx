@@ -27,6 +27,7 @@ interface BasketItem {
 interface TargetInstitution {
   target_key: string;
   institution_name: string;
+  address?: string;
 }
 
 interface BasketPanelProps {
@@ -35,6 +36,220 @@ interface BasketPanelProps {
   onRemove: (managementNumber: string) => void;
   onRemoveEquipmentSerial: (managementNumber: string, serial: string) => void;
   onClear: () => void;
+}
+
+// 설치장소 텍스트에서 구급차/차량번호 강조
+function highlightVehicleText(text: string): React.ReactNode {
+  if (!text) return text;
+
+  const vehicleNumberPattern = /\d{2,3}[가-힣]\d{4}/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  const ambulancePattern = /(특수구급차|구급차)/g;
+  const allMatches: Array<{ index: number; text: string; type: 'ambulance' | 'vehicle' }> = [];
+
+  let match;
+  while ((match = ambulancePattern.exec(text)) !== null) {
+    allMatches.push({ index: match.index, text: match[0], type: 'ambulance' });
+  }
+
+  while ((match = vehicleNumberPattern.exec(text)) !== null) {
+    allMatches.push({ index: match.index, text: match[0], type: 'vehicle' });
+  }
+
+  allMatches.sort((a, b) => a.index - b.index);
+
+  const uniqueMatches: typeof allMatches = [];
+  let lastEnd = -1;
+  for (const m of allMatches) {
+    if (m.index >= lastEnd) {
+      uniqueMatches.push(m);
+      lastEnd = m.index + m.text.length;
+    }
+  }
+
+  uniqueMatches.forEach((m, idx) => {
+    if (m.index > lastIndex) {
+      parts.push(text.substring(lastIndex, m.index));
+    }
+    parts.push(
+      <span key={idx} className="font-bold text-white dark:text-white">
+        {m.text}
+      </span>
+    );
+    lastIndex = m.index + m.text.length;
+  });
+
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? <>{parts}</> : text;
+}
+
+// 기관명에서 선택된 기관명과 매칭되는 부분 강조
+function highlightMatchingInstitutionName(institutionName: string, selectedName: string | undefined): React.ReactNode {
+  if (!institutionName || !selectedName) return institutionName;
+
+  const fullIndex = institutionName.indexOf(selectedName);
+  if (fullIndex !== -1) {
+    const before = institutionName.substring(0, fullIndex);
+    const matched = institutionName.substring(fullIndex, fullIndex + selectedName.length);
+    const after = institutionName.substring(fullIndex + selectedName.length);
+    return (
+      <>
+        {before}
+        <span className="text-yellow-600 dark:text-yellow-400 font-semibold">{matched}</span>
+        {after}
+      </>
+    );
+  }
+
+  const nameKeywords = selectedName.split(/[\s,]+/).filter(k => k.length > 1);
+  if (nameKeywords.length === 0) return institutionName;
+
+  const matches: Array<{ index: number; length: number; text: string }> = [];
+  for (const keyword of nameKeywords) {
+    let searchIndex = 0;
+    while (true) {
+      const index = institutionName.indexOf(keyword, searchIndex);
+      if (index === -1) break;
+      matches.push({ index, length: keyword.length, text: keyword });
+      searchIndex = index + keyword.length;
+    }
+  }
+
+  if (matches.length === 0) return institutionName;
+
+  matches.sort((a, b) => a.index - b.index);
+  const uniqueMatches: typeof matches = [];
+  for (const match of matches) {
+    const hasOverlap = uniqueMatches.some(
+      existing =>
+        (match.index >= existing.index && match.index < existing.index + existing.length) ||
+        (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+        (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+    );
+
+    if (!hasOverlap) {
+      uniqueMatches.push(match);
+    } else {
+      const overlappingIndex = uniqueMatches.findIndex(
+        existing =>
+          (match.index >= existing.index && match.index < existing.index + existing.length) ||
+          (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+          (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+      );
+
+      if (overlappingIndex !== -1 && match.length > uniqueMatches[overlappingIndex].length) {
+        uniqueMatches[overlappingIndex] = match;
+      }
+    }
+  }
+
+  uniqueMatches.sort((a, b) => a.index - b.index);
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  uniqueMatches.forEach((match, idx) => {
+    if (match.index > lastIndex) {
+      parts.push(institutionName.substring(lastIndex, match.index));
+    }
+    parts.push(
+      <span key={idx} className="text-yellow-600 dark:text-yellow-400 font-semibold">
+        {match.text}
+      </span>
+    );
+    lastIndex = match.index + match.length;
+  });
+
+  if (lastIndex < institutionName.length) {
+    parts.push(institutionName.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? <>{parts}</> : institutionName;
+}
+
+// 주소에서 선택된 주소와 매칭되는 부분 강조
+function highlightMatchingAddress(address: string, selectedAddress: string | undefined): React.ReactNode {
+  if (!address || !selectedAddress) return address;
+
+  const addressKeywords = selectedAddress.split(/[\s,]+/).filter(k => k.length > 1);
+  if (addressKeywords.length === 0) return address;
+
+  const matches: Array<{ index: number; length: number; text: string }> = [];
+  for (const keyword of addressKeywords) {
+    let searchIndex = 0;
+    while (true) {
+      const index = address.indexOf(keyword, searchIndex);
+      if (index === -1) break;
+      matches.push({ index, length: keyword.length, text: keyword });
+      searchIndex = index + keyword.length;
+    }
+  }
+
+  const parenMatch = selectedAddress.match(/\([^)]+\)/g);
+  if (parenMatch) {
+    for (const paren of parenMatch) {
+      const index = address.indexOf(paren);
+      if (index !== -1) {
+        matches.push({ index, length: paren.length, text: paren });
+      }
+    }
+  }
+
+  if (matches.length === 0) return address;
+
+  matches.sort((a, b) => a.index - b.index);
+  const uniqueMatches: typeof matches = [];
+  for (const match of matches) {
+    const hasOverlap = uniqueMatches.some(
+      existing =>
+        (match.index >= existing.index && match.index < existing.index + existing.length) ||
+        (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+        (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+    );
+
+    if (!hasOverlap) {
+      uniqueMatches.push(match);
+    } else {
+      const overlappingIndex = uniqueMatches.findIndex(
+        existing =>
+          (match.index >= existing.index && match.index < existing.index + existing.length) ||
+          (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+          (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+      );
+
+      if (overlappingIndex !== -1 && match.length > uniqueMatches[overlappingIndex].length) {
+        uniqueMatches[overlappingIndex] = match;
+      }
+    }
+  }
+
+  uniqueMatches.sort((a, b) => a.index - b.index);
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  uniqueMatches.forEach((match, idx) => {
+    if (match.index > lastIndex) {
+      parts.push(address.substring(lastIndex, match.index));
+    }
+    parts.push(
+      <span key={idx} className="text-yellow-600 dark:text-yellow-400 font-semibold">
+        {match.text}
+      </span>
+    );
+    lastIndex = match.index + match.length;
+  });
+
+  if (lastIndex < address.length) {
+    parts.push(address.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? <>{parts}</> : address;
 }
 
 export default function BasketPanel({
@@ -141,7 +356,7 @@ export default function BasketPanel({
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {item.institution_name}
+                          {highlightMatchingInstitutionName(item.institution_name, selectedInstitution?.institution_name)}
                         </div>
                       </div>
                       <Button
@@ -155,7 +370,7 @@ export default function BasketPanel({
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3" />
-                      <span className="truncate">{item.address}</span>
+                      <span className="truncate">{highlightMatchingAddress(item.address, selectedInstitution?.address)}</span>
                     </div>
                     {item.selected_serials ? (
                       <>
@@ -210,7 +425,7 @@ export default function BasketPanel({
                                       <span className="font-mono font-medium">{serial}</span>
                                       {equipmentDetail?.location_detail && (
                                         <span className="ml-1.5 text-muted-foreground">
-                                          {equipmentDetail.location_detail}
+                                          {highlightVehicleText(equipmentDetail.location_detail)}
                                         </span>
                                       )}
                                     </div>
@@ -284,7 +499,7 @@ export default function BasketPanel({
                                       <span className="font-mono font-medium">{serial}</span>
                                       {equipmentDetail?.location_detail && (
                                         <span className="ml-1.5 text-muted-foreground">
-                                          {equipmentDetail.location_detail}
+                                          {highlightVehicleText(equipmentDetail.location_detail)}
                                         </span>
                                       )}
                                     </div>
