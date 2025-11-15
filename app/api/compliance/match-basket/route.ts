@@ -24,10 +24,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 의무설치기관 존재 확인
-    const targetInstitution = await prisma.target_list_2024.findUnique({
-      where: { target_key },
-    });
+    // 의무설치기관 존재 확인 (동적 테이블 선택)
+    const targetInstitution = year === 2025
+      ? await prisma.target_list_2025.findUnique({
+          where: { target_key },
+        })
+      : await prisma.target_list_2024.findUnique({
+          where: { target_key },
+        });
 
     if (!targetInstitution) {
       return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
