@@ -313,14 +313,11 @@ export default function BasketPanel({
               {selectedInstitution ? (
                 <>
                   <span className="text-primary font-medium">{selectedInstitution.institution_name}</span>
-                  에 아직 매칭된 항목이 없습니다
+                  에 매칭할 대상을 담아주세요
                 </>
               ) : (
-                '매칭된 항목이 없습니다'
+                '매칭할 대상을 담아주세요'
               )}
-            </div>
-            <div className="text-muted-foreground text-xs mt-2">
-              좌측에서 관리번호를 선택하여<br />매칭 리스트에 추가해주세요
             </div>
           </div>
         ) : (

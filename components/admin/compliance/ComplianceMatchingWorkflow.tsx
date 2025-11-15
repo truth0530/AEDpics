@@ -486,11 +486,7 @@ export default function ComplianceMatchingWorkflow({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Badge variant="outline">3</Badge>
-                  {currentBasket.length > 0 ? (
-                    <span>1 &lt;-&gt; 2 매칭 준비완료</span>
-                  ) : (
-                    <span>1 &lt;-&gt; 2 매칭 대기</span>
-                  )}
+                  <span>1 ↔ 2 매칭함</span>
                 </CardTitle>
                 {currentBasket.length > 0 && (
                   <Button
