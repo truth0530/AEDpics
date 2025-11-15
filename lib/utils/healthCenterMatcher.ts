@@ -62,12 +62,16 @@ export class HealthCenterMatcher {
    */
   static normalizeForMatching(name: string): string {
     if (!name) return '';
-    
+
+    // 지역명 패턴 동적 생성 (하드코딩 제거)
+    const patterns = getRegionNamePatterns();
+    const regionPattern = new RegExp(`^(${patterns.shortNames.join('|')})`, 'g');
+
     return name
       .replace(/\s+/g, '')                    // 모든 공백 제거
       .replace(/특별시|광역시|특별자치시|특별자치도|도/g, '') // 시도 접미사 제거
       .replace(/보건소$/g, '')                // '보건소' 접미사 제거
-      .replace(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/g, '') // 시도명 제거
+      .replace(regionPattern, '')             // 시도명 제거 (동적 패턴)
       .toLowerCase();                         // 소문자로 통일
   }
 
