@@ -328,7 +328,7 @@ export async function GET(request: NextRequest) {
             SELECT t.target_key
             FROM aedpics.target_list_devices tld
             JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-            JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+            JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
             WHERE ad2.management_number = ad.management_number
               AND tld.target_list_year = ${parseInt(year)}
             LIMIT 1
@@ -391,7 +391,7 @@ export async function GET(request: NextRequest) {
               SELECT t.target_key
               FROM aedpics.target_list_devices tld
               JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-              JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+              JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
               WHERE ad2.management_number = ad.management_number
                 AND tld.target_list_year = ${parseInt(year)}
               LIMIT 1
@@ -444,7 +444,7 @@ export async function GET(request: NextRequest) {
               SELECT t.target_key
               FROM aedpics.target_list_devices tld
               JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-              JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+              JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
               WHERE ad2.management_number = ad.management_number
                 AND tld.target_list_year = ${parseInt(year)}
               LIMIT 1
@@ -496,7 +496,7 @@ export async function GET(request: NextRequest) {
               SELECT t.target_key
               FROM aedpics.target_list_devices tld
               JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-              JOIN aedpics.target_list_2024 t ON tld.target_institution_id = t.target_key
+              JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
               WHERE ad2.management_number = ad.management_number
                 AND tld.target_list_year = ${parseInt(year)}
               LIMIT 1
