@@ -340,6 +340,22 @@ export default function ComplianceMatchingWorkflow({
   const handleMatchBasket = async () => {
     if (currentBasket.length === 0 || !selectedInstitution) return;
 
+    // 90% 이하 매칭률 확인 및 경고
+    const lowConfidenceItems = currentBasket.filter(item => item.confidence !== null && item.confidence <= 90);
+
+    if (lowConfidenceItems.length > 0) {
+      // 경고 메시지 생성
+      const warnings = lowConfidenceItems.map(item =>
+        `• ${selectedInstitution.institution_name}과 ${item.institution_name}은 매칭률이 ${item.confidence?.toFixed(0)}%입니다.`
+      ).join('\n');
+
+      const confirmMessage = `${warnings}\n\n그럼에도 불구하고 같은 기관으로 매칭하시겠습니까?`;
+
+      if (!window.confirm(confirmMessage)) {
+        return; // 사용자가 취소를 선택하면 매칭 중단
+      }
+    }
+
     try {
       const response = await fetch('/api/compliance/match-basket', {
         method: 'POST',

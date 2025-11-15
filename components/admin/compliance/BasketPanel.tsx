@@ -350,7 +350,13 @@ export default function BasketPanel({
                         <div className="font-medium text-sm">
                           관리번호 {item.management_number}
                           {item.confidence && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "ml-2 text-xs",
+                                item.confidence <= 90 && "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400"
+                              )}
+                            >
                               {item.confidence.toFixed(0)}%
                             </Badge>
                           )}
