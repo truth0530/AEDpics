@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
             SELECT DISTINCT ON (ad.management_number)
               ad.management_number,
               ad.installation_institution,
-              COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
               ad.sido,
               ad.equipment_serial,
               EXISTS(
@@ -235,7 +235,7 @@ export async function GET(request: NextRequest) {
             SELECT DISTINCT ON (ad.management_number)
               ad.management_number,
               ad.installation_institution,
-              COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
               ad.sido,
               ad.equipment_serial,
               EXISTS(
@@ -301,7 +301,7 @@ export async function GET(request: NextRequest) {
         SELECT DISTINCT ON (ad.management_number)
           ad.management_number,
           ad.installation_institution as institution_name,
-          COALESCE(ad.installation_location_address, ad.installation_address) as address,
+          ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
           COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
           (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
            FROM aedpics.aed_data ad2
@@ -364,7 +364,7 @@ export async function GET(request: NextRequest) {
           SELECT DISTINCT ON (ad.management_number)
             ad.management_number,
             ad.installation_institution as institution_name,
-            COALESCE(ad.installation_location_address, ad.installation_address) as address,
+            ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
             COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -417,7 +417,7 @@ export async function GET(request: NextRequest) {
           SELECT DISTINCT ON (ad.management_number)
             ad.management_number,
             ad.installation_institution as institution_name,
-            COALESCE(ad.installation_location_address, ad.installation_address) as address,
+            ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
             COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -469,7 +469,7 @@ export async function GET(request: NextRequest) {
           SELECT DISTINCT ON (ad.management_number)
             ad.management_number,
             ad.installation_institution as institution_name,
-            COALESCE(ad.installation_location_address, ad.installation_address) as address,
+            ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
             COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
