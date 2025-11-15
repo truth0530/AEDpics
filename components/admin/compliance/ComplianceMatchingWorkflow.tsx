@@ -380,10 +380,10 @@ export default function ComplianceMatchingWorkflow({
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Main Content - 3단 구조 */}
-      <div className="grid grid-cols-12 gap-1 p-2" style={{ height: 'calc(100vh - 5rem)' }}>
+      <div className="grid grid-cols-12 gap-0 p-2" style={{ height: 'calc(100vh - 5rem)' }}>
         {/* Column 1: 의무설치기관 리스트 (4/12) */}
-        <div className="col-span-4 flex flex-col overflow-hidden">
-          <Card className="flex-1 flex flex-col overflow-hidden">
+        <div className="col-span-4 flex flex-col overflow-hidden border-r">
+          <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Badge variant="outline">1</Badge>
@@ -413,8 +413,8 @@ export default function ComplianceMatchingWorkflow({
         </div>
 
         {/* Column 2: 관리번호 리스트 (4/12 또는 1/12) */}
-        <div className={`flex flex-col overflow-hidden transition-all ${isManagementPanelCollapsed ? 'col-span-1' : 'col-span-4'}`}>
-          <Card className="flex-1 flex flex-col overflow-hidden bg-green-900/[0.06]">
+        <div className={`flex flex-col overflow-hidden border-r transition-all ${isManagementPanelCollapsed ? 'col-span-1' : 'col-span-4'}`}>
+          <Card className="flex-1 flex flex-col overflow-hidden bg-green-900/[0.06] border-0 shadow-none">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -466,7 +466,7 @@ export default function ComplianceMatchingWorkflow({
 
         {/* Column 3: 담기 박스 (4/12 또는 7/12) */}
         <div className={`flex flex-col overflow-hidden transition-all ${isManagementPanelCollapsed ? 'col-span-7' : 'col-span-4'}`}>
-          <Card className="flex-1 flex flex-col overflow-hidden">
+          <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
