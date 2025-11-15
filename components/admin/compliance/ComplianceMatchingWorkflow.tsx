@@ -384,7 +384,7 @@ export default function ComplianceMatchingWorkflow({
         {/* Column 1: 의무설치기관 리스트 (4/12) */}
         <div className="col-span-4 flex flex-col overflow-hidden border-r">
           <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 pl-1">
               <CardTitle className="text-base flex items-center gap-2">
                 <Badge variant="outline">1</Badge>
                 {selectedInstitution ? (
@@ -399,7 +399,7 @@ export default function ComplianceMatchingWorkflow({
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
+            <CardContent className="flex-1 overflow-hidden flex flex-col pl-0 pr-2">
               <InstitutionListPanel
                 year={year}
                 sido={selectedRegion.sido}
