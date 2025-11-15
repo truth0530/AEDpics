@@ -169,7 +169,7 @@ export default function InstitutionListPanel({
             setSubDivisionFilter(value);
             setCurrentPage(1);
           }}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] h-9">
               <SelectValue placeholder="전체" />
             </SelectTrigger>
             <SelectContent className="max-h-[300px]">
@@ -206,7 +206,7 @@ export default function InstitutionListPanel({
               placeholder="기관명 검색..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-9"
             />
           </div>
         </div>

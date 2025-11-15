@@ -818,7 +818,7 @@ export default function ManagementNumberPanel({
               placeholder="기관명, 주소, 관리번호로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-9"
             />
           </div>
         </div>
