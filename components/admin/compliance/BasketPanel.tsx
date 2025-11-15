@@ -205,13 +205,15 @@ export default function BasketPanel({
                                   key={serial}
                                   className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
                                 >
-                                  <div className="flex-1 space-y-0.5">
-                                    <div className="text-xs font-mono font-medium">{serial}</div>
-                                    {equipmentDetail?.location_detail && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {equipmentDetail.location_detail}
-                                      </div>
-                                    )}
+                                  <div className="flex-1">
+                                    <div className="text-xs">
+                                      <span className="font-mono font-medium">{serial}</span>
+                                      {equipmentDetail?.location_detail && (
+                                        <span className="ml-1.5 text-muted-foreground">
+                                          {equipmentDetail.location_detail}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                   <Button
                                     size="sm"
@@ -277,13 +279,15 @@ export default function BasketPanel({
                                   key={serial}
                                   className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
                                 >
-                                  <div className="flex-1 space-y-0.5">
-                                    <div className="text-xs font-mono font-medium">{serial}</div>
-                                    {equipmentDetail?.location_detail && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {equipmentDetail.location_detail}
-                                      </div>
-                                    )}
+                                  <div className="flex-1">
+                                    <div className="text-xs">
+                                      <span className="font-mono font-medium">{serial}</span>
+                                      {equipmentDetail?.location_detail && (
+                                        <span className="ml-1.5 text-muted-foreground">
+                                          {equipmentDetail.location_detail}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                   <Button
                                     size="sm"
