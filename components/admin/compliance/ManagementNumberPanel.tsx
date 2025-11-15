@@ -678,7 +678,7 @@ export default function ManagementNumberPanel({
                       ) : (
                         <>
                           <ChevronDown className="h-3 w-3" />
-                          모두 펼치기 ({isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대)
+                          장비연번 펼치기 ({isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대)
                         </>
                       )}
                     </div>
