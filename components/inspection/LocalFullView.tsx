@@ -18,6 +18,7 @@ import {
 import { Eye, Trash2 } from 'lucide-react';
 import { InspectionHistoryModal } from './InspectionHistoryModal';
 import { DeleteInspectionModal } from './DeleteInspectionModal';
+import { shortenSidoGugun } from '@/lib/utils/address-formatter';
 
 // Inspection context for filtering
 interface InspectionContextType {
@@ -596,8 +597,8 @@ function LocalViewContent({ user }: LocalViewContentProps) {
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-400 hidden lg:table-cell truncate">{inspection.inspector_name}</td>
                               <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
-                                {inspection.aed_data
-                                  ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
+                                {inspection.aed_data && (inspection.aed_data.sido || inspection.aed_data.gugun)
+                                  ? shortenSidoGugun(`${inspection.aed_data.sido || ''} ${inspection.aed_data.gugun || ''}`.trim())
                                   : '-'
                                 }
                               </td>
