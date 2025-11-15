@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeGugunForDB } from '@/lib/constants/regions';
 import { calculateInstitutionMatchConfidence } from '@/lib/utils/string-similarity';
+import { getSqlAddressCoalesce } from '@/lib/utils/aed-address-helpers';
 
 /**
  * GET /api/compliance/management-number-candidates
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
             SELECT DISTINCT ON (ad.management_number)
               ad.management_number,
               ad.installation_institution,
-              COALESCE(ad.installation_location_address, ad.installation_address) as address,
+              ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
               ad.sido,
               ad.equipment_serial,
               ad.category_1,
