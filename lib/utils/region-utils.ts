@@ -13,14 +13,15 @@
  * abbreviateRegion("부산광역시") // "부산"
  * abbreviateRegion("경기도") // "경기"
  * abbreviateRegion("세종특별자치시") // "세종"
+ * abbreviateRegion("도봉구") // "도봉구" (부작용 없음)
  */
 export function abbreviateRegion(region: string): string {
   return region
-    .replace('광역시', '')
-    .replace('특별시', '')
-    .replace('특별자치시', '')
-    .replace('특별자치도', '')
-    .replace('도', '');
+    .replace(/광역시$/g, '')
+    .replace(/특별시$/g, '')
+    .replace(/특별자치시$/g, '')
+    .replace(/특별자치도$/g, '')
+    .replace(/도$/g, '');  // 끝에만 매칭 (부작용 방지)
 }
 
 /**
