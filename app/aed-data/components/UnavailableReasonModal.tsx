@@ -111,44 +111,44 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
 
   return (
     <Dialog open onOpenChange={(open) => !open && !isSubmitting && onClose()}>
-      <DialogContent className="bg-gray-900 border-gray-800 text-gray-100 sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-100">
+      <DialogContent className="bg-gray-900 border-gray-800 text-gray-100 sm:max-w-md p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-lg font-semibold text-gray-100">
             점검불가 사유 선택
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-400">
+          <DialogDescription className="text-xs text-gray-400">
             해당 장비를 점검할 수 없는 사유를 선택해주세요.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* 장비 정보 */}
-          <div className="rounded-lg border border-gray-800 bg-gray-950 p-4 text-sm space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-400">설치기관</span>
-              <span className="text-gray-100 font-medium">
+          <div className="rounded border border-gray-800 bg-gray-950 p-2.5 text-xs space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">설치기관</span>
+              <span className="text-gray-100 font-medium text-right ml-2 truncate">
                 {device.installation_institution || '미등록'}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">관리번호</span>
-              <span className="text-gray-100">{device.management_number || '미등록'}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">관리번호</span>
+              <span className="text-gray-300 font-mono text-right">{device.management_number || '미등록'}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">장비연번</span>
-              <span className="text-gray-100">{device.equipment_serial || '미등록'}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">장비연번</span>
+              <span className="text-gray-300 font-mono text-right">{device.equipment_serial || '미등록'}</span>
             </div>
           </div>
 
           {/* 사유 선택 */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {REASON_OPTIONS.map((option) => (
               <label
                 key={option.value}
-                className={`block rounded-lg border p-4 cursor-pointer transition-colors ${
+                className={`block rounded border p-2.5 cursor-pointer transition-colors ${
                   selectedReason === option.value
                     ? 'border-green-600 bg-green-900/20'
-                    : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                    : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
                 }`}
               >
                 <input
@@ -160,21 +160,21 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
                   disabled={isSubmitting}
                   className="sr-only"
                 />
-                <div className="flex items-start gap-3">
+                <div className="flex items-center gap-2.5">
                   <div
-                    className={`mt-1 h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                    className={`h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                       selectedReason === option.value
                         ? 'border-green-600 bg-green-600'
                         : 'border-gray-500'
                     }`}
                   >
                     {selectedReason === option.value && (
-                      <div className="h-2 w-2 rounded-full bg-white" />
+                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
                     )}
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-white">{option.label}</div>
-                    <div className="text-sm text-gray-400 mt-1">{option.description}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white">{option.label}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{option.description}</div>
                   </div>
                 </div>
               </label>
@@ -183,8 +183,8 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
 
           {/* 양도 기관명 입력 */}
           {selectedReason === 'transferred' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-300">
                 양도한 기관명 <span className="text-red-400">*</span>
               </label>
               <input
@@ -193,7 +193,7 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
                 onChange={(e) => setTransferredInstitution(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="양도한 기관명을 입력해주세요..."
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:opacity-50"
+                className="w-full px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-green-600 focus:border-transparent disabled:opacity-50"
                 maxLength={100}
               />
               <div className="text-xs text-gray-500 text-right">
@@ -204,8 +204,8 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
 
           {/* 기타 사유 입력 */}
           {selectedReason === 'other' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-300">
                 상세 사유 <span className="text-red-400">*</span>
               </label>
               <textarea
@@ -213,7 +213,7 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
                 onChange={(e) => setCustomNote(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="점검불가 사유를 상세히 입력해주세요..."
-                className="w-full min-h-[100px] px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent disabled:opacity-50"
+                className="w-full min-h-[80px] px-2.5 py-1.5 text-sm bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-green-600 focus:border-transparent disabled:opacity-50 resize-none"
                 maxLength={500}
               />
               <div className="text-xs text-gray-500 text-right">
@@ -223,13 +223,14 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
           )}
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 pt-3 mt-1">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isSubmitting}
-            className="bg-gray-800 hover:bg-gray-700 text-gray-100 border-gray-700"
+            size="sm"
+            className="bg-gray-800 hover:bg-gray-700 text-gray-100 border-gray-700 h-8 text-xs"
           >
             취소
           </Button>
@@ -237,11 +238,12 @@ export function UnavailableReasonModal({ device, onClose, onSuccess }: Unavailab
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting || !selectedReason}
-            className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+            size="sm"
+            className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 h-8 text-xs"
           >
             {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+              <span className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
                 처리 중...
               </span>
             ) : (
