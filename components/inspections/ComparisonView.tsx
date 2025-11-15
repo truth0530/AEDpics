@@ -12,7 +12,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { logger } from '@/lib/logger';
-import { abbreviateRegion, REGIONS } from '@/lib/utils/region-utils';
+import { abbreviateRegion } from '@/lib/utils/region-utils';
+import { REGION_FULL_NAME_LABELS } from '@/lib/constants/regions';
 
 type CompareType = 'region' | 'period';
 
@@ -127,7 +128,7 @@ export default function ComparisonView() {
             지역 선택 (최대 5개)
           </h3>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-1">
-            {REGIONS.map(region => (
+            {REGION_FULL_NAME_LABELS.map(region => (
               <button
                 key={region}
                 onClick={() => toggleRegion(region)}
@@ -178,7 +179,7 @@ export default function ComparisonView() {
               className="w-full text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 py-1 px-2"
             >
               <option value="all">전체</option>
-              {REGIONS.map(region => (
+              {REGION_FULL_NAME_LABELS.map(region => (
                 <option key={region} value={region}>{region}</option>
               ))}
             </select>

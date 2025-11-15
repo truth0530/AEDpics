@@ -106,6 +106,14 @@ const REGION_CODE_TO_FULL_LABEL: Record<string, string> = REGION_FULL_NAMES.redu
 );
 
 /**
+ * 17개 시도 정식 명칭 배열 (중앙 제외)
+ * 점검 비교 등 실제 지역 선택이 필요한 UI에서 사용
+ */
+export const REGION_FULL_NAME_LABELS = REGION_FULL_NAMES
+  .filter(r => r.code !== 'KR')  // '중앙' 제외
+  .map(r => r.label);
+
+/**
  * 시도별 구군 목록 (UI/필터용)
  */
 export const REGION_CODE_TO_GUGUNS: Record<string, string[]> = {
