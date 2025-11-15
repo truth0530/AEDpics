@@ -776,7 +776,7 @@ export default function ManagementNumberPanel({
   return (
     <div className="flex flex-col h-full overflow-hidden bg-green-900/[0.06]">
       {/* 필터 옵션 및 통합 검색창 - 상단 고정 */}
-      <div className="flex-shrink-0 pb-3 border-b mb-3">
+      <div className="flex-shrink-0 pb-2 border-b">
         <div className="flex items-center gap-3">
           {/* 필터 옵션 */}
           <div className="flex items-center gap-4">

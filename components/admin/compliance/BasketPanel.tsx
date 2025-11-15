@@ -76,14 +76,14 @@ export default function BasketPanel({
     <div className="flex flex-col h-full overflow-hidden">
       {/* 통계 정보 - 상단 고정 */}
       {basket.length > 0 && (
-        <div className="flex-shrink-0 grid grid-cols-2 gap-2 mb-4">
-          <Card className="p-2">
+        <div className="flex-shrink-0 grid grid-cols-2 gap-2 mb-2">
+          <Card className="p-1.5">
             <div className="text-xs text-muted-foreground">관리번호</div>
-            <div className="text-2xl font-bold">{basket.length}개</div>
+            <div className="text-lg font-bold">{basket.length}개</div>
           </Card>
-          <Card className="p-2">
+          <Card className="p-1.5">
             <div className="text-xs text-muted-foreground">총 장비</div>
-            <div className="text-2xl font-bold">
+            <div className="text-lg font-bold">
               {hasPartialMatch ? `${totalEquipment}대중 ${selectedEquipment}대` : `${totalEquipment}대`}
             </div>
           </Card>
@@ -129,7 +129,7 @@ export default function BasketPanel({
                       : "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
                   )}
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="font-medium text-sm">

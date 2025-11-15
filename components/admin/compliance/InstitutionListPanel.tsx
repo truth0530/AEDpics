@@ -144,7 +144,7 @@ export default function InstitutionListPanel({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* 검색 및 필터 - 상단 고정 */}
-      <div className="flex-shrink-0 bg-white dark:bg-gray-900 pb-3 border-b">
+      <div className="flex-shrink-0 bg-white dark:bg-gray-900 pb-2 border-b">
         <div className="flex items-center gap-3">
           {/* 필터 옵션 */}
           <div className="flex items-center space-x-2">
