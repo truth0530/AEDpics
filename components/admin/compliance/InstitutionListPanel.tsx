@@ -109,7 +109,7 @@ export default function InstitutionListPanel({
       });
 
       // 미매칭 필터 적용 (클라이언트 사이드)
-      let filteredInstitutions = showOnlyUnmatched
+      const filteredInstitutions = showOnlyUnmatched
         ? transformedInstitutions.filter(inst => inst.unmatched_count > 0)
         : transformedInstitutions;
 
