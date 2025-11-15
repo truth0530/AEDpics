@@ -128,7 +128,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
       {/* 메인 컨텐츠 */}
       <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed')} className="h-full flex flex-col">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-0">
             <TabsList className="grid w-fit grid-cols-2">
               <TabsTrigger value="targets" className="px-8">
                 매칭하기
