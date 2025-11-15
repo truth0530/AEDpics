@@ -400,10 +400,10 @@ export async function GET(request: NextRequest) {
           FROM aedpics.aed_data ad
           WHERE ad.management_number IS NOT NULL
             AND (
-              ad.installation_institution ILIKE ${`%${search}%`}
-              OR ad.installation_location_address ILIKE ${`%${search}%`}
-              OR ad.installation_address ILIKE ${`%${search}%`}
-              OR ad.management_number ILIKE ${`%${search}%`}
+              ad.installation_institution ILIKE ${'%' + search + '%'}
+              OR ad.installation_location_address ILIKE ${'%' + search + '%'}
+              OR ad.installation_address ILIKE ${'%' + search + '%'}
+              OR ad.management_number ILIKE ${'%' + search + '%'}
             )
             AND ad.sido = ${normalizedSido}
             AND ad.gugun = ${normalizedGugun}
@@ -453,10 +453,10 @@ export async function GET(request: NextRequest) {
           FROM aedpics.aed_data ad
           WHERE ad.management_number IS NOT NULL
             AND (
-              ad.installation_institution ILIKE ${`%${search}%`}
-              OR ad.installation_location_address ILIKE ${`%${search}%`}
-              OR ad.installation_address ILIKE ${`%${search}%`}
-              OR ad.management_number ILIKE ${`%${search}%`}
+              ad.installation_institution ILIKE ${'%' + search + '%'}
+              OR ad.installation_location_address ILIKE ${'%' + search + '%'}
+              OR ad.installation_address ILIKE ${'%' + search + '%'}
+              OR ad.management_number ILIKE ${'%' + search + '%'}
             )
             AND ad.sido = ${normalizedSido}
           ORDER BY ad.management_number
@@ -505,10 +505,10 @@ export async function GET(request: NextRequest) {
           FROM aedpics.aed_data ad
           WHERE ad.management_number IS NOT NULL
             AND (
-              ad.installation_institution ILIKE ${`%${search}%`}
-              OR ad.installation_location_address ILIKE ${`%${search}%`}
-              OR ad.installation_address ILIKE ${`%${search}%`}
-              OR ad.management_number ILIKE ${`%${search}%`}
+              ad.installation_institution ILIKE ${'%' + search + '%'}
+              OR ad.installation_location_address ILIKE ${'%' + search + '%'}
+              OR ad.installation_address ILIKE ${'%' + search + '%'}
+              OR ad.management_number ILIKE ${'%' + search + '%'}
             )
           ORDER BY ad.management_number
           LIMIT 50
