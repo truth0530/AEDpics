@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserProfile } from '@/packages/types';
 import { AEDDataProvider, useAEDData } from '@/app/aed-data/components/AEDDataProvider';
@@ -8,7 +8,12 @@ import { DataTable } from '@/app/aed-data/components/DataTable';
 import { InspectionFilterBar } from './InspectionFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
-import { REGION_CODE_TO_DB_LABELS } from '@/lib/constants/regions';
+import { Search } from 'lucide-react';
+import {
+  REGION_CODE_TO_DB_LABELS,
+  REGION_LONG_LABELS,
+  REGION_LABEL_TO_CODE
+} from '@/lib/constants/regions';
 import { hasNationalAccess } from '@/lib/utils/user-roles';
 import {
   getActiveInspectionSessions,
@@ -26,7 +31,6 @@ import { InspectionInProgressModal } from './InspectionInProgressModal';
 import { InspectionHistoryModal } from './InspectionHistoryModal';
 import { DeleteInspectionModal } from './DeleteInspectionModal';
 import * as XLSX from 'xlsx';
-import { Eye, Trash2 } from 'lucide-react';
 
 interface AdminFullViewProps {
   user: UserProfile;
@@ -47,6 +51,11 @@ function getStatusBadge(status: string) {
         text: '점검완료',
         className: 'bg-blue-900 text-blue-200'
       };
+    case 'unavailable':
+      return {
+        text: '점검불가',
+        className: 'bg-red-900 text-red-200'
+      };
     default:
       return {
         text: '알 수 없음',
@@ -57,9 +66,14 @@ function getStatusBadge(status: string) {
 
 function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfile; pageType?: 'inspection' | 'schedule' }) {
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'completed'>('list');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'completed'>('completed');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'in_progress' | 'completed' | 'unavailable'>('completed');
   const [filterCollapsed, setFilterCollapsed] = useState(false);
   const [filterMode, setFilterModeState] = useState<'address' | 'jurisdiction'>('address');
+  // 점검자 필터 (디폴트: 전체, 점검 이력 로드 후 본인으로 설정)
+  const [selectedInspector, setSelectedInspector] = useState<string>('');
+  const isInspectorInitialized = useRef(false);
+  // 통합검색 상태
+  const [searchTerm, setSearchTerm] = useState('');
   const { data, isLoading, setFilters, filters } = useAEDData();
   const router = useRouter();
   const { showSuccess, showError } = useToast();
@@ -114,6 +128,66 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
   // 점검 이력 목록 (엑셀 다운로드용)
   const [inspectionHistoryList, setInspectionHistoryList] = useState<InspectionHistory[]>([]);
+
+  // 점검자 필터용 고유 점검자 목록 추출
+  const uniqueInspectors = useMemo(() => {
+    const inspectorMap = new Map<string, { id: string; name: string }>();
+    inspectionHistoryList.forEach((inspection) => {
+      if (inspection.inspector_id && inspection.inspector_name) {
+        inspectorMap.set(inspection.inspector_id, {
+          id: inspection.inspector_id,
+          name: inspection.inspector_name,
+        });
+      }
+    });
+
+    const inspectors = Array.from(inspectorMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+    // "전체" 옵션 추가
+    return [{ id: '', name: '전체' }, ...inspectors];
+  }, [inspectionHistoryList]);
+
+  // 점검 이력 로드 후 현재 사용자의 inspector_id 설정 (최초 1회만)
+  useEffect(() => {
+    if (inspectionHistoryList.length === 0) return;
+    if (isInspectorInitialized.current) return; // 이미 초기화되었으면 스킵
+
+    // 점검 이력에서 현재 사용자(user.id)를 inspector_id로 가진 레코드 찾기
+    const userInspection = inspectionHistoryList.find(
+      (inspection) => inspection.inspector_id === user?.id
+    );
+
+    if (userInspection && userInspection.inspector_id) {
+      // 현재 사용자가 점검한 이력이 있으면 본인 ID로 설정
+      setSelectedInspector(userInspection.inspector_id);
+    } else {
+      // 없으면 전체로 설정
+      setSelectedInspector('');
+    }
+
+    isInspectorInitialized.current = true; // 초기화 완료 표시
+  }, [inspectionHistoryList, user?.id]);
+
+  // 지역 변경 시 점검자 필터 리셋
+  useEffect(() => {
+    setSelectedInspector(''); // 전체로 리셋
+    isInspectorInitialized.current = false; // 다음 로드 시 재초기화 허용
+  }, [filters.regionCodes]);
+
+  // 통합검색 적용 함수
+  const handleSearchApply = () => {
+    setFilters({
+      ...filters,
+      search: searchTerm.trim() || undefined,
+    } as any);
+  };
+
+  // Enter 키로 검색
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearchApply();
+    }
+  };
 
   // 점검시작/점검불가 선택 모달
   const [showInspectionChoiceModal, setShowInspectionChoiceModal] = useState(false);
@@ -212,12 +286,19 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
         // ⚠️ CRITICAL: cityCodes 필터는 전국 권한 사용자만 클라이언트 필터링 적용
         // 시도/시군구 권한은 API가 이미 권한 기반으로 필터링했으므로 클라이언트 필터링 하지 않음
-        if (hasNationalAccessFlag && filters.cityCodes && filters.cityCodes.length > 0) {
+        // "전체"가 선택된 경우 필터링 스킵
+        if (hasNationalAccessFlag && filters.cityCodes && filters.cityCodes.length > 0 && !filters.cityCodes.includes('전체')) {
           history = history.filter(item => {
             const itemGugun = (item as any).aed_data?.gugun;
             if (!itemGugun) return true;
             return filters.cityCodes!.includes(itemGugun);
           });
+        }
+
+        // 점검자 필터 적용 (빈 문자열이면 전체 조회)
+        if (selectedInspector && selectedInspector !== '') {
+          history = history.filter(item => item.inspector_id === selectedInspector);
+          console.log('[AdminFullView Debug] 점검자 필터 적용 후 레코드 수:', history.length);
         }
 
         console.log('[AdminFullView Debug] 필터링 후 최종 레코드 수:', history.length);
@@ -228,7 +309,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     }
 
     loadInspectionHistory();
-  }, [viewMode, statusFilter, filterMode, user?.role, filters.regionCodes, filters.cityCodes]);
+  }, [viewMode, statusFilter, filterMode, user?.role, user?.id, filters.regionCodes, filters.cityCodes, selectedInspector]);
 
   // ✅ mapRegionChanged 이벤트 제거 - 드롭다운 선택만 필터 업데이트
 
@@ -617,45 +698,103 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
       {/* 점검이력 상태 필터 버튼 - 점검이력 탭일 때만 표시 */}
       {viewMode === 'completed' && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-gray-900/50 border-b border-gray-800">
-          <span className="text-xs text-gray-400 font-medium">상태:</span>
-          <div className="flex gap-1">
+        <div className="flex items-center gap-3 px-4 py-2 bg-gray-900/50 border-b border-gray-800 flex-wrap">
+          {/* 상태 필터 버튼 */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-medium">상태:</span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                  statusFilter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+                }`}
+              >
+                전체
+              </button>
+              <button
+                onClick={() => setStatusFilter('in_progress')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                  statusFilter === 'in_progress'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+                }`}
+              >
+                점검중
+              </button>
+              <button
+                onClick={() => setStatusFilter('completed')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                  statusFilter === 'completed'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+                }`}
+              >
+                점검완료
+              </button>
+              <button
+                onClick={() => setStatusFilter('unavailable')}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                  statusFilter === 'unavailable'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+                }`}
+              >
+                점검불가
+              </button>
+            </div>
+          </div>
+
+          {/* 점검자 필터 드롭다운 */}
+          {uniqueInspectors.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 font-medium">점검자:</span>
+              <select
+                value={selectedInspector}
+                onChange={(e) => setSelectedInspector(e.target.value)}
+                disabled={user?.role === 'temporary_inspector'}
+                className={`px-3 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded text-gray-300 focus:outline-none focus:ring-1 focus:ring-green-600 focus:border-transparent min-w-[150px] ${
+                  user?.role === 'temporary_inspector' ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {uniqueInspectors.map((inspector) => (
+                  <option key={inspector.id} value={inspector.id}>
+                    {inspector.name}
+                  </option>
+                ))}
+              </select>
+              {user?.role === 'temporary_inspector' && (
+                <span className="text-xs text-gray-500">(본인 이력만 조회 가능)</span>
+              )}
+            </div>
+          )}
+
+          {/* 통합검색 창 */}
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="통합검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                className="pl-8 pr-3 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded text-gray-300 focus:outline-none focus:ring-1 focus:ring-green-600 focus:border-transparent w-full"
+              />
+            </div>
             <button
-              onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                statusFilter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
-              }`}
+              onClick={handleSearchApply}
+              className="px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors whitespace-nowrap"
             >
-              전체
-            </button>
-            <button
-              onClick={() => setStatusFilter('in_progress')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                statusFilter === 'in_progress'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
-              }`}
-            >
-              점검중
-            </button>
-            <button
-              onClick={() => setStatusFilter('completed')}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                statusFilter === 'completed'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
-              }`}
-            >
-              점검완료
+              조회
             </button>
           </div>
         </div>
       )}
 
-      {/* Filter Bar - 목록/점검완료 뷰일 때는 일반 배치, 지도 뷰일 때는 오버레이 */}
-      {(viewMode === 'list' || viewMode === 'completed') && (
+      {/* Filter Bar - 목록 뷰일 때만 표시 (점검완료 뷰는 자체 필터 사용) */}
+      {viewMode === 'list' && (
         <>
           {/* 현장점검 페이지에서는 필터바 항상 표시, 일정관리에서는 토글 가능 */}
           {(pageType === 'inspection' || !filterCollapsed) && <InspectionFilterBar />}
@@ -829,37 +968,46 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
                       {/* 푸터: 작업 버튼 */}
                       <div className="px-4 py-3 border-t border-gray-700 flex gap-2">
-                        <button
-                          onClick={() => handleViewInspectionHistory(inspection.id)}
-                          className="flex-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-                          title="상세 정보 보기"
-                          aria-label="상세 정보 보기"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {user?.role === 'master' ? (
-                          <button
-                            onClick={() => {
-                              setSelectedInspection(inspection);
-                              setInspectionToDelete(inspection);
-                              setShowDeleteModal(true);
-                            }}
-                            className="flex-1 p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-                            title="삭제 (마스터만)"
-                            aria-label="삭제 (마스터만)"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <button
-                            disabled
-                            className="flex-1 p-2 bg-gray-700 text-gray-500 rounded cursor-not-allowed flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-                            title="삭제 불가 (마스터만 가능)"
-                            aria-label="삭제 불가 (마스터만 가능)"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        {(() => {
+                          // 점검 기록의 지역 코드 추출
+                          const inspectionSido = inspection.aed_data?.sido;
+                          const inspectionRegionCode = inspectionSido ?
+                            (REGION_LONG_LABELS[inspectionSido] || REGION_LABEL_TO_CODE[inspectionSido]) :
+                            undefined;
+
+                          // 권한 확인
+                          const permission = getInspectionActionButtons(
+                            user.role,
+                            user.id,
+                            inspection.inspector_id,
+                            user.region_code,
+                            inspectionRegionCode
+                          );
+
+                          if (permission.showEdit) {
+                            return (
+                              <button
+                                onClick={() => handleViewInspectionHistory(inspection.id)}
+                                className="flex-1 p-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800 text-sm font-medium"
+                                title="점검 기록 수정"
+                                aria-label="점검 기록 수정"
+                              >
+                                수정
+                              </button>
+                            );
+                          } else {
+                            return (
+                              <button
+                                onClick={() => handleViewInspectionHistory(inspection.id)}
+                                className="flex-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 text-sm font-medium"
+                                title="상세 정보 보기"
+                                aria-label="상세 정보 보기"
+                              >
+                                보기
+                              </button>
+                            );
+                          }
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -870,11 +1018,12 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                   <table className="w-full border-collapse table-fixed">
                     <thead className="sticky top-0 bg-gray-800 border-b border-gray-700">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비연번</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden md:table-cell min-w-[110px] max-w-[150px]">시도/구군</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden xl:table-cell min-w-[150px] max-w-[200px]">설치기관</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden lg:table-cell min-w-[120px] max-w-[140px] break-words">관리번호</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[120px] max-w-[140px] break-words">장비연번</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden sm:table-cell min-w-[130px] max-w-[150px]">점검일시</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden lg:table-cell min-w-[80px] max-w-[100px]">점검자</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 hidden md:table-cell min-w-[110px] max-w-[150px]">시도/구군</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[90px] max-w-[110px]">상태</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 min-w-[110px] max-w-[140px]">작업</th>
                       </tr>
@@ -885,10 +1034,19 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                           key={inspection.id}
                           className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-sm text-gray-200 font-medium truncate whitespace-nowrap">{inspection.equipment_serial}</td>
+                          <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
+                            {inspection.aed_data
+                              ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
+                              : '-'
+                            }
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-400 hidden xl:table-cell truncate">
                             {inspection.aed_data?.installation_institution || '-'}
                           </td>
+                          <td className="px-4 py-3 text-sm text-gray-400 hidden lg:table-cell truncate whitespace-nowrap">
+                            {inspection.aed_data?.management_number || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-200 font-medium truncate whitespace-nowrap">{inspection.equipment_serial}</td>
                           <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell whitespace-nowrap">
                             {new Date(inspection.created_at).toLocaleString('ko-KR', {
                               year: '2-digit',
@@ -899,49 +1057,52 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                             })}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-400 hidden lg:table-cell truncate">{inspection.inspector_name}</td>
-                          <td className="px-4 py-3 text-sm text-gray-400 hidden md:table-cell truncate">
-                            {inspection.aed_data
-                              ? `${inspection.aed_data.sido || '-'} ${inspection.aed_data.gugun || '-'}`
-                              : '-'
-                            }
-                          </td>
                           <td className="px-4 py-3 text-sm">
                             <span className={`inline-block px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${getStatusBadge(inspection.status).className}`}>
                               {getStatusBadge(inspection.status).text}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm space-x-1 flex flex-wrap gap-1">
-                            <button
-                              onClick={() => handleViewInspectionHistory(inspection.id)}
-                              className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-                              title="상세 정보 보기"
-                              aria-label="상세 정보 보기"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            {user?.role === 'master' ? (
-                              <button
-                                onClick={() => {
-                                  setSelectedInspection(inspection);
-                                  setInspectionToDelete(inspection);
-                                  setShowDeleteModal(true);
-                                }}
-                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-                                title="삭제 (마스터만)"
-                                aria-label="삭제 (마스터만)"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <button
-                                disabled
-                                className="p-1.5 bg-gray-700 text-gray-500 rounded cursor-not-allowed flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-                                title="삭제 불가 (마스터만 가능)"
-                                aria-label="삭제 불가 (마스터만 가능)"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
+                            {(() => {
+                              // 점검 기록의 지역 코드 추출
+                              const inspectionSido = inspection.aed_data?.sido;
+                              const inspectionRegionCode = inspectionSido ?
+                                (REGION_LONG_LABELS[inspectionSido] || REGION_LABEL_TO_CODE[inspectionSido]) :
+                                undefined;
+
+                              // 권한 확인
+                              const permission = getInspectionActionButtons(
+                                user.role,
+                                user.id,
+                                inspection.inspector_id,
+                                user.region_code,
+                                inspectionRegionCode
+                              );
+
+                              if (permission.showEdit) {
+                                return (
+                                  <button
+                                    onClick={() => handleViewInspectionHistory(inspection.id)}
+                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800 text-xs font-medium"
+                                    title="점검 기록 수정"
+                                    aria-label="점검 기록 수정"
+                                  >
+                                    수정
+                                  </button>
+                                );
+                              } else {
+                                return (
+                                  <button
+                                    onClick={() => handleViewInspectionHistory(inspection.id)}
+                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex-shrink-0 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 text-xs font-medium"
+                                    title="상세 정보 보기"
+                                    aria-label="상세 정보 보기"
+                                  >
+                                    보기
+                                  </button>
+                                );
+                              }
+                            })()}
                           </td>
                         </tr>
                       ))}
