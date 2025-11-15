@@ -1203,7 +1203,7 @@ export function DataTable({
     // 점검진행목록(completed) 탭일 때는 다른 메시지 표시
     const emptyMessage = pageType === 'inspection' && currentViewMode === 'completed'
       ? '아직 점검을 시작한 장비가 없습니다.'
-      : '일정관리에서 추가된 점검대상 장비가 없습니다.';
+      : '점검대상 장비가 없습니다.';
 
     // 임시점검원 역할 확인
     const isTemporaryInspector = userProfile?.role === 'temporary_inspector';
@@ -1217,7 +1217,7 @@ export function DataTable({
               onClick={() => router.push('/aed-data')}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
-              점검일정 추가하기
+              일정관리로 이동해 추가하기
             </button>
           )}
         </div>
