@@ -452,10 +452,13 @@ export default function BasketPanel({
                         <div className="flex items-center gap-2">
                           <Badge
                             variant="outline"
-                            className="text-xs cursor-pointer hover:bg-muted transition-colors"
-                            onClick={() => toggleCollapsed(item.management_number)}
+                            className={cn(
+                              "text-xs",
+                              item.equipment_count > 1 && "cursor-pointer hover:bg-muted transition-colors"
+                            )}
+                            onClick={item.equipment_count > 1 ? () => toggleCollapsed(item.management_number) : undefined}
                           >
-                            장비 {item.equipment_count}대 (클릭시 부분제외 가능)
+                            장비 {item.equipment_count}대{item.equipment_count > 1 && ' (클릭시 부분제외 가능)'}
                           </Badge>
                         </div>
 
