@@ -75,6 +75,285 @@ function hasUniqueKeyMatch(locationDetail: string, uniqueKey: string | undefined
   return valuesInParentheses.some(value => value === uniqueKey);
 }
 
+// 설치장소 텍스트에서 구급차/차량번호 강조
+function highlightVehicleText(text: string): React.ReactNode {
+  if (!text) return text;
+
+  // 차량번호 패턴: 숫자+한글+숫자 (예: 12가3456, 123가4567)
+  const vehicleNumberPattern = /\d{2,3}[가-힣]\d{4}/g;
+
+  // 구급차, 특수구급차, 차량번호를 찾아서 강조
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  // 먼저 구급차 관련 키워드 찾기
+  const ambulancePattern = /(특수구급차|구급차)/g;
+  const allMatches: Array<{ index: number; text: string; type: 'ambulance' | 'vehicle' }> = [];
+
+  let match;
+  while ((match = ambulancePattern.exec(text)) !== null) {
+    allMatches.push({ index: match.index, text: match[0], type: 'ambulance' });
+  }
+
+  // 차량번호 패턴 찾기
+  while ((match = vehicleNumberPattern.exec(text)) !== null) {
+    allMatches.push({ index: match.index, text: match[0], type: 'vehicle' });
+  }
+
+  // 인덱스 순으로 정렬
+  allMatches.sort((a, b) => a.index - b.index);
+
+  // 중복 제거 (겹치는 영역이 있는 경우)
+  const uniqueMatches: typeof allMatches = [];
+  let lastEnd = -1;
+  for (const m of allMatches) {
+    if (m.index >= lastEnd) {
+      uniqueMatches.push(m);
+      lastEnd = m.index + m.text.length;
+    }
+  }
+
+  // 텍스트 분할 및 강조
+  uniqueMatches.forEach((m, idx) => {
+    // 이전 매치와 현재 매치 사이의 일반 텍스트
+    if (m.index > lastIndex) {
+      parts.push(text.substring(lastIndex, m.index));
+    }
+
+    // 강조 텍스트
+    parts.push(
+      <span key={idx} className="font-bold text-white dark:text-white">
+        {m.text}
+      </span>
+    );
+
+    lastIndex = m.index + m.text.length;
+  });
+
+  // 남은 텍스트
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? <>{parts}</> : text;
+}
+
+// 기관명에서 선택된 기관명과 매칭되는 부분 강조 (여러 키워드 모두 강조)
+function highlightMatchingInstitutionName(institutionName: string, selectedName: string | undefined): React.ReactNode {
+  if (!institutionName || !selectedName) return institutionName;
+
+  // 먼저 전체 문자열 매칭 시도
+  const fullIndex = institutionName.indexOf(selectedName);
+  if (fullIndex !== -1) {
+    const before = institutionName.substring(0, fullIndex);
+    const matched = institutionName.substring(fullIndex, fullIndex + selectedName.length);
+    const after = institutionName.substring(fullIndex + selectedName.length);
+    return (
+      <>
+        {before}
+        <span className="text-yellow-600 dark:text-yellow-400 font-semibold">{matched}</span>
+        {after}
+      </>
+    );
+  }
+
+  // 전체 매칭이 안되면 키워드 단위로 분리하여 매칭
+  const nameKeywords = selectedName
+    .split(/[\s,]+/) // 공백과 쉼표로 분리
+    .filter(k => k.length > 1); // 1글자 제외
+
+  if (nameKeywords.length === 0) return institutionName;
+
+  // 모든 매칭 위치 찾기
+  const matches: Array<{ index: number; length: number; text: string }> = [];
+
+  for (const keyword of nameKeywords) {
+    let searchIndex = 0;
+    while (true) {
+      const index = institutionName.indexOf(keyword, searchIndex);
+      if (index === -1) break;
+
+      matches.push({
+        index,
+        length: keyword.length,
+        text: keyword
+      });
+
+      searchIndex = index + keyword.length;
+    }
+  }
+
+  if (matches.length === 0) return institutionName;
+
+  // 인덱스 순으로 정렬
+  matches.sort((a, b) => a.index - b.index);
+
+  // 겹치는 매치 제거 (더 긴 매치 우선)
+  const uniqueMatches: typeof matches = [];
+  for (const match of matches) {
+    const hasOverlap = uniqueMatches.some(
+      existing =>
+        (match.index >= existing.index && match.index < existing.index + existing.length) ||
+        (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+        (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+    );
+
+    if (!hasOverlap) {
+      uniqueMatches.push(match);
+    } else {
+      // 겹치는 경우 더 긴 것으로 교체
+      const overlappingIndex = uniqueMatches.findIndex(
+        existing =>
+          (match.index >= existing.index && match.index < existing.index + existing.length) ||
+          (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+          (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+      );
+
+      if (overlappingIndex !== -1 && match.length > uniqueMatches[overlappingIndex].length) {
+        uniqueMatches[overlappingIndex] = match;
+      }
+    }
+  }
+
+  // 다시 정렬
+  uniqueMatches.sort((a, b) => a.index - b.index);
+
+  // 텍스트 분할 및 강조
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  uniqueMatches.forEach((match, idx) => {
+    // 이전 매치와 현재 매치 사이의 일반 텍스트
+    if (match.index > lastIndex) {
+      parts.push(institutionName.substring(lastIndex, match.index));
+    }
+
+    // 강조 텍스트
+    parts.push(
+      <span key={idx} className="text-yellow-600 dark:text-yellow-400 font-semibold">
+        {match.text}
+      </span>
+    );
+
+    lastIndex = match.index + match.length;
+  });
+
+  // 남은 텍스트
+  if (lastIndex < institutionName.length) {
+    parts.push(institutionName.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? <>{parts}</> : institutionName;
+}
+
+// 주소에서 선택된 주소와 매칭되는 부분 강조 (여러 키워드 모두 강조)
+function highlightMatchingAddress(address: string, selectedAddress: string | undefined): React.ReactNode {
+  if (!address || !selectedAddress) return address;
+
+  // 주소를 공백, 쉼표, 괄호 등으로 분리하여 개별 키워드 찾기
+  const addressKeywords = selectedAddress
+    .split(/[\s,]+/) // 공백과 쉼표로 분리
+    .filter(k => k.length > 1); // 1글자 제외
+
+  if (addressKeywords.length === 0) return address;
+
+  // 모든 매칭 위치 찾기
+  const matches: Array<{ index: number; length: number; text: string }> = [];
+
+  for (const keyword of addressKeywords) {
+    let searchIndex = 0;
+    while (true) {
+      const index = address.indexOf(keyword, searchIndex);
+      if (index === -1) break;
+
+      matches.push({
+        index,
+        length: keyword.length,
+        text: keyword
+      });
+
+      searchIndex = index + keyword.length;
+    }
+  }
+
+  // 괄호 안의 내용도 매칭 (예: (신천동))
+  const parenMatch = selectedAddress.match(/\([^)]+\)/g);
+  if (parenMatch) {
+    for (const paren of parenMatch) {
+      const index = address.indexOf(paren);
+      if (index !== -1) {
+        matches.push({
+          index,
+          length: paren.length,
+          text: paren
+        });
+      }
+    }
+  }
+
+  if (matches.length === 0) return address;
+
+  // 인덱스 순으로 정렬
+  matches.sort((a, b) => a.index - b.index);
+
+  // 겹치는 매치 제거 (더 긴 매치 우선)
+  const uniqueMatches: typeof matches = [];
+  for (const match of matches) {
+    const hasOverlap = uniqueMatches.some(
+      existing =>
+        (match.index >= existing.index && match.index < existing.index + existing.length) ||
+        (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+        (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+    );
+
+    if (!hasOverlap) {
+      uniqueMatches.push(match);
+    } else {
+      // 겹치는 경우 더 긴 것으로 교체
+      const overlappingIndex = uniqueMatches.findIndex(
+        existing =>
+          (match.index >= existing.index && match.index < existing.index + existing.length) ||
+          (match.index + match.length > existing.index && match.index + match.length <= existing.index + existing.length) ||
+          (match.index <= existing.index && match.index + match.length >= existing.index + existing.length)
+      );
+
+      if (overlappingIndex !== -1 && match.length > uniqueMatches[overlappingIndex].length) {
+        uniqueMatches[overlappingIndex] = match;
+      }
+    }
+  }
+
+  // 다시 정렬
+  uniqueMatches.sort((a, b) => a.index - b.index);
+
+  // 텍스트 분할 및 강조
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  uniqueMatches.forEach((match, idx) => {
+    // 이전 매치와 현재 매치 사이의 일반 텍스트
+    if (match.index > lastIndex) {
+      parts.push(address.substring(lastIndex, match.index));
+    }
+
+    // 강조 텍스트
+    parts.push(
+      <span key={idx} className="text-yellow-600 dark:text-yellow-400 font-semibold">
+        {match.text}
+      </span>
+    );
+
+    lastIndex = match.index + match.length;
+  });
+
+  // 남은 텍스트
+  if (lastIndex < address.length) {
+    parts.push(address.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? <>{parts}</> : address;
+}
+
 export default function ManagementNumberPanel({
   year,
   selectedInstitution,
@@ -241,7 +520,7 @@ export default function ManagementNumberPanel({
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-0.5">
         {filteredItems.map((item) => {
           const isExpanded = expandedManagementNumbers.has(item.management_number);
           const hasMultipleEquipment = item.equipment_count > 1;
@@ -277,7 +556,8 @@ export default function ManagementNumberPanel({
             <Card
               key={item.management_number}
               className={cn(
-                "p-2.5 transition-all",
+                "p-2 transition-all",
+                !item.is_matched && !isPartiallyMatched && !isFullyMatched && !hasUniqueKeyInEquipment && "bg-green-900/[0.06]",
                 item.is_matched && "opacity-50 bg-muted",
                 isPartiallyMatched && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
                 isFullyMatched && "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20",
@@ -293,7 +573,7 @@ export default function ManagementNumberPanel({
                   <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="font-medium text-sm">
-                      {item.institution_name}
+                      {highlightMatchingInstitutionName(item.institution_name, selectedInstitution?.institution_name)}
                     </div>
                     {hasUniqueKeyInEquipment && !isPartiallyMatched && !isFullyMatched && (
                       <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-300">
@@ -319,9 +599,12 @@ export default function ManagementNumberPanel({
                         e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
                         onAddToBasket(item);
                       }}
-                      className="flex-shrink-0"
+                      className={cn(
+                        "flex-shrink-0 bg-green-900/[0.06]",
+                        item.equipment_count === 1 && item.confidence === 100 && "text-yellow-600 dark:text-yellow-400"
+                      )}
                     >
-                      모든장비매칭
+                      {item.equipment_count === 1 ? '관리번호 담기' : '모든장비담기'}
                     </Button>
                   ) : item.is_matched ? (
                     <Badge variant="secondary" className="text-xs flex-shrink-0">
@@ -353,7 +636,7 @@ export default function ManagementNumberPanel({
                 )}
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 flex-shrink-0" />
-                  <span>{item.address}</span>
+                  <span>{highlightMatchingAddress(item.address, selectedInstitution?.address)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-xs text-muted-foreground">
@@ -361,7 +644,7 @@ export default function ManagementNumberPanel({
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {showConfidence && item.confidence && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs bg-green-900/[0.06]">
                         <TrendingUp className="h-3 w-3 mr-1" />
                         {item.confidence.toFixed(0)}%
                       </Badge>
@@ -378,7 +661,10 @@ export default function ManagementNumberPanel({
                 {hasMultipleEquipment && remainingEquipmentCount > 0 && (
                   <div className="flex justify-center mt-2">
                     <div
-                      className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors"
+                      className={cn(
+                        "text-xs text-muted-foreground flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors",
+                        item.confidence === 100 && "text-yellow-600 dark:text-yellow-400"
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpanded(item.management_number);
@@ -387,12 +673,12 @@ export default function ManagementNumberPanel({
                       {isExpanded ? (
                         <>
                           <ChevronUp className="h-3 w-3" />
-                          장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대 접기
+                          일부만 보기
                         </>
                       ) : (
                         <>
                           <ChevronDown className="h-3 w-3" />
-                          장비 {isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대 펼치기
+                          모두 펼치기 ({isPartiallyMatched ? remainingEquipmentCount : item.equipment_count}대)
                         </>
                       )}
                     </div>
@@ -401,20 +687,27 @@ export default function ManagementNumberPanel({
               </div>
               {/* 클릭 가능 영역 끝 */}
 
-              {/* 펼쳐진 경우 장비연번 목록 표시 (담기지 않은 장비만) - 클릭해도 접히지 않음 */}
-                {isExpanded && hasMultipleEquipment && item.equipment_details && (() => {
+              {/* 장비연번 목록 표시 (담기지 않은 장비만) - 펼침 상태에 따라 전체 또는 절반만 표시 */}
+                {hasMultipleEquipment && item.equipment_details && (() => {
                   // 담기지 않은 장비연번만 필터링
                   const remainingEquipmentDetails = item.equipment_details.filter(
                     detail => !basketedSerials.includes(detail.serial)
                   );
 
-                  return remainingEquipmentDetails.length > 0 ? (
+                  // 접힌 상태일 때는 절반만, 펼쳐진 상태일 때는 전체 표시
+                  const displayCount = isExpanded
+                    ? remainingEquipmentDetails.length
+                    : Math.ceil(remainingEquipmentDetails.length / 2);
+
+                  const displayedEquipmentDetails = remainingEquipmentDetails.slice(0, displayCount);
+
+                  return displayedEquipmentDetails.length > 0 ? (
                     <div className="mt-3 pt-3 border-t border-border">
                       <div className="text-xs font-medium text-muted-foreground mb-2">
-                        장비연번 목록 ({remainingEquipmentDetails.length}개)
+                        장비연번 목록 ({displayCount}/{remainingEquipmentDetails.length}개)
                       </div>
                       <div className="space-y-1.5">
-                        {remainingEquipmentDetails.map((detail) => {
+                        {displayedEquipmentDetails.map((detail) => {
                           // 고유키 매칭 여부 확인
                           const isUniqueKeyMatched = uniqueKey && hasUniqueKeyMatch(detail.location_detail, uniqueKey);
 
@@ -426,7 +719,7 @@ export default function ManagementNumberPanel({
                                 !item.is_matched && "cursor-pointer hover:opacity-80",
                                 isUniqueKeyMatched
                                   ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700"
-                                  : "bg-muted/50"
+                                  : "bg-green-900/[0.06]"
                               )}
                               onClick={() => {
                                 if (!item.is_matched) {
@@ -441,7 +734,7 @@ export default function ManagementNumberPanel({
                                     "text-xs",
                                     isUniqueKeyMatched ? "text-purple-700 dark:text-purple-300 font-medium" : "text-muted-foreground"
                                   )}>
-                                    {detail.location_detail}
+                                    {highlightVehicleText(detail.location_detail)}
                                   </div>
                                 )}
                               </div>
@@ -481,9 +774,9 @@ export default function ManagementNumberPanel({
   ).length;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-green-900/[0.06]">
       {/* 필터 옵션 및 통합 검색창 - 상단 고정 */}
-      <div className="flex-shrink-0 bg-white dark:bg-gray-900 pb-3 border-b mb-3">
+      <div className="flex-shrink-0 pb-3 border-b mb-3">
         <div className="flex items-center gap-3">
           {/* 필터 옵션 */}
           <div className="flex items-center gap-4">

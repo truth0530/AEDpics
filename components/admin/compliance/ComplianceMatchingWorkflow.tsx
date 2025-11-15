@@ -380,20 +380,26 @@ export default function ComplianceMatchingWorkflow({
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Main Content - 3단 구조 */}
-      <div className="grid grid-cols-12 gap-4 p-4" style={{ height: 'calc(100vh - 5rem)' }}>
+      <div className="grid grid-cols-12 gap-1 p-2" style={{ height: 'calc(100vh - 5rem)' }}>
         {/* Column 1: 의무설치기관 리스트 (4/12) */}
         <div className="col-span-4 flex flex-col overflow-hidden">
           <Card className="flex-1 flex flex-col overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Badge variant="outline">1</Badge>
-                의무설치기관
-                <span className="text-xs text-muted-foreground font-normal ml-1">
-                  미매칭만 표시
-                </span>
+                {selectedInstitution ? (
+                  <span>{selectedInstitution.institution_name} 선택됨</span>
+                ) : (
+                  <>
+                    의무설치기관
+                    <span className="text-xs text-muted-foreground font-normal ml-1">
+                      미매칭만 표시
+                    </span>
+                  </>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-hidden flex flex-col">
+            <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
               <InstitutionListPanel
                 year={year}
                 sido={selectedRegion.sido}
@@ -408,7 +414,7 @@ export default function ComplianceMatchingWorkflow({
 
         {/* Column 2: 관리번호 리스트 (4/12 또는 1/12) */}
         <div className={`flex flex-col overflow-hidden transition-all ${isManagementPanelCollapsed ? 'col-span-1' : 'col-span-4'}`}>
-          <Card className="flex-1 flex flex-col overflow-hidden">
+          <Card className="flex-1 flex flex-col overflow-hidden bg-green-900/[0.06]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -417,15 +423,10 @@ export default function ComplianceMatchingWorkflow({
                     <>
                       {selectedInstitution ? (
                         <span>
-                          {selectedInstitution.institution_name} 매칭대상
+                          <span className="text-yellow-600 dark:text-yellow-400">{selectedInstitution.institution_name}</span> 을(를) 선택하세요
                         </span>
                       ) : (
-                        <>
-                          관리번호 리스트
-                          <span className="text-xs text-muted-foreground font-normal ml-1">
-                            의무설치기관을 선택하세요
-                          </span>
-                        </>
+                        <span>새올-인트라넷 등록현황</span>
                       )}
                     </>
                   )}
@@ -445,7 +446,7 @@ export default function ComplianceMatchingWorkflow({
               </div>
             </CardHeader>
             {!isManagementPanelCollapsed && (
-              <CardContent className="flex-1 overflow-hidden flex flex-col">
+              <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
                 <ManagementNumberPanel
                   year={year}
                   selectedInstitution={selectedInstitution}
@@ -470,15 +471,10 @@ export default function ComplianceMatchingWorkflow({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Badge variant="outline">3</Badge>
-                  {selectedInstitution ? (
-                    `${selectedInstitution.institution_name}과 매칭할 관리번호`
+                  {currentBasket.length > 0 ? (
+                    <span>1 &lt;-&gt; 2 매칭 준비완료</span>
                   ) : (
-                    <>
-                      매칭할 관리번호
-                      <span className="text-xs text-muted-foreground font-normal ml-1">
-                        의무설치기관을 선택하세요
-                      </span>
-                    </>
+                    <span>1 &lt;-&gt; 2 매칭 대기</span>
                   )}
                 </CardTitle>
                 {currentBasket.length > 0 && (
@@ -492,14 +488,13 @@ export default function ComplianceMatchingWorkflow({
                 )}
               </div>
             </CardHeader>
-            <CardContent className="flex-1 overflow-hidden flex flex-col">
+            <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
               <BasketPanel
                 basket={currentBasket}
                 selectedInstitution={selectedInstitution}
                 onRemove={handleRemoveFromBasket}
                 onRemoveEquipmentSerial={handleRemoveEquipmentSerial}
                 onClear={handleClearBasket}
-                onMatch={handleMatchBasket}
               />
             </CardContent>
           </Card>

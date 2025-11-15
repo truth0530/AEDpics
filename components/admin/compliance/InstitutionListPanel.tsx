@@ -8,6 +8,13 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TargetInstitution {
   target_key: string;
@@ -46,6 +53,7 @@ export default function InstitutionListPanel({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showOnlyUnmatched, setShowOnlyUnmatched] = useState(true);
+  const [subDivisionFilter, setSubDivisionFilter] = useState<string>('전체');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -54,7 +62,7 @@ export default function InstitutionListPanel({
   // 의무설치기관 목록 조회
   useEffect(() => {
     fetchInstitutions();
-  }, [year, sido, gugun, showOnlyUnmatched, searchTerm, currentPage, refreshTrigger]);
+  }, [year, sido, gugun, showOnlyUnmatched, subDivisionFilter, searchTerm, currentPage, refreshTrigger]);
 
   const fetchInstitutions = async () => {
     setLoading(true);
@@ -68,7 +76,12 @@ export default function InstitutionListPanel({
       if (sido) params.append('sido', sido);
       if (gugun) params.append('gugun', gugun);
       if (searchTerm) params.append('search', searchTerm);
+      if (subDivisionFilter !== '전체') {
+        params.append('sub_division', subDivisionFilter);
+        console.log('[InstitutionListPanel] Filtering by sub_division:', subDivisionFilter);
+      }
 
+      console.log('[InstitutionListPanel] API params:', params.toString());
       const response = await fetch(`/api/compliance/check-optimized?${params}`);
       if (!response.ok) throw new Error('Failed to fetch institutions');
 
@@ -95,10 +108,12 @@ export default function InstitutionListPanel({
         };
       });
 
-      // 미매칭 필터 적용
-      const filteredInstitutions = showOnlyUnmatched
+      // 미매칭 필터 적용 (클라이언트 사이드)
+      let filteredInstitutions = showOnlyUnmatched
         ? transformedInstitutions.filter(inst => inst.unmatched_count > 0)
         : transformedInstitutions;
+
+      // sub_division은 이미 서버에서 필터링됨
 
       setInstitutions(filteredInstitutions);
       setTotalCount(data.totalCount === 'calculating' ? filteredInstitutions.length : (data.totalCount || filteredInstitutions.length));
@@ -145,9 +160,44 @@ export default function InstitutionListPanel({
               htmlFor="show-unmatched"
               className="text-sm font-medium leading-none whitespace-nowrap"
             >
-              미매칭만 표시
+              미매칭만
             </label>
           </div>
+
+          {/* 의무기관 종류 선택 */}
+          <Select value={subDivisionFilter} onValueChange={(value) => {
+            setSubDivisionFilter(value);
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="전체" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="전체">전체</SelectItem>
+              <SelectItem value="119 및 의료기관 구급차">119 및 의료기관 구급차</SelectItem>
+              <SelectItem value="경마장">경마장</SelectItem>
+              <SelectItem value="경주장">경주장</SelectItem>
+              <SelectItem value="공공의료기관">공공의료기관</SelectItem>
+              <SelectItem value="공동주택(500세대 이상)">공동주택(500세대 이상)</SelectItem>
+              <SelectItem value="공항">공항</SelectItem>
+              <SelectItem value="관광단지">관광단지</SelectItem>
+              <SelectItem value="관광지">관광지</SelectItem>
+              <SelectItem value="교도소">교도소</SelectItem>
+              <SelectItem value="상시근로자 300인이상">상시근로자 300인이상</SelectItem>
+              <SelectItem value="선박(20톤이상)">선박(20톤이상)</SelectItem>
+              <SelectItem value="시도 청사">시도 청사</SelectItem>
+              <SelectItem value="어선">어선</SelectItem>
+              <SelectItem value="여객자동차터미널">여객자동차터미널</SelectItem>
+              <SelectItem value="여객항공기">여객항공기</SelectItem>
+              <SelectItem value="운동장(5000석 이상)">운동장(5000석 이상)</SelectItem>
+              <SelectItem value="중앙행정기관청사">중앙행정기관청사</SelectItem>
+              <SelectItem value="지역보건의료기관">지역보건의료기관</SelectItem>
+              <SelectItem value="철도역사 대합실">철도역사 대합실</SelectItem>
+              <SelectItem value="철도차랑 객차">철도차랑 객차</SelectItem>
+              <SelectItem value="카지노">카지노</SelectItem>
+              <SelectItem value="항만대합실">항만대합실</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* 검색창 */}
           <div className="relative flex-1">
@@ -173,12 +223,12 @@ export default function InstitutionListPanel({
             의무설치기관이 없습니다
           </div>
         ) : (
-          <div className="space-y-3 px-0.5">
+          <div className="space-y-0.5 px-0.5">
             {institutions.map((institution) => (
               <Card
                 key={institution.target_key}
                 className={cn(
-                  "p-2.5 cursor-pointer transition-all",
+                  "p-2 cursor-pointer transition-all",
                   selectedInstitution?.target_key === institution.target_key
                     ? "border-2 border-white bg-white/80 dark:bg-white/10"
                     : "hover:border-primary/50"
@@ -186,7 +236,10 @@ export default function InstitutionListPanel({
                 onClick={() => onSelect(institution)}
               >
                 <div className="space-y-1.5">
-                  <div className="font-medium text-sm">
+                  <div className={cn(
+                    "font-medium text-sm",
+                    selectedInstitution?.target_key === institution.target_key && "text-yellow-600 dark:text-yellow-400"
+                  )}>
                     {institution.institution_name}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { MapPin, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface EquipmentDetail {
@@ -36,7 +35,6 @@ interface BasketPanelProps {
   onRemove: (managementNumber: string) => void;
   onRemoveEquipmentSerial: (managementNumber: string, serial: string) => void;
   onClear: () => void;
-  onMatch: () => Promise<void>;
 }
 
 export default function BasketPanel({
@@ -44,35 +42,10 @@ export default function BasketPanel({
   selectedInstitution,
   onRemove,
   onRemoveEquipmentSerial,
-  onClear,
-  onMatch
+  onClear
 }: BasketPanelProps) {
-  const [matching, setMatching] = useState(false);
   // 기본값이 펼쳐진 상태이므로 접힌 항목만 추적
   const [collapsedBasketItems, setCollapsedBasketItems] = useState<Set<string>>(new Set());
-
-  const handleMatch = async () => {
-    if (basket.length === 0) {
-      toast.error('매칭된 항목이 없습니다');
-      return;
-    }
-
-    if (!selectedInstitution) {
-      toast.error('의무설치기관이 선택되지 않았습니다');
-      return;
-    }
-
-    setMatching(true);
-    try {
-      await onMatch();
-      toast.success(`${basket.length}개 관리번호가 매칭되었습니다`);
-    } catch (error) {
-      toast.error('매칭 실패');
-      console.error('Matching failed:', error);
-    } finally {
-      setMatching(false);
-    }
-  };
 
   const toggleCollapsed = (managementNumber: string) => {
     setCollapsedBasketItems(prev => {
@@ -104,11 +77,11 @@ export default function BasketPanel({
       {/* 통계 정보 - 상단 고정 */}
       {basket.length > 0 && (
         <div className="flex-shrink-0 grid grid-cols-2 gap-2 mb-4">
-          <Card className="p-3">
+          <Card className="p-2">
             <div className="text-xs text-muted-foreground">관리번호</div>
             <div className="text-2xl font-bold">{basket.length}개</div>
           </Card>
-          <Card className="p-3">
+          <Card className="p-2">
             <div className="text-xs text-muted-foreground">총 장비</div>
             <div className="text-2xl font-bold">
               {hasPartialMatch ? `${totalEquipment}대중 ${selectedEquipment}대` : `${totalEquipment}대`}
@@ -136,7 +109,7 @@ export default function BasketPanel({
             </div>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             {basket.map((item) => {
               // 개별 장비가 모두 담긴 경우 완전 매칭으로 취급
               const isFullyMatchedByIndividual = item.selected_serials &&
@@ -150,7 +123,7 @@ export default function BasketPanel({
                 <Card
                   key={item.management_number}
                   className={cn(
-                    "p-3 transition-all hover:shadow-md",
+                    "p-2 transition-all hover:shadow-md",
                     isPartiallyMatched
                       ? "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
                       : "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
@@ -340,21 +313,12 @@ export default function BasketPanel({
 
       {/* 액션 버튼 - 하단 고정 */}
       {basket.length > 0 && (
-        <div className="flex-shrink-0 mt-4 pt-4 border-t space-y-2">
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={handleMatch}
-            disabled={!selectedInstitution || matching}
-          >
-            {matching ? '매칭 중...' : `전체 매칭하기 (${basket.length}개)`}
-          </Button>
+        <div className="flex-shrink-0 mt-4 pt-4 border-t">
           <Button
             className="w-full"
             size="sm"
             variant="outline"
             onClick={onClear}
-            disabled={matching}
           >
             매칭 리스트 비우기
           </Button>

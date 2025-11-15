@@ -31,6 +31,11 @@ export async function GET(request: NextRequest) {
     const gugunParam = searchParams.get('gugun');
     const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
     const search = searchParams.get('search');
+    const subDivision = searchParams.get('sub_division');
+
+    if (subDivision) {
+      console.log('[ComplianceAPI] Received sub_division filter:', subDivision);
+    }
 
     // Use smaller page sizes by default
     const page = parseInt(searchParams.get('page') || '1');
@@ -47,12 +52,18 @@ export async function GET(request: NextRequest) {
 
     if (sido) targetWhere.sido = sido;
     if (gugun) targetWhere.gugun = gugun;
+    if (subDivision) {
+      targetWhere.sub_division = subDivision;
+      console.log('[ComplianceAPI] WHERE clause includes sub_division:', subDivision);
+    }
     if (search) {
       targetWhere.OR = [
         { institution_name: { contains: search, mode: 'insensitive' } },
         { target_key: { contains: search, mode: 'insensitive' } }
       ];
     }
+
+    console.log('[ComplianceAPI] Final WHERE clause:', JSON.stringify(targetWhere));
 
     // Check cache for count
     const cacheKey = JSON.stringify(targetWhere);
