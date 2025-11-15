@@ -182,12 +182,12 @@ export default function BasketPanel({
                               {collapsedBasketItems.has(item.management_number) ? (
                                 <>
                                   <ChevronDown className="h-3 w-3 mr-1" />
-                                  장비 {item.selected_serials.length}대 펼치기
+                                  장비연번 {item.selected_serials.length}대 펼치기
                                 </>
                               ) : (
                                 <>
                                   <ChevronUp className="h-3 w-3 mr-1" />
-                                  장비 {item.selected_serials.length}대 접기
+                                  장비연번 {item.selected_serials.length}대 접기
                                 </>
                               )}
                             </Button>
@@ -254,12 +254,12 @@ export default function BasketPanel({
                               {collapsedBasketItems.has(item.management_number) ? (
                                 <>
                                   <ChevronDown className="h-3 w-3 mr-1" />
-                                  장비 {item.equipment_count}대 펼치기
+                                  장비연번 {item.equipment_count}대 펼치기
                                 </>
                               ) : (
                                 <>
                                   <ChevronUp className="h-3 w-3 mr-1" />
-                                  장비 {item.equipment_count}대 접기
+                                  장비연번 {item.equipment_count}대 접기
                                 </>
                               )}
                             </Button>
