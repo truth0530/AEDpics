@@ -4,6 +4,7 @@ import { calculateMatchingScore } from '@/lib/utils/similarity-matching';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeGugunForDB, normalizeSidoForDB } from '@/lib/constants/regions';
+import { getDisplayAddressWithDefault } from '@/lib/utils/aed-address-helpers';
 
 // Optimize query with pagination and limits
 const DEFAULT_PAGE_SIZE = 50;
@@ -165,7 +166,7 @@ export async function GET(request: NextRequest) {
           targetMatches.push({
             management_number: managementNumber,
             institution_name: matchedAed.installation_institution || '',
-            address: matchedAed.installation_location_address || matchedAed.installation_address || '',
+            address: getDisplayAddressWithDefault(matchedAed, ''),
             equipment_count: matchedAed.equipment_serial?.length || 0,
             confidence: parseFloat(existingMapping[`auto_confidence_${year}`]?.toString() || '100'),
             matchingReason: existingMapping[`auto_matching_reason_${year}`] || { confirmed: true },
@@ -188,7 +189,7 @@ export async function GET(request: NextRequest) {
             target.institution_name || '',
             targetAddress,
             aed.installation_institution || '',
-            aed.installation_location_address || aed.installation_address || '',
+            getDisplayAddressWithDefault(aed, ''),
             target.sub_division
           );
 
@@ -196,7 +197,7 @@ export async function GET(request: NextRequest) {
             targetMatches.push({
               management_number: aed.management_number || '',
               institution_name: aed.installation_institution || '',
-              address: aed.installation_location_address || aed.installation_address || '',
+              address: getDisplayAddressWithDefault(aed, ''),
               equipment_count: aed.equipment_serial?.length || 0,
               confidence: result.confidence,
               matchingReason: result.matchingReason,
