@@ -36,9 +36,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!reason || !['disposed', 'broken', 'lost', 'other'].includes(reason)) {
+    if (!reason || !['disposed', 'broken', 'lost', 'transferred', 'other'].includes(reason)) {
       return NextResponse.json(
-        { error: 'reason은 disposed, broken, lost, other 중 하나여야 합니다.' },
+        { error: 'reason은 disposed, broken, lost, transferred, other 중 하나여야 합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 양도 사유일 경우 note(양도한 기관명) 필수
+    if (reason === 'transferred' && !note) {
+      return NextResponse.json(
+        { error: '양도 사유를 선택한 경우 양도한 기관명(note)을 입력해야 합니다.' },
         { status: 400 }
       );
     }
