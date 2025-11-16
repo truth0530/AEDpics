@@ -131,6 +131,8 @@ export function compareAddresses(aedAddress: string, targetAddress: string): num
  * @param targetAddress 의무설치기관 주소
  * @param aedSido AED 시도 (주소 기반)
  * @param targetSido 의무설치기관 시도
+ * @param aedGugun AED 구군 (주소 기반, 옵션)
+ * @param targetGugun 의무설치기관 구군 (옵션)
  * @returns 매칭 신뢰도 (0-100, null = 매칭 불가)
  */
 export function calculateInstitutionMatchConfidence(
@@ -139,7 +141,9 @@ export function calculateInstitutionMatchConfidence(
   aedAddress?: string,
   targetAddress?: string,
   aedSido?: string,
-  targetSido?: string
+  targetSido?: string,
+  aedGugun?: string,
+  targetGugun?: string
 ): number | null {
   if (!aedInstitution || !targetInstitution) return null;
 
@@ -178,17 +182,54 @@ export function calculateInstitutionMatchConfidence(
 
   // === 단계 4: 가중치 기반 최종 신뢰도 계산 ===
   // 이름 50% + 주소 30% + 지역 20%
-  const weightedConfidence = Math.round(
+  let weightedConfidence = Math.round(
     (nameScore * 0.5) +
     (addressScore * 0.3) +
     (regionScore * 0.2)
   );
 
+  // === 단계 5: 키워드 보너스 (2025-11-16 추가) ===
+  // 특정 키워드 매칭 시 보너스 점수 추가 (최대 100점 제한)
+  let keywordBonus = 0;
+
+  // 보건소 매칭 (+3점)
+  if (aedInstitution.includes('보건소') && targetInstitution.includes('보건소')) {
+    keywordBonus += 3;
+  }
+
+  // 구군 매칭 (+5점)
+  if (aedGugun && targetGugun && aedGugun === targetGugun) {
+    keywordBonus += 5;
+  }
+
+  // 법정동 매칭 (+2점) - 주소에서 "동", "로", "가" 포함 시
+  if (aedAddress && targetAddress) {
+    const dongPattern = /[가-힣]+동|[가-힣]+로|[가-힣]+가/;
+    const aedDong = aedAddress.match(dongPattern)?.[0];
+    const targetDong = targetAddress.match(dongPattern)?.[0];
+    if (aedDong && targetDong && aedDong === targetDong) {
+      keywordBonus += 2;
+    }
+  }
+
+  // 의료 기관 키워드 매칭 (+2점)
+  const medicalKeywords = ['센터', '의료원'];
+  const hasCommonMedicalKeyword = medicalKeywords.some(
+    keyword => aedInstitution.includes(keyword) && targetInstitution.includes(keyword)
+  );
+  if (hasCommonMedicalKeyword) {
+    keywordBonus += 2;
+  }
+
+  // 키워드 보너스 적용 (최대 100점 제한)
+  weightedConfidence = Math.min(100, weightedConfidence + keywordBonus);
+
   // 최소 임계값: 50% (이름 30% + 주소 20% 정도)
   // 하지만 주소가 0이면 이름만 사용 (이전 호환성)
   if (addressScore === 0 && nameScore >= 70) {
-    // 주소 정보 없으면 이름 기반만 사용
-    return nameScore;
+    // 주소 정보 없으면 이름 기반만 사용 (보너스 포함)
+    const nameWithBonus = Math.min(100, nameScore + keywordBonus);
+    return nameWithBonus;
   }
 
   return weightedConfidence >= 50 ? weightedConfidence : null;

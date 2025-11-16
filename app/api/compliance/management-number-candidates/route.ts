@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
       institution_name: string;
       address: string;
       sido: string;
+      gugun: string;
       equipment_count: number;
       equipment_serials: string[];
       equipment_details: Array<{ serial: string; location_detail: string }>;
@@ -104,6 +105,7 @@ export async function GET(request: NextRequest) {
               ad.installation_institution,
               ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
               ad.sido,
+              ad.gugun,
               ad.equipment_serial,
               ad.category_1,
               ad.category_2,
@@ -136,6 +138,7 @@ export async function GET(request: NextRequest) {
             gd.installation_institution as institution_name,
             gd.address,
             gd.sido,
+            gd.gugun,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -171,6 +174,7 @@ export async function GET(request: NextRequest) {
               ad.installation_institution,
               ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
               ad.sido,
+              ad.gugun,
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
@@ -200,6 +204,7 @@ export async function GET(request: NextRequest) {
             gd.installation_institution as institution_name,
             gd.address,
             gd.sido,
+            gd.gugun,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -238,6 +243,7 @@ export async function GET(request: NextRequest) {
               ad.installation_institution,
               ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
               ad.sido,
+              ad.gugun,
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
@@ -266,6 +272,7 @@ export async function GET(request: NextRequest) {
             gd.installation_institution as institution_name,
             gd.address,
             gd.sido,
+            gd.gugun,
             (SELECT COUNT(*) FROM aedpics.aed_data ad WHERE ad.management_number = gd.management_number) as equipment_count,
             (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
              FROM aedpics.aed_data ad2
@@ -303,6 +310,8 @@ export async function GET(request: NextRequest) {
           ad.management_number,
           ad.installation_institution as institution_name,
           ${Prisma.raw(getSqlAddressCoalesce('ad', 'address'))},
+          ad.sido,
+          ad.gugun,
           COUNT(*) OVER (PARTITION BY ad.management_number) as equipment_count,
           (SELECT array_agg(ad2.equipment_serial ORDER BY ad2.equipment_serial)
            FROM aedpics.aed_data ad2
@@ -538,8 +547,9 @@ export async function GET(request: NextRequest) {
         .filter(Boolean)
         .join(' ');
       const targetSido = targetInfo?.sido || '';
+      const targetGugun = targetInfo?.gugun || '';
 
-      // 각 후보의 신뢰도를 퍼지 매칭으로 재계산 (주소 + 지역 정보 포함)
+      // 각 후보의 신뢰도를 퍼지 매칭으로 재계산 (주소 + 지역 + 키워드 보너스 포함)
       improvedAutoSuggestions = autoSuggestionsQuery.map(item => {
         const fuzzyConfidence = calculateInstitutionMatchConfidence(
           item.institution_name,
@@ -547,7 +557,9 @@ export async function GET(request: NextRequest) {
           item.address,        // AED 설치 주소
           targetAddress,       // 의무설치기관 주소
           item.sido,           // AED 시도
-          targetSido           // 의무설치기관 시도
+          targetSido,          // 의무설치기관 시도
+          item.gugun,          // AED 구군 (키워드 보너스용)
+          targetGugun          // 의무설치기관 구군 (키워드 보너스용)
         );
 
         // 퍼지 매칭이 더 나은 점수를 제공하면 사용
