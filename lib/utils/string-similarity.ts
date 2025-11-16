@@ -96,6 +96,18 @@ export function normalizeKoreanText(text: string): string {
 }
 
 /**
+ * 주소에서 읍면동 추출
+ * @param address 주소 문자열
+ * @returns 읍면동 문자열 또는 null
+ */
+function extractEupMyeonDong(address: string): string | null {
+  // 읍/면/동/가/리/로 패턴 추출
+  const pattern = /([가-힣]+(?:읍|면|동|가|리))/;
+  const match = address.match(pattern);
+  return match ? match[1] : null;
+}
+
+/**
  * 주소 유사도 비교 (가중치 계산용)
  * @param aedAddress AED 설치 주소
  * @param targetAddress 의무설치기관 주소
@@ -110,7 +122,20 @@ export function compareAddresses(aedAddress: string, targetAddress: string): num
   // 정확 일치
   if (aedNorm === targetNorm) return 100;
 
-  // 부분 일치 (포함 관계)
+  // === 읍면동 레벨 비교 (2025-11-16 추가) ===
+  // 군위읍 vs 의흥면 같은 경우를 감지하여 낮은 점수 부여
+  const aedEupMyeonDong = extractEupMyeonDong(aedAddress);
+  const targetEupMyeonDong = extractEupMyeonDong(targetAddress);
+
+  if (aedEupMyeonDong && targetEupMyeonDong) {
+    // 읍면동이 다르면 주소 점수 대폭 감소
+    if (aedEupMyeonDong !== targetEupMyeonDong) {
+      // 다른 읍면동 = 최대 30점만 부여 (기존 90점에서 대폭 감소)
+      return 30;
+    }
+  }
+
+  // 부분 일치 (포함 관계) - 읍면동이 같은 경우에만 높은 점수
   if (aedNorm.includes(targetNorm) || targetNorm.includes(aedNorm)) return 90;
 
   // Levenshtein 기반 유사도 (주소는 이름보다 엄격함)
@@ -147,16 +172,41 @@ export function calculateInstitutionMatchConfidence(
 ): number | null {
   if (!aedInstitution || !targetInstitution) return null;
 
-  // === 단계 1: 이름 유사도 계산 ===
+  // === 단계 0: 부속시설 패턴 감지 및 제외 ===
+  // "군위군보건소" vs "군위군보건소의흥면보건지소" 같은 경우 탐지
+  const subsidiaryPatterns = [
+    /보건지소$/,        // 보건지소
+    /분소$/,            // 분소
+    /출장소$/,          // 출장소
+    /지소$/,            // 지소
+    /지부$/,            // 지부
+    /분원$/,            // 분원
+  ];
+
   const aedNormalized = aedInstitution.replace(/\s+/g, '');
   const targetNormalized = targetInstitution.replace(/\s+/g, '');
 
+  // 한 쪽이 다른 쪽의 substring이면서 부속시설 패턴을 가진 경우
+  const isAedSubsidiaryOfTarget = targetNormalized.includes(aedNormalized) &&
+    subsidiaryPatterns.some(pattern => targetNormalized.match(pattern));
+
+  const isTargetSubsidiaryOfAed = aedNormalized.includes(targetNormalized) &&
+    subsidiaryPatterns.some(pattern => aedNormalized.match(pattern));
+
+  // 부속시설 관계인 경우 매칭 불가
+  if (isAedSubsidiaryOfTarget || isTargetSubsidiaryOfAed) {
+    return null;
+  }
+
+  // === 단계 1: 이름 유사도 계산 ===
   let nameScore = 0;
 
   if (aedNormalized === targetNormalized) {
     nameScore = 100; // 정확 일치
   } else if (aedNormalized.includes(targetNormalized) || targetNormalized.includes(aedNormalized)) {
-    nameScore = 90; // 부분 일치
+    // 부분 일치이지만 부속시설이 아닌 경우
+    // 점수를 낮춤 (90 → 75)
+    nameScore = 75;
   } else {
     // 한글 정규화 후 유사도 계산
     const aedKoreanNormalized = normalizeKoreanText(aedInstitution);
