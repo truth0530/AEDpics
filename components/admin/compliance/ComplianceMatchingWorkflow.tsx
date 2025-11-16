@@ -452,6 +452,50 @@ export default function ComplianceMatchingWorkflow({
     }
   };
 
+  // 매칭 대상 없음 처리
+  const handleNoMatchAvailable = async () => {
+    if (!selectedInstitution) return;
+
+    try {
+      // 현재 후보 건수 조회
+      const params = new URLSearchParams({
+        year,
+        target_key: selectedInstitution.target_key,
+        include_all_region: 'false',
+        include_matched: 'false'
+      });
+
+      const response = await fetch(`/api/compliance/management-number-candidates?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch candidates');
+
+      const data = await response.json();
+      const candidateCount = (data.auto_suggestions || []).length;
+
+      // 확인 메시지 생성
+      let confirmMessage;
+      if (candidateCount > 0) {
+        confirmMessage = `"${selectedInstitution.institution_name}"에 ${candidateCount}건의 후보가 있습니다.\n\n정말로 "매칭 대상 없음"으로 처리하시겠습니까?\n\n• 추천된 모든 후보를 검토하셨습니까?\n• 이 기관은 의무설치기관 목록에서 제외됩니다\n• 매칭결과 탭에서 "매칭 대상 없음" 상태로 표시됩니다`;
+      } else {
+        confirmMessage = `"${selectedInstitution.institution_name}"과(와) 매칭 가능한 관리번호가 없습니다.\n\n"매칭 대상 없음"으로 표시하시겠습니까?\n\n• 의무설치기관 목록에서 제외됩니다\n• 매칭결과 탭에서 "매칭 대상 없음" 상태로 표시됩니다`;
+      }
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      // TODO: API 구현 후 실제 저장 로직 추가
+      alert('API 구현 예정: 매칭 대상 없음 처리');
+
+      // 성공 시 UI 업데이트
+      // setRefreshTrigger(prev => prev + 1);
+      // setSelectedInstitution(null);
+
+    } catch (error) {
+      console.error('매칭 대상 없음 처리 실패:', error);
+      alert('처리 중 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Main Content - 3단 구조 */}
@@ -491,33 +535,37 @@ export default function ComplianceMatchingWorkflow({
         <div className={`flex flex-col overflow-hidden border-r transition-all ${isManagementPanelCollapsed ? 'col-span-2' : 'col-span-4'}`}>
           <Card className="flex-1 flex flex-col overflow-hidden bg-green-900/[0.06] border-0 shadow-none">
             <CardHeader className="pb-2 pt-2 px-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Badge variant="outline">2</Badge>
                   {!isManagementPanelCollapsed && (
-                    <>
-                      {selectedInstitution ? (
-                        <span>
-                          <span className="text-yellow-600 dark:text-yellow-400">{selectedInstitution.institution_name}</span> 을(를) 매칭보관함에 담아주세요
-                        </span>
-                      ) : (
-                        <span>새올-인트라넷 등록현황</span>
-                      )}
-                    </>
+                    <span>관리번호 후보</span>
                   )}
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsManagementPanelCollapsed(!isManagementPanelCollapsed)}
-                  className="h-8 w-8 p-0"
-                >
-                  {isManagementPanelCollapsed ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
-                    <ChevronLeft className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+                  {selectedInstitution && !isManagementPanelCollapsed && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleNoMatchAvailable}
+                      className="text-xs"
+                    >
+                      매칭 대상 없음
+                    </Button>
                   )}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsManagementPanelCollapsed(!isManagementPanelCollapsed)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {isManagementPanelCollapsed ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronLeft className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
