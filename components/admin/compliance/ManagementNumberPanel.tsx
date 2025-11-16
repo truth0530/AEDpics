@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getMatchTier } from '@/lib/utils/match-tier';
+import { getAddressMatchLevel } from '@/lib/utils/string-similarity';
 
 interface EquipmentDetail {
   serial: string;
@@ -19,6 +20,8 @@ interface ManagementNumberCandidate {
   management_number: string;
   institution_name: string;
   address: string;
+  sido: string;
+  gugun: string;
   equipment_count: number;
   equipment_serials: string[];
   equipment_details: EquipmentDetail[];
@@ -555,6 +558,20 @@ export default function ManagementNumberPanel({
             hasUniqueKeyMatch(detail.location_detail, uniqueKey)
           );
 
+          // 주소 일치 수준 계산 (2: 시도+구군, 3: 시도+구군+읍면동)
+          const addressMatchLevel = selectedInstitution ? getAddressMatchLevel(
+            item.address,
+            selectedInstitution.address,
+            item.sido,
+            selectedInstitution.sido,
+            item.gugun,
+            selectedInstitution.gugun
+          ) : 0;
+
+          // isPartiallyMatched일 때 주소 일치 수준에 따라 색상 차별화
+          const isPartiallyMatchedLevel2 = isPartiallyMatched && addressMatchLevel === 2; // 시도+구군만 일치
+          const isPartiallyMatchedLevel3 = isPartiallyMatched && addressMatchLevel === 3; // 시도+구군+읍면동 일치
+
           return (
             <Card
               key={item.management_number}
@@ -562,7 +579,8 @@ export default function ManagementNumberPanel({
                 "p-2 transition-all",
                 !item.is_matched && !isPartiallyMatched && !isFullyMatched && !hasUniqueKeyInEquipment && "bg-green-900/[0.06]",
                 item.is_matched && "opacity-50 bg-muted",
-                isPartiallyMatched && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
+                isPartiallyMatchedLevel2 && "border-2 border-amber-600 bg-amber-100/30 dark:bg-amber-950/30", // 어두운 노랑색
+                isPartiallyMatchedLevel3 && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20", // 밝은 노랑색
                 isFullyMatched && "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20",
                 hasUniqueKeyInEquipment && !isPartiallyMatched && !isFullyMatched && "border-2 border-purple-400 bg-purple-50/50 dark:bg-purple-950/20"
               )}

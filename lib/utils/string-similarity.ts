@@ -108,6 +108,51 @@ function extractEupMyeonDong(address: string): string | null {
 }
 
 /**
+ * 주소 일치 수준 판단 (시도 → 구군 → 읍면동 단계별)
+ * @param aedAddress AED 설치 주소
+ * @param targetAddress 의무설치기관 주소
+ * @param aedSido AED 시도
+ * @param targetSido 의무설치기관 시도
+ * @param aedGugun AED 구군
+ * @param targetGugun 의무설치기관 구군
+ * @returns 일치 수준 (1: 시도만, 2: 시도+구군, 3: 시도+구군+읍면동)
+ */
+export function getAddressMatchLevel(
+  aedAddress?: string,
+  targetAddress?: string,
+  aedSido?: string,
+  targetSido?: string,
+  aedGugun?: string,
+  targetGugun?: string
+): number {
+  // 시도 불일치 = 0
+  if (!aedSido || !targetSido || aedSido !== targetSido) {
+    return 0;
+  }
+
+  // 시도만 일치 = 1
+  if (!aedGugun || !targetGugun || aedGugun !== targetGugun) {
+    return 1;
+  }
+
+  // 시도 + 구군 일치 = 2 (기본)
+  let matchLevel = 2;
+
+  // 읍면동 추출 및 비교
+  if (aedAddress && targetAddress) {
+    const aedEupMyeonDong = extractEupMyeonDong(aedAddress);
+    const targetEupMyeonDong = extractEupMyeonDong(targetAddress);
+
+    // 읍면동까지 일치 = 3
+    if (aedEupMyeonDong && targetEupMyeonDong && aedEupMyeonDong === targetEupMyeonDong) {
+      matchLevel = 3;
+    }
+  }
+
+  return matchLevel;
+}
+
+/**
  * 주소 유사도 비교 (가중치 계산용)
  * @param aedAddress AED 설치 주소
  * @param targetAddress 의무설치기관 주소
