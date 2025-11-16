@@ -24,6 +24,17 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
   const [activeTab, setActiveTab] = useState<'targets' | 'completed'>('targets');
   const [selectedInstitutionName, setSelectedInstitutionName] = useState<string | null>(null);
 
+  // 담기 박스 정보 상태
+  const [basketInfo, setBasketInfo] = useState<{
+    managementNumberCount: number;
+    selectedEquipment: number;
+    totalEquipment: number;
+  }>({
+    managementNumberCount: 0,
+    selectedEquipment: 0,
+    totalEquipment: 0
+  });
+
   // 지역 선택 상태
   const [selectedSido, setSelectedSido] = useState<string | null>(null);
   const [selectedGugun, setSelectedGugun] = useState<string | null>(null);
@@ -88,6 +99,23 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
     }
   }, [])
 
+  // ComplianceMatchingWorkflow에서 담기 박스 정보 수신
+  useEffect(() => {
+    const handleBasketUpdated = (e: CustomEvent) => {
+      const { managementNumberCount, selectedEquipment, totalEquipment } = e.detail
+      setBasketInfo({
+        managementNumberCount,
+        selectedEquipment,
+        totalEquipment
+      })
+    }
+
+    window.addEventListener('basketUpdated', handleBasketUpdated as EventListener)
+    return () => {
+      window.removeEventListener('basketUpdated', handleBasketUpdated as EventListener)
+    }
+  }, [])
+
   // 매칭결과 탭에서 매칭하기로 이동 요청 수신
   useEffect(() => {
     const handleOpenMatching = (e: CustomEvent) => {
@@ -140,13 +168,28 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
 
             {/* 동적 안내 메시지 - 매칭하기 탭 */}
             {activeTab === 'targets' && (
-              <div className="text-sm text-muted-foreground">
-                {selectedInstitutionName ? (
-                  <span className="text-foreground font-medium">
-                    {selectedInstitutionName}과 매칭할 관리번호를 선택하세요
+              <div className="text-sm">
+                {basketInfo.managementNumberCount > 0 ? (
+                  // 보관함에 담긴 경우: 상세 정보
+                  <span className="text-foreground">
+                    <span className="text-yellow-600 dark:text-yellow-400 font-semibold">{selectedInstitutionName}</span>
+                    <span className="text-muted-foreground mx-1">과(와)</span>
+                    <span className="font-semibold">{basketInfo.managementNumberCount}개</span>
+                    <span className="text-muted-foreground mx-1">관리번호</span>
+                    <span className="font-semibold">({basketInfo.selectedEquipment}대)</span>
+                    <span className="text-muted-foreground mx-1">의 연번 매칭 준비 완료</span>
+                    <ChevronRight className="inline h-4 w-4 mx-1" />
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">'매칭하기'를 눌러주세요</span>
+                  </span>
+                ) : selectedInstitutionName ? (
+                  // 보관함이 비어있는 경우
+                  <span className="text-muted-foreground">
+                    <span className="text-foreground font-medium">{selectedInstitutionName}</span>
+                    <span>과 매칭할 관리번호를 선택하세요</span>
                   </span>
                 ) : (
-                  <span>의무설치기관을 선택하세요</span>
+                  // 의무기관 미선택
+                  <span className="text-muted-foreground">의무설치기관을 선택하세요</span>
                 )}
               </div>
             )}

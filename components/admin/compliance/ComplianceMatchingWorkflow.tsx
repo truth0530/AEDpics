@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UserProfile } from '@/packages/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -84,6 +84,19 @@ export default function ComplianceMatchingWorkflow({
   const currentBasket = selectedInstitution
     ? (basketByInstitution[selectedInstitution.target_key] || [])
     : [];
+
+  // 이전 basket 정보 추적 (무한 루프 방지)
+  const prevBasketInfoRef = useRef<{
+    count: number;
+    selectedEquipment: number;
+    totalEquipment: number;
+    institutionKey: string | null;
+  }>({
+    count: 0,
+    selectedEquipment: 0,
+    totalEquipment: 0,
+    institutionKey: null
+  });
 
   // 관할지역 정보 (사용자 프로필 기반 - 참고용)
   const userJurisdiction = useMemo(() => {
@@ -170,6 +183,52 @@ export default function ComplianceMatchingWorkflow({
     });
     window.dispatchEvent(event);
   }, [selectedInstitution]);
+
+  // 담기 박스 정보를 부모(ComplianceMainLayout)에게 알림
+  useEffect(() => {
+    // 선택된 장비 개수 계산
+    const selectedEquipment = currentBasket.reduce((sum, item) => {
+      if (item.selected_serials) {
+        return sum + item.selected_serials.length;
+      }
+      return sum + item.equipment_count;
+    }, 0);
+
+    // 전체 장비 개수 계산
+    const totalEquipment = currentBasket.reduce((sum, item) => {
+      return sum + item.equipment_count;
+    }, 0);
+
+    const currentInstitutionKey = selectedInstitution?.target_key || null;
+
+    // 이전 값과 비교하여 실제로 변경되었을 때만 이벤트 dispatch (무한 루프 방지)
+    const isChanged =
+      currentBasket.length !== prevBasketInfoRef.current.count ||
+      selectedEquipment !== prevBasketInfoRef.current.selectedEquipment ||
+      totalEquipment !== prevBasketInfoRef.current.totalEquipment ||
+      currentInstitutionKey !== prevBasketInfoRef.current.institutionKey;
+
+    if (isChanged) {
+      // 이전 값 업데이트
+      prevBasketInfoRef.current = {
+        count: currentBasket.length,
+        selectedEquipment,
+        totalEquipment,
+        institutionKey: currentInstitutionKey
+      };
+
+      const event = new CustomEvent('basketUpdated', {
+        detail: {
+          basket: currentBasket,
+          managementNumberCount: currentBasket.length,
+          selectedEquipment,
+          totalEquipment,
+          selectedInstitution
+        }
+      });
+      window.dispatchEvent(event);
+    }
+  }, [currentBasket, selectedInstitution]);
 
   // 담기 박스 핸들러
   const handleAddToBasket = (item: ManagementNumberCandidate) => {
@@ -439,7 +498,7 @@ export default function ComplianceMatchingWorkflow({
                     <>
                       {selectedInstitution ? (
                         <span>
-                          <span className="text-yellow-600 dark:text-yellow-400">{selectedInstitution.institution_name}</span> 을(를) 매칭함에 담아주세요
+                          <span className="text-yellow-600 dark:text-yellow-400">{selectedInstitution.institution_name}</span> 을(를) 매칭보관함에 담아주세요
                         </span>
                       ) : (
                         <span>새올-인트라넷 등록현황</span>
@@ -486,7 +545,7 @@ export default function ComplianceMatchingWorkflow({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Badge variant="outline">3</Badge>
-                  <span>1 ↔ 2 매칭함</span>
+                  <span>1 ↔ 2 매칭보관함</span>
                 </CardTitle>
                 {currentBasket.length > 0 && (
                   <Button
