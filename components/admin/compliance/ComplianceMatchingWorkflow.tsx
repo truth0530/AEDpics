@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getRegionLabel } from '@/lib/constants/regions';
+import { isHighQualityMatch } from '@/lib/utils/match-tier';
 import InstitutionListPanel from './InstitutionListPanel';
 import ManagementNumberPanel from './ManagementNumberPanel';
 import BasketPanel from './BasketPanel';
@@ -208,10 +209,10 @@ export default function ComplianceMatchingWorkflow({
         const data = await response.json();
         const autoSuggestions = data.auto_suggestions || [];
 
-        // 90% 이상 신뢰도를 가진 후보가 있는지 확인
+        // 고품질 매칭 후보가 있는지 확인 (A 티어 이상: 91% 이상)
         const hasHighConfidence = autoSuggestions.some(
           (candidate: ManagementNumberCandidate) =>
-            candidate.confidence !== null && candidate.confidence > 90
+            isHighQualityMatch(candidate.confidence)
         );
 
         setHasHighConfidenceCandidates(hasHighConfidence);

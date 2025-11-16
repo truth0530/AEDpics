@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getMatchTier } from '@/lib/utils/match-tier';
 
 interface EquipmentDetail {
   serial: string;
@@ -645,12 +646,18 @@ export default function ManagementNumberPanel({
                     관리번호 {item.management_number}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {showConfidence && item.confidence && (
-                      <Badge variant="secondary" className="text-xs bg-green-900/[0.06]">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {item.confidence.toFixed(0)}%
-                      </Badge>
-                    )}
+                    {showConfidence && item.confidence && (() => {
+                      const tierInfo = getMatchTier(item.confidence);
+                      return (
+                        <Badge
+                          variant="outline"
+                          className={cn("text-xs font-semibold", tierInfo.bgColor, tierInfo.textColor)}
+                        >
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          {tierInfo.tier} - {tierInfo.label} ({item.confidence.toFixed(0)}%)
+                        </Badge>
+                      );
+                    })()}
                     {isPartiallyMatched && (
                       <Badge variant="outline" className="text-xs">
                         관리번호 1개, 장비 {item.equipment_count}대중 {basketedSerials.length}대
