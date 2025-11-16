@@ -276,23 +276,23 @@ export function calculateInstitutionMatchConfidence(
     : 0;
 
   // === 단계 4: 가중치 기반 최종 신뢰도 계산 ===
-  // 주소 정보가 있는 경우: 이름 40% + 주소 40% + 지역 20%
-  // 주소 정보가 없는 경우: 이름 50% + 주소 30% + 지역 20% (기존 방식 유지)
+  // 2025-11-16: 주소 중심 가중치 재조정
+  // - 주소가 3단계까지 일치하면 같은 기관일 확률 높음
+  // - 주소가 다르면 이름이 유사해도 다른 기관일 확률 높음
   let weightedConfidence: number;
 
   if (addressScore > 0) {
-    // 주소 정보가 있으면 주소 가중치 증가 (30% → 40%)
+    // 주소 정보가 있을 때: 주소 우선 (이름 25% + 주소 55% + 지역 20%)
     weightedConfidence = Math.round(
-      (nameScore * 0.4) +
-      (addressScore * 0.4) +
+      (nameScore * 0.25) +
+      (addressScore * 0.55) +
       (regionScore * 0.2)
     );
   } else {
-    // 주소 정보가 없으면 기존 가중치 유지
+    // 주소 정보가 없을 때: 이름과 지역만 사용 (이름 60% + 지역 40%)
     weightedConfidence = Math.round(
-      (nameScore * 0.5) +
-      (addressScore * 0.3) +
-      (regionScore * 0.2)
+      (nameScore * 0.6) +
+      (regionScore * 0.4)
     );
   }
 
@@ -332,14 +332,16 @@ export function calculateInstitutionMatchConfidence(
   // 키워드 보너스 적용 (최대 100점 제한)
   weightedConfidence = Math.min(100, weightedConfidence + keywordBonus);
 
-  // 최소 임계값: 50% (이름 30% + 주소 20% 정도)
-  // 하지만 주소가 0이면 이름만 사용 (이전 호환성)
-  if (addressScore === 0 && nameScore >= 70) {
-    // 주소 정보 없으면 이름 기반만 사용 (보너스 포함)
-    const nameWithBonus = Math.min(100, nameScore + keywordBonus);
-    return nameWithBonus;
+  // === 단계 6: 최소 임계값 판단 ===
+  // 주소 중심 가중치 적용으로 임계값 재설정
+  // - 주소 정보가 있을 때: 최소 50% (주소가 중요하므로 엄격함)
+  // - 주소 정보가 없을 때: 최소 70% (이름과 지역만 있으므로 더 엄격함)
+  if (addressScore === 0) {
+    // 주소 정보 없으면 이름+지역 기반 점수가 70% 이상이어야 매칭
+    return weightedConfidence >= 70 ? weightedConfidence : null;
   }
 
+  // 주소 정보가 있으면 50% 이상이면 매칭 가능
   return weightedConfidence >= 50 ? weightedConfidence : null;
 }
 
