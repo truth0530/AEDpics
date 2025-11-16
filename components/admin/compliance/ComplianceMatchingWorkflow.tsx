@@ -63,6 +63,8 @@ export default function ComplianceMatchingWorkflow({
   const [isManagementPanelCollapsed, setIsManagementPanelCollapsed] = useState(false);
   // 매칭 완료 후 리스트 새로고침 트리거
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // 90% 이상 신뢰도 후보 존재 여부
+  const [hasHighConfidenceCandidates, setHasHighConfidenceCandidates] = useState(false);
 
   // 헤더 Region Filter에서 선택한 지역 (동적으로 연결)
   const [selectedRegion, setSelectedRegion] = useState<{ sido: string | null; gugun: string | null }>(() => {
@@ -183,6 +185,44 @@ export default function ComplianceMatchingWorkflow({
     });
     window.dispatchEvent(event);
   }, [selectedInstitution]);
+
+  // 선택된 기관의 90% 이상 신뢰도 후보 존재 여부 확인
+  useEffect(() => {
+    const checkHighConfidenceCandidates = async () => {
+      if (!selectedInstitution) {
+        setHasHighConfidenceCandidates(false);
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams({
+          year,
+          target_key: selectedInstitution.target_key,
+          include_all_region: 'false',
+          include_matched: 'false'
+        });
+
+        const response = await fetch(`/api/compliance/management-number-candidates?${params}`);
+        if (!response.ok) throw new Error('Failed to fetch candidates');
+
+        const data = await response.json();
+        const autoSuggestions = data.auto_suggestions || [];
+
+        // 90% 이상 신뢰도를 가진 후보가 있는지 확인
+        const hasHighConfidence = autoSuggestions.some(
+          (candidate: ManagementNumberCandidate) =>
+            candidate.confidence !== null && candidate.confidence > 90
+        );
+
+        setHasHighConfidenceCandidates(hasHighConfidence);
+      } catch (error) {
+        console.error('Failed to check high confidence candidates:', error);
+        setHasHighConfidenceCandidates(false);
+      }
+    };
+
+    checkHighConfidenceCandidates();
+  }, [selectedInstitution, year]);
 
   // 담기 박스 정보를 부모(ComplianceMainLayout)에게 알림
   useEffect(() => {
@@ -546,11 +586,11 @@ export default function ComplianceMatchingWorkflow({
                   {selectedInstitution && !isManagementPanelCollapsed && (
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant={hasHighConfidenceCandidates ? "outline" : "destructive"}
                       onClick={handleNoMatchAvailable}
-                      className="text-xs"
+                      className={`text-xs ${hasHighConfidenceCandidates ? 'opacity-60' : ''}`}
                     >
-                      매칭 대상 없음
+                      매칭불가처리
                     </Button>
                   )}
                   <Button
