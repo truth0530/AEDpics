@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, ChevronDown, ChevronUp, GitCompare, CornerRightDown, CornerLeftUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EquipmentDetail {
@@ -28,6 +28,7 @@ interface TargetInstitution {
   target_key: string;
   institution_name: string;
   address?: string;
+  unique_key?: string; // 2025년 고유키
 }
 
 interface BasketPanelProps {
@@ -36,6 +37,7 @@ interface BasketPanelProps {
   onRemove: (managementNumber: string) => void;
   onRemoveEquipmentSerial: (managementNumber: string, serial: string) => void;
   onClear: () => void;
+  onMatch?: () => void;
 }
 
 // 설치장소 텍스트에서 구급차/차량번호 강조
@@ -100,7 +102,7 @@ function highlightMatchingInstitutionName(institutionName: string, selectedName:
     return (
       <>
         {before}
-        <span className="text-yellow-600 dark:text-yellow-400 font-semibold">{matched}</span>
+        <span className="text-blue-600 dark:text-blue-400 font-semibold">{matched}</span>
         {after}
       </>
     );
@@ -158,7 +160,7 @@ function highlightMatchingInstitutionName(institutionName: string, selectedName:
       parts.push(institutionName.substring(lastIndex, match.index));
     }
     parts.push(
-      <span key={idx} className="text-yellow-600 dark:text-yellow-400 font-semibold">
+      <span key={idx} className="text-blue-600 dark:text-blue-400 font-semibold">
         {match.text}
       </span>
     );
@@ -238,7 +240,7 @@ function highlightMatchingAddress(address: string, selectedAddress: string | und
       parts.push(address.substring(lastIndex, match.index));
     }
     parts.push(
-      <span key={idx} className="text-yellow-600 dark:text-yellow-400 font-semibold">
+      <span key={idx} className="text-blue-600 dark:text-blue-400 font-semibold">
         {match.text}
       </span>
     );
@@ -257,7 +259,8 @@ export default function BasketPanel({
   selectedInstitution,
   onRemove,
   onRemoveEquipmentSerial,
-  onClear
+  onClear,
+  onMatch
 }: BasketPanelProps) {
   // 기본값이 펼쳐진 상태이므로 접힌 항목만 추적
   const [collapsedBasketItems, setCollapsedBasketItems] = useState<Set<string>>(new Set());
@@ -289,6 +292,48 @@ export default function BasketPanel({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* 매칭 대상 의무기관 헤더 - basket에 항목이 있을 때만 표시 */}
+      {selectedInstitution && basket.length > 0 && (
+        <div className="flex-shrink-0 mb-2 p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded border-2 border-blue-400">
+          <div className="font-medium text-sm text-blue-600 dark:text-blue-400 truncate">
+            {selectedInstitution.institution_name}
+          </div>
+        </div>
+      )}
+
+      {/* 매칭 순환 아이콘 */}
+      {selectedInstitution && basket.length > 0 && (
+        <div className="flex my-1">
+          {/* 좌측 1/3 지점 */}
+          <div className="flex-1 flex justify-center items-center">
+            <div className="rounded-full p-1 bg-blue-50 dark:bg-blue-900/20">
+              <CornerLeftUp className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+            </div>
+          </div>
+
+          {/* 중앙 매칭하기 버튼 */}
+          <div className="flex-1 flex justify-center items-center">
+            {onMatch && (
+              <Button
+                size="sm"
+                onClick={onMatch}
+                disabled={!selectedInstitution}
+                className="h-7"
+              >
+                매칭하기
+              </Button>
+            )}
+          </div>
+
+          {/* 우측 2/3 지점 */}
+          <div className="flex-1 flex justify-center items-center">
+            <div className="rounded-full p-1 bg-blue-50 dark:bg-blue-900/20">
+              <CornerRightDown className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 담긴 항목 리스트 */}
       <div className="flex-1 overflow-auto">
         {basket.length === 0 ? (
@@ -319,41 +364,61 @@ export default function BasketPanel({
                 <Card
                   key={item.management_number}
                   className={cn(
-                    "p-2 transition-all hover:shadow-md",
+                    "p-1.5 transition-all hover:shadow-md",
                     isPartiallyMatched
-                      ? "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
-                      : "border-2 border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                      ? "border border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
+                      : "border border-green-400 bg-green-50/50 dark:bg-green-950/20"
                   )}
                 >
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
+                      <div className="flex-1 space-y-0.5">
+                        {/* 기관명칭 */}
                         <div className="font-medium text-sm">
-                          관리번호 {item.management_number}
-                          {item.confidence && (
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "ml-2 text-xs",
-                                item.confidence <= 90 && "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400"
-                              )}
-                            >
-                              {item.confidence.toFixed(0)}%
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
                           {highlightMatchingInstitutionName(item.institution_name, selectedInstitution?.institution_name)}
                         </div>
+                        {/* 관리번호 + 분류1,2 */}
+                        <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                          <span className="font-mono">
+                            {item.management_number}
+                          </span>
+                          {item.category_1 && (
+                            <span>
+                              {item.category_1 === '구비의무기관' ? '의무' : item.category_1}
+                            </span>
+                          )}
+                          {item.category_2 && (
+                            <span>
+                              {item.category_2}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onRemove(item.management_number)}
-                        className="text-xs px-2 py-1"
-                      >
-                        {item.equipment_count > 1 ? '모두비우기' : '비우기'}
-                      </Button>
+                      <div className="flex flex-col items-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onRemove(item.management_number)}
+                          className="h-auto text-xs px-1 py-0"
+                        >
+                          {item.equipment_count > 1 ? '모두비우기' : '비우기'}
+                        </Button>
+                        {item.confidence && (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "text-xs font-normal flex-shrink-0 px-1 py-0.5 tracking-tighter",
+                              item.confidence === 100
+                                ? "bg-amber-100 text-red-800 border-amber-300 dark:bg-amber-900/30 dark:text-red-400"
+                                : item.confidence >= 90
+                                ? "bg-slate-700 dark:bg-slate-600 text-white"
+                                : "bg-transparent border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                            )}
+                          >
+                            {item.confidence.toFixed(0)}%
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3" />
@@ -361,20 +426,14 @@ export default function BasketPanel({
                     </div>
                     {item.selected_serials ? (
                       <>
-                        <div className="flex items-center gap-2">
-                          <div className="text-xs text-muted-foreground">
-                            장비 {item.equipment_count}대중 {item.selected_serials.length}대:
-                          </div>
-                          {isPartiallyMatched && (
-                            <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
-                              부분 매칭
-                            </Badge>
-                          )}
-                        </div>
-
                         {/* 장비가 2개 이상인 경우에만 펼치기/접기 버튼 표시 */}
                         {item.selected_serials.length > 1 && (
-                          <div className="flex justify-center mt-2">
+                          <div className="flex items-center justify-center gap-2 mt-1">
+                            {isPartiallyMatched && (
+                              <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                                부분 매칭
+                              </Badge>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
@@ -384,12 +443,12 @@ export default function BasketPanel({
                               {collapsedBasketItems.has(item.management_number) ? (
                                 <>
                                   <ChevronDown className="h-3 w-3 mr-1" />
-                                  장비연번 {item.selected_serials.length}대 펼치기
+                                  장비연번 {item.selected_serials.length}대 펼치기(잔여 {item.equipment_count - item.selected_serials.length}대)
                                 </>
                               ) : (
                                 <>
                                   <ChevronUp className="h-3 w-3 mr-1" />
-                                  장비연번 {item.selected_serials.length}대 접기
+                                  장비연번 {item.selected_serials.length}대 접기(잔여 {item.equipment_count - item.selected_serials.length}대)
                                 </>
                               )}
                             </Button>
@@ -398,23 +457,49 @@ export default function BasketPanel({
 
                         {/* 기본 펼쳐진 상태, 접기 버튼을 누른 경우만 숨김 */}
                         {(!collapsedBasketItems.has(item.management_number) || item.selected_serials.length === 1) && (
-                          <div className="space-y-1 mt-2">
+                          <div className="space-y-0 mt-1">
                             {item.selected_serials.map(serial => {
                               const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+
+                              // 고유키 일치 여부 확인
+                              const isUniqueKeyMatched = selectedInstitution?.unique_key &&
+                                equipmentDetail?.location_detail &&
+                                equipmentDetail.location_detail.includes(selectedInstitution.unique_key);
 
                               return (
                                 <div
                                   key={serial}
-                                  className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
+                                  className={cn(
+                                    "flex items-center justify-between gap-1.5 p-1 rounded",
+                                    isUniqueKeyMatched
+                                      ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-400 dark:border-purple-500"
+                                      : "bg-muted/30"
+                                  )}
                                 >
                                   <div className="flex-1">
-                                    <div className="text-xs">
-                                      <span className="font-mono font-medium">{serial}</span>
+                                    <div className="text-xs leading-tight">
                                       {equipmentDetail?.location_detail && (
-                                        <span className="ml-1.5 text-muted-foreground">
-                                          {highlightVehicleText(equipmentDetail.location_detail)}
-                                        </span>
+                                        <>
+                                          <span className={cn(
+                                            isUniqueKeyMatched
+                                              ? "text-purple-600 dark:text-purple-400"
+                                              : !isUniqueKeyMatched && selectedInstitution?.unique_key
+                                              ? "text-red-600 dark:text-red-400"
+                                              : "text-muted-foreground"
+                                          )}>
+                                            {highlightVehicleText(equipmentDetail.location_detail)}
+                                          </span>
+                                          <span className="text-muted-foreground mx-1">|</span>
+                                        </>
                                       )}
+                                      <span className={cn(
+                                        "font-mono font-medium",
+                                        isUniqueKeyMatched
+                                          ? "text-purple-700 dark:text-purple-300"
+                                          : !isUniqueKeyMatched && selectedInstitution?.unique_key
+                                          ? "text-red-600 dark:text-red-400"
+                                          : ""
+                                      )}>{serial}</span>
                                     </div>
                                   </div>
                                   {item.selected_serials.length > 1 && (
@@ -425,7 +510,12 @@ export default function BasketPanel({
                                         e.stopPropagation();
                                         onRemoveEquipmentSerial(item.management_number, serial);
                                       }}
-                                      className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                                      className={cn(
+                                        "h-auto text-xs px-1 py-0 flex-shrink-0",
+                                        !isUniqueKeyMatched && selectedInstitution?.unique_key
+                                          ? "bg-red-100 text-red-700 border-red-300 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600"
+                                          : "hover:bg-destructive/10 hover:text-destructive"
+                                      )}
                                     >
                                       비우기
                                     </Button>
@@ -453,7 +543,7 @@ export default function BasketPanel({
 
                         {/* 전체 매칭된 상태에서 장비가 2개 이상인 경우 펼치기/접기 버튼 표시 */}
                         {item.equipment_count > 1 && (
-                          <div className="flex justify-center mt-2">
+                          <div className="flex justify-center mt-1">
                             <Button
                               size="sm"
                               variant="outline"
@@ -477,20 +567,44 @@ export default function BasketPanel({
 
                         {/* 전체 매칭된 상태의 장비 리스트 (펼쳐진 경우만 표시) */}
                         {(!collapsedBasketItems.has(item.management_number) || item.equipment_count === 1) && (
-                          <div className="space-y-1 mt-2">
+                          <div className="space-y-0.5 mt-1">
                             {item.equipment_serials.map(serial => {
                               const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+
+                              // 고유키 일치 여부 확인
+                              const isUniqueKeyMatched = selectedInstitution?.unique_key &&
+                                equipmentDetail?.location_detail &&
+                                equipmentDetail.location_detail.includes(selectedInstitution.unique_key);
 
                               return (
                                 <div
                                   key={serial}
-                                  className="flex items-start justify-between gap-2 p-2 bg-muted/30 rounded"
+                                  className={cn(
+                                    "flex items-center justify-between gap-1.5 p-1.5 rounded",
+                                    isUniqueKeyMatched
+                                      ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-400 dark:border-purple-500"
+                                      : "bg-muted/30"
+                                  )}
                                 >
                                   <div className="flex-1">
-                                    <div className="text-xs">
-                                      <span className="font-mono font-medium">{serial}</span>
+                                    <div className="text-xs leading-tight">
+                                      <span className={cn(
+                                        "font-mono font-medium",
+                                        isUniqueKeyMatched
+                                          ? "text-purple-700 dark:text-purple-300"
+                                          : !isUniqueKeyMatched && selectedInstitution?.unique_key
+                                          ? "text-red-600 dark:text-red-400"
+                                          : ""
+                                      )}>{serial}</span>
                                       {equipmentDetail?.location_detail && (
-                                        <span className="ml-1.5 text-muted-foreground">
+                                        <span className={cn(
+                                          "ml-1",
+                                          isUniqueKeyMatched
+                                            ? "text-purple-600 dark:text-purple-400"
+                                            : !isUniqueKeyMatched && selectedInstitution?.unique_key
+                                            ? "text-red-600 dark:text-red-400"
+                                            : "text-muted-foreground"
+                                        )}>
                                           {highlightVehicleText(equipmentDetail.location_detail)}
                                         </span>
                                       )}
@@ -504,7 +618,12 @@ export default function BasketPanel({
                                         e.stopPropagation();
                                         onRemoveEquipmentSerial(item.management_number, serial);
                                       }}
-                                      className="text-xs px-2 py-1 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                                      className={cn(
+                                        "h-auto text-xs px-1.5 py-0.5 flex-shrink-0",
+                                        !isUniqueKeyMatched && selectedInstitution?.unique_key
+                                          ? "bg-red-100 text-red-700 border-red-300 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600"
+                                          : "hover:bg-destructive/10 hover:text-destructive"
+                                      )}
                                     >
                                       비우기
                                     </Button>

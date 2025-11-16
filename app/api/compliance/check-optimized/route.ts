@@ -62,6 +62,10 @@ export async function GET(request: NextRequest) {
         { institution_name: { contains: search, mode: 'insensitive' } },
         { target_key: { contains: search, mode: 'insensitive' } }
       ];
+      // 2025년 데이터는 고유키로도 검색 가능
+      if (year === '2025') {
+        targetWhere.OR.push({ unique_key: { contains: search, mode: 'insensitive' } });
+      }
     }
 
     console.log('[ComplianceAPI] Final WHERE clause:', JSON.stringify(targetWhere));
@@ -110,6 +114,7 @@ export async function GET(request: NextRequest) {
           orderBy: [
             { sido: 'asc' },
             { gugun: 'asc' },
+            { address: 'asc' },
             { institution_name: 'asc' }
           ],
           skip,
@@ -128,6 +133,7 @@ export async function GET(request: NextRequest) {
           orderBy: [
             { sido: 'asc' },
             { gugun: 'asc' },
+            { address: 'asc' },
             { institution_name: 'asc' }
           ],
           skip,

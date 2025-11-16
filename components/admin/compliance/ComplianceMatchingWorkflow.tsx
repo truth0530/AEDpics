@@ -37,7 +37,8 @@ interface TargetInstitution {
   gugun: string;
   division: string;
   sub_division: string;
-  address?: string; // 2025년 세부주소 추가 예정
+  unique_key?: string; // 2025년 고유키
+  address?: string; // 2025년 세부주소
   equipment_count: number;
   matched_count: number;
   unmatched_count: number;
@@ -87,6 +88,22 @@ export default function ComplianceMatchingWorkflow({
   const currentBasket = selectedInstitution
     ? (basketByInstitution[selectedInstitution.target_key] || [])
     : [];
+
+  // 부분매칭 및 전체담김 개수 계산
+  const partialMatchCount = currentBasket.filter(item =>
+    item.selected_serials &&
+    item.selected_serials.length > 0 &&
+    item.selected_serials.length < item.equipment_count
+  ).length;
+
+  const fullMatchCount = currentBasket.filter(item =>
+    !item.selected_serials || // 전체 선택 (selected_serials가 undefined)
+    item.selected_serials.length === item.equipment_count // 또는 모든 장비연번 선택
+  ).length;
+
+  // 기존 호환성을 위한 boolean 값
+  const hasPartialMatch = partialMatchCount > 0;
+  const hasFullMatch = fullMatchCount > 0;
 
   // 이전 basket 정보 추적 (무한 루프 방지)
   const prevBasketInfoRef = useRef<{
@@ -567,6 +584,11 @@ export default function ComplianceMatchingWorkflow({
                 selectedInstitution={selectedInstitution}
                 onSelect={setSelectedInstitution}
                 refreshTrigger={refreshTrigger}
+                hasPartialMatch={hasPartialMatch}
+                hasFullMatch={hasFullMatch}
+                partialMatchCount={partialMatchCount}
+                fullMatchCount={fullMatchCount}
+                basket={currentBasket}
               />
             </CardContent>
           </Card>
@@ -580,7 +602,7 @@ export default function ComplianceMatchingWorkflow({
                 <CardTitle className="text-base flex items-center gap-2">
                   <Badge variant="outline">2</Badge>
                   {!isManagementPanelCollapsed && (
-                    <span>관리번호 후보</span>
+                    <span>매칭후보(인트라넷)</span>
                   )}
                 </CardTitle>
                 <div className="flex items-center gap-2">
@@ -638,19 +660,10 @@ export default function ComplianceMatchingWorkflow({
           <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
             <CardHeader className="pb-2 pt-2 px-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2">
                   <Badge variant="outline">3</Badge>
-                  <span>1 ↔ 2 매칭보관함</span>
+                  <span>매칭대기리스트를 확인후 매칭하기 버튼을 누르세요</span>
                 </CardTitle>
-                {currentBasket.length > 0 && (
-                  <Button
-                    size="sm"
-                    onClick={handleMatchBasket}
-                    disabled={!selectedInstitution}
-                  >
-                    매칭하기
-                  </Button>
-                )}
               </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden flex flex-col px-2">
@@ -660,6 +673,7 @@ export default function ComplianceMatchingWorkflow({
                 onRemove={handleRemoveFromBasket}
                 onRemoveEquipmentSerial={handleRemoveEquipmentSerial}
                 onClear={handleClearBasket}
+                onMatch={handleMatchBasket}
               />
             </CardContent>
           </Card>
