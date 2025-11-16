@@ -64,6 +64,10 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   const [gugunHierarchy, setGugunHierarchy] = useState<GugunHierarchy[]>(getGugunHierarchy(fallbackRegionCode));
   const onChangeRef = useRef(onChange);
 
+  // ✅ 성능 최적화: 이전 값 추적하여 실제 변경 시에만 이벤트 dispatch
+  const prevSidoRef = useRef(selectedSido);
+  const prevGugunRef = useRef(selectedGugun);
+
   // onChange ref 업데이트
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -156,7 +160,14 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
 
   // 시도 또는 구군이 변경될 때 onChange 콜백 호출 및 regionSelected 이벤트 dispatch
   useEffect(() => {
-    if (selectedSido && selectedGugun) {
+    // ✅ 성능 최적화: 값이 실제로 변경되었을 때만 이벤트 dispatch
+    const isChanged = selectedSido !== prevSidoRef.current || selectedGugun !== prevGugunRef.current;
+
+    if (selectedSido && selectedGugun && isChanged) {
+      // 이전 값 업데이트
+      prevSidoRef.current = selectedSido;
+      prevGugunRef.current = selectedGugun;
+
       // ✅ 한글 시도명을 지역코드로 변환 (예: "대구" → "DAE")
       const regionCode = getRegionCode(selectedSido);
 
