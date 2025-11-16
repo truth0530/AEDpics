@@ -586,9 +586,15 @@ export default function ComplianceMatchingWorkflow({
                   {selectedInstitution && !isManagementPanelCollapsed && (
                     <Button
                       size="sm"
-                      variant={hasHighConfidenceCandidates ? "outline" : "destructive"}
+                      variant={currentBasket.length > 0 || hasHighConfidenceCandidates ? "outline" : "destructive"}
                       onClick={handleNoMatchAvailable}
-                      className={`text-xs ${hasHighConfidenceCandidates ? 'opacity-60' : ''}`}
+                      className={`text-xs ${
+                        currentBasket.length > 0
+                          ? 'opacity-40'
+                          : hasHighConfidenceCandidates
+                          ? 'opacity-60'
+                          : ''
+                      }`}
                     >
                       매칭불가처리
                     </Button>
