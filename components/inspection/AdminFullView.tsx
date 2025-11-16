@@ -222,6 +222,50 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
     return () => clearInterval(interval);
   }, []);
 
+  // 점검이력 탭에서 RegionFilter 이벤트 수신 및 필터 적용
+  useEffect(() => {
+    const handleRegionSelected = (e: CustomEvent) => {
+      const { sido, gugun, regionCode } = e.detail;
+      console.log('[AdminFullView] Region selected from header:', { sido, gugun, viewMode });
+
+      // 점검이력 탭에서만 처리 (다른 탭에서는 InspectionFilterBar가 처리)
+      if (viewMode === 'completed') {
+        // 지역 필터 변환: 라벨 → 코드
+        let regionCodes: string[] | undefined;
+        let cityCodes: string[] | undefined;
+
+        if (sido && sido !== '시도') {
+          // REGION_LABEL_TO_CODE 매핑 사용
+          const regionCodeValue = REGION_LABEL_TO_CODE[sido];
+          if (regionCodeValue) {
+            regionCodes = [regionCodeValue];
+          }
+        }
+
+        if (gugun && gugun !== '구군' && gugun !== '전체') {
+          cityCodes = [gugun];
+        }
+
+        console.log('[AdminFullView] Auto-applying filters on region change (점검이력):', {
+          regionCodes,
+          cityCodes
+        });
+
+        setFilters({
+          search: searchTerm.trim() || undefined,
+          regionCodes,
+          cityCodes,
+        } as any);
+      }
+    };
+
+    window.addEventListener('regionSelected', handleRegionSelected as EventListener);
+
+    return () => {
+      window.removeEventListener('regionSelected', handleRegionSelected as EventListener);
+    };
+  }, [viewMode, setFilters, searchTerm]);
+
   // viewMode 변경 시 statusFilter 초기화
   useEffect(() => {
     if (viewMode === 'completed' && statusFilter !== 'completed') {
@@ -1122,10 +1166,16 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               userProfile={undefined}
               viewMode="inspection"
               filters={filters}
+              inspectionSessions={inspectionSessions}
+              inspectionCompleted={completedInspections}
+              scheduledEquipment={new Set()}
               onQuickInspect={(location) => {
                 // 즉시 점검 페이지로 이동
                 const serial = location.equipment_serial;
                 router.push(`/inspection/${serial}`);
+              }}
+              onInspectionInProgress={(equipmentSerial) => {
+                handleInspectionInProgress(equipmentSerial);
               }}
             />
           </div>

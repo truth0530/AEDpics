@@ -22,6 +22,10 @@ interface AEDMapLocation {
   last_inspection_date?: string;
   external_display?: string;
   external_non_display_reason?: string;
+  // 지역 정보 (지도 중심 이동에 사용)
+  sido?: string;
+  gugun?: string;
+  place_name?: string;
 }
 
 interface InspectionSession {
@@ -177,9 +181,14 @@ export function MapView({
           // 추가된 목록: 스케줄에 있는 장비
           return scheduledEquipment.has(serial);
         } else if (listFilter === 'target') {
-          // 점검대상목록: 스케줄에 있고 아직 완료되지 않은 장비
-          // 점검 진행 중인 장비도 포함 (점검 완료 전까지는 점검대상)
-          return scheduledEquipment.has(serial) && !inspectionCompleted.has(serial);
+          // 점검대상목록
+          if (viewMode === 'inspection') {
+            // 현장점검 모드: 점검 완료되지 않은 모든 장비가 점검대상
+            return !inspectionCompleted.has(serial);
+          } else {
+            // 일정관리 모드: 스케줄에 있고 아직 완료되지 않은 장비
+            return scheduledEquipment.has(serial) && !inspectionCompleted.has(serial);
+          }
         } else if (listFilter === 'inProgress') {
           // 점검진행목록: 현재 점검 진행 중인 장비
           return inspectionSessions.has(serial);
@@ -406,12 +415,28 @@ export function MapView({
     }
   }, [useMapBasedLoading, fetchAEDByMapCenter, filters]);
 
+  // 이전 필터 추적 (무한 루프 및 불필요한 지도 이동 방지)
+  const prevFiltersRef = useRef<string>('');
+
   // filters 변경 시 지도 중심 이동
   useEffect(() => {
+    const currentFiltersStr = JSON.stringify({
+      regionCodes: filters?.regionCodes,
+      cityCodes: filters?.cityCodes
+    });
+
+    // 필터가 실제로 변경되지 않았으면 스킵
+    if (prevFiltersRef.current === currentFiltersStr) {
+      console.log('[MapView] 📍 Filters unchanged, skipping center update');
+      return;
+    }
+
     console.log('[MapView] 📍 Filters change useEffect triggered:', {
       hasMap: !!map,
-      filters: JSON.stringify(filters),
-      regionCode: filters?.regionCodes?.[0]
+      prev: prevFiltersRef.current,
+      current: currentFiltersStr,
+      regionCode: filters?.regionCodes?.[0],
+      cityCode: filters?.cityCodes?.[0]
     });
 
     if (!map) {
@@ -427,20 +452,56 @@ export function MapView({
     const regionCode = filters.regionCodes[0];
     const region = REGIONS.find(r => r.code === regionCode);
 
+    // ✅ 구군이 선택된 경우: props로 전달받은 locations에서 찾기 (displayLocations 아님!)
+    if (filters.cityCodes?.[0] && filters.cityCodes[0] !== '전체') {
+      const gugunName = filters.cityCodes[0];
+
+      // locations (props)에서 해당 구군 장비 찾기
+      const locationsInGugun = locations.filter(loc =>
+        loc.gugun === gugunName && loc.latitude && loc.longitude
+      );
+
+      if (locationsInGugun.length > 0) {
+        const firstLocation = locationsInGugun[0];
+        const newCenter = new window.kakao.maps.LatLng(firstLocation.latitude!, firstLocation.longitude!);
+        const currentLevel = map.getLevel(); // ✅ 현재 줌 레벨 저장 (반경 유지)
+        console.log('[MapView] 📍 Moving map to selected gugun (first location):', {
+          gugun: gugunName,
+          lat: firstLocation.latitude,
+          lng: firstLocation.longitude,
+          placeName: firstLocation.installation_institution || firstLocation.place_name,
+          totalInGugun: locationsInGugun.length,
+          preservingZoomLevel: currentLevel
+        });
+        map.setCenter(newCenter);
+        map.setLevel(currentLevel); // ✅ 줌 레벨 복원 (반경 크기 유지)
+        setMapCenter({ lat: firstLocation.latitude!, lng: firstLocation.longitude! });
+        prevFiltersRef.current = currentFiltersStr; // ✅ 필터 업데이트 기록
+        return;
+      } else {
+        console.log('[MapView] 📍 No locations found for gugun:', gugunName, '- falling back to region center');
+      }
+    }
+
+    // ✅ 시도만 선택되거나 구군 데이터가 없는 경우: 시도 중심으로 이동
     if (region) {
       const newCenter = new window.kakao.maps.LatLng(region.latitude, region.longitude);
+      const currentLevel = map.getLevel(); // ✅ 현재 줌 레벨 저장 (반경 유지)
       console.log('[MapView] 📍 Moving map to selected region:', {
         code: regionCode,
         label: region.label,
         lat: region.latitude,
-        lng: region.longitude
+        lng: region.longitude,
+        preservingZoomLevel: currentLevel
       });
       map.setCenter(newCenter);
+      map.setLevel(currentLevel); // ✅ 줌 레벨 복원 (반경 크기 유지)
       setMapCenter({ lat: region.latitude, lng: region.longitude });
+      prevFiltersRef.current = currentFiltersStr; // ✅ 필터 업데이트 기록
     } else {
       console.log('[MapView] 📍 Region not found for code:', regionCode);
     }
-  }, [map, filters]);
+  }, [map, filters, locations]);
 
   // 마커 추가
   const addMarkers = useCallback(() => {
@@ -625,7 +686,10 @@ export function MapView({
     }
   }, [map, isMapLoaded, displayLocations, addMarkers]);
 
-  // 반경 원 그리기 함수 (useMapBasedLoading일 때만)
+  // 이전 반경 값 추적 (자동 줌 조정 여부 판단용)
+  const prevSearchRadiusRef = useRef<number>(searchRadius);
+
+  // 반경 원 그리기 함수
   const drawRadiusCircle = useCallback(() => {
     if (!map) return;
 
@@ -655,21 +719,27 @@ export function MapView({
 
     console.log(`[MapView] ⭕ Drew radius circle: ${searchRadius}km at center (${center.getLat()}, ${center.getLng()})`);
 
-    // 반경에 맞춰 자동 줌 조정 (항상 적용)
-    // 사용자가 반경 버튼을 클릭했을 때 적절한 줌 레벨로 조정
-    let zoomLevel: number;
-    if (searchRadius === 1) {
-      zoomLevel = 5; // 1km - 많이 확대
-    } else if (searchRadius === 3) {
-      zoomLevel = 7; // 3km - 중간 확대
-    } else if (searchRadius === 5) {
-      zoomLevel = 8; // 5km - 축소하여 전체 보기
+    // ✅ 반경이 실제로 변경되었을 때만 자동 줌 조정
+    const radiusChanged = prevSearchRadiusRef.current !== searchRadius;
+
+    if (radiusChanged) {
+      let zoomLevel: number;
+      if (searchRadius === 1) {
+        zoomLevel = 5; // 1km - 많이 확대
+      } else if (searchRadius === 3) {
+        zoomLevel = 7; // 3km - 중간 확대
+      } else if (searchRadius === 5) {
+        zoomLevel = 8; // 5km - 축소하여 전체 보기
+      } else {
+        zoomLevel = 7; // 기본값
+      }
+      map.setLevel(zoomLevel);
+      console.log('[MapView] 🔍 Auto-zoom to level', zoomLevel, 'for radius', searchRadius, 'km (radius changed)');
+      prevSearchRadiusRef.current = searchRadius;
     } else {
-      zoomLevel = 7; // 기본값
+      console.log('[MapView] ⏭️ Skipping auto-zoom (radius unchanged:', searchRadius, 'km)');
     }
-    map.setLevel(zoomLevel);
-    console.log('[MapView] 🔍 Auto-zoom to level', zoomLevel, 'for radius', searchRadius, 'km');
-  }, [map, searchRadius, useMapBasedLoading]);
+  }, [map, searchRadius]);
 
   // 지도 로드 완료 시 초기 원 그리기
   useEffect(() => {
@@ -734,9 +804,11 @@ export function MapView({
           lastRegionRef.current = { sido, gugun };
         }
 
+        // ✅ 현재 줌 레벨 보존 (사용자가 설정한 반경 유지)
+        const currentLevel = map.getLevel();
+
         let targetLat: number;
         let targetLng: number;
-        let zoomLevel = 8;
 
         // 구군이 지정된 경우: 보건소 좌표로 이동
         if (gugun && gugun !== '전체' && gugun !== '구군') {
@@ -748,8 +820,7 @@ export function MapView({
               const data = await response.json();
               targetLat = data.latitude;
               targetLng = data.longitude;
-              zoomLevel = 6; // 구군 단위이므로 더 확대
-              console.log('[MapView] ✅ Health center coords:', { healthCenter: data.healthCenter, lat: targetLat, lng: targetLng });
+              console.log('[MapView] ✅ Health center coords:', { healthCenter: data.healthCenter, lat: targetLat, lng: targetLng, preservingZoomLevel: currentLevel });
             } else {
               // API 실패 시 시도 중심으로 폴백
               console.warn('[MapView] ⚠️ Health center API failed, using region center');
@@ -776,7 +847,8 @@ export function MapView({
 
         const moveLatLng = new window.kakao.maps.LatLng(targetLat, targetLng);
         map.setCenter(moveLatLng);
-        map.setLevel(zoomLevel);
+        // ✅ 줌 레벨 복원 (사용자가 설정한 반경 유지)
+        map.setLevel(currentLevel);
         initialBoundsSetRef.current = false;
       }
     };
@@ -1187,10 +1259,10 @@ export function MapView({
           className="w-full h-full"
         />
 
-          {/* Loading Overlay */}
+          {/* Loading Overlay - 지도 조작 차단하지 않도록 pointer-events-none 추가 */}
           {isLoading && (
-            <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center z-30">
-              <div className="text-center">
+            <div className="absolute inset-0 bg-gray-900/50 flex items-center justify-center z-30 pointer-events-none">
+              <div className="text-center pointer-events-auto">
                 <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
                 <p className="text-white">데이터를 불러오는 중...</p>
               </div>

@@ -154,12 +154,31 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
     }
   }, [user.role, user.organization]);
 
-  // 시도 또는 구군이 변경될 때 onChange 콜백 호출
+  // 시도 또는 구군이 변경될 때 onChange 콜백 호출 및 regionSelected 이벤트 dispatch
   useEffect(() => {
-    if (onChangeRef.current && selectedSido && selectedGugun) {
+    if (selectedSido && selectedGugun) {
       // ✅ 한글 시도명을 지역코드로 변환 (예: "대구" → "DAE")
       const regionCode = getRegionCode(selectedSido);
-      onChangeRef.current(regionCode || selectedSido, selectedGugun, selectedSido);
+
+      // onChange 콜백 호출 (레거시 지원)
+      if (onChangeRef.current) {
+        onChangeRef.current(regionCode || selectedSido, selectedGugun, selectedSido);
+      }
+
+      // ✅ regionSelected 이벤트 dispatch (모든 리스너에게 전파)
+      console.log('[RegionFilter] Dispatching regionSelected event:', {
+        sido: selectedSido,
+        gugun: selectedGugun,
+        regionCode: regionCode || selectedSido
+      });
+
+      window.dispatchEvent(new CustomEvent('regionSelected', {
+        detail: {
+          sido: selectedSido,
+          gugun: selectedGugun,
+          regionCode: regionCode || selectedSido
+        }
+      }));
     }
   }, [selectedSido, selectedGugun]);
 

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeGugunForDB, normalizeSidoForDB } from '@/lib/constants/regions';
+import { getDisplayAddress } from '@/lib/utils/aed-address-helpers';
 
 // Ultra-optimized version with minimal data loading
 const MINIMAL_PAGE_SIZE = 10; // Start with very small pages
@@ -286,7 +287,7 @@ export async function POST(request: NextRequest) {
       .map(aed => ({
         management_number: aed.management_number,
         institution_name: aed.installation_institution,
-        address: aed.installation_location_address || aed.installation_address,
+        address: getDisplayAddress(aed),
         confidence: 80, // Simplified confidence
         confirmed: false
       }));

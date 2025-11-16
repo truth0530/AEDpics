@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
               ad.category_2,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
-                WHERE tld.target_list_year = ${parseInt(year)}
+                WHERE tld.target_list_year = ${year}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
-                  AND tld.target_list_year = ${parseInt(year)}
+                  AND tld.target_list_year = ${year}
                 LIMIT 1
               ) as matched_to
             FROM aedpics.aed_data ad
@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
-                WHERE tld.target_list_year = ${parseInt(year)}
+                WHERE tld.target_list_year = ${year}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
-                  AND tld.target_list_year = ${parseInt(year)}
+                  AND tld.target_list_year = ${year}
                 LIMIT 1
               ) as matched_to
             FROM aedpics.aed_data ad
@@ -240,7 +240,7 @@ export async function GET(request: NextRequest) {
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
-                WHERE tld.target_list_year = ${parseInt(year)}
+                WHERE tld.target_list_year = ${year}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
-                  AND tld.target_list_year = ${parseInt(year)}
+                  AND tld.target_list_year = ${year}
                 LIMIT 1
               ) as matched_to
             FROM aedpics.aed_data ad
@@ -317,7 +317,7 @@ export async function GET(request: NextRequest) {
           0::numeric as confidence,
           EXISTS(
             SELECT 1 FROM aedpics.target_list_devices tld
-            WHERE tld.target_list_year = ${parseInt(year)}
+            WHERE tld.target_list_year = ${year}
               AND ad.equipment_serial = ANY(
                 SELECT ad2.equipment_serial
                 FROM aedpics.aed_data ad2
@@ -328,9 +328,9 @@ export async function GET(request: NextRequest) {
             SELECT t.target_key
             FROM aedpics.target_list_devices tld
             JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-            JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
+            JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
             WHERE ad2.management_number = ad.management_number
-              AND tld.target_list_year = ${parseInt(year)}
+              AND tld.target_list_year = ${year}
             LIMIT 1
           ) as matched_to,
           ad.category_1,
@@ -380,7 +380,7 @@ export async function GET(request: NextRequest) {
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
-              WHERE tld.target_list_year = ${parseInt(year)}
+              WHERE tld.target_list_year = ${year}
                 AND ad.equipment_serial = ANY(
                   SELECT ad2.equipment_serial
                   FROM aedpics.aed_data ad2
@@ -391,9 +391,9 @@ export async function GET(request: NextRequest) {
               SELECT t.target_key
               FROM aedpics.target_list_devices tld
               JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-              JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
+              JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
               WHERE ad2.management_number = ad.management_number
-                AND tld.target_list_year = ${parseInt(year)}
+                AND tld.target_list_year = ${year}
               LIMIT 1
             ) as matched_to,
             ad.category_1,
@@ -433,7 +433,7 @@ export async function GET(request: NextRequest) {
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
-              WHERE tld.target_list_year = ${parseInt(year)}
+              WHERE tld.target_list_year = ${year}
                 AND ad.equipment_serial = ANY(
                   SELECT ad2.equipment_serial
                   FROM aedpics.aed_data ad2
@@ -444,9 +444,9 @@ export async function GET(request: NextRequest) {
               SELECT t.target_key
               FROM aedpics.target_list_devices tld
               JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-              JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
+              JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
               WHERE ad2.management_number = ad.management_number
-                AND tld.target_list_year = ${parseInt(year)}
+                AND tld.target_list_year = ${year}
               LIMIT 1
             ) as matched_to,
             ad.category_1,
@@ -485,7 +485,7 @@ export async function GET(request: NextRequest) {
             NULL::numeric as confidence,
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
-              WHERE tld.target_list_year = ${parseInt(year)}
+              WHERE tld.target_list_year = ${year}
                 AND ad.equipment_serial = ANY(
                   SELECT ad2.equipment_serial
                   FROM aedpics.aed_data ad2
@@ -496,9 +496,9 @@ export async function GET(request: NextRequest) {
               SELECT t.target_key
               FROM aedpics.target_list_devices tld
               JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
-              JOIN aedpics.${targetTable} t ON tld.target_institution_id = t.target_key
+              JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
               WHERE ad2.management_number = ad.management_number
-                AND tld.target_list_year = ${parseInt(year)}
+                AND tld.target_list_year = ${year}
               LIMIT 1
             ) as matched_to,
             ad.category_1,

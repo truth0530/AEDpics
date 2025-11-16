@@ -42,6 +42,33 @@ export function InspectionFilterBar() {
         }
         window.sessionStorage.setItem('selectedGugun', gugun);
       }
+
+      // ✅ 즉시 필터 적용 (일정관리와 동일하게 작동)
+      // 지역 필터 변환: 라벨 → 코드로 중앙 관리 유틸 사용
+      let regionCodes: string[] | undefined;
+      let cityCodes: string[] | undefined;
+
+      if (sido && sido !== '시도') {
+        const regionCodeValue = getRegionCode(sido);
+        if (regionCodeValue && regionCodeValue !== sido) {
+          regionCodes = [regionCodeValue];
+        }
+      }
+
+      if (gugun && gugun !== '구군' && gugun !== '전체') {
+        cityCodes = [gugun];
+      }
+
+      console.log('[InspectionFilterBar] Auto-applying filters on region change:', {
+        regionCodes,
+        cityCodes
+      });
+
+      setFilters({
+        search: searchTerm.trim() || undefined,
+        regionCodes,
+        cityCodes,
+      } as any);
     };
 
     window.addEventListener('regionSelected', handleRegionSelected as EventListener);
@@ -58,7 +85,7 @@ export function InspectionFilterBar() {
     return () => {
       window.removeEventListener('regionSelected', handleRegionSelected as EventListener);
     };
-  }, []);
+  }, [setFilters, searchTerm]);
 
   // 검색 필터 적용
   const handleApply = useCallback(() => {
