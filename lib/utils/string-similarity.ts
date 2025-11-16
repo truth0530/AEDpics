@@ -181,12 +181,25 @@ export function calculateInstitutionMatchConfidence(
     : 0;
 
   // === 단계 4: 가중치 기반 최종 신뢰도 계산 ===
-  // 이름 50% + 주소 30% + 지역 20%
-  let weightedConfidence = Math.round(
-    (nameScore * 0.5) +
-    (addressScore * 0.3) +
-    (regionScore * 0.2)
-  );
+  // 주소 정보가 있는 경우: 이름 40% + 주소 40% + 지역 20%
+  // 주소 정보가 없는 경우: 이름 50% + 주소 30% + 지역 20% (기존 방식 유지)
+  let weightedConfidence: number;
+
+  if (addressScore > 0) {
+    // 주소 정보가 있으면 주소 가중치 증가 (30% → 40%)
+    weightedConfidence = Math.round(
+      (nameScore * 0.4) +
+      (addressScore * 0.4) +
+      (regionScore * 0.2)
+    );
+  } else {
+    // 주소 정보가 없으면 기존 가중치 유지
+    weightedConfidence = Math.round(
+      (nameScore * 0.5) +
+      (addressScore * 0.3) +
+      (regionScore * 0.2)
+    );
+  }
 
   // === 단계 5: 키워드 보너스 (2025-11-16 추가) ===
   // 특정 키워드 매칭 시 보너스 점수 추가 (최대 100점 제한)
