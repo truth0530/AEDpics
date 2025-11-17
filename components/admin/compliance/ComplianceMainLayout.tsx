@@ -185,7 +185,8 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                     <span className="font-semibold">({basketInfo.selectedEquipment}대)</span>
                     <span className="text-muted-foreground mx-1">의 연번 매칭 준비 완료</span>
                     <ChevronRight className="inline h-4 w-4 mx-1" />
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">'매칭하기'를 눌러주세요</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">'매칭하기'</span>
+                    <span className="text-foreground font-medium">를 눌러주세요</span>
                   </span>
                 ) : selectedInstitutionName ? (
                   // 보관함이 비어있는 경우

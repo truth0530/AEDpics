@@ -167,20 +167,33 @@ export function compareAddresses(aedAddress: string, targetAddress: string): num
   // 정확 일치
   if (aedNorm === targetNorm) return 100;
 
-  // === 읍면동 레벨 비교 (2025-11-16 추가) ===
+  // === 읍면동 레벨 비교 (2025-11-16 추가, 2025-11-18 강화) ===
   // 군위읍 vs 의흥면 같은 경우를 감지하여 낮은 점수 부여
   const aedEupMyeonDong = extractEupMyeonDong(aedAddress);
   const targetEupMyeonDong = extractEupMyeonDong(targetAddress);
 
+  // 케이스 1: 둘 다 읍면동 정보가 있는 경우
   if (aedEupMyeonDong && targetEupMyeonDong) {
-    // 읍면동이 다르면 주소 점수 대폭 감소
     if (aedEupMyeonDong !== targetEupMyeonDong) {
-      // 다른 읍면동 = 최대 30점만 부여 (기존 90점에서 대폭 감소)
+      // 읍면동이 다르면 = 다른 지역이므로 최대 30점
       return 30;
     }
+    // 읍면동이 같으면 아래 부분 일치 로직으로 진행
   }
 
-  // 부분 일치 (포함 관계) - 읍면동이 같은 경우에만 높은 점수
+  // 케이스 2: 한쪽에만 읍면동 정보가 있는 경우 (불완전 매칭)
+  // 예: AED="대구 군위군 의흥면", Target="대구 군위군"
+  if (aedEupMyeonDong && !targetEupMyeonDong) {
+    // AED에만 읍면동 정보가 있음 = 불완전 매칭 = 최대 40점
+    return 40;
+  }
+  if (!aedEupMyeonDong && targetEupMyeonDong) {
+    // Target에만 읍면동 정보가 있음 = 불완전 매칭 = 최대 40점
+    return 40;
+  }
+
+  // 케이스 3: 둘 다 읍면동 정보가 없거나, 읍면동이 일치하는 경우
+  // 부분 일치 (포함 관계) - 높은 점수 부여
   if (aedNorm.includes(targetNorm) || targetNorm.includes(aedNorm)) return 90;
 
   // Levenshtein 기반 유사도 (주소는 이름보다 엄격함)
@@ -277,16 +290,18 @@ export function calculateInstitutionMatchConfidence(
 
   // === 단계 4: 가중치 기반 최종 신뢰도 계산 ===
   // 2025-11-16: 주소 중심 가중치 재조정
+  // 2025-11-18: 주소 비중 대폭 증가 (55% → 70%)
   // - 주소가 3단계까지 일치하면 같은 기관일 확률 높음
   // - 주소가 다르면 이름이 유사해도 다른 기관일 확률 높음
+  // - 읍면동이 다르면 거의 별개 기관으로 판단
   let weightedConfidence: number;
 
   if (addressScore > 0) {
-    // 주소 정보가 있을 때: 주소 우선 (이름 25% + 주소 55% + 지역 20%)
+    // 주소 정보가 있을 때: 주소 중심 (이름 15% + 주소 70% + 지역 15%)
     weightedConfidence = Math.round(
-      (nameScore * 0.25) +
-      (addressScore * 0.55) +
-      (regionScore * 0.2)
+      (nameScore * 0.15) +
+      (addressScore * 0.70) +
+      (regionScore * 0.15)
     );
   } else {
     // 주소 정보가 없을 때: 이름과 지역만 사용 (이름 60% + 지역 40%)
@@ -296,37 +311,42 @@ export function calculateInstitutionMatchConfidence(
     );
   }
 
-  // === 단계 5: 키워드 보너스 (2025-11-16 추가) ===
+  // === 단계 5: 키워드 보너스 (2025-11-16 추가, 2025-11-18 조건부 적용) ===
   // 특정 키워드 매칭 시 보너스 점수 추가 (최대 100점 제한)
+  // 단, 주소 점수가 너무 낮으면 키워드 보너스를 주지 않음
   let keywordBonus = 0;
 
-  // 보건소 매칭 (+3점)
-  if (aedInstitution.includes('보건소') && targetInstitution.includes('보건소')) {
-    keywordBonus += 3;
-  }
+  // 주소 점수가 50점 이상일 때만 키워드 보너스 적용
+  // (읍면동이 다르거나 불완전 매칭인 경우 보너스 없음)
+  if (addressScore >= 50) {
+    // 보건소 매칭 (+3점)
+    if (aedInstitution.includes('보건소') && targetInstitution.includes('보건소')) {
+      keywordBonus += 3;
+    }
 
-  // 구군 매칭 (+5점)
-  if (aedGugun && targetGugun && aedGugun === targetGugun) {
-    keywordBonus += 5;
-  }
+    // 구군 매칭 (+5점)
+    if (aedGugun && targetGugun && aedGugun === targetGugun) {
+      keywordBonus += 5;
+    }
 
-  // 법정동 매칭 (+2점) - 주소에서 "동", "로", "가" 포함 시
-  if (aedAddress && targetAddress) {
-    const dongPattern = /[가-힣]+동|[가-힣]+로|[가-힣]+가/;
-    const aedDong = aedAddress.match(dongPattern)?.[0];
-    const targetDong = targetAddress.match(dongPattern)?.[0];
-    if (aedDong && targetDong && aedDong === targetDong) {
+    // 법정동 매칭 (+2점) - 주소에서 "동", "로", "가" 포함 시
+    if (aedAddress && targetAddress) {
+      const dongPattern = /[가-힣]+동|[가-힣]+로|[가-힣]+가/;
+      const aedDong = aedAddress.match(dongPattern)?.[0];
+      const targetDong = targetAddress.match(dongPattern)?.[0];
+      if (aedDong && targetDong && aedDong === targetDong) {
+        keywordBonus += 2;
+      }
+    }
+
+    // 의료 기관 키워드 매칭 (+2점)
+    const medicalKeywords = ['센터', '의료원'];
+    const hasCommonMedicalKeyword = medicalKeywords.some(
+      keyword => aedInstitution.includes(keyword) && targetInstitution.includes(keyword)
+    );
+    if (hasCommonMedicalKeyword) {
       keywordBonus += 2;
     }
-  }
-
-  // 의료 기관 키워드 매칭 (+2점)
-  const medicalKeywords = ['센터', '의료원'];
-  const hasCommonMedicalKeyword = medicalKeywords.some(
-    keyword => aedInstitution.includes(keyword) && targetInstitution.includes(keyword)
-  );
-  if (hasCommonMedicalKeyword) {
-    keywordBonus += 2;
   }
 
   // 키워드 보너스 적용 (최대 100점 제한)

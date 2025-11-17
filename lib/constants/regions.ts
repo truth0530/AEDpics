@@ -1384,3 +1384,43 @@ export function getSidoVariantsForDB(sido: string | undefined): string[] | undef
 
   return [sido];
 }
+
+/**
+ * ⭐ 주소의 정식 시도명을 약칭으로 변환 (UI 표시용)
+ *
+ * @example
+ * shortenAddressSido("대구광역시 동구 국채보상로") → "대구 동구 국채보상로"
+ * shortenAddressSido("서울특별시 강남구 테헤란로") → "서울 강남구 테헤란로"
+ * shortenAddressSido("충청남도 천안시 동남구") → "충남 천안시 동남구"
+ * shortenAddressSido("경기도 수원시 영통구") → "경기 수원시 영통구"
+ *
+ * @description
+ * 주소 문자열에서 정식 시도명을 약칭으로 변환합니다.
+ * UI에서 간결한 주소 표시를 위해 사용됩니다.
+ *
+ * @param address - 원본 주소 문자열
+ * @returns 시도명이 약칭으로 변환된 주소
+ */
+export function shortenAddressSido(address: string): string {
+  if (!address) return address;
+
+  // 정식명칭을 긴 것부터 짧은 것 순으로 정렬하여 치환
+  // (예: "서울특별시"를 "서울시"보다 먼저 처리)
+  const sortedLongLabels = Object.keys(REGION_LONG_LABELS)
+    .filter(name => name !== '중앙')  // 중앙 제외
+    .sort((a, b) => b.length - a.length);
+
+  let result = address;
+  for (const longLabel of sortedLongLabels) {
+    if (result.includes(longLabel)) {
+      const code = REGION_LONG_LABELS[longLabel];
+      const shortLabel = REGION_CODE_TO_LABEL[code];
+      if (shortLabel) {
+        result = result.replace(longLabel, shortLabel);
+        break; // 첫 번째 매칭만 치환
+      }
+    }
+  }
+
+  return result;
+}

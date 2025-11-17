@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { MapPin, ChevronDown, ChevronUp, GitCompare, CornerRightDown, CornerLeftUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { shortenAddressSido } from '@/lib/constants/regions';
 
 interface EquipmentDetail {
   serial: string;
@@ -320,7 +321,7 @@ export default function BasketPanel({
                 size="sm"
                 onClick={onMatch}
                 disabled={!selectedInstitution}
-                className="h-7"
+                className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 매칭하기
               </Button>
@@ -339,7 +340,37 @@ export default function BasketPanel({
       {/* 담긴 항목 리스트 */}
       <div className="flex-1 overflow-auto">
         {basket.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
+          <div className="flex flex-col items-center justify-start h-full text-center pt-[20vh]">
+            {/* ㄱ자 화살표 */}
+            <div className="mb-6 flex justify-center">
+              <svg width="100" height="80" viewBox="0 0 100 80" className="text-blue-500 dark:text-blue-400">
+                {/* 화살표 시작 부분 - 점선 (3칸) */}
+                <path
+                  d="M 10 10 L 27 10"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  strokeLinecap="butt"
+                  strokeDasharray="3 4"
+                />
+                {/* 화살표 나머지 부분 - 실선 */}
+                <path
+                  d="M 27 10 L 55 10 Q 80 10, 80 35 L 80 54"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  strokeLinecap="butt"
+                />
+                {/* 화살표 머리 - 각진 삼각형 (윗부분 수평선) */}
+                <path
+                  d="M 68 46 L 68 46 L 92 46 L 80 64 Z"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinejoin="miter"
+                />
+              </svg>
+            </div>
             <div className="text-muted-foreground text-sm">
               {selectedInstitution ? (
                 <>
@@ -424,7 +455,7 @@ export default function BasketPanel({
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3" />
-                      <span className="truncate">{highlightMatchingAddress(item.address, selectedInstitution?.address)}</span>
+                      <span className="truncate">{highlightMatchingAddress(shortenAddressSido(item.address), selectedInstitution?.address)}</span>
                     </div>
                     {item.selected_serials ? (
                       <>
