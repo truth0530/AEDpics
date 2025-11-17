@@ -68,6 +68,8 @@ export default function ComplianceMatchingWorkflow({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // 90% 이상 신뢰도 후보 존재 여부
   const [hasHighConfidenceCandidates, setHasHighConfidenceCandidates] = useState(false);
+  // 섹션2 후보 데이터 (unique_key 매칭 확인용)
+  const [candidatesData, setCandidatesData] = useState<ManagementNumberCandidate[]>([]);
   // 매칭 불가 다이얼로그 상태
   const [unmatchableDialogOpen, setUnmatchableDialogOpen] = useState(false);
   const [unmatchableDialogData, setUnmatchableDialogData] = useState<{
@@ -96,12 +98,22 @@ export default function ComplianceMatchingWorkflow({
     ? (basketByInstitution[selectedInstitution.target_key] || [])
     : [];
 
-  // unique_key 매칭 여부 확인 (basket 항목의 equipment_details에서 location_detail에 unique_key 포함 여부)
+  // unique_key 매칭 여부 확인 (basket + 섹션2 후보 모두 확인)
   const hasUniqueKeyInBasket = selectedInstitution?.unique_key && currentBasket.some(item =>
     item.equipment_details?.some(detail =>
       detail.location_detail && detail.location_detail.includes(selectedInstitution.unique_key!)
     )
   );
+
+  // 섹션2 후보에서도 unique_key 매칭 확인
+  const hasUniqueKeyInCandidates = selectedInstitution?.unique_key && candidatesData.some(candidate =>
+    candidate.equipment_details?.some(detail =>
+      detail.location_detail && detail.location_detail.includes(selectedInstitution.unique_key!)
+    )
+  );
+
+  // basket 또는 섹션2 후보 중 하나라도 매칭되면 true
+  const hasUniqueKeyMatch = hasUniqueKeyInBasket || hasUniqueKeyInCandidates;
 
   // 부분매칭 및 전체담김 개수 계산
   const partialMatchCount = currentBasket.filter(item =>
@@ -661,7 +673,7 @@ export default function ComplianceMatchingWorkflow({
                 partialMatchCount={partialMatchCount}
                 fullMatchCount={fullMatchCount}
                 basket={currentBasket}
-                hasUniqueKeyInBasket={hasUniqueKeyInBasket}
+                hasUniqueKeyInBasket={hasUniqueKeyMatch}
               />
             </CardContent>
           </Card>
@@ -723,6 +735,7 @@ export default function ComplianceMatchingWorkflow({
                   selected_serials: item.selected_serials
                 }))}
                 isCollapsed={isManagementPanelCollapsed}
+                onCandidatesLoaded={setCandidatesData}
               />
             </CardContent>
           </Card>

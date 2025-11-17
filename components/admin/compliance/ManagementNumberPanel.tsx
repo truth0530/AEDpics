@@ -60,6 +60,7 @@ interface ManagementNumberPanelProps {
   basketedManagementNumbers?: string[];
   basketedItems?: BasketItem[];
   isCollapsed?: boolean;
+  onCandidatesLoaded?: (candidates: ManagementNumberCandidate[]) => void;
 }
 
 // 고유키 매칭 유틸리티 함수
@@ -387,7 +388,8 @@ export default function ManagementNumberPanel({
   onAddEquipmentSerial,
   basketedManagementNumbers = [],
   basketedItems = [],
-  isCollapsed = false
+  isCollapsed = false,
+  onCandidatesLoaded
 }: ManagementNumberPanelProps) {
   const [autoSuggestions, setAutoSuggestions] = useState<ManagementNumberCandidate[]>([]);
   const [searchResults, setSearchResults] = useState<ManagementNumberCandidate[]>([]);
@@ -480,8 +482,17 @@ export default function ManagementNumberPanel({
       if (!response.ok) throw new Error('Failed to fetch candidates');
 
       const data = await response.json();
-      setAutoSuggestions(data.auto_suggestions || []);
-      setSearchResults(data.search_results || []);
+      const autoSugs = data.auto_suggestions || [];
+      const searchRes = data.search_results || [];
+
+      setAutoSuggestions(autoSugs);
+      setSearchResults(searchRes);
+
+      // 부모 컴포넌트에 후보 데이터 전달 (섹션1에서 unique_key 매칭 확인용)
+      if (onCandidatesLoaded) {
+        const allCandidates = [...autoSugs, ...searchRes];
+        onCandidatesLoaded(allCandidates);
+      }
     } catch (error) {
       console.error('Failed to fetch candidates:', error);
     } finally {
