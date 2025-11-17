@@ -46,7 +46,7 @@ interface CompletedTarget {
     equipment_count: number;
     confidence: number;
   }>;
-  status: 'installed' | 'not_installed';
+  status: 'installed' | 'not_installed' | 'confirmed' | 'pending';
   confirmedBy?: string;
   confirmedAt?: Date;
   note?: string;

@@ -1,0 +1,342 @@
+{
+  "table_name": "target_list_2025",
+  "description": "2025년도 AED 설치 의무기관 목록",
+  "total_records_current": 28862,
+  "schema": {
+    "primary_key": "target_key",
+    "columns": [
+      {
+        "name": "target_key",
+        "type": "VARCHAR(255)",
+        "nullable": false,
+        "is_primary_key": true,
+        "description": "기관 고유 식별자 (Primary Key)",
+        "example": "DGU_GUNWI_001",
+        "preprocessing_notes": "중복 없이 고유해야 함. 기관명+지역 조합으로 생성 권장"
+      },
+      {
+        "name": "no",
+        "type": "INTEGER",
+        "nullable": true,
+        "description": "일련번호",
+        "example": 1,
+        "preprocessing_notes": "선택 필드. 순차 번호 또는 NULL"
+      },
+      {
+        "name": "sido",
+        "type": "VARCHAR(50)",
+        "nullable": true,
+        "description": "시도 (광역자치단체)",
+        "example": "대구광역시",
+        "preprocessing_notes": "17개 시도 표준명 사용. lib/constants/regions.ts 참조 필수",
+        "allowed_values": [
+          "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
+          "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
+          "충청북도", "충청남도", "전북특별자치도", "전라남도", "경상북도",
+          "경상남도", "제주특별자치도"
+        ]
+      },
+      {
+        "name": "gugun",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "구군 (기초자치단체)",
+        "example": "군위군",
+        "preprocessing_notes": "시도별 구군 목록은 lib/constants/regions.ts의 REGIONS_WITH_GUGUN 참조"
+      },
+      {
+        "name": "division",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "기관 구분 (대분류)",
+        "example": "보건의료기관",
+        "preprocessing_notes": "기관 유형 대분류"
+      },
+      {
+        "name": "sub_division",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "기관 세부 구분 (소분류)",
+        "example": "보건진료소",
+        "preprocessing_notes": "기관 유형 세부 분류"
+      },
+      {
+        "name": "institution_name",
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "description": "기관명",
+        "example": "용대보건진료소",
+        "preprocessing_notes": "정확한 공식 명칭 사용. 특수문자 제거하지 말 것"
+      },
+      {
+        "name": "unique_key",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "고유 식별 키 (별칭)",
+        "example": "GUNWI_YONGDAE_HC",
+        "preprocessing_notes": "선택 필드. target_key와 다른 별칭이 필요한 경우 사용"
+      },
+      {
+        "name": "address",
+        "type": "VARCHAR(500)",
+        "nullable": true,
+        "description": "기관 주소",
+        "example": "대구광역시 군위군 용대길 123",
+        "preprocessing_notes": "도로명주소 우선. 지번주소도 가능"
+      },
+      {
+        "name": "contact",
+        "type": "VARCHAR(100)",
+        "nullable": true,
+        "description": "연락처",
+        "example": "053-123-4567",
+        "preprocessing_notes": "전화번호 형식. 하이픈(-) 포함 또는 미포함 모두 허용"
+      },
+      {
+        "name": "target_keygroup",
+        "type": "VARCHAR(255)",
+        "nullable": true,
+        "description": "그룹 키 (같은 그룹 기관 묶기)",
+        "example": "DAEGU_GUNWI_GROUP",
+        "preprocessing_notes": "같은 관할이나 그룹에 속한 기관들을 묶는 용도"
+      },
+      {
+        "name": "data_year",
+        "type": "INTEGER",
+        "nullable": true,
+        "default": 2025,
+        "description": "데이터 기준 연도",
+        "example": 2025,
+        "preprocessing_notes": "2025 고정. 누락 시 자동으로 2025 설정됨"
+      },
+      {
+        "name": "imported_at",
+        "type": "TIMESTAMP WITH TIME ZONE",
+        "nullable": true,
+        "description": "데이터 import 시각",
+        "example": "2025-11-17T10:30:00.000Z",
+        "preprocessing_notes": "자동 생성 가능. ISO 8601 형식"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP WITH TIME ZONE",
+        "nullable": true,
+        "default": "now()",
+        "description": "레코드 생성 시각",
+        "example": "2025-11-17T10:30:00.000Z",
+        "preprocessing_notes": "자동 생성됨. 수동 지정 시 ISO 8601 형식"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP WITH TIME ZONE",
+        "nullable": true,
+        "default": "now()",
+        "description": "레코드 수정 시각",
+        "example": "2025-11-17T10:30:00.000Z",
+        "preprocessing_notes": "자동 업데이트됨. 수동 지정 시 ISO 8601 형식"
+      }
+    ],
+    "indexes": [
+      {
+        "name": "idx_target_2025_keygroup",
+        "columns": ["target_keygroup"],
+        "description": "그룹 키 검색 최적화"
+      },
+      {
+        "name": "idx_target_2025_location",
+        "columns": ["sido", "gugun"],
+        "description": "지역 기반 검색 최적화 (매우 중요!)"
+      },
+      {
+        "name": "idx_target_2025_unique_key",
+        "columns": ["unique_key"],
+        "description": "고유 키 검색 최적화"
+      }
+    ]
+  },
+  "data_preparation_guide": {
+    "file_format": {
+      "recommended": "CSV (UTF-8 with BOM)",
+      "alternatives": ["JSON", "Excel (XLSX)"],
+      "encoding": "UTF-8",
+      "delimiter": ",",
+      "quote_character": "\"",
+      "header_required": true
+    },
+    "critical_fields": [
+      {
+        "field": "target_key",
+        "importance": "필수",
+        "validation": "고유값, 중복 불가, 255자 이내",
+        "recommendation": "sido_gugun_기관명약어 형식 권장"
+      },
+      {
+        "field": "sido",
+        "importance": "필수",
+        "validation": "17개 시도 표준명 중 하나",
+        "recommendation": "lib/constants/regions.ts의 SIDO_LIST 참조"
+      },
+      {
+        "field": "gugun",
+        "importance": "선택 (시도에 따라 필수)",
+        "validation": "해당 시도의 구군 목록 중 하나",
+        "recommendation": "lib/constants/regions.ts의 REGIONS_WITH_GUGUN 참조"
+      },
+      {
+        "field": "institution_name",
+        "importance": "필수",
+        "validation": "255자 이내",
+        "recommendation": "공식 명칭 사용"
+      }
+    ],
+    "preprocessing_steps": [
+      {
+        "step": 1,
+        "action": "중복 제거",
+        "description": "target_key 기준으로 중복 레코드 제거",
+        "tool": "Excel: 데이터 > 중복된 항목 제거 / Python: pandas.drop_duplicates()"
+      },
+      {
+        "step": 2,
+        "action": "시도명 표준화",
+        "description": "17개 시도 표준명으로 통일 (예: 대구 → 대구광역시)",
+        "tool": "Excel: 찾기 및 바꾸기 / Python: str.replace() with mapping"
+      },
+      {
+        "step": 3,
+        "action": "NULL 값 처리",
+        "description": "필수 필드(target_key, sido, institution_name) NULL 확인",
+        "tool": "Excel: 필터 > 빈 셀 / Python: df.isnull().sum()"
+      },
+      {
+        "step": 4,
+        "action": "문자열 정리",
+        "description": "앞뒤 공백 제거, 특수문자 정규화",
+        "tool": "Excel: TRIM() / Python: str.strip()"
+      },
+      {
+        "step": 5,
+        "action": "데이터 검증",
+        "description": "sido-gugun 조합 검증, 255자 초과 확인",
+        "tool": "Python: custom validation script"
+      }
+    ],
+    "common_issues": [
+      {
+        "issue": "시도명 불일치",
+        "example": "대구 vs 대구광역시",
+        "solution": "lib/constants/regions.ts의 SIDO_LIST 기준으로 통일"
+      },
+      {
+        "issue": "target_key 중복",
+        "example": "같은 기관이 2번 이상 등록",
+        "solution": "중복 제거 또는 _001, _002 등 suffix 추가"
+      },
+      {
+        "issue": "인코딩 문제",
+        "example": "한글 깨짐",
+        "solution": "UTF-8 with BOM으로 저장"
+      },
+      {
+        "issue": "날짜 형식 불일치",
+        "example": "2025-11-17 vs 2025/11/17",
+        "solution": "ISO 8601 형식 (YYYY-MM-DD) 권장"
+      }
+    ]
+  },
+  "sample_data": {
+    "format": "CSV",
+    "header": "target_key,no,sido,gugun,division,sub_division,institution_name,unique_key,address,contact,target_keygroup,data_year,imported_at,created_at,updated_at",
+    "rows": [
+      {
+        "target_key": "DGU_GUNWI_YONGDAE",
+        "no": 1,
+        "sido": "대구광역시",
+        "gugun": "군위군",
+        "division": "보건의료기관",
+        "sub_division": "보건진료소",
+        "institution_name": "용대보건진료소",
+        "unique_key": "GUNWI_YONGDAE_HC",
+        "address": "대구광역시 군위군 용대길 123",
+        "contact": "053-123-4567",
+        "target_keygroup": "DAEGU_GUNWI_GROUP",
+        "data_year": 2025,
+        "imported_at": "2025-11-17T10:30:00.000Z",
+        "created_at": "2025-11-17T10:30:00.000Z",
+        "updated_at": "2025-11-17T10:30:00.000Z"
+      },
+      {
+        "target_key": "DGU_GUNWI_BUGYE",
+        "no": 2,
+        "sido": "대구광역시",
+        "gugun": "군위군",
+        "division": "보건의료기관",
+        "sub_division": "보건지소",
+        "institution_name": "부계면보건지소",
+        "unique_key": "GUNWI_BUGYE_HC",
+        "address": "대구광역시 군위군 부계면 보건로 456",
+        "contact": "053-234-5678",
+        "target_keygroup": "DAEGU_GUNWI_GROUP",
+        "data_year": 2025,
+        "imported_at": "2025-11-17T10:30:00.000Z",
+        "created_at": "2025-11-17T10:30:00.000Z",
+        "updated_at": "2025-11-17T10:30:00.000Z"
+      }
+    ]
+  },
+  "upload_methods": {
+    "method_1": {
+      "name": "Python Script (권장)",
+      "script_path": "scripts/upload_target_list_2025.py",
+      "description": "CSV 파일을 읽어 PostgreSQL에 COPY 방식으로 업로드",
+      "advantages": [
+        "대용량 데이터 빠른 처리",
+        "자동 데이터 검증",
+        "에러 로깅"
+      ],
+      "usage": "python scripts/upload_target_list_2025.py path/to/data.csv"
+    },
+    "method_2": {
+      "name": "Prisma Client",
+      "description": "Node.js 스크립트로 createMany 사용",
+      "advantages": [
+        "타입 안정성",
+        "트랜잭션 지원"
+      ],
+      "limitations": "대용량 데이터 시 느림"
+    },
+    "method_3": {
+      "name": "pgAdmin / psql COPY",
+      "description": "PostgreSQL COPY 명령 직접 사용",
+      "command": "\\COPY target_list_2025 FROM 'data.csv' DELIMITER ',' CSV HEADER;",
+      "advantages": "가장 빠름",
+      "limitations": "수동 작업, 검증 없음"
+    }
+  },
+  "validation_queries": {
+    "check_duplicates": "SELECT target_key, COUNT(*) FROM target_list_2025 GROUP BY target_key HAVING COUNT(*) > 1;",
+    "check_nulls": "SELECT COUNT(*) FROM target_list_2025 WHERE target_key IS NULL OR sido IS NULL OR institution_name IS NULL;",
+    "check_region_validity": "SELECT DISTINCT sido FROM target_list_2025 WHERE sido NOT IN ('서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시', '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원특별자치도', '충청북도', '충청남도', '전북특별자치도', '전라남도', '경상북도', '경상남도', '제주특별자치도');",
+    "check_total_count": "SELECT COUNT(*) as total, COUNT(DISTINCT target_key) as unique_keys FROM target_list_2025;",
+    "check_region_distribution": "SELECT sido, COUNT(*) as count FROM target_list_2025 GROUP BY sido ORDER BY count DESC;"
+  },
+  "references": {
+    "region_constants": "lib/constants/regions.ts",
+    "upload_script_example": "scripts/upload_to_ncp.py",
+    "troubleshooting_doc": "docs/troubleshooting/COMPLIANCE_EMPTY_DATA_RESOLUTION.md"
+  },
+  "important_notes": [
+    "데이터 교체 전 반드시 기존 데이터 백업 (pg_dump 또는 SQL export)",
+    "target_list_devices 테이블과의 관계 확인 (equipment_serial 매칭)",
+    "시도/구군명은 lib/constants/regions.ts 기준으로 정확히 일치해야 API 필터링 정상 작동",
+    "대용량 데이터 (28,000+ 레코드) 업로드 시 트랜잭션 크기 고려",
+    "업로드 후 validation_queries로 데이터 무결성 검증 필수"
+  ],
+  "metadata": {
+    "created_at": "2025-11-17",
+    "created_by": "Claude Code",
+    "version": "1.0.0",
+    "last_updated": "2025-11-17",
+    "related_issue": "의무기관매칭 통계 탭 데이터 미표시 문제"
+  }
+}
