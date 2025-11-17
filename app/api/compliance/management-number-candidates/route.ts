@@ -23,20 +23,14 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const targetKey = searchParams.get('target_key');
-    const year = searchParams.get('year') || '2025';
+    const year = '2025'; // Only 2025 data is supported
     const search = searchParams.get('search') || '';
     const includeAllRegion = searchParams.get('include_all_region') === 'true';
     const includeMatched = searchParams.get('include_matched') === 'true';
 
-    // year 값 검증 (SQL injection 방지)
-    if (year !== '2024' && year !== '2025') {
-      return NextResponse.json({ error: 'Invalid year parameter' }, { status: 400 });
-    }
-
-    // 동적 테이블명 (SQL 쿼리용)
-    const targetTable = year === '2025' ? 'target_list_2025' : 'target_list_2024';
-    const targetTableRaw = Prisma.raw(`aedpics.${targetTable}`);
-    const yearInt = parseInt(year, 10); // ✅ integer 타입 변환 (DB target_list_year 칼럼이 integer)
+    // 2025년 데이터만 사용
+    const targetTableRaw = Prisma.raw('aedpics.target_list_2025');
+    const yearInt = 2025;
 
     // target_key가 있으면 의무설치기관 정보 조회
     let targetInstitution: { sido: string | null; gugun: string | null } | null = null;
@@ -44,16 +38,11 @@ export async function GET(request: NextRequest) {
     let normalizedGugun: string | null = null;
 
     if (targetKey) {
-      // 동적 테이블 선택 (2024 or 2025)
-      targetInstitution = year === '2025'
-        ? await prisma.target_list_2025.findUnique({
-            where: { target_key: targetKey },
-            select: { sido: true, gugun: true }
-          })
-        : await prisma.target_list_2024.findUnique({
-            where: { target_key: targetKey },
-            select: { sido: true, gugun: true }
-          });
+      // 2025년 의무설치기관 조회
+      targetInstitution = await prisma.target_list_2025.findUnique({
+        where: { target_key: targetKey },
+        select: { sido: true, gugun: true }
+      });
 
       if (!targetInstitution) {
         return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
@@ -84,16 +73,11 @@ export async function GET(request: NextRequest) {
     }> = [];
 
     if (targetInstitution) {
-      // 선택된 의무설치기관 정보 조회 (동적 테이블 선택)
-      const targetInfo = year === '2025'
-        ? await prisma.target_list_2025.findUnique({
-            where: { target_key: targetKey! },
-            select: { institution_name: true }
-          })
-        : await prisma.target_list_2024.findUnique({
-            where: { target_key: targetKey! },
-            select: { institution_name: true }
-          });
+      // 선택된 의무설치기관 정보 조회
+      const targetInfo = await prisma.target_list_2025.findUnique({
+        where: { target_key: targetKey! },
+        select: { institution_name: true }
+      });
       const targetName = targetInfo?.institution_name || '';
 
       // 의무설치기관 선택 시: 실시간 유사도 계산
@@ -538,15 +522,10 @@ export async function GET(request: NextRequest) {
     // TNMS 도입 시 이 로직은 제거되고 standard_code 기반 매칭으로 대체됨
     let improvedAutoSuggestions = autoSuggestionsQuery;
     if (targetInstitution && !search) {
-      const targetInfo = year === '2025'
-        ? await prisma.target_list_2025.findUnique({
-            where: { target_key: targetKey! },
-            select: { institution_name: true, sido: true, gugun: true, division: true, sub_division: true }
-          })
-        : await prisma.target_list_2024.findUnique({
-            where: { target_key: targetKey! },
-            select: { institution_name: true, sido: true, gugun: true, division: true, sub_division: true }
-          });
+      const targetInfo = await prisma.target_list_2025.findUnique({
+        where: { target_key: targetKey! },
+        select: { institution_name: true, sido: true, gugun: true, division: true, sub_division: true }
+      });
 
       const targetName = targetInfo?.institution_name || '';
       // 의무설치기관의 위치 정보 (address 필드 없으므로 sido + gugun + division으로 구성)

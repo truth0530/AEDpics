@@ -110,13 +110,35 @@ export async function GET(request: NextRequest) {
 
     const results = await prisma.$queryRawUnsafe<any[]>(query, ...params);
 
-    // 통계 집계
-    const totalInstitutions = results.length;
-    const totalMatchedEquipment = results.reduce((sum, r) => sum + parseInt(r.matched_equipment_count || 0), 0);
-    const totalInspectedEquipment = results.reduce((sum, r) => sum + parseInt(r.inspected_equipment_count || 0), 0);
-    const totalGoodStatus = results.reduce((sum, r) => sum + parseInt(r.good_status_count || 0), 0);
-    const totalBadStatus = results.reduce((sum, r) => sum + parseInt(r.bad_status_count || 0), 0);
-    const totalOtherStatus = results.reduce((sum, r) => sum + parseInt(r.other_status_count || 0), 0);
+    // ✅ 통계는 전체 데이터에서 집계 (페이지네이션 무관)
+    // summary 통계용 별도 쿼리 (LIMIT/OFFSET 없이 전체 집계)
+    const summaryQuery = `
+      SELECT
+        COUNT(DISTINCT t.target_key) as total_institutions,
+        COUNT(DISTINCT d.equipment_serial) as total_matched_equipment,
+        COUNT(DISTINCT CASE WHEN i.id IS NOT NULL THEN i.equipment_serial END) as total_inspected_equipment,
+        COUNT(DISTINCT CASE WHEN i.overall_status = '양호' THEN i.equipment_serial END) as total_good_status,
+        COUNT(DISTINCT CASE WHEN i.overall_status = '불량' THEN i.equipment_serial END) as total_bad_status,
+        COUNT(DISTINCT CASE WHEN i.overall_status NOT IN ('양호', '불량') AND i.overall_status IS NOT NULL THEN i.equipment_serial END) as total_other_status
+      FROM ${tableName} t
+      LEFT JOIN target_list_devices d
+        ON d.target_institution_id = t.target_key
+        AND d.target_list_year = $${paramIndex}
+      LEFT JOIN inspections i
+        ON i.equipment_serial = d.equipment_serial
+      ${whereClause}
+    `;
+
+    const summaryParams = [...params.slice(0, -2), year]; // year만 포함 (pageSize, offset 제외)
+    const summaryResult = await prisma.$queryRawUnsafe<any[]>(summaryQuery, ...summaryParams);
+    const summary = summaryResult[0];
+
+    const totalInstitutions = parseInt(summary?.total_institutions || 0);
+    const totalMatchedEquipment = parseInt(summary?.total_matched_equipment || 0);
+    const totalInspectedEquipment = parseInt(summary?.total_inspected_equipment || 0);
+    const totalGoodStatus = parseInt(summary?.total_good_status || 0);
+    const totalBadStatus = parseInt(summary?.total_bad_status || 0);
+    const totalOtherStatus = parseInt(summary?.total_other_status || 0);
 
     // 응답 데이터 정리
     const institutions = results.map(r => {
@@ -172,8 +194,8 @@ export async function GET(request: NextRequest) {
         hasPrevPage: page > 1
       },
       summary: {
-        total_institutions_on_page: totalInstitutions,
-        total_institutions_all: totalCount,
+        total_institutions_on_page: results.length,
+        total_institutions_all: totalInstitutions,
         total_matched_equipment: totalMatchedEquipment,
         total_inspected_equipment: totalInspectedEquipment,
         total_uninspected_equipment: totalMatchedEquipment - totalInspectedEquipment,

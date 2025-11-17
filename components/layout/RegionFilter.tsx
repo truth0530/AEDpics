@@ -65,8 +65,9 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   const onChangeRef = useRef(onChange);
 
   // ✅ 성능 최적화: 이전 값 추적하여 실제 변경 시에만 이벤트 dispatch
-  const prevSidoRef = useRef(selectedSido);
-  const prevGugunRef = useRef(selectedGugun);
+  // 초기값은 undefined로 설정하여 첫 마운트 시 이벤트가 발송되도록 함
+  const prevSidoRef = useRef<string | undefined>(undefined);
+  const prevGugunRef = useRef<string | undefined>(undefined);
 
   // onChange ref 업데이트
   useEffect(() => {
@@ -77,8 +78,6 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
   useEffect(() => {
     const handleRegionSelected = (e: CustomEvent) => {
       const { sido, gugun } = e.detail;
-
-      console.log('[RegionFilter] Region selected:', { sido, gugun });
 
       // 시도가 변경되는 경우인지 확인
       const isSidoChanging = sido && sido !== '시도' && sido !== selectedSido;
@@ -96,12 +95,10 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
       // 구군 체크 및 업데이트
       // 시도가 변경되는 경우에는 구군을 무시하고 '전체'로 리셋
       if (isSidoChanging) {
-        console.log('[RegionFilter] Sido changed, resetting gugun to 전체');
         setSelectedGugun('전체');
       } else if (gugun && gugun !== '구군') {
         // 보건소 담당자: 자신의 구군만 허용
         if (isHealthCenterStaff && gugun !== userCity) {
-          console.log('[RegionFilter] Health center staff cannot view other cities');
           return;
         }
         setSelectedGugun(gugun);
@@ -177,12 +174,6 @@ export function RegionFilter({ user, onChange }: RegionFilterProps) {
       }
 
       // ✅ regionSelected 이벤트 dispatch (모든 리스너에게 전파)
-      console.log('[RegionFilter] Dispatching regionSelected event:', {
-        sido: selectedSido,
-        gugun: selectedGugun,
-        regionCode: regionCode || selectedSido
-      });
-
       window.dispatchEvent(new CustomEvent('regionSelected', {
         detail: {
           sido: selectedSido,

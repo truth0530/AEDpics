@@ -23,12 +23,9 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const year = searchParams.get('year') || '2025';
+    const year = '2025'; // Only 2025 data is supported
     const sidoParam = searchParams.get('sido');
-    // 2024년: 짧은 형식 ("대구"), 2025년: 긴 형식 ("대구광역시")
-    const sido = sidoParam
-      ? (year === '2025' ? (normalizeSidoForDB(sidoParam) ?? sidoParam) : sidoParam)
-      : undefined;
+    const sido = sidoParam ? (normalizeSidoForDB(sidoParam) ?? sidoParam) : undefined;
     const gugunParam = searchParams.get('gugun');
     const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
     const search = searchParams.get('search');
@@ -63,12 +60,9 @@ export async function GET(request: NextRequest) {
     if (search) {
       targetWhere.OR = [
         { institution_name: { contains: search, mode: 'insensitive' } },
-        { target_key: { contains: search, mode: 'insensitive' } }
+        { target_key: { contains: search, mode: 'insensitive' } },
+        { unique_key: { contains: search, mode: 'insensitive' } }
       ];
-      // 2025년 데이터는 고유키로도 검색 가능
-      if (year === '2025') {
-        targetWhere.OR.push({ unique_key: { contains: search, mode: 'insensitive' } });
-      }
     }
 
     console.log('[ComplianceAPI] Final WHERE clause:', JSON.stringify(targetWhere));
@@ -81,10 +75,8 @@ export async function GET(request: NextRequest) {
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       totalCount = cached.value;
     } else {
-      // Count with timeout (dynamic table selection)
-      const countPromise = year === '2025'
-        ? prisma.target_list_2025.count({ where: targetWhere })
-        : prisma.target_list_2024.count({ where: targetWhere });
+      // Count with timeout
+      const countPromise = prisma.target_list_2025.count({ where: targetWhere });
 
       // Set a timeout for the count query
       const timeoutPromise = new Promise<number>((_, reject) =>
@@ -100,47 +92,28 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get minimal target list (dynamic table selection)
-    const targetList = year === '2025'
-      ? await prisma.target_list_2025.findMany({
-          where: targetWhere,
-          select: {
-            target_key: true,
-            institution_name: true,
-            sido: true,
-            gugun: true,
-            division: true,
-            sub_division: true,
-            unique_key: true,
-            address: true,
-          },
-          orderBy: [
-            { sido: 'asc' },
-            { gugun: 'asc' },
-            { address: 'asc' },
-            { institution_name: 'asc' }
-          ],
-          skip,
-          take: limit
-        })
-      : await prisma.target_list_2024.findMany({
-          where: targetWhere,
-          select: {
-            target_key: true,
-            institution_name: true,
-            sido: true,
-            gugun: true,
-            division: true,
-            sub_division: true,
-          },
-          orderBy: [
-            { sido: 'asc' },
-            { gugun: 'asc' },
-            { institution_name: 'asc' }
-          ],
-          skip,
-          take: limit
-        });
+    // Get minimal target list
+    const targetList = await prisma.target_list_2025.findMany({
+      where: targetWhere,
+      select: {
+        target_key: true,
+        institution_name: true,
+        sido: true,
+        gugun: true,
+        division: true,
+        sub_division: true,
+        unique_key: true,
+        address: true,
+      },
+      orderBy: [
+        { sido: 'asc' },
+        { gugun: 'asc' },
+        { address: 'asc' },
+        { institution_name: 'asc' }
+      ],
+      skip,
+      take: limit
+    });
 
     if (targetList.length === 0) {
       return NextResponse.json({
@@ -163,17 +136,56 @@ export async function GET(request: NextRequest) {
       },
       select: {
         target_institution_id: true,
+        equipment_serial: true,
         matched_by: true,
         matched_at: true,
-      },
-      distinct: ['target_institution_id']
+      }
     });
 
-    // Build minimal response
+    // Get unique equipment serials from matched devices
+    const equipmentSerials = [...new Set(matchedDevices.map(d => d.equipment_serial))];
+
+    // Get AED data for matched equipment
+    const aedData = equipmentSerials.length > 0 ? await prisma.aed_data.findMany({
+      where: {
+        equipment_serial: { in: equipmentSerials }
+      },
+      select: {
+        equipment_serial: true,
+        management_number: true,
+        installation_institution: true,
+        installation_location_address: true,
+        installation_address: true,
+      }
+    }) : [];
+
+    // Build response with AED data
     const matches = targetList.map(target => {
-      const matchedDevice = matchedDevices.find(m =>
+      const targetMatches = matchedDevices.filter(m =>
         m.target_institution_id === target.target_key
       );
+
+      const matchedAeds = targetMatches.map(tm => {
+        const aed = aedData.find(a => a.equipment_serial === tm.equipment_serial);
+        return aed;
+      }).filter(Boolean);
+
+      // Group by management_number
+      const groupedByManagementNumber = matchedAeds.reduce((acc: any, aed: any) => {
+        if (!acc[aed.management_number]) {
+          acc[aed.management_number] = {
+            management_number: aed.management_number,
+            institution_name: aed.installation_institution || '',
+            address: aed.installation_location_address || aed.installation_address || '',
+            equipment_count: 0,
+            confidence: 100
+          };
+        }
+        acc[aed.management_number].equipment_count++;
+        return acc;
+      }, {});
+
+      const matchesArray = Object.values(groupedByManagementNumber);
 
       return {
         targetInstitution: {
@@ -183,17 +195,30 @@ export async function GET(request: NextRequest) {
           gugun: target.gugun,
           division: target.division,
           sub_division: target.sub_division,
-          // 2025년 전용 필드
-          unique_key: 'unique_key' in target ? target.unique_key : undefined,
-          address: 'address' in target ? target.address : undefined,
+          unique_key: target.unique_key,
+          address: target.address,
         },
-        matches: [], // Don't load AED data unless specifically requested
-        status: matchedDevice ? 'confirmed' : 'pending',
-        confirmedBy: matchedDevice?.matched_by,
-        confirmedAt: matchedDevice?.matched_at,
-        requiresMatching: !matchedDevice // Flag for frontend to request matching if needed
+        matches: matchesArray,
+        status: targetMatches.length > 0 ? 'confirmed' : 'pending',
+        confirmedBy: targetMatches[0]?.matched_by,
+        confirmedAt: targetMatches[0]?.matched_at,
+        requiresMatching: targetMatches.length === 0
       };
     });
+
+    // DEBUG: confirmed 상태인 기관의 matches 배열 확인
+    const confirmedMatches = matches.filter(m => m.status === 'confirmed');
+    if (confirmedMatches.length > 0) {
+      console.log('[ComplianceAPI] Confirmed matches sample:', JSON.stringify({
+        count: confirmedMatches.length,
+        sample: confirmedMatches.slice(0, 2).map(m => ({
+          target_key: m.targetInstitution.target_key,
+          institution_name: m.targetInstitution.institution_name,
+          matchesArray: m.matches,
+          matchesCount: m.matches.length
+        }))
+      }, null, 2));
+    }
 
     // 미매칭만 필터 적용
     const filteredMatches = showOnlyUnmatched
@@ -254,26 +279,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { target_key, year = '2024' } = body;
+    const { target_key } = body;
 
     if (!target_key) {
       return NextResponse.json({ error: 'target_key required' }, { status: 400 });
     }
 
-    // Get target details (dynamic table selection)
-    const target = year === '2025'
-      ? await prisma.target_list_2025.findFirst({
-          where: {
-            target_key,
-            data_year: parseInt(year)
-          }
-        })
-      : await prisma.target_list_2024.findFirst({
-          where: {
-            target_key,
-            data_year: parseInt(year)
-          }
-        });
+    // Get target details
+    const target = await prisma.target_list_2025.findFirst({
+      where: {
+        target_key,
+        data_year: 2025
+      }
+    });
 
     if (!target) {
       return NextResponse.json({ error: 'Target not found' }, { status: 404 });

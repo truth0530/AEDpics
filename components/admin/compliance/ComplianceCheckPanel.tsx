@@ -56,7 +56,7 @@ interface ComplianceMatch {
 }
 
 export default function ComplianceCheckPanel() {
-  const [selectedYear, setSelectedYear] = useState('2024');
+  const [selectedYear, setSelectedYear] = useState('2025');
   const [selectedSido, setSelectedSido] = useState('');
   const [selectedGugun, setSelectedGugun] = useState('');
   const [searchTerm, setSearchTerm] = useState('');

@@ -124,6 +124,46 @@ export async function GET(request: NextRequest) {
 
     const results = await prisma.$queryRawUnsafe<any[]>(query, ...params);
 
+    // ✅ 통계는 전체 데이터에서 집계 (페이지네이션 무관)
+    // summary 통계용 별도 쿼리 (LIMIT/OFFSET 없이 전체 집계)
+    const summaryQuery = `
+      WITH regional_equipment AS (
+        SELECT
+          t.target_key,
+          COUNT(DISTINCT a.equipment_serial) as total_regional_equipment
+        FROM ${tableName} t
+        LEFT JOIN aed_data a
+          ON a.sido = t.sido
+          AND a.gugun = t.gugun
+        ${whereClause}
+        GROUP BY t.target_key
+      )
+      SELECT
+        COUNT(DISTINCT t.target_key) as total_institutions,
+        SUM(re.total_regional_equipment) as total_regional_equipment,
+        COUNT(DISTINCT d.equipment_serial) as total_matched_equipment,
+        COUNT(DISTINCT CASE WHEN i.id IS NOT NULL THEN i.equipment_serial END) as total_inspected_equipment,
+        COUNT(DISTINCT CASE WHEN i.overall_status = '양호' THEN i.equipment_serial END) as total_good_status
+      FROM ${tableName} t
+      LEFT JOIN regional_equipment re ON re.target_key = t.target_key
+      LEFT JOIN target_list_devices d
+        ON d.target_institution_id = t.target_key
+        AND d.target_list_year = $${paramIndex}
+      LEFT JOIN inspections i
+        ON i.equipment_serial = d.equipment_serial
+      ${whereClause}
+    `;
+
+    const summaryParams = [...params.slice(0, -2), year]; // year만 포함 (pageSize, offset 제외)
+    const summaryResult = await prisma.$queryRawUnsafe<any[]>(summaryQuery, ...summaryParams);
+    const summary = summaryResult[0];
+
+    const totalInstitutions = parseInt(summary?.total_institutions || 0);
+    const totalRegionalEquipment = parseInt(summary?.total_regional_equipment || 0);
+    const totalMatchedEquipment = parseInt(summary?.total_matched_equipment || 0);
+    const totalInspectedEquipment = parseInt(summary?.total_inspected_equipment || 0);
+    const totalGoodStatus = parseInt(summary?.total_good_status || 0);
+
     // 응답 데이터 정리 및 의무이행률 계산
     const institutions = results.map(r => {
       const regionalEquipment = parseInt(r.total_regional_equipment || 0);
@@ -171,12 +211,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 전체 통계 집계
-    const totalRegionalEquipment = results.reduce((sum, r) => sum + parseInt(r.total_regional_equipment || 0), 0);
-    const totalMatchedEquipment = results.reduce((sum, r) => sum + parseInt(r.matched_equipment_count || 0), 0);
-    const totalInspectedEquipment = results.reduce((sum, r) => sum + parseInt(r.inspected_equipment_count || 0), 0);
-    const totalGoodStatus = results.reduce((sum, r) => sum + parseInt(r.good_status_count || 0), 0);
-
+    // 전체 통계 계산 (이미 summary에서 집계됨)
     const overallMatchingRate = totalRegionalEquipment > 0
       ? (totalMatchedEquipment / totalRegionalEquipment) * 100
       : 0;
@@ -206,8 +241,8 @@ export async function GET(request: NextRequest) {
         hasPrevPage: page > 1
       },
       summary: {
-        total_institutions_on_page: institutions.length,
-        total_institutions_all: totalCount,
+        total_institutions_on_page: results.length,
+        total_institutions_all: totalInstitutions,
         total_regional_equipment: totalRegionalEquipment,
         total_matched_equipment: totalMatchedEquipment,
         total_inspected_equipment: totalInspectedEquipment,

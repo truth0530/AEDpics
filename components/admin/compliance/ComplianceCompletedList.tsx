@@ -130,12 +130,15 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
   }, [session]);
 
   // 완료된 데이터 로드
-  const loadCompletedTargets = async () => {
+  const loadCompletedTargets = React.useCallback(async () => {
     setLoading(true);
     try {
       // props로 받은 sido/gugun 우선 사용, 없으면 userJurisdiction 사용
-      const effectiveSido = sido !== undefined ? sido : userJurisdiction?.sido;
-      const effectiveGugun = gugun !== undefined ? gugun : userJurisdiction?.gugun;
+      // null이나 '전체', '시도'는 무시하고 전국 데이터 조회
+      const effectiveSido = (sido && sido !== '전체' && sido !== '시도') ? sido :
+                            (userJurisdiction?.sido && !userJurisdiction?.isNational) ? userJurisdiction.sido : null;
+      const effectiveGugun = (gugun && gugun !== '전체' && gugun !== '구군') ? gugun :
+                             userJurisdiction?.gugun || null;
 
       // 통계는 별도 API로 조회 (빠른 응답)
       const statsParams = new URLSearchParams({
@@ -156,7 +159,9 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await fetch(`/api/compliance/check?${params}`);
+      // check-optimized API 사용 (target_list_devices 기반)
+      // showOnlyUnmatched=false로 설정하여 모든 기관 조회
+      const response = await fetch(`/api/compliance/check-optimized?${params}&showOnlyUnmatched=false`);
       const data = await response.json();
 
       const allMatches = data.matches || [];
@@ -173,9 +178,10 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       setAvailableSubDivisions(subDivisions);
 
       // 상태 필터 적용 (현재 페이지 데이터만)
+      // check-optimized API는 'confirmed'/'pending' status를 반환
       let filtered;
       if (statusFilter === 'installed') {
-        filtered = allMatches.filter((m: any) => m.status === 'installed');
+        filtered = allMatches.filter((m: any) => m.status === 'confirmed');
       } else if (statusFilter === 'not_installed') {
         filtered = allMatches.filter((m: any) =>
           !m.status || m.status === 'pending' || m.requiresMatching === true
@@ -205,18 +211,17 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
     } finally {
       setLoading(false);
     }
-  };
+  }, [sido, gugun, userJurisdiction, selectedYear, searchTerm, statusFilter, subDivisionFilter, currentPage, pageSize]);
 
   useEffect(() => {
     if (userJurisdiction !== null || sido !== undefined) {
       loadCompletedTargets();
     }
-  }, [selectedYear, searchTerm, statusFilter, subDivisionFilter, userJurisdiction, sido, gugun, currentPage, pageSize]);
+  }, [selectedYear, searchTerm, statusFilter, subDivisionFilter, userJurisdiction, sido, gugun, currentPage, pageSize, loadCompletedTargets]);
 
   // 매칭 완료 이벤트 수신하여 목록 새로고침
   useEffect(() => {
     const handleMatchCompleted = () => {
-      console.log('[ComplianceCompletedList] Match completed, refreshing list...');
       loadCompletedTargets();
     };
 
@@ -458,7 +463,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                   {target.targetInstitution.institution_name}
                 </TableCell>
                 <TableCell>
-                  {target.status === 'installed' && target.matches[0] ? (
+                  {target.status === 'confirmed' && target.matches[0] ? (
                     <div className="flex items-center gap-2">
                       <span>{target.matches[0].institution_name}</span>
                       <Badge variant="secondary" className="text-xs">
@@ -470,21 +475,21 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                   )}
                 </TableCell>
                 <TableCell>
-                  {target.status === 'installed' && target.matches[0] ? (
+                  {target.status === 'confirmed' && target.matches[0] ? (
                     <span className="font-mono text-sm">{target.matches[0].management_number}</span>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
                 <TableCell>
-                  {target.status === 'installed' && target.matches[0] ? (
+                  {target.status === 'confirmed' && target.matches[0] ? (
                     <span className="text-sm">{target.matches[0].equipment_count}대</span>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
                 <TableCell className="max-w-xs">
-                  {target.status === 'installed' && target.matches[0] ? (
+                  {target.status === 'confirmed' && target.matches[0] ? (
                     <span className="text-sm truncate">{target.matches[0].address}</span>
                   ) : (
                     <span className="text-muted-foreground">-</span>
@@ -492,7 +497,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-2 justify-end">
-                    {target.status === 'installed' ? (
+                    {target.status === 'confirmed' ? (
                       <>
                         <Button
                           variant="ghost"

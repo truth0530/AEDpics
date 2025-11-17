@@ -37,27 +37,28 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
     totalEquipment: 0
   });
 
-  // 지역 선택 상태
-  const [selectedSido, setSelectedSido] = useState<string | null>(null);
+  // 지역 선택 상태 - 초기값을 사용자 프로필 기반으로 설정
+  const getInitialSido = () => {
+    if (!initialProfile) return null;
+    const orgRegionCode = (initialProfile.organization as any)?.region_code;
+    if (orgRegionCode && orgRegionCode !== 'KR') {
+      // 지역코드를 한글 시도명으로 변환
+      const { REGIONS } = require('@/lib/constants/regions');
+      return REGIONS.find((r: any) => r.code === orgRegionCode)?.label || null;
+    }
+    return null;
+  };
+
+  const initialSido = getInitialSido();
+
+  const [selectedSido, setSelectedSido] = useState<string | null>(initialSido);
   const [selectedGugun, setSelectedGugun] = useState<string | null>(null);
 
   // Ref for ComplianceCompletedList to call export function
   const completedListRef = useRef<ComplianceCompletedListRef>(null);
 
-  // sessionStorage에서 지역 초기값 로드 (hydration 후 클라이언트에서만)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedSido = window.sessionStorage.getItem('selectedSido');
-      if (storedSido) {
-        setSelectedSido(storedSido);
-      }
-
-      const storedGugun = window.sessionStorage.getItem('selectedGugun');
-      if (storedGugun) {
-        setSelectedGugun(storedGugun);
-      }
-    }
-  }, []);
+  // 초기값은 RegionFilter의 이벤트를 통해서만 설정
+  // sessionStorage를 사용하지 않아 항상 사용자 권한에 따른 기본 지역으로 시작
 
   // 통계 상태
   const [statistics, setStatistics] = useState({

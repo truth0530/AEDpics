@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const year = searchParams.get('year') || '2025';
+    const year = '2025'; // Only 2025 data is supported
     const sidoParam = searchParams.get('sido');
     const sido = sidoParam ? normalizeSidoForDB(sidoParam) : undefined;
     const gugunParam = searchParams.get('gugun');
@@ -29,13 +29,12 @@ export async function GET(request: NextRequest) {
       sidoParam,
       sido,
       gugunParam,
-      gugun,
-      year
+      gugun
     });
 
     // 1. Build WHERE clause for target institutions
     const targetWhere: any = {
-      data_year: parseInt(year),
+      data_year: 2025,
     };
 
     if (sido && sido !== '전체' && sido !== '시도') {
@@ -45,73 +44,37 @@ export async function GET(request: NextRequest) {
       targetWhere.gugun = gugun;
     }
 
-    // 2. Count total target institutions (dynamic table selection)
-    const totalCount = year === '2025'
-      ? await prisma.target_list_2025.count({ where: targetWhere })
-      : await prisma.target_list_2024.count({ where: targetWhere });
+    // 2. Count total target institutions
+    const totalCount = await prisma.target_list_2025.count({ where: targetWhere });
 
-    // 3. Get all target keys for this region (dynamic table selection)
-    const targetKeys = year === '2025'
-      ? await prisma.target_list_2025.findMany({
-          where: targetWhere,
-          select: {
-            target_key: true
-          }
-        })
-      : await prisma.target_list_2024.findMany({
-          where: targetWhere,
-          select: {
-            target_key: true
-          }
-        });
+    // 3. Get all target keys for this region
+    const targetKeys = await prisma.target_list_2025.findMany({
+      where: targetWhere,
+      select: {
+        target_key: true
+      }
+    });
 
     const targetKeyList = targetKeys.map(t => t.target_key);
 
-    // 4. Count confirmed mappings (installed)
-    const installedCount = year === '2025'
-      ? await prisma.management_number_group_mapping.count({
-          where: {
-            target_key_2025: {
-              in: targetKeyList
-            },
-            confirmed_2025: true,
-            management_number: {
-              not: null
-            }
-          }
-        })
-      : await prisma.management_number_group_mapping.count({
-          where: {
-            target_key_2024: {
-              in: targetKeyList
-            },
-            confirmed_2024: true,
-            management_number: {
-              not: null
-            }
-          }
-        });
+    // 4. Count matched institutions (distinct target_institution_id in target_list_devices)
+    const matchedInstitutions = await prisma.target_list_devices.findMany({
+      where: {
+        target_institution_id: {
+          in: targetKeyList
+        },
+        target_list_year: parseInt(year)
+      },
+      select: {
+        target_institution_id: true
+      },
+      distinct: ['target_institution_id']
+    });
 
-    // 5. Count not installed (confirmed but no management_number)
-    const confirmedNotInstalledCount = year === '2025'
-      ? await prisma.management_number_group_mapping.count({
-          where: {
-            target_key_2025: {
-              in: targetKeyList
-            },
-            confirmed_2025: true,
-            management_number: null
-          }
-        })
-      : await prisma.management_number_group_mapping.count({
-          where: {
-            target_key_2024: {
-              in: targetKeyList
-            },
-            confirmed_2024: true,
-            management_number: null
-          }
-        });
+    const installedCount = matchedInstitutions.length;
+
+    // 5. Count not installed (total - matched)
+    const confirmedNotInstalledCount = 0;
 
     // 6. Calculate pending (not yet confirmed)
     const notInstalledCount = totalCount - installedCount;

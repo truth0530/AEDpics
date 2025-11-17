@@ -95,11 +95,28 @@ export async function GET(request: NextRequest) {
 
     const results = await prisma.$queryRawUnsafe<any[]>(query, ...params);
 
-    // 통계 집계
-    const totalInstitutions = results.length;
-    const matchedInstitutions = results.filter(r => r.matched_equipment_count > 0).length;
-    const unmatchedInstitutions = results.filter(r => r.matched_equipment_count === 0);
-    const totalMatchedEquipment = results.reduce((sum, r) => sum + parseInt(r.matched_equipment_count || 0), 0);
+    // ✅ 통계는 전체 데이터에서 집계 (페이지네이션 무관)
+    // summary 통계용 별도 쿼리 (LIMIT/OFFSET 없이 전체 집계)
+    const summaryQuery = `
+      SELECT
+        COUNT(DISTINCT t.target_key) as total_institutions,
+        COUNT(DISTINCT CASE WHEN d.equipment_serial IS NOT NULL THEN t.target_key END) as matched_institutions,
+        COUNT(DISTINCT d.equipment_serial) as total_matched_equipment
+      FROM ${tableName} t
+      LEFT JOIN target_list_devices d
+        ON d.target_institution_id = t.target_key
+        AND d.target_list_year = $${paramIndex}
+      ${whereClause}
+    `;
+
+    const summaryParams = [...params.slice(0, -2), year]; // year만 포함 (pageSize, offset 제외)
+    const summaryResult = await prisma.$queryRawUnsafe<any[]>(summaryQuery, ...summaryParams);
+    const summary = summaryResult[0];
+
+    const totalInstitutions = parseInt(summary?.total_institutions || 0);
+    const matchedInstitutions = parseInt(summary?.matched_institutions || 0);
+    const unmatchedInstitutionsCount = totalInstitutions - matchedInstitutions; // 전체 - 매칭완료 = 미매칭
+    const totalMatchedEquipment = parseInt(summary?.total_matched_equipment || 0);
 
     // 응답 데이터 정리
     const institutions = results.map(r => ({
@@ -132,24 +149,16 @@ export async function GET(request: NextRequest) {
         hasPrevPage: page > 1
       },
       summary: {
-        total_institutions_on_page: totalInstitutions,
-        total_institutions_all: totalCount,
+        total_institutions_on_page: results.length,
+        total_institutions_all: totalInstitutions,
         matched_institutions: matchedInstitutions,
-        unmatched_institutions_count: unmatchedInstitutions.length,
+        unmatched_institutions_count: unmatchedInstitutionsCount,
         total_matched_equipment: totalMatchedEquipment,
         matching_rate: totalInstitutions > 0
           ? ((matchedInstitutions / totalInstitutions) * 100).toFixed(2) + '%'
           : '0%'
       },
-      institutions,
-      unmatched_institutions: unmatchedInstitutions.map(r => ({
-        target_key: r.target_key,
-        institution_name: r.institution_name,
-        sido: r.sido,
-        gugun: r.gugun,
-        address: r.address,
-        sub_division: r.sub_division
-      }))
+      institutions
     });
 
   } catch (error) {

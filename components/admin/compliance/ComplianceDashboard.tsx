@@ -350,49 +350,67 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                   <CardDescription>매칭된 장비 수 기준으로 정렬</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-4">기관명</th>
-                          <th className="text-left py-2 px-4">시도</th>
-                          <th className="text-left py-2 px-4">구군</th>
-                          <th className="text-left py-2 px-4">세부구분</th>
-                          <th className="text-right py-2 px-4">매칭된 장비</th>
-                          <th className="text-center py-2 px-4">상태</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {matchingData.institutions.map((institution) => (
-                          <tr key={institution.target_key} className="border-b hover:bg-muted/50">
-                            <td className="py-2 px-4 font-medium">{institution.institution_name}</td>
-                            <td className="py-2 px-4 text-muted-foreground">{institution.sido}</td>
-                            <td className="py-2 px-4 text-muted-foreground">{institution.gugun}</td>
-                            <td className="py-2 px-4 text-muted-foreground">{institution.sub_division}</td>
-                            <td className="py-2 px-4 text-right font-semibold">{institution.matched_equipment_count}대</td>
-                            <td className="py-2 px-4 text-center">
-                              {institution.is_matched ? (
-                                <Badge variant="default" className="bg-green-500">매칭완료</Badge>
-                              ) : (
-                                <Badge variant="secondary">미매칭</Badge>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  {matchingData.institutions.length === 0 ? (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        {selectedSido || selectedGugun ? (
+                          <>
+                            선택한 지역에 매칭된 기관이 없습니다.
+                            {' '}다른 지역을 선택하거나 지역 필터를 해제해보세요.
+                          </>
+                        ) : (
+                          <>매칭된 기관이 아직 없습니다. '매칭하기' 탭에서 의무기관과 AED를 매칭하세요.</>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2 px-4">기관명</th>
+                              <th className="text-left py-2 px-4">시도</th>
+                              <th className="text-left py-2 px-4">구군</th>
+                              <th className="text-left py-2 px-4">세부구분</th>
+                              <th className="text-right py-2 px-4">매칭된 장비</th>
+                              <th className="text-center py-2 px-4">상태</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {matchingData.institutions.map((institution) => (
+                              <tr key={institution.target_key} className="border-b hover:bg-muted/50">
+                                <td className="py-2 px-4 font-medium">{institution.institution_name}</td>
+                                <td className="py-2 px-4 text-muted-foreground">{institution.sido}</td>
+                                <td className="py-2 px-4 text-muted-foreground">{institution.gugun}</td>
+                                <td className="py-2 px-4 text-muted-foreground">{institution.sub_division}</td>
+                                <td className="py-2 px-4 text-right font-semibold">{institution.matched_equipment_count}대</td>
+                                <td className="py-2 px-4 text-center">
+                                  {institution.is_matched ? (
+                                    <Badge variant="default" className="bg-green-500">매칭완료</Badge>
+                                  ) : (
+                                    <Badge variant="secondary">미매칭</Badge>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
-                  {/* 페이지네이션 */}
-                  <div className="mt-4">
-                    <Pagination
-                      currentPage={matchingData.pagination.page}
-                      totalPages={matchingData.pagination.totalPages}
-                      pageSize={matchingData.pagination.pageSize}
-                      total={matchingData.pagination.totalCount}
-                      onPageChange={(page) => setMatchingPage(page)}
-                    />
-                  </div>
+                      {/* 페이지네이션 */}
+                      <div className="mt-4">
+                        <Pagination
+                          currentPage={matchingData.pagination.page}
+                          totalPages={matchingData.pagination.totalPages}
+                          pageSize={matchingData.pagination.pageSize}
+                          total={matchingData.pagination.totalCount}
+                          onPageChange={(page) => setMatchingPage(page)}
+                        />
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </>

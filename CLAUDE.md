@@ -33,6 +33,7 @@
 - [docs/reference/aed-data-schema.md](docs/reference/aed-data-schema.md) - AED 데이터 스키마
 
 ### 문제 해결 (Troubleshooting)
+- [docs/troubleshooting/COMPLIANCE_EMPTY_DATA_RESOLUTION.md](docs/troubleshooting/COMPLIANCE_EMPTY_DATA_RESOLUTION.md) - **매칭결과 탭 빈 데이터 문제 (API-UI 상태 불일치)**
 - [docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md](docs/troubleshooting/EMAIL_SENDING_ISSUE_RESOLUTION.md) - NCP 이메일 발송 문제 해결 전체 문서
 - [docs/troubleshooting/EMAIL_DEBUGGING_CHECKLIST.md](docs/troubleshooting/EMAIL_DEBUGGING_CHECKLIST.md) - 이메일 발송 실패 디버깅 체크리스트
 
@@ -724,6 +725,72 @@ gh workflow run fix-database-enum.yml -f action=fix
 - 서비스 가용성을 최우선으로 하라 (Graceful Degradation)
 - 실패를 인정하고 빠르게 수정하라
 
+### 14. API-UI 상태 값 불일치 (2025-11-17 사건)
+
+**사건 개요**: 매칭결과 탭에서 통계는 정상 표시되지만 실제 데이터 칼럼이 모두 "-"로 표시되는 문제
+
+**핵심 교훈**:
+> **캐시나 강력새로고침이 아니라 API와 UI의 상태 값(status) 불일치가 근본 원인**
+
+**증상**:
+- 통계 뱃지: "매칭완료: 3" 정상 표시
+- 필터링: 클릭 시 정상 작동
+- 테이블: 매칭된 기관명, 관리번호, 장비연번, 주소 모두 "-" 표시
+
+**잘못된 진단 시도들**:
+```
+1차: 캐시 문제로 오인 → 강력새로고침 반복 (실패)
+2차: API 데이터 구조 문제로 오인 → check-optimized/route.ts 전면 수정 (불필요)
+3차: 데이터베이스 문제로 오인 → scripts/check-serials.mjs로 확인 (DB는 정상)
+```
+
+**올바른 진단**:
+서버 로그에서 결정적 단서 발견:
+```
+[ComplianceAPI] Confirmed matches sample: {
+  matchesArray: [{...}],  // 데이터 있음!
+  matchesCount: 1
+}
+```
+
+**근본 원인**:
+```typescript
+// API 응답 (check-optimized/route.ts:202)
+status: targetMatches.length > 0 ? 'confirmed' : 'pending'  // 'confirmed' 반환
+
+// UI 체크 (ComplianceCompletedList.tsx:466, 478, 485, 492, 500)
+{target.status === 'installed' && target.matches[0] ? (  // 'installed' 체크
+  <span>{target.matches[0].institution_name}</span>
+) : (
+  <span>-</span>  // 항상 여기로 빠짐!
+)}
+```
+
+**해결책**:
+ComplianceCompletedList.tsx의 5개 위치에서 status 체크를 `'installed'` → `'confirmed'`로 변경
+
+**시스템 이해**:
+프로젝트에는 두 가지 API가 공존:
+- 레거시 API (`/api/compliance/check`): `'installed'` | `'not_installed'` | `'pending'`
+- 새 API (`/api/compliance/check-optimized`): `'confirmed'` | `'pending'`
+
+**재발 방지**:
+1. API 응답 구조를 브라우저 Network 탭에서 먼저 확인
+2. 서버 로그로 API 내부 데이터 생성 확인
+3. UI 렌더링 조건과 API 응답 값 일치 여부 검증
+4. 타입 정의만 믿지 말고 실제 런타임 값 확인
+
+**절대 하지 말 것**:
+- 캐시 문제로 성급하게 단정하지 말 것 (강력새로고침 10번 해도 코드 로직 문제는 해결 안 됨)
+- API 코드를 무분별하게 수정하지 말 것 (서버 로그로 API 응답 먼저 확인)
+- 여러 곳을 동시에 수정하지 말 것 (한 번에 하나씩)
+- 타입 정의만 보고 실제 값을 확인하지 않는 것
+
+**관련 문서**:
+- [매칭결과 탭 빈 데이터 문제 상세 가이드](docs/troubleshooting/COMPLIANCE_EMPTY_DATA_RESOLUTION.md) - target_list_2025 데이터 교체 시 재발 방지 체크리스트
+
+**적용 범위**: ComplianceCompletedList.tsx (lines 466, 478, 485, 492, 500)
+
 ## 필수: NCP 이메일 발송 문제 해결
 
 ### 이메일 발송 실패 시 최우선 체크
@@ -1216,9 +1283,9 @@ migrate: 마이그레이션 관련
 
 ---
 
-**마지막 업데이트**: 2025-11-01
-**문서 버전**: 2.6.0
-**주요 변경**: 502 에러 사건 분석 및 재발 방지 가이드 추가
+**마지막 업데이트**: 2025-11-17
+**문서 버전**: 2.7.0
+**주요 변경**: API-UI 상태 값 불일치 사건 (교훈 14번) 및 매칭결과 탭 빈 데이터 문제 해결 가이드 추가
 
 ---
 
