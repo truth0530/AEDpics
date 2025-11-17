@@ -52,6 +52,7 @@ interface InstitutionListPanelProps {
   partialMatchCount?: number;
   fullMatchCount?: number;
   basket?: BasketItem[];
+  hasUniqueKeyInBasket?: boolean;
 }
 
 // 기관명에서 선택된 기관명과 매칭되는 부분 강조 (여러 키워드 모두 강조)
@@ -184,7 +185,8 @@ export default function InstitutionListPanel({
   hasFullMatch = false,
   partialMatchCount = 0,
   fullMatchCount = 0,
-  basket = []
+  basket = [],
+  hasUniqueKeyInBasket = false
 }: InstitutionListPanelProps) {
   const [institutions, setInstitutions] = useState<TargetInstitution[]>([]);
   const [loading, setLoading] = useState(false);
@@ -406,16 +408,14 @@ export default function InstitutionListPanel({
                             </span>
                           )}
                           {institution.unique_key && (() => {
-                            // 매칭 상태 확인: basket에 담긴 경우 또는 이미 매칭 완료된 경우
-                            const hasBasketItems = basket && basket.length > 0 &&
-                                                 selectedInstitution?.target_key === institution.target_key;
-                            const hasMatches = institution.matched_count > 0;
-                            const isMatched = hasBasketItems || hasMatches;
+                            // unique_key 매칭 확인: 선택된 기관의 basket에 unique_key가 포함된 경우에만 보라색
+                            const isCurrentInstitution = selectedInstitution?.target_key === institution.target_key;
+                            const hasUniqueKeyMatch = isCurrentInstitution && hasUniqueKeyInBasket;
 
                             return (
                               <div className="flex items-center gap-1">
-                                <Hash className={`w-3 h-3 ${isMatched ? 'text-purple-600' : 'text-muted-foreground'}`} />
-                                <span className={`font-mono text-sm ${isMatched ? 'text-purple-600 font-bold' : ''}`}>
+                                <Hash className={`w-3 h-3 ${hasUniqueKeyMatch ? 'text-purple-600' : 'text-muted-foreground'}`} />
+                                <span className={`font-mono text-sm ${hasUniqueKeyMatch ? 'text-purple-600 font-bold' : ''}`}>
                                   {institution.unique_key}
                                 </span>
                               </div>

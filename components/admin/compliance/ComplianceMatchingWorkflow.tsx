@@ -96,6 +96,13 @@ export default function ComplianceMatchingWorkflow({
     ? (basketByInstitution[selectedInstitution.target_key] || [])
     : [];
 
+  // unique_key 매칭 여부 확인 (basket 항목의 equipment_details에서 location_detail에 unique_key 포함 여부)
+  const hasUniqueKeyInBasket = selectedInstitution?.unique_key && currentBasket.some(item =>
+    item.equipment_details?.some(detail =>
+      detail.location_detail && detail.location_detail.includes(selectedInstitution.unique_key!)
+    )
+  );
+
   // 부분매칭 및 전체담김 개수 계산
   const partialMatchCount = currentBasket.filter(item =>
     item.selected_serials &&
@@ -654,6 +661,7 @@ export default function ComplianceMatchingWorkflow({
                 partialMatchCount={partialMatchCount}
                 fullMatchCount={fullMatchCount}
                 basket={currentBasket}
+                hasUniqueKeyInBasket={hasUniqueKeyInBasket}
               />
             </CardContent>
           </Card>
