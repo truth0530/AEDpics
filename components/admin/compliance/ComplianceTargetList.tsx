@@ -27,6 +27,7 @@ import {
   Users,
   Filter
 } from 'lucide-react';
+import { shortenSidoInAddress } from '@/lib/utils/address-formatter';
 
 interface TargetInstitution {
   target_key: string;
@@ -338,7 +339,8 @@ export default function ComplianceTargetList({ year = '2025' }: ComplianceTarget
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      {target.targetInstitution.sido} {target.targetInstitution.gugun}
+                      {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
+                      {shortenSidoInAddress(target.targetInstitution.sido)} {target.targetInstitution.gugun}
                     </div>
                   </div>
 
@@ -435,7 +437,8 @@ export default function ComplianceTargetList({ year = '2025' }: ComplianceTarget
               <DialogHeader>
                 <DialogTitle>{selectedTarget.targetInstitution.institution_name}</DialogTitle>
                 <DialogDescription>
-                  {selectedTarget.targetInstitution.sub_division} | {selectedTarget.targetInstitution.sido} {selectedTarget.targetInstitution.gugun}
+                  {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
+                  {selectedTarget.targetInstitution.sub_division} | {shortenSidoInAddress(selectedTarget.targetInstitution.sido)} {selectedTarget.targetInstitution.gugun}
                 </DialogDescription>
               </DialogHeader>
 

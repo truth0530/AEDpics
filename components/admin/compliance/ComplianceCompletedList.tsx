@@ -29,6 +29,7 @@ import {
   Filter,
   Download
 } from 'lucide-react';
+import { shortenSidoInAddress } from '@/lib/utils/address-formatter';
 
 interface CompletedTarget {
   targetInstitution: {
@@ -316,7 +317,8 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       ['기관명', '시도', '구군', '분류', '상태', '확인일자', '확인자', '비고'],
       ...completedTargets.map(target => [
         target.targetInstitution.institution_name,
-        target.targetInstitution.sido,
+        // 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구)
+        shortenSidoInAddress(target.targetInstitution.sido),
         target.targetInstitution.gugun,
         target.targetInstitution.sub_division,
         target.status === 'installed' ? '설치' : '미설치',
@@ -452,7 +454,8 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
           <TableBody>
             {completedTargets.map((target) => (
               <TableRow key={target.targetInstitution.target_key}>
-                <TableCell>{target.targetInstitution.sido}</TableCell>
+                {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
+                <TableCell>{shortenSidoInAddress(target.targetInstitution.sido)}</TableCell>
                 <TableCell>{target.targetInstitution.gugun}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-xs">
