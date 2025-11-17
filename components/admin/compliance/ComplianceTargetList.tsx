@@ -44,6 +44,7 @@ interface AEDMatch {
   institution_name: string;
   address: string;
   equipment_count: number;
+  equipment_serials?: string[];
   confidence: number;
   matchingReason: {
     nameScore: number;
@@ -345,8 +346,8 @@ export default function ComplianceTargetList({ year = '2025' }: ComplianceTarget
                     </div>
                     {target.targetInstitution.unique_key && (
                       <div className="flex items-center gap-2">
-                        <Hash className="w-4 h-4" />
-                        <span className="font-medium">{target.targetInstitution.unique_key}</span>
+                        <Hash className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-mono text-sm">{target.targetInstitution.unique_key}</span>
                       </div>
                     )}
                   </div>
@@ -443,9 +444,23 @@ export default function ComplianceTargetList({ year = '2025' }: ComplianceTarget
             <>
               <DialogHeader>
                 <DialogTitle>{selectedTarget.targetInstitution.institution_name}</DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="space-y-1">
                   {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
-                  {selectedTarget.targetInstitution.sub_division} | {shortenSidoInAddress(selectedTarget.targetInstitution.sido)} {selectedTarget.targetInstitution.gugun}
+                  <div>{selectedTarget.targetInstitution.sub_division} | {shortenSidoInAddress(selectedTarget.targetInstitution.sido)} {selectedTarget.targetInstitution.gugun}</div>
+                  {selectedTarget.targetInstitution.unique_key && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Hash className="w-4 h-4 text-muted-foreground" />
+                      <span
+                        className={`font-mono text-sm ${
+                          selectedTarget.matches.some(m =>
+                            m.equipment_serials?.includes(selectedTarget.targetInstitution.unique_key!)
+                          ) ? 'text-purple-600 font-bold' : ''
+                        }`}
+                      >
+                        {selectedTarget.targetInstitution.unique_key}
+                      </span>
+                    </div>
+                  )}
                 </DialogDescription>
               </DialogHeader>
 
@@ -467,6 +482,25 @@ export default function ComplianceTargetList({ year = '2025' }: ComplianceTarget
                                 </span>
                                 <span>장비: {match.equipment_count}대</span>
                               </div>
+                              {/* 고유키 매칭 시 보라색 강조 */}
+                              {match.equipment_serials && match.equipment_serials.length > 0 && (
+                                <div className="mt-2 text-sm">
+                                  <span className="text-muted-foreground">장비번호: </span>
+                                  {match.equipment_serials.map((serial, idx) => (
+                                    <span
+                                      key={idx}
+                                      className={`font-mono ${
+                                        selectedTarget.targetInstitution.unique_key === serial
+                                          ? 'text-purple-600 font-bold'
+                                          : 'text-muted-foreground'
+                                      }`}
+                                    >
+                                      {serial}
+                                      {idx < match.equipment_serials!.length - 1 && ', '}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             <div className="text-right">
                               <div className="text-2xl font-bold">

@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
 
       const matchedAeds = targetMatches.map(tm => {
         const aed = aedData.find(a => a.equipment_serial === tm.equipment_serial);
-        return aed;
+        return aed ? { ...aed, equipment_serial: tm.equipment_serial } : null;
       }).filter(Boolean);
 
       // Group by management_number
@@ -180,10 +180,12 @@ export async function GET(request: NextRequest) {
             institution_name: aed.installation_institution || '',
             address: aed.installation_location_address || aed.installation_address || '',
             equipment_count: 0,
+            equipment_serials: [],
             confidence: 100
           };
         }
         acc[aed.management_number].equipment_count++;
+        acc[aed.management_number].equipment_serials.push(aed.equipment_serial);
         return acc;
       }, {});
 
