@@ -36,6 +36,7 @@ interface TargetInstitution {
   gugun: string;
   division: string;
   sub_division: string;
+  unique_key?: string | null;
 }
 
 interface AEDMatch {
@@ -342,6 +343,12 @@ export default function ComplianceTargetList({ year = '2025' }: ComplianceTarget
                       {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
                       {shortenSidoInAddress(target.targetInstitution.sido)} {target.targetInstitution.gugun}
                     </div>
+                    {target.targetInstitution.unique_key && (
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-4 h-4" />
+                        <span className="font-medium">{target.targetInstitution.unique_key}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* 매칭 후보 미리보기 */}
