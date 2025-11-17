@@ -406,10 +406,12 @@ export default function InstitutionListPanel({
                             </span>
                           )}
                           {institution.unique_key && (() => {
-                            // basket에 현재 기관의 매칭 정보가 있는지 확인
-                            // basket은 이미 선택된 기관만 필터링되어 있으므로 length만 체크
-                            const isMatched = basket && basket.length > 0 &&
-                                            selectedInstitution?.target_key === institution.target_key;
+                            // 매칭 상태 확인: basket에 담긴 경우 또는 이미 매칭 완료된 경우
+                            const hasBasketItems = basket && basket.length > 0 &&
+                                                 selectedInstitution?.target_key === institution.target_key;
+                            const hasMatches = institution.matched_count > 0;
+                            const isMatched = hasBasketItems || hasMatches;
+
                             return (
                               <div className="flex items-center gap-1">
                                 <Hash className={`w-3 h-3 ${isMatched ? 'text-purple-600' : 'text-muted-foreground'}`} />
