@@ -48,9 +48,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
       }
 
-      // 2025-11-14: DB가 이제 정식 지역명을 사용하므로 정규화 제거
-      // 예: aed_data.sido = "광주광역시" (이전: "광주")
-      // normalizeRegionName()은 정식→축약명 변환이므로 사용 금지
+      // 2025-11-17: aed_data.sido는 약칭으로 통일 완료 (DB 정합 작업)
+      // target_list_2025.sido도 약칭으로 저장되어 있음
+      // 예: aed_data.sido = "광주", target_list_2025.sido = "광주"
+      // 따라서 정규화 없이 그대로 사용
       normalizedSido = targetInstitution.sido;
       normalizedGugun = targetInstitution.gugun ? (normalizeGugunForDB(targetInstitution.gugun) ?? targetInstitution.gugun) : null;
     }

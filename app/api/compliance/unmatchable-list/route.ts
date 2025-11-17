@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
+// 중앙 관리: lib/constants/regions.ts (하드코딩 금지)
+import { normalizeRegionName } from '@/lib/constants/regions';
 
 /**
  * GET /api/compliance/unmatchable-list
@@ -16,8 +18,12 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const year = 2025; // 2025년 고정
-    const sido = searchParams.get('sido');
-    const gugun = searchParams.get('gugun');
+    // target_list_2025는 약칭("대구", "서울")으로 저장되어 있으므로
+    // normalizeRegionName으로 정식명칭 → 약칭 변환
+    const sidoParam = searchParams.get('sido');
+    const sido = sidoParam ? normalizeRegionName(sidoParam) : undefined;
+    const gugunParam = searchParams.get('gugun');
+    const gugun = gugunParam ? normalizeRegionName(gugunParam) : undefined;
 
     // 매칭 불가로 표시된 기관 조회
     // 가장 최근의 mark_unmatchable 액션을 가진 기관들
