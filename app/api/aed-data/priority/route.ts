@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth/auth-options';
 import type { AedDataWhereInput } from '@/lib/types/api-filters';
 import type { Prisma } from '@prisma/client';
-import { mapCityCodeToGugun, normalizeGugunForDB } from '@/lib/constants/regions';
+import { mapCityCodeToGugun, normalizeGugunForDB, getRegionLabel } from '@/lib/constants/regions';
 
 import { prisma } from '@/lib/prisma';
 /**
@@ -41,9 +41,10 @@ export async function GET(request: NextRequest) {
 
     // 지역 필터링 (local_admin은 본인 관할만)
     if (userProfile.role === 'local_admin' && userProfile.organizations) {
-      // 시도 필터
+      // 시도 필터: region_code → 약칭 변환 (aed_data.sido는 약칭으로 저장됨)
+      // 예: 'DAE' → '대구', 'SEO' → '서울'
       if (userProfile.organizations.region_code) {
-        where.sido = userProfile.organizations.region_code;
+        where.sido = getRegionLabel(userProfile.organizations.region_code);
       }
       // 구군 필터: city_code → gugun → 정규화
       if (userProfile.organizations.city_code) {
@@ -54,9 +55,9 @@ export async function GET(request: NextRequest) {
         }
       }
     } else if (userProfile.role === 'regional_admin' && userProfile.organizations) {
-      // 시도청은 시도만 필터
+      // 시도청은 시도만 필터: region_code → 약칭 변환
       if (userProfile.organizations.region_code) {
-        where.sido = userProfile.organizations.region_code;
+        where.sido = getRegionLabel(userProfile.organizations.region_code);
       }
     }
 

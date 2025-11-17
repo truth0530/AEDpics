@@ -14,10 +14,10 @@ const getDatabaseUrl = () => {
 
   // Add connection pooling and timeout parameters
   const urlWithParams = new URL(url);
-  urlWithParams.searchParams.set('connection_limit', '10');
-  urlWithParams.searchParams.set('pool_timeout', '30');
-  urlWithParams.searchParams.set('statement_timeout', '30000'); // 30 seconds
-  urlWithParams.searchParams.set('connect_timeout', '10');
+  urlWithParams.searchParams.set('connection_limit', '20'); // 개발 모드 안정성을 위해 증가
+  urlWithParams.searchParams.set('pool_timeout', '60'); // 타임아웃 여유 증가
+  urlWithParams.searchParams.set('statement_timeout', '60000'); // 60 seconds
+  urlWithParams.searchParams.set('connect_timeout', '20');
 
   return urlWithParams.toString();
 };

@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import type { UserProfile } from '@/packages/types';
-import { normalizeSidoForDB, getSidoVariantsForDB } from '@/lib/constants/regions';
+import { normalizeRegionName } from '@/lib/constants/regions';
 import { logger } from '@/lib/logger';
 
 interface DashboardStats {
@@ -121,10 +121,11 @@ export const getCachedDashboardData = cache(async (
     // 날짜 범위 필터 설정
     const { startDate, endDate } = getDateRangeForFilter(dateRange);
 
-    // 지역명 정규화 (짧은 이름 → DB용 긴 공식 명칭)
-    // 예: "대구" → "대구광역시", "서울" → "서울특별시"
-    const normalizedSido = normalizeSidoForDB(selectedSido);
-    const normalizedGugun = normalizeSidoForDB(selectedGugun);
+    // 지역명 정규화 (정식명칭 → 약칭)
+    // aed_data 테이블은 약칭("대구", "서울")으로 저장되어 있음
+    // 예: "대구광역시" → "대구", "서울특별시" → "서울"
+    const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
+    const normalizedGugun = selectedGugun ? normalizeRegionName(selectedGugun) : selectedGugun;
 
     // 전국 또는 지역별 통계 집계
     const isNationalView = ['master', 'ministry_admin', 'emergency_center_admin', 'regional_emergency_center_admin'].includes(userProfile.role);
@@ -848,10 +849,10 @@ export const getCachedHourlyInspections = cache(async (
   try {
     const { startDate, endDate } = getDateRangeForFilter(dateRange || 'all');
 
-    // 지역명 정규화 (짧은 이름 → DB용 긴 공식 명칭)
-    // 예: "대구" → "대구광역시", "서울" → "서울특별시"
-    const normalizedSido = normalizeSidoForDB(selectedSido);
-    const normalizedGugun = normalizeSidoForDB(selectedGugun);
+    // 지역명 정규화 (정식명칭 → 약칭)
+    // aed_data 테이블은 약칭("대구", "서울")으로 저장되어 있음
+    const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
+    const normalizedGugun = selectedGugun ? normalizeRegionName(selectedGugun) : selectedGugun;
 
     // 1. 해당 지역의 AED equipment_serial 목록 조회
     let equipmentSerials: string[] = [];
@@ -933,10 +934,10 @@ export const getCachedDailyInspections = cache(async (
   try {
     const { startDate, endDate } = getDateRangeForFilter(dateRange || 'all');
 
-    // 지역명 정규화 (짧은 이름 → DB용 긴 공식 명칭)
-    // 예: "대구" → "대구광역시", "서울" → "서울특별시"
-    const normalizedSido = normalizeSidoForDB(selectedSido);
-    const normalizedGugun = normalizeSidoForDB(selectedGugun);
+    // 지역명 정규화 (정식명칭 → 약칭)
+    // aed_data 테이블은 약칭("대구", "서울")으로 저장되어 있음
+    const normalizedSido = selectedSido ? normalizeRegionName(selectedSido) : selectedSido;
+    const normalizedGugun = selectedGugun ? normalizeRegionName(selectedGugun) : selectedGugun;
 
     // 1. 해당 지역의 AED equipment_serial 목록 조회
     let equipmentSerials: string[] = [];

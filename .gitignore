@@ -108,3 +108,12 @@ docs_backup_*/
 .secrets
 .actrc
 .playwright-mcp/
+
+# Data files (원본, 전처리, 백업 파일)
+/data/source/*
+/data/processed/*
+/data/backup/*
+# README.md는 커밋 유지
+!data/source/README.md
+!data/processed/README.md
+!data/backup/README.md

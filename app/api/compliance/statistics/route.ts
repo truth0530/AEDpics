@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { normalizeGugunForDB } from '@/lib/constants/regions';
+import { normalizeRegionName } from '@/lib/constants/regions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +14,12 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const year = searchParams.get('year') || '2025';
-    const sido = searchParams.get('sido');
+    const sidoParam = searchParams.get('sido');
+    // target_list_2025/2024는 약칭("대구", "서울")으로 저장되어 있으므로
+    // normalizeRegionName으로 정식명칭 → 약칭 변환
+    const sido = sidoParam ? normalizeRegionName(sidoParam) : undefined;
     const gugunParam = searchParams.get('gugun');
-    const gugun = gugunParam ? (normalizeGugunForDB(gugunParam) ?? gugunParam) : undefined;
+    const gugun = gugunParam ? normalizeRegionName(gugunParam) : undefined;
 
     // year 값 검증 (SQL injection 방지)
     if (year !== '2024' && year !== '2025') {

@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
-import { normalizeGugunForDB } from '@/lib/constants/regions';
+import { normalizeRegionName } from '@/lib/constants/regions';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
     // 쿼리 파라미터
-    const regionCode = searchParams.get('region');
+    const regionCodeParam = searchParams.get('region');
+    // aed_data 테이블은 약칭("대구", "서울")으로 저장되어 있으므로
+    // normalizeRegionName으로 정식명칭 → 약칭 변환
+    const regionCode = regionCodeParam ? normalizeRegionName(regionCodeParam) : undefined;
     const cityCodeParam = searchParams.get('city');
-    const cityCode = cityCodeParam ? (normalizeGugunForDB(cityCodeParam) ?? cityCodeParam) : undefined;
+    const cityCode = cityCodeParam ? normalizeRegionName(cityCodeParam) : undefined;
     const bounds = searchParams.get('bounds'); // "west,south,east,north"
     const limit = parseInt(searchParams.get('limit') || '1000');
     const category1 = searchParams.get('category1');

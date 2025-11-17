@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
-import { normalizeGugunForDB, normalizeSidoForDB } from '@/lib/constants/regions';
+import { normalizeRegionName } from '@/lib/constants/regions';
 
 /**
  * Lightweight statistics-only endpoint for compliance matching
@@ -21,9 +21,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const year = '2025'; // Only 2025 data is supported
     const sidoParam = searchParams.get('sido');
-    const sido = sidoParam ? normalizeSidoForDB(sidoParam) : undefined;
+    // target_list_2025는 약칭("대구", "서울")으로 저장되어 있으므로
+    // normalizeRegionName으로 정식명칭 → 약칭 변환
+    const sido = sidoParam ? normalizeRegionName(sidoParam) : undefined;
     const gugunParam = searchParams.get('gugun');
-    const gugun = gugunParam ? normalizeGugunForDB(gugunParam) : undefined;
+    const gugun = gugunParam ? normalizeRegionName(gugunParam) : undefined;
 
     console.log('[compliance/stats] Request params:', {
       sidoParam,
