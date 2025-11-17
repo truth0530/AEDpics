@@ -148,18 +148,15 @@ function buildJurisdictionBasedFilter(scope: AccessScope): EquipmentFilter {
   const filter: EquipmentFilter = {};
 
   if (scope.jurisdictionCodes && scope.jurisdictionCodes.length > 0) {
-    // Normalize each jurisdiction name and include both variants
+    // 중앙 관리: normalizeJurisdictionName()으로 모든 변형 패턴 생성
+    // 예: "대구광역시 중구 보건소" → ["대구광역시중구보건소", "중구보건소"]
     const allJurisdictionVariants: string[] = [];
 
     for (const originalName of scope.jurisdictionCodes) {
-      // Add original name
-      allJurisdictionVariants.push(originalName);
-
-      // Add normalized name (handles space removal and district name duplication)
-      const normalizedName = normalizeJurisdictionName(originalName);
-      if (normalizedName !== originalName) {
-        allJurisdictionVariants.push(normalizedName);
-      }
+      // normalizeJurisdictionName()이 모든 변형을 배열로 반환
+      // 원본명 추가 불필요 (함수 내부에서 이미 포함)
+      const normalizedVariants = normalizeJurisdictionName(originalName);
+      allJurisdictionVariants.push(...normalizedVariants);
     }
 
     // Remove duplicates

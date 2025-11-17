@@ -19,8 +19,9 @@ function deriveOrganizationName(profile: UserProfile): string | null {
 
 function deriveJurisdictionCodes(profile: UserProfile): string[] | null {
   const orgName = deriveOrganizationName(profile);
+  // 중앙 관리: normalizeJurisdictionName()이 배열 반환
   const normalized = normalizeJurisdictionName(orgName);
-  return normalized ? [normalized] : null;
+  return normalized.length > 0 ? normalized : null;
 }
 
 function deriveCityFromProfile(profile: UserProfile): string | null {

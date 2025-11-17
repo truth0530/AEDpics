@@ -102,16 +102,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
     if (filterMode === 'jurisdiction') {
       // 관할보건소 기준 필터링: 해당 보건소가 관리하는 모든 AED (타 지역 포함 가능)
       if (userProfile.organizations.name) {
-        const originalName = userProfile.organizations.name;
-        const normalizedName = normalizeJurisdictionName(originalName);
-
-        // 원본 이름과 정규화된 이름 모두 검색 (공백/구군명 중복 대응)
-        // 예: "서귀포시 보건소" (원본) 또는 "서귀포시서귀포보건소" (정규화)
-        // Prisma nested relation filter에서는 IN operator 사용
-        const jurisdictionVariants = [originalName];
-        if (normalizedName !== originalName) {
-          jurisdictionVariants.push(normalizedName);
-        }
+        // 중앙 관리: normalizeJurisdictionName()으로 모든 변형 패턴 생성
+        // 예: "대구광역시 중구 보건소" → ["대구광역시중구보건소", "중구보건소"]
+        const jurisdictionVariants = normalizeJurisdictionName(userProfile.organizations.name);
 
         aedFilter.jurisdiction_health_center = { in: jurisdictionVariants };
       }

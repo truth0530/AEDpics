@@ -783,38 +783,65 @@ export function mapRegionCodesToDbLabels(codes?: string[] | null): string[] | nu
 }
 
 /**
- * 관할보건소 명칭 정규화 (공백 제거)
+ * 관할보건소 명칭 정규화 (다중 변형 패턴 생성)
+ *
+ * 중앙 관리: lib/constants/regions.ts의 REGION_LONG_LABELS 사용 (하드코딩 금지)
+ *
+ * organizations 테이블의 명칭을 aed_data.jurisdiction_health_center의
+ * 모든 가능한 변형 패턴으로 변환하여 배열로 반환
+ *
+ * @param name organizations 테이블의 명칭 (예: "대구광역시 중구 보건소")
+ * @returns 매칭 가능한 모든 변형 패턴 배열
+ *
+ * @example
+ * // "대구광역시 중구 보건소" → ["대구광역시중구보건소", "중구보건소"]
+ * normalizeJurisdictionName("대구광역시 중구 보건소")
+ *
+ * @example
+ * // "제주특별자치도 서귀포시 보건소" → ["제주특별자치도서귀포시보건소", "서귀포시보건소", "서귀포시서귀포보건소"]
+ * normalizeJurisdictionName("제주특별자치도 서귀포시 보건소")
  */
-export function normalizeJurisdictionName(name?: string | null): string | null {
+export function normalizeJurisdictionName(name?: string | null): string[] {
   if (!name) {
-    return null;
+    return [];
   }
   const trimmed = name.trim();
   if (!trimmed) {
-    return null;
+    return [];
   }
 
-  // 1. 공백 제거
-  let normalized = trimmed.replace(/\s+/g, '');
+  const variants: string[] = [];
 
-  console.log('[normalizeJurisdictionName] Input:', name);
-  console.log('[normalizeJurisdictionName] After space removal:', normalized);
+  // 1. 공백 제거 (기본 형식)
+  const noSpace = trimmed.replace(/\s+/g, '');
+  variants.push(noSpace);  // "대구광역시중구보건소"
 
-  // 2. 구군명 중복 패턴 처리
-  // 예: "서귀포시보건소" → "서귀포시서귀포보건소"
-  // 패턴: "시/군/구 + 시/군/구이름 + 보건소"
-  const districtMatch = normalized.match(/^(.+?)(시|군|구)보건소$/);
-  console.log('[normalizeJurisdictionName] Regex match:', districtMatch);
+  // 2. 시도명 제거 패턴
+  // 중앙 관리: REGION_LONG_LABELS의 키를 동적으로 사용 (하드코딩 금지)
+  const sidoNames = Object.keys(REGION_LONG_LABELS)
+    .filter(name => name !== '중앙')  // 중앙 제외
+    .sort((a, b) => b.length - a.length);  // 긴 이름부터 매칭 ("서울특별시" before "서울시")
 
+  // 정규표현식 동적 생성
+  const sidoPattern = new RegExp(`^(${sidoNames.join('|')})`);
+  const sidoRemoved = noSpace.replace(sidoPattern, '');
+
+  if (sidoRemoved !== noSpace && sidoRemoved.endsWith('보건소')) {
+    variants.push(sidoRemoved);  // "중구보건소"
+  }
+
+  // 3. 구군명 중복 패턴
+  // "서귀포시보건소" → "서귀포시서귀포보건소"
+  const districtMatch = sidoRemoved.match(/^(.+?)(시|군|구)보건소$/);
   if (districtMatch) {
     const cityName = districtMatch[1];  // "서귀포"
     const districtType = districtMatch[2];  // "시"
-    const district = cityName + districtType;  // "서귀포시"
-    normalized = district + cityName + '보건소';  // "서귀포시서귀포보건소" (districtType 제외)
-    console.log('[normalizeJurisdictionName] After duplication:', normalized);
+    const duplicated = cityName + districtType + cityName + '보건소';
+    variants.push(duplicated);  // "서귀포시서귀포보건소"
   }
 
-  return normalized;
+  // 4. 중복 제거 및 반환
+  return [...new Set(variants)];
 }
 
 /**

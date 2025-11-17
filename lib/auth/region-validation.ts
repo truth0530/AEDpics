@@ -41,7 +41,9 @@ export function validateRegionInfo(info: OrganizationInfo): RegionValidationResu
 
   // 1. 조직명 정규화
   if (info.organizationName) {
-    const normalizedName = normalizeJurisdictionName(info.organizationName);
+    // 중앙 관리: normalizeJurisdictionName()이 배열 반환 (첫 번째는 기본 형식)
+    const normalizedVariants = normalizeJurisdictionName(info.organizationName);
+    const normalizedName = normalizedVariants[0] || info.organizationName;
     if (normalizedName !== info.organizationName) {
       suggestions.normalizedOrgName = normalizedName;
     }
@@ -141,7 +143,9 @@ export function autocompleteRegionInfo(info: OrganizationInfo): {
 
   // 조직명 정규화
   if (info.organizationName) {
-    result.normalizedOrgName = normalizeJurisdictionName(info.organizationName);
+    // 중앙 관리: normalizeJurisdictionName()이 배열 반환 (첫 번째는 기본 형식)
+    const normalizedVariants = normalizeJurisdictionName(info.organizationName);
+    result.normalizedOrgName = normalizedVariants[0] || info.organizationName;
 
     // region_code가 없으면 조직명에서 추출
     if (!result.regionCode) {
@@ -170,7 +174,9 @@ export function autocompleteRegionInfo(info: OrganizationInfo): {
  * 보건소 조직인지 확인
  */
 export function isHealthCenterOrganization(organizationName: string): boolean {
-  const normalized = normalizeJurisdictionName(organizationName);
+  // 중앙 관리: normalizeJurisdictionName()이 배열 반환 (첫 번째는 기본 형식)
+  const normalizedVariants = normalizeJurisdictionName(organizationName);
+  const normalized = normalizedVariants[0] || organizationName;
   return normalized.includes('보건소') || normalized.includes('보건지소');
 }
 
@@ -178,7 +184,9 @@ export function isHealthCenterOrganization(organizationName: string): boolean {
  * 시도/시군구 관청인지 확인
  */
 export function isGovernmentOrganization(organizationName: string): boolean {
-  const normalized = normalizeJurisdictionName(organizationName);
+  // 중앙 관리: normalizeJurisdictionName()이 배열 반환 (첫 번째는 기본 형식)
+  const normalizedVariants = normalizeJurisdictionName(organizationName);
+  const normalized = normalizedVariants[0] || organizationName;
   return normalized.includes('시청') ||
          normalized.includes('도청') ||
          normalized.includes('군청') ||
