@@ -405,12 +405,20 @@ export default function InstitutionListPanel({
                               {institution.sub_division}
                             </span>
                           )}
-                          {institution.unique_key && (
-                            <div className="flex items-center gap-1">
-                              <Hash className="w-3 h-3 text-muted-foreground" />
-                              <span className="font-mono text-sm">{institution.unique_key}</span>
-                            </div>
-                          )}
+                          {institution.unique_key && (() => {
+                            // basket에 현재 기관의 매칭 정보가 있는지 확인
+                            // basket은 이미 선택된 기관만 필터링되어 있으므로 length만 체크
+                            const isMatched = basket && basket.length > 0 &&
+                                            selectedInstitution?.target_key === institution.target_key;
+                            return (
+                              <div className="flex items-center gap-1">
+                                <Hash className={`w-3 h-3 ${isMatched ? 'text-purple-600' : 'text-muted-foreground'}`} />
+                                <span className={`font-mono text-sm ${isMatched ? 'text-purple-600 font-bold' : ''}`}>
+                                  {institution.unique_key}
+                                </span>
+                              </div>
+                            );
+                          })()}
                           {!institution.unique_key && (() => {
                             // unique_key가 없는 경우 (2024년) target_key 마지막 번호 추출
                             const match = institution.target_key.match(/_(\d+)$/);
