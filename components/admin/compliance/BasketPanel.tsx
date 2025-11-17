@@ -22,6 +22,8 @@ interface BasketItem {
   confidence: number | null;
   target_key: string;
   selected_serials?: string[]; // 선택된 장비연번 (undefined면 전체, 배열이면 일부만)
+  category_1?: string;
+  category_2?: string;
 }
 
 interface TargetInstitution {

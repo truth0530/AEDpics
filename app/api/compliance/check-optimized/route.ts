@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const subDivision = searchParams.get('sub_division');
 
+    // 미매칭만 필터 파라미터 (기본값: true)
+    const showOnlyUnmatched = searchParams.get('showOnlyUnmatched') !== 'false';
+
     if (subDivision) {
       console.log('[ComplianceAPI] Received sub_division filter:', subDivision);
     }
@@ -133,7 +136,6 @@ export async function GET(request: NextRequest) {
           orderBy: [
             { sido: 'asc' },
             { gugun: 'asc' },
-            { address: 'asc' },
             { institution_name: 'asc' }
           ],
           skip,
@@ -152,26 +154,25 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get only confirmed mappings (skip auto-matching for speed)
+    // Get matched institutions from target_list_devices (새로운 매칭 시스템)
     const targetKeys = targetList.map(t => t.target_key);
-    const existingMappings = await prisma.management_number_group_mapping.findMany({
+    const matchedDevices = await prisma.target_list_devices.findMany({
       where: {
-        [`target_key_${year}`]: { in: targetKeys },
-        [`confirmed_${year}`]: true // Only get confirmed mappings
+        target_institution_id: { in: targetKeys },
+        target_list_year: parseInt(year)
       },
       select: {
-        [`target_key_${year}`]: true,
-        management_number: true,
-        [`confirmed_${year}`]: true,
-        [`confirmed_by_${year}`]: true,
-        [`confirmed_at_${year}`]: true,
-      }
+        target_institution_id: true,
+        matched_by: true,
+        matched_at: true,
+      },
+      distinct: ['target_institution_id']
     });
 
     // Build minimal response
     const matches = targetList.map(target => {
-      const mapping = existingMappings.find(m =>
-        m[`target_key_${year}`] === target.target_key
+      const matchedDevice = matchedDevices.find(m =>
+        m.target_institution_id === target.target_key
       );
 
       return {
@@ -187,18 +188,31 @@ export async function GET(request: NextRequest) {
           address: 'address' in target ? target.address : undefined,
         },
         matches: [], // Don't load AED data unless specifically requested
-        status: mapping ? 'confirmed' : 'pending',
-        confirmedBy: mapping?.[`confirmed_by_${year}`],
-        confirmedAt: mapping?.[`confirmed_at_${year}`],
-        requiresMatching: !mapping // Flag for frontend to request matching if needed
+        status: matchedDevice ? 'confirmed' : 'pending',
+        confirmedBy: matchedDevice?.matched_by,
+        confirmedAt: matchedDevice?.matched_at,
+        requiresMatching: !matchedDevice // Flag for frontend to request matching if needed
       };
+    });
+
+    // 미매칭만 필터 적용
+    const filteredMatches = showOnlyUnmatched
+      ? matches.filter(m => m.status !== 'confirmed')
+      : matches;
+
+    console.log('[ComplianceAPI] Filtering stats:', {
+      showOnlyUnmatched,
+      totalMatches: matches.length,
+      confirmedCount: matches.filter(m => m.status === 'confirmed').length,
+      pendingCount: matches.filter(m => m.status === 'pending').length,
+      afterFilterCount: filteredMatches.length
     });
 
     const totalPages = totalCount > 0 ? Math.ceil(totalCount / limit) : 0;
 
     return NextResponse.json({
-      matches,
-      total: matches.length,
+      matches: filteredMatches,
+      total: filteredMatches.length,
       page,
       pageSize: limit,
       totalPages,

@@ -17,21 +17,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { target_key, year, management_numbers } = body;
 
-    if (!target_key || !year || !Array.isArray(management_numbers) || management_numbers.length === 0) {
+    // year는 2025년만 허용
+    const validYear = 2025;
+    if (year && year !== validYear) {
       return NextResponse.json(
-        { error: 'target_key, year, and management_numbers array are required' },
+        { error: `Only year ${validYear} is supported` },
         { status: 400 }
       );
     }
 
-    // 의무설치기관 존재 확인 (동적 테이블 선택)
-    const targetInstitution = year === 2025
-      ? await prisma.target_list_2025.findUnique({
-          where: { target_key },
-        })
-      : await prisma.target_list_2024.findUnique({
-          where: { target_key },
-        });
+    if (!target_key || !Array.isArray(management_numbers) || management_numbers.length === 0) {
+      return NextResponse.json(
+        { error: 'target_key and management_numbers array are required' },
+        { status: 400 }
+      );
+    }
+
+    // 의무설치기관 존재 확인 (2025년 고정)
+    const targetInstitution = await prisma.target_list_2025.findUnique({
+      where: { target_key },
+    });
 
     if (!targetInstitution) {
       return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
@@ -66,28 +71,31 @@ export async function POST(request: NextRequest) {
           equipment_serial: {
             in: serialsToMatch,
           },
-          target_list_year: year,
+          target_list_year: validYear,
         },
       });
 
       // 2. 새로운 매칭 레코드 생성
-      const createData = serialsToMatch.map((serial) => ({
-        target_institution_id: target_key,
-        equipment_serial: serial,
-        target_list_year: year,
-        matched_at: new Date(),
-        matched_by: session.user!.id,
-      }));
-
-      await tx.target_list_devices.createMany({
-        data: createData,
-      });
+      // Note: createMany는 PostgreSQL default 생성을 건너뛸 수 있으므로 개별 create 사용
+      await Promise.all(
+        serialsToMatch.map((serial) =>
+          tx.target_list_devices.create({
+            data: {
+              target_institution_id: target_key,
+              equipment_serial: serial,
+              target_list_year: validYear,
+              matched_at: new Date(),
+              matched_by: session.user!.id,
+            },
+          })
+        )
+      );
 
       // 3. 매칭 로그 기록
       const log = await tx.target_list_match_logs.create({
         data: {
           action: 'match',
-          target_list_year: year,
+          target_list_year: validYear,
           target_key,
           management_numbers,
           user_id: session.user!.id,

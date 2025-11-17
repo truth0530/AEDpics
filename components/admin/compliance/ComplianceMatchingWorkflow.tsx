@@ -11,6 +11,7 @@ import { isHighQualityMatch } from '@/lib/utils/match-tier';
 import InstitutionListPanel from './InstitutionListPanel';
 import ManagementNumberPanel from './ManagementNumberPanel';
 import BasketPanel from './BasketPanel';
+import { UnmatchableReasonDialog } from './UnmatchableReasonDialog';
 
 // 타입 정의
 interface EquipmentDetail {
@@ -67,6 +68,12 @@ export default function ComplianceMatchingWorkflow({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   // 90% 이상 신뢰도 후보 존재 여부
   const [hasHighConfidenceCandidates, setHasHighConfidenceCandidates] = useState(false);
+  // 매칭 불가 다이얼로그 상태
+  const [unmatchableDialogOpen, setUnmatchableDialogOpen] = useState(false);
+  const [unmatchableDialogData, setUnmatchableDialogData] = useState<{
+    has100PercentMatch: boolean;
+    matchingInstitutionName?: string;
+  }>({ has100PercentMatch: false });
 
   // 헤더 Region Filter에서 선택한 지역 (동적으로 연결)
   const [selectedRegion, setSelectedRegion] = useState<{ sido: string | null; gugun: string | null }>(() => {
@@ -485,7 +492,20 @@ export default function ComplianceMatchingWorkflow({
       });
 
       if (!response.ok) {
-        throw new Error('매칭 실패');
+        console.error('매칭 API 실패:', {
+          status: response.status,
+          statusText: response.statusText
+        });
+
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+
+        console.error('매칭 API 에러 데이터:', errorData);
+        throw new Error(errorData.error || `매칭 실패 (${response.status})`);
       }
 
       const result = await response.json();
@@ -502,11 +522,21 @@ export default function ComplianceMatchingWorkflow({
       // 의무설치기관 리스트 새로고침 트리거
       setRefreshTrigger(prev => prev + 1);
 
+      // 매칭 완료 이벤트 발송 (매칭결과, 통계 탭 새로고침)
+      window.dispatchEvent(new CustomEvent('matchCompleted', {
+        detail: {
+          target_key: selectedInstitution.target_key,
+          institution_name: selectedInstitution.institution_name,
+          management_numbers: currentBasket.map(item => item.management_number)
+        }
+      }));
+
       // 선택된 기관 초기화 (리스트에서 사라지므로)
       setSelectedInstitution(null);
 
     } catch (error) {
       console.error('매칭 실패:', error);
+      alert(error instanceof Error ? error.message : '매칭 중 오류가 발생했습니다.');
     }
   };
 
@@ -515,7 +545,7 @@ export default function ComplianceMatchingWorkflow({
     if (!selectedInstitution) return;
 
     try {
-      // 현재 후보 건수 조회
+      // 현재 후보 건수 조회 및 100% 매칭 확인
       const params = new URLSearchParams({
         year,
         target_key: selectedInstitution.target_key,
@@ -527,30 +557,65 @@ export default function ComplianceMatchingWorkflow({
       if (!response.ok) throw new Error('Failed to fetch candidates');
 
       const data = await response.json();
-      const candidateCount = (data.auto_suggestions || []).length;
+      const candidates = data.auto_suggestions || [];
 
-      // 확인 메시지 생성
-      let confirmMessage;
-      if (candidateCount > 0) {
-        confirmMessage = `"${selectedInstitution.institution_name}"에 ${candidateCount}건의 후보가 있습니다.\n\n정말로 "매칭 대상 없음"으로 처리하시겠습니까?\n\n• 추천된 모든 후보를 검토하셨습니까?\n• 이 기관은 의무설치기관 목록에서 제외됩니다\n• 매칭결과 탭에서 "매칭 대상 없음" 상태로 표시됩니다`;
-      } else {
-        confirmMessage = `"${selectedInstitution.institution_name}"과(와) 매칭 가능한 관리번호가 없습니다.\n\n"매칭 대상 없음"으로 표시하시겠습니까?\n\n• 의무설치기관 목록에서 제외됩니다\n• 매칭결과 탭에서 "매칭 대상 없음" 상태로 표시됩니다`;
-      }
+      // 100% 매칭 후보 확인
+      const perfectMatch = candidates.find((c: any) => c.confidence === 100);
 
-      if (!window.confirm(confirmMessage)) {
-        return;
-      }
-
-      // TODO: API 구현 후 실제 저장 로직 추가
-      alert('API 구현 예정: 매칭 대상 없음 처리');
-
-      // 성공 시 UI 업데이트
-      // setRefreshTrigger(prev => prev + 1);
-      // setSelectedInstitution(null);
+      // 다이얼로그 열기
+      setUnmatchableDialogData({
+        has100PercentMatch: !!perfectMatch,
+        matchingInstitutionName: perfectMatch?.institution_name
+      });
+      setUnmatchableDialogOpen(true);
 
     } catch (error) {
       console.error('매칭 대상 없음 처리 실패:', error);
       alert('처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 매칭 불가 확정 처리
+  const handleConfirmUnmatchable = async (reason: string) => {
+    if (!selectedInstitution) return;
+
+    try {
+      const response = await fetch('/api/compliance/mark-unmatchable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_key: selectedInstitution.target_key,
+          year,
+          reason
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to mark as unmatchable');
+      }
+
+      // 성공 시 UI 업데이트
+      setUnmatchableDialogOpen(false);
+      setRefreshTrigger(prev => prev + 1);
+
+      // 매칭 불가 처리 이벤트 발송 (매칭결과, 통계 탭 새로고침)
+      window.dispatchEvent(new CustomEvent('matchCompleted', {
+        detail: {
+          target_key: selectedInstitution.target_key,
+          institution_name: selectedInstitution.institution_name,
+          action: 'mark_unmatchable',
+          reason
+        }
+      }));
+
+      setSelectedInstitution(null);
+
+      alert('매칭 불가로 처리되었습니다.');
+
+    } catch (error) {
+      console.error('매칭 불가 처리 실패:', error);
+      alert(error instanceof Error ? error.message : '처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -679,6 +744,16 @@ export default function ComplianceMatchingWorkflow({
           </Card>
         </div>
       </div>
+
+      {/* 매칭 불가 처리 다이얼로그 */}
+      <UnmatchableReasonDialog
+        open={unmatchableDialogOpen}
+        onOpenChange={setUnmatchableDialogOpen}
+        onConfirm={handleConfirmUnmatchable}
+        institutionName={selectedInstitution?.institution_name || ''}
+        has100PercentMatch={unmatchableDialogData.has100PercentMatch}
+        matchingInstitutionName={unmatchableDialogData.matchingInstitutionName}
+      />
     </div>
   );
 }

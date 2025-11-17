@@ -7,6 +7,7 @@ import { normalizeGugunForDB } from '@/lib/constants/regions';
 import { calculateInstitutionMatchConfidence } from '@/lib/utils/string-similarity';
 import { getSqlAddressCoalesce } from '@/lib/utils/aed-address-helpers';
 
+// DEBUG: Added filtering debug logs on 2025-11-17
 /**
  * GET /api/compliance/management-number-candidates
  * 특정 의무설치기관에 대한 관리번호 그룹 후보 조회
@@ -112,6 +113,7 @@ export async function GET(request: NextRequest) {
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
                 WHERE tld.target_list_year = ${yearInt}
+                  AND tld.target_institution_id = ${targetKey}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -179,6 +181,7 @@ export async function GET(request: NextRequest) {
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
                 WHERE tld.target_list_year = ${yearInt}
+                  AND tld.target_institution_id = ${targetKey}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -248,6 +251,7 @@ export async function GET(request: NextRequest) {
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
                 WHERE tld.target_list_year = ${yearInt}
+                  AND tld.target_institution_id = ${targetKey}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -391,6 +395,7 @@ export async function GET(request: NextRequest) {
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
               WHERE tld.target_list_year = ${yearInt}
+                AND tld.target_institution_id = ${targetKey}
                 AND ad.equipment_serial = ANY(
                   SELECT ad2.equipment_serial
                   FROM aedpics.aed_data ad2
@@ -444,6 +449,7 @@ export async function GET(request: NextRequest) {
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
               WHERE tld.target_list_year = ${yearInt}
+                AND tld.target_institution_id = ${targetKey}
                 AND ad.equipment_serial = ANY(
                   SELECT ad2.equipment_serial
                   FROM aedpics.aed_data ad2
@@ -496,6 +502,7 @@ export async function GET(request: NextRequest) {
             EXISTS(
               SELECT 1 FROM aedpics.target_list_devices tld
               WHERE tld.target_list_year = ${yearInt}
+                AND tld.target_institution_id = ${targetKey}
                 AND ad.equipment_serial = ANY(
                   SELECT ad2.equipment_serial
                   FROM aedpics.aed_data ad2
@@ -578,6 +585,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // 디버그: 필터링 전 데이터 확인
+    console.log('[DEBUG] Auto suggestions before filtering:', {
+      total: improvedAutoSuggestions.length,
+      matched: improvedAutoSuggestions.filter(item => item.is_matched).length,
+      unmatched: improvedAutoSuggestions.filter(item => !item.is_matched).length,
+      includeMatched,
+      sample: improvedAutoSuggestions.slice(0, 3).map(item => ({
+        management_number: item.management_number,
+        institution_name: item.institution_name,
+        is_matched: item.is_matched,
+        confidence: item.confidence
+      }))
+    });
+
     // 매칭된 항목 필터링 (includeMatched가 false일 때)
     const filteredAutoSuggestions = includeMatched
       ? improvedAutoSuggestions
@@ -586,6 +607,11 @@ export async function GET(request: NextRequest) {
     const filteredSearchResults = includeMatched
       ? searchResults
       : searchResults.filter(item => !item.is_matched);
+
+    console.log('[DEBUG] After filtering:', {
+      auto_suggestions: filteredAutoSuggestions.length,
+      search_results: filteredSearchResults.length
+    });
 
     return NextResponse.json({
       auto_suggestions: filteredAutoSuggestions.map(item => ({

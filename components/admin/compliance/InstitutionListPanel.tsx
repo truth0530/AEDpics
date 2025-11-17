@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -196,12 +196,7 @@ export default function InstitutionListPanel({
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 20;
 
-  // 의무설치기관 목록 조회
-  useEffect(() => {
-    fetchInstitutions();
-  }, [year, sido, gugun, showOnlyUnmatched, subDivisionFilter, searchTerm, currentPage, refreshTrigger]);
-
-  const fetchInstitutions = async () => {
+  const fetchInstitutions = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -217,6 +212,9 @@ export default function InstitutionListPanel({
         params.append('sub_division', subDivisionFilter);
         console.log('[InstitutionListPanel] Filtering by sub_division:', subDivisionFilter);
       }
+
+      // 미매칭 필터를 API에 전달 (서버사이드 필터링)
+      params.append('showOnlyUnmatched', showOnlyUnmatched.toString());
 
       console.log('[InstitutionListPanel] API params:', params.toString());
       const response = await fetch(`/api/compliance/check-optimized?${params}`);
@@ -245,16 +243,10 @@ export default function InstitutionListPanel({
         };
       });
 
-      // 미매칭 필터 적용 (클라이언트 사이드)
-      const filteredInstitutions = showOnlyUnmatched
-        ? transformedInstitutions.filter(inst => inst.unmatched_count > 0)
-        : transformedInstitutions;
-
-      // sub_division은 이미 서버에서 필터링됨
-
-      setInstitutions(filteredInstitutions);
-      setTotalCount(data.totalCount === 'calculating' ? filteredInstitutions.length : (data.totalCount || filteredInstitutions.length));
-      setTotalPages(data.totalPages || Math.ceil(filteredInstitutions.length / pageSize));
+      // 필터링은 서버에서 처리됨 (showOnlyUnmatched 파라미터)
+      setInstitutions(transformedInstitutions);
+      setTotalCount(data.totalCount === 'calculating' ? transformedInstitutions.length : (data.totalCount || transformedInstitutions.length));
+      setTotalPages(data.totalPages || Math.ceil(transformedInstitutions.length / pageSize));
 
       // Stats 업데이트
       if (onStatsUpdate) {
@@ -271,7 +263,25 @@ export default function InstitutionListPanel({
     } finally {
       setLoading(false);
     }
-  };
+  }, [year, currentPage, sido, gugun, searchTerm, subDivisionFilter, showOnlyUnmatched, onStatsUpdate]);
+
+  // 의무설치기관 목록 조회
+  useEffect(() => {
+    fetchInstitutions();
+  }, [fetchInstitutions, refreshTrigger]);
+
+  // 매칭 완료/취소 이벤트 수신하여 목록 새로고침
+  useEffect(() => {
+    const handleMatchCompleted = () => {
+      console.log('[InstitutionListPanel] Match completed/cancelled, refreshing list...');
+      fetchInstitutions();
+    };
+
+    window.addEventListener('matchCompleted', handleMatchCompleted);
+    return () => {
+      window.removeEventListener('matchCompleted', handleMatchCompleted);
+    };
+  }, [fetchInstitutions]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);

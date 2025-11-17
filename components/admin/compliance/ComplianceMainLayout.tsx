@@ -12,6 +12,8 @@ import { Calendar, CheckCircle2, Target, ChevronRight, AlertCircle, Download, Se
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ComplianceMatchingWorkflow from './ComplianceMatchingWorkflow';
 import ComplianceCompletedList, { ComplianceCompletedListRef } from './ComplianceCompletedList';
+import UnmatchableInstitutionsList from './UnmatchableInstitutionsList';
+import ComplianceDashboard from './ComplianceDashboard';
 import { UserProfile } from '@/packages/types';
 
 interface ComplianceMainLayoutProps {
@@ -21,7 +23,7 @@ interface ComplianceMainLayoutProps {
 export default function ComplianceMainLayout({ initialProfile }: ComplianceMainLayoutProps) {
   // 2025년으로 고정
   const selectedYear = '2025' as const;
-  const [activeTab, setActiveTab] = useState<'targets' | 'completed'>('targets');
+  const [activeTab, setActiveTab] = useState<'targets' | 'completed' | 'dashboard'>('targets');
   const [selectedInstitutionName, setSelectedInstitutionName] = useState<string | null>(null);
 
   // 담기 박스 정보 상태
@@ -155,14 +157,17 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* 메인 컨텐츠 */}
       <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed')} className="h-full flex flex-col">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed' | 'dashboard')} className="h-full flex flex-col">
           <div className="flex items-center gap-3 mb-0">
-            <TabsList className="grid w-fit grid-cols-2">
+            <TabsList className="grid w-fit grid-cols-3">
               <TabsTrigger value="targets" className="px-8">
                 매칭하기
               </TabsTrigger>
               <TabsTrigger value="completed" className="px-8">
                 매칭결과
+              </TabsTrigger>
+              <TabsTrigger value="dashboard" className="px-8">
+                통계
               </TabsTrigger>
             </TabsList>
 
@@ -272,15 +277,32 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
               />
             </TabsContent>
 
-            <TabsContent value="completed" className="mt-0 h-full">
-              <ComplianceCompletedList
-                ref={completedListRef}
-                year={selectedYear}
-                sido={selectedSido}
-                gugun={selectedGugun}
-                statusFilter={statusFilter}
-                subDivisionFilter={subDivisionFilter}
-                searchTerm={searchTerm}
+            <TabsContent value="completed" className="mt-0 h-full overflow-auto">
+              <div className="space-y-4 pb-4">
+                <ComplianceCompletedList
+                  ref={completedListRef}
+                  year={selectedYear}
+                  sido={selectedSido}
+                  gugun={selectedGugun}
+                  statusFilter={statusFilter}
+                  subDivisionFilter={subDivisionFilter}
+                  searchTerm={searchTerm}
+                />
+
+                {/* 매칭 불가 기관 목록 */}
+                <UnmatchableInstitutionsList
+                  year={selectedYear}
+                  sido={selectedSido}
+                  gugun={selectedGugun}
+                />
+              </div>
+            </TabsContent>
+
+            {/* 통계 탭 */}
+            <TabsContent value="dashboard" className="flex-1 overflow-auto">
+              <ComplianceDashboard
+                selectedSido={selectedSido}
+                selectedGugun={selectedGugun}
               />
             </TabsContent>
           </div>

@@ -87,6 +87,8 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
   const [completedTargets, setCompletedTargets] = useState<CompletedTarget[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<CompletedTarget | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showUnmatchDialog, setShowUnmatchDialog] = useState(false);
+  const [unmatchReason, setUnmatchReason] = useState('');
   const [editNote, setEditNote] = useState('');
   const [statistics, setStatistics] = useState({
     total: 0,
@@ -211,6 +213,19 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
     }
   }, [selectedYear, searchTerm, statusFilter, subDivisionFilter, userJurisdiction, sido, gugun, currentPage, pageSize]);
 
+  // 매칭 완료 이벤트 수신하여 목록 새로고침
+  useEffect(() => {
+    const handleMatchCompleted = () => {
+      console.log('[ComplianceCompletedList] Match completed, refreshing list...');
+      loadCompletedTargets();
+    };
+
+    window.addEventListener('matchCompleted', handleMatchCompleted);
+    return () => {
+      window.removeEventListener('matchCompleted', handleMatchCompleted);
+    };
+  }, [loadCompletedTargets]);
+
   // Expose export function, statistics, and availableSubDivisions to parent via ref
   useImperativeHandle(ref, () => ({
     exportToExcel: handleExportCSV,
@@ -243,6 +258,50 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       }
     } catch (error) {
       console.error('Failed to update status:', error);
+    }
+  };
+
+  // 매칭 취소
+  const handleUnmatch = async () => {
+    if (!selectedTarget) return;
+
+    try {
+      const response = await fetch('/api/compliance/unmatch', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_key: selectedTarget.targetInstitution.target_key,
+          year: parseInt(selectedYear),
+          reason: unmatchReason.trim() || undefined
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to unmatch');
+      }
+
+      const result = await response.json();
+
+      // 성공 시 목록 새로고침
+      await loadCompletedTargets();
+
+      // 매칭 취소 이벤트 발송 (매칭하기 탭의 Section 1 새로고침)
+      window.dispatchEvent(new CustomEvent('matchCompleted', {
+        detail: {
+          target_key: selectedTarget.targetInstitution.target_key,
+          institution_name: selectedTarget.targetInstitution.institution_name,
+          action: 'unmatch'
+        }
+      }));
+
+      setShowUnmatchDialog(false);
+      setSelectedTarget(null);
+      setUnmatchReason('');
+      alert(`매칭이 취소되었습니다.\n(${result.unmatched_count}개 관리번호, ${result.equipment_count}대 장비연번)`);
+    } catch (error) {
+      console.error('Failed to unmatch:', error);
+      alert(error instanceof Error ? error.message : '매칭 취소 중 오류가 발생했습니다.');
     }
   };
 
@@ -433,26 +492,49 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (target.status === 'installed') {
-                          // 매칭완료: 수정 다이얼로그 표시
-                          setSelectedTarget(target);
-                          setEditNote(target.note || '');
-                          setShowEditDialog(true);
-                        } else {
+                    {target.status === 'installed' ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTarget(target);
+                            setEditNote(target.note || '');
+                            setShowEditDialog(true);
+                          }}
+                          title="매칭 정보 수정"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTarget(target);
+                            setUnmatchReason('');
+                            setShowUnmatchDialog(true);
+                          }}
+                          title="매칭 취소"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
                           // 미완료: 매칭하기 탭으로 전환 + 해당 기관 자동 선택
                           window.dispatchEvent(new CustomEvent('openMatchingWorkflow', {
                             detail: { institution: target.targetInstitution }
                           }));
-                        }
-                      }}
-                      title={target.status === 'installed' ? '매칭 정보 수정' : '매칭하기'}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
+                        }}
+                        title="매칭하기"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    )}
                     {target.note && (
                       <Button
                         variant="ghost"
@@ -539,6 +621,54 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 매칭 취소 다이얼로그 */}
+      <Dialog open={showUnmatchDialog} onOpenChange={setShowUnmatchDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>매칭 취소 확인</DialogTitle>
+            <DialogDescription className="pt-2">
+              <span className="font-medium text-foreground">
+                &quot;{selectedTarget?.targetInstitution.institution_name}&quot;
+              </span>
+              <span className="block mt-1">
+                의 매칭을 취소하시겠습니까?
+              </span>
+              <span className="block mt-2 text-sm text-muted-foreground">
+                매칭된 모든 관리번호와 장비연번이 target_list_devices에서 삭제됩니다.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium">취소 사유 (선택)</label>
+            <Textarea
+              placeholder="취소 사유를 입력하세요 (다른 사람의 매칭을 취소할 경우 필수)"
+              value={unmatchReason}
+              onChange={(e) => setUnmatchReason(e.target.value)}
+              className="mt-1"
+              rows={3}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUnmatchDialog(false);
+                setSelectedTarget(null);
+                setUnmatchReason('');
+              }}
+            >
+              아니오
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleUnmatch}
+            >
+              네, 매칭 취소
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
