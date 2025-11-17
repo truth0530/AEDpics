@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, MapPin, ChevronLeft, ChevronRight, GitCompare, CornerRightDown, CornerLeftUp } from 'lucide-react';
+import { Search, MapPin, ChevronLeft, ChevronRight, GitCompare, CornerRightDown, CornerLeftUp, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -406,9 +406,10 @@ export default function InstitutionListPanel({
                             </span>
                           )}
                           {institution.unique_key && (
-                            <span>
-                              고유키: {institution.unique_key}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <Hash className="w-3 h-3 text-muted-foreground" />
+                              <span className="font-mono text-sm">{institution.unique_key}</span>
+                            </div>
                           )}
                           {!institution.unique_key && (() => {
                             // unique_key가 없는 경우 (2024년) target_key 마지막 번호 추출
