@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
+import { getSidoVariantsForDB } from '@/lib/constants/regions';
 
 /**
  * GET /api/compliance/matching-status
@@ -44,10 +45,12 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     let paramIndex = 1;
 
-    if (sido) {
-      whereConditions.push(`t.sido = $${paramIndex}`);
-      params.push(sido);
-      paramIndex++;
+    // sido 필터: 약칭과 정식명 모두 검색
+    const sidoVariants = getSidoVariantsForDB(sido);
+    if (sidoVariants && sidoVariants.length > 0) {
+      const placeholders = sidoVariants.map(() => `$${paramIndex++}`).join(', ');
+      whereConditions.push(`t.sido IN (${placeholders})`);
+      params.push(...sidoVariants);
     }
 
     if (gugun) {

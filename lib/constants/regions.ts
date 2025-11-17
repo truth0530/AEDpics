@@ -1320,3 +1320,40 @@ export function normalizeSidoForDB(sido: string | undefined): string | undefined
 
   return sido; // 매핑에 없으면 원본 반환
 }
+
+/**
+ * DB에 저장된 시도명의 모든 변형을 반환 (약칭 + 정식명)
+ *
+ * DB에는 약칭("서울", "부산")과 정식명("서울특별시", "부산광역시")이 혼재되어 있으므로
+ * 모든 변형을 포함하여 검색해야 누락 없이 데이터를 조회할 수 있습니다.
+ *
+ * @param sido - 시도명 (약칭 또는 정식명)
+ * @returns 모든 변형 배열 또는 undefined
+ *
+ * @example
+ * getSidoVariantsForDB("서울") → ["서울특별시", "서울"]
+ * getSidoVariantsForDB("서울특별시") → ["서울특별시", "서울"]
+ * getSidoVariantsForDB("대구") → ["대구광역시", "대구"]
+ * getSidoVariantsForDB("전체") → undefined
+ * getSidoVariantsForDB("시도") → undefined
+ */
+export function getSidoVariantsForDB(sido: string | undefined): string[] | undefined {
+  if (!sido || sido === '전체' || sido === '시도') {
+    return undefined;
+  }
+
+  // 1. 시도명 → 지역코드 변환
+  const code = getRegionCode(sido);
+  if (!code) {
+    // 코드 찾기 실패 시 원본만 반환
+    return [sido];
+  }
+
+  // 2. 해당 코드의 모든 DB 라벨 반환 (정식명 + 약칭)
+  const variants = REGION_CODE_TO_DB_LABELS[code];
+  if (variants && variants.length > 0) {
+    return variants; // 예: ['서울특별시', '서울'] 또는 ['대구광역시', '대구']
+  }
+
+  return [sido];
+}

@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import type { UserProfile } from '@/packages/types';
-import { normalizeSidoForDB } from '@/lib/constants/regions';
+import { normalizeSidoForDB, getSidoVariantsForDB } from '@/lib/constants/regions';
 import { logger } from '@/lib/logger';
 
 interface DashboardStats {
