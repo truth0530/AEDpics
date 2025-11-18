@@ -6,7 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { shortenAddressSido } from '@/lib/constants/regions';
 import { getMatchTier } from '@/lib/utils/match-tier';
@@ -29,6 +34,7 @@ interface ManagementNumberCandidate {
   confidence: number | null;
   is_matched: boolean;
   matched_to: string | null;
+  matched_institution_name: string | null;
   category_1?: string | null;
   category_2?: string | null;
 }
@@ -423,30 +429,34 @@ export default function ManagementNumberPanel({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [includeAllRegion, setIncludeAllRegion] = useState(false);
-  const [includeMatched, setIncludeMatched] = useState(false);
+  const [hideAlreadyMatched, setHideAlreadyMatched] = useState(true); // 기본: 이미 매칭된 항목 숨김
   // 펼쳐진 관리번호 Set (관리번호별 펼침/접힘 상태 관리)
   // 접힌 상태를 추적 (기본값은 펼쳐진 상태)
   const [collapsedManagementNumbers, setCollapsedManagementNumbers] = useState<Set<string>>(new Set());
   // 60% 이하 후보 펼침 상태 (기본값: false = 접힌 상태)
   const [showLowConfidenceCandidates, setShowLowConfidenceCandidates] = useState(false);
 
+  // 이중매칭 확인 모달 상태
+  const [duplicateMatchDialog, setDuplicateMatchDialog] = useState<{
+    isOpen: boolean;
+    item: ManagementNumberCandidate | null;
+  }>({ isOpen: false, item: null });
+  const [duplicateReason, setDuplicateReason] = useState<'duplicate_institution' | 'no_match' | 'other'>('duplicate_institution');
+  const [otherReason, setOtherReason] = useState('');
+
   // 선택된 기관이 변경될 때 초기 설정
   useEffect(() => {
     if (selectedInstitution) {
       setSearchTerm('');
-      // 매칭된 기관인 경우 "매칭된 항목 표시" 자동 체크, 미매칭 기관은 체크 해제
-      if (selectedInstitution.matched_count > 0) {
-        setIncludeMatched(true);
-      } else {
-        setIncludeMatched(false);
-      }
+      // 기본값: 이미 매칭된 관리번호 숨기기 (hideAlreadyMatched = true)
+      setHideAlreadyMatched(true);
     }
   }, [selectedInstitution]);
 
   // 선택된 기관이 변경되거나 필터 옵션이 변경되면 데이터 조회
   useEffect(() => {
     fetchCandidates();
-  }, [selectedInstitution, includeAllRegion, includeMatched]);
+  }, [selectedInstitution, includeAllRegion, hideAlreadyMatched]);
 
   // 검색어 변경 시 검색 실행 (디바운싱)
   useEffect(() => {
@@ -495,7 +505,7 @@ export default function ManagementNumberPanel({
       const params = new URLSearchParams({
         year,
         include_all_region: includeAllRegion.toString(),
-        include_matched: includeMatched.toString()
+        include_matched: (!hideAlreadyMatched).toString() // 반전된 로직
       });
 
       // 의무설치기관이 선택된 경우에만 target_key 추가
@@ -540,6 +550,35 @@ export default function ManagementNumberPanel({
       }
       return newSet;
     });
+  };
+
+  // 담기 버튼 클릭 핸들러 (이중매칭 체크)
+  const handleAddToBasket = (item: ManagementNumberCandidate) => {
+    // 이미 매칭된 항목인지 체크
+    if (item.is_matched) {
+      // 이중매칭 확인 모달 열기
+      setDuplicateMatchDialog({ isOpen: true, item });
+      setDuplicateReason('duplicate_institution');
+      setOtherReason('');
+    } else {
+      // 일반 매칭
+      onAddToBasket(item);
+    }
+  };
+
+  // 이중매칭 확인
+  const handleConfirmDuplicateMatch = () => {
+    if (!duplicateMatchDialog.item) return;
+
+    // TODO: 이중매칭 로그 저장 (사유와 함께)
+    const reason = duplicateReason === 'other' ? otherReason : duplicateReason;
+    console.log('이중매칭 사유:', reason);
+
+    // 담기 실행
+    onAddToBasket(duplicateMatchDialog.item);
+
+    // 모달 닫기
+    setDuplicateMatchDialog({ isOpen: false, item: null });
   };
 
   const renderCandidateList = (items: ManagementNumberCandidate[], showConfidence: boolean) => {
@@ -672,29 +711,37 @@ export default function ManagementNumberPanel({
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* 장비가 1대인 경우에만 담기 버튼 표시 */}
-                    {!item.is_matched && !isPartiallyMatched && !isFullyMatched && item.equipment_count === 1 ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
-                          onAddToBasket(item);
-                        }}
-                        className={cn(
-                          "flex-shrink-0 h-6 text-xs",
-                          item.confidence === 100
-                            ? "bg-green-900/[0.06] text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500 hover:bg-green-900/[0.12]"
-                            : item.confidence && item.confidence < 90
-                            ? "bg-transparent text-slate-400 dark:text-slate-500 border-slate-300 dark:border-slate-600"
-                            : "bg-green-900/[0.06]"
+                    {!isPartiallyMatched && !isFullyMatched && item.equipment_count === 1 ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+                            handleAddToBasket(item);
+                          }}
+                          className={cn(
+                            "flex-shrink-0 h-6 text-xs",
+                            item.confidence === 100
+                              ? "bg-green-900/[0.06] text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500 hover:bg-green-900/[0.12]"
+                              : item.confidence && item.confidence < 90
+                              ? "bg-transparent text-slate-400 dark:text-slate-500 border-slate-300 dark:border-slate-600"
+                              : "bg-green-900/[0.06]"
+                          )}
+                        >
+                          담기
+                        </Button>
+                        {item.is_matched && (
+                          <div className="flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3 text-amber-600" />
+                            <Badge variant="secondary" className="text-xs flex-shrink-0 bg-amber-50 text-amber-800 border-amber-300">
+                              {item.matched_institution_name
+                                ? `이미 ${item.matched_institution_name}에 매칭됨`
+                                : '이미 매칭됨'}
+                            </Badge>
+                          </div>
                         )}
-                      >
-                        담기
-                      </Button>
-                    ) : item.is_matched ? (
-                      <Badge variant="secondary" className="text-xs flex-shrink-0">
-                        이미 매칭됨
-                      </Badge>
+                      </>
                     ) : null}
                     {showConfidence && item.confidence && (
                       <Badge
@@ -788,14 +835,14 @@ export default function ManagementNumberPanel({
                           )}
                         </div>
                       </div>
-                      {/* 일괄담기 버튼 - 매칭되지 않은 경우에만 표시 */}
-                      {!item.is_matched && !isPartiallyMatched && !isFullyMatched && (
+                      {/* 일괄담기 버튼 */}
+                      {!isPartiallyMatched && !isFullyMatched && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onAddToBasket(item);
+                            handleAddToBasket(item);
                           }}
                           className={cn(
                             "flex-shrink-0 h-6 text-xs",
@@ -984,7 +1031,7 @@ export default function ManagementNumberPanel({
                     "p-2 transition-all border",
                     !item.is_matched && !isPartiallyMatched && !isFullyMatched && (!item.confidence || item.confidence >= 90) && "bg-green-900/[0.06] border-slate-300 dark:border-slate-600",
                     !item.is_matched && !isPartiallyMatched && !isFullyMatched && item.confidence && item.confidence < 90 && "border-slate-200 dark:border-slate-700",
-                    item.is_matched && "opacity-50 bg-muted border-slate-200 dark:border-slate-700",
+                    item.is_matched && "bg-gray-100 dark:bg-gray-800 border-amber-300 dark:border-amber-700",
                     isPartiallyMatched && "border-slate-300 dark:border-slate-600",
                     isFullyMatched && "border-green-400 bg-green-50/50 dark:bg-green-950/20"
                   )}
@@ -1004,29 +1051,37 @@ export default function ManagementNumberPanel({
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          {!item.is_matched && !isPartiallyMatched && !isFullyMatched && item.equipment_count === 1 ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onAddToBasket(item);
-                              }}
-                              className={cn(
-                                "flex-shrink-0 h-6 text-xs",
-                                item.confidence === 100
-                                  ? "bg-green-900/[0.06] text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500 hover:bg-green-900/[0.12]"
-                                  : item.confidence && item.confidence < 90
-                                  ? "bg-transparent text-slate-400 dark:text-slate-500 border-slate-300 dark:border-slate-600"
-                                  : "bg-green-900/[0.06]"
+                          {!isPartiallyMatched && !isFullyMatched && item.equipment_count === 1 ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToBasket(item);
+                                }}
+                                className={cn(
+                                  "flex-shrink-0 h-6 text-xs",
+                                  item.confidence === 100
+                                    ? "bg-green-900/[0.06] text-blue-600 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500 hover:bg-green-900/[0.12]"
+                                    : item.confidence && item.confidence < 90
+                                    ? "bg-transparent text-slate-400 dark:text-slate-500 border-slate-300 dark:border-slate-600"
+                                    : "bg-green-900/[0.06]"
+                                )}
+                              >
+                                담기
+                              </Button>
+                              {item.is_matched && (
+                                <div className="flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3 text-amber-600" />
+                                  <Badge variant="secondary" className="text-xs flex-shrink-0 bg-amber-50 text-amber-800 border-amber-300">
+                                    {item.matched_institution_name
+                                      ? `이미 ${item.matched_institution_name}에 매칭됨`
+                                      : '이미 매칭됨'}
+                                  </Badge>
+                                </div>
                               )}
-                            >
-                              담기
-                            </Button>
-                          ) : item.is_matched ? (
-                            <Badge variant="secondary" className="text-xs flex-shrink-0">
-                              이미 매칭됨
-                            </Badge>
+                            </>
                           ) : null}
                           {showConfidence && item.confidence && (
                             <Badge
@@ -1118,13 +1173,13 @@ export default function ManagementNumberPanel({
                                 )}
                               </div>
                             </div>
-                            {!item.is_matched && !isPartiallyMatched && !isFullyMatched && (
+                            {!isPartiallyMatched && !isFullyMatched && (
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onAddToBasket(item);
+                                  handleAddToBasket(item);
                                 }}
                                 className={cn(
                                   "flex-shrink-0 h-6 text-xs",
@@ -1259,19 +1314,19 @@ export default function ManagementNumberPanel({
                 전지역 조회
               </label>
             </div>
-            {/* 매칭된 기관을 선택한 경우에만 표시 */}
-            {selectedInstitution && selectedInstitution.matched_count > 0 && (
+            {/* 의무설치기관이 선택된 경우 항상 표시 */}
+            {selectedInstitution && (
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="include-matched"
-                  checked={includeMatched}
-                  onCheckedChange={(checked) => setIncludeMatched(checked === true)}
+                  id="hide-matched"
+                  checked={hideAlreadyMatched}
+                  onCheckedChange={(checked) => setHideAlreadyMatched(checked === true)}
                 />
                 <label
-                  htmlFor="include-matched"
+                  htmlFor="hide-matched"
                   className="text-sm font-medium leading-none whitespace-nowrap"
                 >
-                  매칭된 항목 표시
+                  매칭완료 항목 숨기기
                 </label>
               </div>
             )}
@@ -1307,6 +1362,95 @@ export default function ManagementNumberPanel({
           renderCandidateList(displayItems, showConfidence)
         )}
       </div>
+
+      {/* 이중매칭 확인 모달 */}
+      <Dialog open={duplicateMatchDialog.isOpen} onOpenChange={(open) => {
+        if (!open) setDuplicateMatchDialog({ isOpen: false, item: null });
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>이중 매칭 확인</DialogTitle>
+            <DialogDescription>
+              {duplicateMatchDialog.item && (
+                <span>
+                  관리번호 <strong>{duplicateMatchDialog.item.management_number}</strong>는 이미{' '}
+                  <strong className="text-amber-600">
+                    {duplicateMatchDialog.item.matched_institution_name || '다른 기관'}
+                  </strong>에 매칭된 장비입니다.
+                  <br />
+                  이중 매칭을 하는 사유를 선택하세요.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <RadioGroup value={duplicateReason} onValueChange={(value: any) => setDuplicateReason(value)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="duplicate_institution" id="duplicate_institution" />
+                <Label htmlFor="duplicate_institution" className="cursor-pointer">
+                  같은 의무시설이 중복 등록되었음
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no_match" id="no_match" />
+                <Label htmlFor="no_match" className="cursor-pointer">
+                  마땅히 매칭할 대상이 보이지 않음
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="other" id="other" />
+                <Label htmlFor="other" className="cursor-pointer">
+                  기타
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {/* 기타 사유 입력 */}
+            {duplicateReason === 'other' && (
+              <div className="mt-2">
+                <Label htmlFor="other_reason">기타 사유</Label>
+                <Textarea
+                  id="other_reason"
+                  placeholder="이중 매칭 사유를 입력하세요..."
+                  value={otherReason}
+                  onChange={(e) => setOtherReason(e.target.value)}
+                  className="mt-2"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* 매칭불가 처리 안내 */}
+            {duplicateReason === 'no_match' && (
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertTriangle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  마땅히 매칭할 대상이 없다면 <strong>'매칭불가 처리'</strong>를 권장합니다.
+                  <br />
+                  섹션 1에서 해당 의무기관을 선택 후 '매칭불가' 버튼을 눌러주세요.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDuplicateMatchDialog({ isOpen: false, item: null })}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleConfirmDuplicateMatch}
+              disabled={duplicateReason === 'other' && !otherReason.trim()}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              이중 매칭 진행
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
