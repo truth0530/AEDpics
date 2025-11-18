@@ -362,9 +362,9 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-160px)]">
       {/* 완료 목록 테이블 */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="flex-1 border rounded-lg overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -528,7 +528,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       </div>
 
       {/* 페이지 크기 선택 및 페이지네이션 컨트롤 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-t bg-background p-4">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">페이지당</span>
           <Select
@@ -562,17 +562,17 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
           </Button>
 
           <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(15, totalPages) }, (_, i) => {
               // 현재 페이지 근처의 페이지 번호만 표시
               let pageNum;
-              if (totalPages <= 5) {
+              if (totalPages <= 15) {
                 pageNum = i + 1;
-              } else if (currentPage <= 3) {
+              } else if (currentPage <= 7) {
                 pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
+              } else if (currentPage >= totalPages - 6) {
+                pageNum = totalPages - 14 + i;
               } else {
-                pageNum = currentPage - 2 + i;
+                pageNum = currentPage - 6 + i;
               }
 
               return (

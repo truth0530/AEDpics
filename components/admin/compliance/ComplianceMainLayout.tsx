@@ -310,30 +310,6 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
           </div>
         </Tabs>
       </div>
-
-      {/* 빠른 통계 (하단 고정) */}
-      <div className="border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-6 py-3">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-6">
-            <span className="text-muted-foreground">
-              {selectedYear}년 의무설치기관 현황
-            </span>
-            {activeTab === 'targets' ? (
-              <div className="flex items-center gap-4">
-                <span className="dark:text-gray-300">작업 대기 중</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium dark:text-gray-200">매칭 작업을 진행하세요</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <span className="dark:text-gray-300">완료된 작업</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium dark:text-gray-200">확인 이력을 검토하세요</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
