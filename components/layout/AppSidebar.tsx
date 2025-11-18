@@ -88,18 +88,18 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canAccessI
     <Sidebar>
       <SidebarHeader>
         <div className={cn(
-          "flex items-center py-2 px-3",
+          "flex items-center py-1 lg:py-2 px-1 lg:px-3",
           isExpanded ? "justify-end" : "justify-center"
         )}>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
+            className="p-0.5 lg:p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded transition-colors"
             aria-label={isExpanded ? "사이드바 닫기" : "사이드바 열기"}
           >
             {isExpanded ? (
-              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <ChevronLeft className="w-3 h-3 lg:w-4 lg:h-4 text-gray-600 dark:text-gray-400" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="w-3 h-3 lg:w-4 lg:h-4 text-gray-600 dark:text-gray-400" />
             )}
           </button>
         </div>
@@ -122,11 +122,11 @@ function AppSidebarComponent({ canAccessAedData, canAccessInspection, canAccessI
                     ) : item.icon ? (
                       <item.icon className={cn(
                         "flex-shrink-0 transition-all",
-                        isExpanded ? "w-5 h-5" : "w-5 h-5"
+                        isExpanded ? "w-4 h-4 lg:w-5 lg:h-5" : "w-4 h-4 lg:w-5 lg:h-5"
                       )} />
                     ) : null}
                     {isExpanded && (
-                      <span className="whitespace-nowrap overflow-hidden">
+                      <span className="whitespace-nowrap overflow-hidden text-[10px] lg:text-sm">
                         {item.title}
                       </span>
                     )}

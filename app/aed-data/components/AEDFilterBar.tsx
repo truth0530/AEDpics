@@ -155,6 +155,7 @@ export function AEDFilterBar() {
   const [queryCriteria, setQueryCriteria] = useState<QueryCriteria>(defaultCriteria);
   const [isMobileLayout, setIsMobileLayout] = useState(false);
   const [isTabletLayout, setIsTabletLayout] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showMobileBadges, setShowMobileBadges] = useState(false);
 
@@ -182,10 +183,18 @@ export function AEDFilterBar() {
   useEffect(() => {
     const updateLayoutFlags = () => {
       const width = window.innerWidth;
-      const mobile = width < 768;
+      const height = window.innerHeight;
+      const landscape = width > height;
+
+      // 가로 모드에서는 태블릿으로 간주하여 더 넓은 레이아웃 사용
+      const mobile = width < 768 && !landscape;
+      const tablet = (width >= 768 && width < 1024) || (landscape && width < 1024);
+
+      setIsLandscape(landscape);
       setIsMobileLayout(mobile);
-      setIsTabletLayout(width >= 768 && width < 1024);
-      // PC에서는 항상 필터 펼침, 모바일에서는 기본 접힘
+      setIsTabletLayout(tablet);
+
+      // PC 및 가로 모드에서는 항상 필터 펼침, 세로 모바일에서는 기본 접힘
       if (!mobile) {
         setShowFilters(true);
       } else if (mobile && showFilters) {
@@ -195,7 +204,11 @@ export function AEDFilterBar() {
 
     updateLayoutFlags();
     window.addEventListener('resize', updateLayoutFlags);
-    return () => window.removeEventListener('resize', updateLayoutFlags);
+    window.addEventListener('orientationchange', updateLayoutFlags);
+    return () => {
+      window.removeEventListener('resize', updateLayoutFlags);
+      window.removeEventListener('orientationchange', updateLayoutFlags);
+    };
   }, []);
 
   const isCondensedLayout = isMobileLayout || isTabletLayout;
@@ -715,10 +728,11 @@ export function AEDFilterBar() {
 
   return (
     <div className="bg-gray-900 border-b border-gray-800 overflow-visible" data-filter-bar>
-      {/* 반응형 레이아웃: 모바일/태블릿/PC 대응 - 모바일 padding 제거 */}
+      {/* 반응형 레이아웃: 모바일/태블릿/PC 대응 - 가로모드에서는 최소 padding */}
       <div className={cn(
-        "py-0.5 sm:py-1.5",
-        isMobileLayout ? "space-y-1 sm:space-y-2 px-0" : "flex items-center gap-0.5 overflow-x-auto overflow-y-hidden px-2 flex-nowrap"
+        isLandscape ? "py-0" : "py-0.5 sm:py-1.5",
+        isMobileLayout ? "space-y-1 sm:space-y-2 px-0" : "flex items-center overflow-x-auto overflow-y-hidden px-2 flex-nowrap",
+        isLandscape ? "gap-0.5" : "gap-0.5"
       )}>
         {/* 현장점검 모드에서는 검색창과 버튼만 표시 */}
         {viewMode === 'inspection' ? (
@@ -760,16 +774,20 @@ export function AEDFilterBar() {
         {/* PC: 모든 필터 1줄 여백 확보 / 모바일: 2줄로 분리 */}
         <div className={cn(
           "flex items-center",
-          isMobileLayout ? "w-full flex-wrap gap-0.5" : "flex-shrink-0 gap-2"
+          isMobileLayout ? "w-full flex-wrap gap-0.5" : "flex-shrink-0",
+          isLandscape ? "gap-0" : "gap-2"
         )}>
           {/* 첫 번째 그룹: 구분~분류3 */}
-          <div className={cn("flex items-center", isMobileLayout ? "w-full gap-0.5" : "gap-2")}>
+          <div className={cn("flex items-center", isMobileLayout ? "w-full gap-0.5" : isLandscape ? "gap-0" : "gap-2")}>
             {/* 조회기준: 드롭다운 */}
             <Select
               value={queryCriteria}
               onValueChange={(value) => setQueryCriteria(value as QueryCriteria)}
             >
-              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[60px] lg:w-[80px] xl:w-[100px]")}>
+              <SelectTrigger className={cn(
+                "text-[10px] px-0.5 py-0 border-r rounded-none",
+                isMobileLayout ? "h-6 flex-1" : isLandscape ? "h-4 w-[45px]" : "h-6 lg:h-7 xl:h-8 w-[60px] lg:w-[80px] xl:w-[100px] lg:text-xs xl:text-sm"
+              )}>
                 <SelectValue className="truncate">
                   {queryCriteria === 'address' ? (isMobileLayout ? '기준' : '구분') : '보건소'}
                 </SelectValue>
@@ -806,7 +824,7 @@ export function AEDFilterBar() {
                 }) as any);
               }}
             >
-              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[55px] lg:w-[75px] xl:w-[95px]")}>
+              <SelectTrigger className={cn("text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "h-6 flex-1" : isLandscape ? "h-4 w-[45px]" : "h-6 lg:h-7 xl:h-8 w-[55px] lg:w-[75px] xl:w-[95px]")}>
                 <SelectValue className="truncate">
                   {(() => {
                     const value = !draftFilters.category_1 || draftFilters.category_1.length === 0
@@ -844,7 +862,7 @@ export function AEDFilterBar() {
               }}
             >
               <SelectTrigger
-                className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[55px] lg:w-[75px] xl:w-[95px]")}
+                className={cn("text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "h-6 flex-1" : isLandscape ? "h-4 w-[45px]" : "h-6 lg:h-7 xl:h-8 w-[55px] lg:w-[75px] xl:w-[95px]")}
                 title={(draftFilters.category_2?.[0] && draftFilters.category_2[0] !== 'all') ? draftFilters.category_2[0] : '분류2'}
               >
                 <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
@@ -866,43 +884,41 @@ export function AEDFilterBar() {
               </SelectContent>
             </Select>
 
-            {/* 분류3 - 모바일에서 숨김 */}
-            {!isMobileLayout && (
-              <Select
-                value={draftFilters.category_3?.[0] || 'all'}
-                onValueChange={(value) => {
-                  if (typeof window !== 'undefined') {
-                    window.sessionStorage.setItem('aed_filters_user_modified', 'true');
-                  }
-                  setDraftFilters((prev) => ({
-                    ...prev,
-                    category_3: value === 'all' ? undefined : [value],
-                  }) as any);
-                }}
+            {/* 분류3 - 모바일/PC 모두 표시 */}
+            <Select
+              value={draftFilters.category_3?.[0] || 'all'}
+              onValueChange={(value) => {
+                if (typeof window !== 'undefined') {
+                  window.sessionStorage.setItem('aed_filters_user_modified', 'true');
+                }
+                setDraftFilters((prev) => ({
+                  ...prev,
+                  category_3: value === 'all' ? undefined : [value],
+                }) as any);
+              }}
+            >
+              <SelectTrigger
+                className={cn("text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "h-6 flex-1" : isLandscape ? "h-4 w-[45px]" : "h-6 lg:h-7 xl:h-8 w-[55px] lg:w-[75px] xl:w-[95px]")}
+                title={(draftFilters.category_3?.[0] && draftFilters.category_3[0] !== 'all') ? draftFilters.category_3[0] : '분류3'}
               >
-                <SelectTrigger
-                  className="h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none w-[55px] lg:w-[75px] xl:w-[95px]"
-                  title={(draftFilters.category_3?.[0] && draftFilters.category_3[0] !== 'all') ? draftFilters.category_3[0] : '분류3'}
-                >
-                  <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
-                    {(() => {
-                      const value = draftFilters.category_3?.[0];
-                      if (!value || value === 'all') return '분류3';
-                      // PC에서는 최대 4글자만 표시
-                      return value.length > 4 ? value.substring(0, 4) + '..' : value;
-                    })()}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
-                  {filteredCategory3Options.map((option) => (
-                    <SelectItem key={option} value={option} className="text-[10px] lg:text-xs xl:text-sm py-1">
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
+                  {(() => {
+                    const value = draftFilters.category_3?.[0];
+                    if (!value || value === 'all') return '분류3';
+                    // PC에서는 최대 4글자만 표시
+                    return isMobileLayout ? value : (value.length > 4 ? value.substring(0, 4) + '..' : value);
+                  })()}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
+                {filteredCategory3Options.map((option) => (
+                  <SelectItem key={option} value={option} className="text-[10px] lg:text-xs xl:text-sm py-1">
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 두 번째 그룹: 배터리~점검 */}
@@ -956,83 +972,87 @@ export function AEDFilterBar() {
               value={draftFilters.last_inspection_date || 'all'}
               options={INSPECTION_OPTIONS}
               isMobile={isMobileLayout}
-              withBorder={false}
+              withBorder={true}
               onChange={(value: string) => setDraftFilters((prev) => ({
                 ...prev,
                 last_inspection_date: value === 'all' ? undefined : value as ExpiryFilter,
               }))}
             />
+
+            {/* 외부표출 - 모바일/PC 모두 표시 */}
+            <Select
+              value={draftFilters.external_display || 'all'}
+              onValueChange={(value) => setDraftFilters((prev) => ({
+                ...prev,
+                external_display: value === 'all' ? undefined : value as ExternalDisplayFilter | undefined,
+              }))}
+            >
+              <SelectTrigger
+                className={cn(
+                  "text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none",
+                  isMobileLayout ? "h-6 flex-1" : isLandscape ? "h-4 w-[50px]" : "h-6 lg:h-7 xl:h-8 w-[70px] lg:w-[90px] xl:w-[110px]"
+                )}
+              >
+                <SelectValue className="truncate">
+                  {draftFilters.external_display
+                    ? (EXTERNAL_DISPLAY_OPTIONS.find(opt => opt.value === draftFilters.external_display)?.label || '외부표출')
+                    : '외부표출'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {EXTERNAL_DISPLAY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="text-[10px] lg:text-xs xl:text-sm py-1">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* 매칭상태 - 모바일/PC 모두 표시 */}
+            <Select
+              value={draftFilters.matching_status || 'all'}
+              onValueChange={(value) => setDraftFilters((prev) => ({
+                ...prev,
+                matching_status: value === 'all' ? undefined : value as 'matched' | 'unmatched',
+              }))}
+            >
+              <SelectTrigger
+                className={cn(
+                  "text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 rounded-none",
+                  isMobileLayout ? "h-6 flex-1" : isLandscape ? "h-4 w-[50px]" : "h-6 lg:h-7 xl:h-8 w-[70px] lg:w-[90px] xl:w-[110px]"
+                )}
+              >
+                <SelectValue className="truncate">
+                  {draftFilters.matching_status === 'matched' ? '매칭완료' : draftFilters.matching_status === 'unmatched' ? '미매칭' : '매칭상태'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
+                <SelectItem value="matched" className="text-[10px] lg:text-xs xl:text-sm py-1">매칭완료</SelectItem>
+                <SelectItem value="unmatched" className="text-[10px] lg:text-xs xl:text-sm py-1">미매칭</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-
-        {/* 필터 섹션 (PC에서만 인라인 표시) */}
-        {!isMobileLayout && showFilters && (
-          <>
-            {/* 배터리/패드/교체예정일/월간점검은 이미 위 첫 번째 줄에 표시되므로 PC 중복 제거 */}
-
-            {/* PC에서도 외부표출 필터 표시 (드롭다운) - 여백 추가 */}
-            <div className="flex items-center gap-2 border-r border-gray-700 pr-2 flex-shrink-0">
-              <Select
-                value={draftFilters.external_display || 'all'}
-                onValueChange={(value) => setDraftFilters((prev) => ({
-                  ...prev,
-                  external_display: value === 'all' ? undefined : value as ExternalDisplayFilter | undefined,
-                }))}
-              >
-                <SelectTrigger className="h-6 lg:h-7 xl:h-8 w-[70px] lg:w-[90px] xl:w-[110px] text-[10px] lg:text-xs xl:text-sm px-0.5 py-0">
-                  <SelectValue className="truncate">
-                    {draftFilters.external_display
-                      ? (EXTERNAL_DISPLAY_OPTIONS.find(opt => opt.value === draftFilters.external_display)?.label || '외부표출')
-                      : '외부표출'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {EXTERNAL_DISPLAY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="text-[10px] lg:text-xs xl:text-sm py-1">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 매칭 상태 필터 (외부표출 우측) - 여백 추가 */}
-            <div className="flex items-center gap-2 border-r border-gray-700 pr-2 flex-shrink-0">
-              <Select
-                value={draftFilters.matching_status || 'all'}
-                onValueChange={(value) => setDraftFilters((prev) => ({
-                  ...prev,
-                  matching_status: value === 'all' ? undefined : value as 'matched' | 'unmatched',
-                }))}
-              >
-                <SelectTrigger className="h-6 lg:h-7 xl:h-8 w-[70px] lg:w-[90px] xl:w-[110px] text-[10px] lg:text-xs xl:text-sm px-0.5 py-0">
-                  <SelectValue className="truncate">
-                    {draftFilters.matching_status === 'matched' ? '매칭완료' : draftFilters.matching_status === 'unmatched' ? '미매칭' : '매칭상태'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
-                  <SelectItem value="matched" className="text-[10px] lg:text-xs xl:text-sm py-1">매칭완료</SelectItem>
-                  <SelectItem value="unmatched" className="text-[10px] lg:text-xs xl:text-sm py-1">미매칭</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-          </>
-        )}
 
         {/* 검색창 + 버튼들 - PC에서만 표시 (모바일은 하단으로 이동) */}
         {!isMobileLayout && (
           <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
             <div className="relative w-[90px] lg:w-[110px] xl:w-[140px] min-w-0">
-              <Search className="absolute left-1 top-1/2 h-3 w-3 lg:h-3.5 lg:w-3.5 xl:h-4 xl:w-4 -translate-y-1/2 text-gray-400 flex-shrink-0" />
+              <Search className={cn(
+                "absolute left-1 top-1/2 -translate-y-1/2 text-gray-400 flex-shrink-0",
+                isLandscape ? "h-2.5 w-2.5" : "h-3 w-3 lg:h-3.5 lg:w-3.5 xl:h-4 xl:w-4"
+              )} />
               <Input
                 type="text"
                 placeholder="검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="pl-4 lg:pl-5 xl:pl-6 h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm w-full min-w-0 pr-1"
+                className={cn(
+                  "text-[10px] lg:text-xs xl:text-sm w-full min-w-0 pr-1",
+                  isLandscape ? "pl-3.5 h-4" : "pl-4 lg:pl-5 xl:pl-6 h-6 lg:h-7 xl:h-8"
+                )}
               />
             </div>
 
@@ -1042,7 +1062,10 @@ export function AEDFilterBar() {
               onClick={handleClear}
               disabled={!hasActiveFilters}
               size="sm"
-              className="h-6 lg:h-7 xl:h-8 px-2 lg:px-2.5 xl:px-3 text-[10px] lg:text-xs xl:text-sm flex-shrink-0 whitespace-nowrap"
+              className={cn(
+                "text-[10px] lg:text-xs xl:text-sm flex-shrink-0 whitespace-nowrap",
+                isLandscape ? "h-4 px-1.5" : "h-6 lg:h-7 xl:h-8 px-2 lg:px-2.5 xl:px-3"
+              )}
             >
               초기화
             </Button>
@@ -1051,7 +1074,10 @@ export function AEDFilterBar() {
             <Button
               onClick={handleApply}
               size="sm"
-              className="h-6 lg:h-7 xl:h-8 px-2 lg:px-2.5 xl:px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
+              className={cn(
+                "bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap",
+                isLandscape ? "h-4 px-1.5" : "h-6 lg:h-7 xl:h-8 px-2 lg:px-2.5 xl:px-3"
+              )}
             >
               조회
             </Button>
@@ -1378,13 +1404,29 @@ function ExpirySelectControl({ label, shortLabel, value, options, onChange, isMo
   const selectedOption = options.find(opt => opt.value === value);
   const displayLabel = isMobile ? (shortLabel || label) : label;
 
+  // 가로모드 감지
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight && window.innerWidth < 1024);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         className={cn(
-          "h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0",
+          "text-[10px] lg:text-xs xl:text-sm px-0.5 py-0",
           withBorder && "border-r rounded-none",
-          isMobile ? "flex-1" : "w-[55px] lg:w-[75px] xl:w-[95px]"
+          isMobile ? "h-6 flex-1" : isLandscape ? "h-4 w-[40px]" : "h-6 lg:h-7 xl:h-8 w-[55px] lg:w-[75px] xl:w-[95px]"
         )}
         title={label}
       >

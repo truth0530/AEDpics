@@ -24,6 +24,8 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
   const selectedYear = '2025' as const;
   const [activeTab, setActiveTab] = useState<'targets' | 'completed' | 'dashboard'>('targets');
   const [selectedInstitutionName, setSelectedInstitutionName] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
 
   // 담기 박스 정보 상태
   const [basketInfo, setBasketInfo] = useState<{
@@ -73,6 +75,21 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
   const [subDivisionFilter, setSubDivisionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [availableSubDivisions, setAvailableSubDivisions] = useState<string[]>([]);
+
+  // 마운트 및 가로모드 감지
+  useEffect(() => {
+    setIsMounted(true);
+    const checkOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight && window.innerWidth < 1024);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   // AppHeader의 RegionFilter에서 지역 변경 이벤트 수신
   useEffect(() => {
@@ -155,26 +172,35 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
   }, [activeTab])
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900" suppressHydrationWarning>
       {/* 메인 컨텐츠 */}
       <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed' | 'dashboard')} className="h-full flex flex-col">
           <div className="flex items-center gap-3 mb-0">
             <TabsList className="grid w-fit grid-cols-3">
-              <TabsTrigger value="targets" className="px-8">
+              <TabsTrigger
+                value="targets"
+                className={isLandscape ? "px-2 text-[10px]" : "px-8"}
+              >
                 매칭하기
               </TabsTrigger>
-              <TabsTrigger value="completed" className="px-8">
+              <TabsTrigger
+                value="completed"
+                className={isLandscape ? "px-2 text-[10px]" : "px-8"}
+              >
                 매칭결과
               </TabsTrigger>
-              <TabsTrigger value="dashboard" className="px-8">
+              <TabsTrigger
+                value="dashboard"
+                className={isLandscape ? "px-2 text-[10px]" : "px-8"}
+              >
                 통계
               </TabsTrigger>
             </TabsList>
 
             {/* 동적 안내 메시지 - 매칭하기 탭 */}
             {activeTab === 'targets' && (
-              <div className="text-sm">
+              <div className={isMounted && isLandscape ? "text-[10px]" : "text-sm"}>
                 {basketInfo.managementNumberCount > 0 ? (
                   // 보관함에 담긴 경우: 상세 정보
                   <span className="text-foreground">
@@ -184,7 +210,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                     <span className="text-muted-foreground mx-1">관리번호</span>
                     <span className="font-semibold">({basketInfo.selectedEquipment}대)</span>
                     <span className="text-muted-foreground mx-1">의 연번 매칭 준비 완료</span>
-                    <ChevronRight className="inline h-4 w-4 mx-1" />
+                    <ChevronRight className={isLandscape ? "inline h-2.5 w-2.5 mx-0.5" : "inline h-4 w-4 mx-1"} />
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium">'매칭하기'</span>
                     <span className="text-foreground font-medium">를 눌러주세요</span>
                   </span>
@@ -207,14 +233,14 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                 {/* 클릭 가능한 통계 뱃지 (필터 기능) */}
                 <Badge
                   variant={statusFilter === 'all' ? 'default' : 'outline'}
-                  className="text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity"
+                  className={isLandscape ? "text-[9px] px-1 py-0.5 cursor-pointer hover:opacity-80 transition-opacity" : "text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity"}
                   onClick={() => setStatusFilter('all')}
                 >
                   의무시설: <span className="font-semibold ml-1">{statistics.total}</span>
                 </Badge>
                 <Badge
                   variant={statusFilter === 'installed' ? 'default' : 'outline'}
-                  className={`text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity ${
+                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity ${
                     statusFilter === 'installed' ? 'bg-green-600 hover:bg-green-700' : 'border-green-500 text-green-700'
                   }`}
                   onClick={() => setStatusFilter('installed')}
@@ -223,7 +249,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                 </Badge>
                 <Badge
                   variant={statusFilter === 'not_installed' ? 'default' : 'outline'}
-                  className={`text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity ${
+                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity ${
                     statusFilter === 'not_installed' ? 'bg-amber-600 hover:bg-amber-700' : 'border-amber-500 text-amber-700'
                   }`}
                   onClick={() => setStatusFilter('not_installed')}
@@ -232,7 +258,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                 </Badge>
                 <Badge
                   variant={statusFilter === 'unmatchable' ? 'default' : 'outline'}
-                  className={`text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity ${
+                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity ${
                     statusFilter === 'unmatchable' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500 text-red-700'
                   }`}
                   onClick={() => setStatusFilter('unmatchable')}
@@ -242,7 +268,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
 
                 {/* 구분 드롭다운 */}
                 <Select value={subDivisionFilter} onValueChange={setSubDivisionFilter}>
-                  <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectTrigger className={isLandscape ? "w-[80px] h-5 text-[9px]" : "w-[150px] h-8 text-xs"}>
                     <SelectValue placeholder="구분 선택" />
                   </SelectTrigger>
                   <SelectContent>
@@ -256,13 +282,13 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                 </Select>
 
                 {/* 기관명 검색 */}
-                <div className="relative w-[200px]">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3" />
+                <div className={isLandscape ? "relative w-[100px]" : "relative w-[200px]"}>
+                  <Search className={isLandscape ? "absolute left-1 top-1/2 transform -translate-y-1/2 text-muted-foreground h-2.5 w-2.5" : "absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3"} />
                   <Input
                     placeholder="기관명 검색..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-7 h-8 text-xs"
+                    className={isLandscape ? "pl-4 h-5 text-[9px]" : "pl-7 h-8 text-xs"}
                   />
                 </div>
 
@@ -271,9 +297,9 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                   variant="outline"
                   size="sm"
                   onClick={() => completedListRef.current?.exportToExcel()}
-                  className="ml-auto h-8"
+                  className={isLandscape ? "ml-auto h-5 text-[9px] px-1" : "ml-auto h-8"}
                 >
-                  <Download className="w-3 h-3 mr-1" />
+                  <Download className={isLandscape ? "w-2 h-2 mr-0.5" : "w-3 h-3 mr-1"} />
                   엑셀 다운로드
                 </Button>
               </>

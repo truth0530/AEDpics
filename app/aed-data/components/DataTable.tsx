@@ -131,7 +131,7 @@ const DesktopTableRow = memo(({
 
   return (
     <div
-      className={`hidden lg:grid items-center py-1.5 px-2 hover:bg-gray-800/50 border-b border-gray-800 min-h-[30px] gap-2 ${
+      className={`grid items-center py-1.5 px-2 hover:bg-gray-800/50 border-b border-gray-800 min-h-[30px] gap-2 ${
         isScheduled ? 'bg-gray-800/30' : ''
       }`}
       style={{ gridTemplateColumns: getColumnTemplate(enableSelection, showInspectionStatus, showAssignmentInfo) }}
@@ -939,14 +939,22 @@ export function DataTable({
     }
   }, [viewMode, userProfile]);
 
-  // 모바일 감지
+  // 모바일 감지 (가로 모드에서는 PC 레이아웃 사용)
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isLandscape = width > height;
+      // 가로 모드에서는 PC 레이아웃 사용
+      setIsMobile(width < 1024 && !isLandscape); // lg breakpoint
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
   }, []);
 
   // ✅ 성능 최적화: calculateDistance 함수 제거
@@ -1294,46 +1302,84 @@ export function DataTable({
 
       {/* 데이터 목록 및 헤더를 포함하는 스크롤 컨테이너 */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* 헤더 (데스크톱만, 고정) */}
-        <div className="flex-shrink-0 hidden lg:block bg-gray-800 border-b border-gray-700">
-          <div
-            className="grid items-center py-1.5 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide gap-2"
-            style={{ gridTemplateColumns: getColumnTemplate(enableSelection, showInspectionStatus, showAssignmentInfo) }}
-          >
-            {enableSelection && (
-              <div className="flex items-center pl-2">
-                <Checkbox
-                  checked={isIndeterminate ? 'indeterminate' : isAllSelected}
-                  onCheckedChange={toggleSelectAll}
-                  aria-label="모두 선택"
-                />
-              </div>
-            )}
-            <div className="text-center text-xs lg:text-sm xl:text-base">분류1</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base">설치기관</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base">관리번호</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base">장비연번</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base whitespace-nowrap">최근점검일</div>
-            {showInspectionStatus && <div className="text-center text-xs lg:text-sm xl:text-base">상태</div>}
-            <div className="text-center text-xs lg:text-sm xl:text-base">표출</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base">주소</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base">세부위치</div>
-            <div className="text-center text-xs lg:text-sm xl:text-base">거리</div>
-            {showAssignmentInfo && <div className="text-center text-xs lg:text-sm xl:text-base whitespace-nowrap">추가일시</div>}
-            {showAssignmentInfo && <div className="text-center text-xs lg:text-sm xl:text-base">추가자</div>}
-            {showAssignmentInfo && <div className="text-center text-xs lg:text-sm xl:text-base">담당</div>}
-            <div className="flex justify-center pr-3 text-xs lg:text-sm xl:text-base">작업</div>
+        {/* 헤더 (데스크톱 및 가로모드, 고정) */}
+        {!isMobile && (
+          <div className="flex-shrink-0 bg-gray-800 border-b border-gray-700">
+            <div
+              className="grid items-center py-1.5 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide gap-2"
+              style={{ gridTemplateColumns: getColumnTemplate(enableSelection, showInspectionStatus, showAssignmentInfo) }}
+            >
+              {enableSelection && (
+                <div className="flex items-center pl-2">
+                  <Checkbox
+                    checked={isIndeterminate ? 'indeterminate' : isAllSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="모두 선택"
+                  />
+                </div>
+              )}
+              <div className="text-center text-[10px]">분류1</div>
+              <div className="text-center text-[10px]">설치기관</div>
+              <div className="text-center text-[10px]">관리번호</div>
+              <div className="text-center text-[10px]">장비연번</div>
+              <div className="text-center text-[10px] whitespace-nowrap">최근점검일</div>
+              {showInspectionStatus && <div className="text-center text-[10px]">상태</div>}
+              <div className="text-center text-[10px]">표출</div>
+              <div className="text-center text-[10px]">주소</div>
+              <div className="text-center text-[10px]">세부위치</div>
+              <div className="text-center text-[10px]">거리</div>
+              {showAssignmentInfo && <div className="text-center text-[10px] whitespace-nowrap">추가일시</div>}
+              {showAssignmentInfo && <div className="text-center text-[10px]">추가자</div>}
+              {showAssignmentInfo && <div className="text-center text-[10px]">담당</div>}
+              <div className="flex justify-center pr-3 text-[10px]">작업</div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 스크롤 가능한 데이터 영역 */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          {/* 모바일 / 태블릿 뷰 */}
-          <div className="lg:hidden p-1.5 space-y-1">
+          {/* 모바일 뷰 (세로 모드만) */}
+          {isMobile && (
+            <div className="p-1.5 space-y-1">
+              {devices.map((device, index) => {
+                const deviceId = getDeviceId(device);
+                return (
+                  <MobileCard
+                    key={deviceId}
+                    device={device}
+                    accessScope={accessScope}
+                    allowQuickInspect={allowQuickInspect}
+                    allowSchedule={allowSchedule}
+                    enableSelection={enableSelection}
+                    viewMode={viewMode}
+                    isSelected={selectedIds.has(deviceId)}
+                    onToggleSelect={toggleSelect}
+                    onViewDetails={handleViewDetails}
+                    onQuickInspect={handleQuickInspect}
+                    onSchedule={handleSchedule}
+                    scheduledEquipment={scheduledEquipment}
+                    onCancelSchedule={onCancelSchedule}
+                    showInspectionStatus={showInspectionStatus}
+                    inspectionCompleted={inspectionCompleted}
+                    inspectionUnavailable={inspectionUnavailable}
+                    onShowUnavailable={handleShowUnavailable}
+                    inspectionSession={inspectionSessions.get(device.equipment_serial)}
+                    onInspectionInProgress={onInspectionInProgress}
+                    onViewInspectionHistory={onViewInspectionHistory}
+                    rowIndex={index}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* 데스크톱 뷰 (PC 및 가로모드) */}
+          {!isMobile && (
+            <div className="pr-4 text-[10px]">
             {devices.map((device, index) => {
               const deviceId = getDeviceId(device);
               return (
-                <MobileCard
+                <DesktopTableRow
                   key={deviceId}
                   device={device}
                   accessScope={accessScope}
@@ -1356,44 +1402,12 @@ export function DataTable({
                   onInspectionInProgress={onInspectionInProgress}
                   onViewInspectionHistory={onViewInspectionHistory}
                   rowIndex={index}
+                  showAssignmentInfo={showAssignmentInfo}
                 />
               );
             })}
-          </div>
-
-          {/* 데스크톱 뷰 */}
-          <div className="hidden lg:block pr-4">
-          {devices.map((device, index) => {
-            const deviceId = getDeviceId(device);
-            return (
-              <DesktopTableRow
-                key={deviceId}
-                device={device}
-                accessScope={accessScope}
-                allowQuickInspect={allowQuickInspect}
-                allowSchedule={allowSchedule}
-                enableSelection={enableSelection}
-                viewMode={viewMode}
-                isSelected={selectedIds.has(deviceId)}
-                onToggleSelect={toggleSelect}
-                onViewDetails={handleViewDetails}
-                onQuickInspect={handleQuickInspect}
-                onSchedule={handleSchedule}
-                scheduledEquipment={scheduledEquipment}
-                onCancelSchedule={onCancelSchedule}
-                showInspectionStatus={showInspectionStatus}
-                inspectionCompleted={inspectionCompleted}
-                inspectionUnavailable={inspectionUnavailable}
-                onShowUnavailable={handleShowUnavailable}
-                inspectionSession={inspectionSessions.get(device.equipment_serial)}
-                onInspectionInProgress={onInspectionInProgress}
-                onViewInspectionHistory={onViewInspectionHistory}
-                rowIndex={index}
-                showAssignmentInfo={showAssignmentInfo}
-              />
-            );
-          })}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

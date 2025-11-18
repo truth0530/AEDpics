@@ -77,9 +77,24 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   const isInspectorInitialized = useRef(false);
   // 통합검색 상태
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLandscape, setIsLandscape] = useState(false);
   const { data, isLoading, setFilters, filters } = useAEDData();
   const router = useRouter();
   const { showSuccess, showError } = useToast();
+
+  // 가로모드 감지
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight && window.innerWidth < 1024);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   // filterMode를 localStorage에서 복원하고 변경 시 저장
   useEffect(() => {
@@ -682,14 +697,16 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
         <div className="flex gap-1">
           <button
             onClick={() => setViewMode('list')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 font-medium border-b-2 transition-colors ${
+              isLandscape ? 'text-[10px]' : 'text-sm'
+            } ${
               viewMode === 'list'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
             }`}
           >
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`${isLandscape ? 'w-2.5 h-2.5' : 'w-4 h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
               </svg>
               <span>점검대상</span>
@@ -697,14 +714,16 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           </button>
           <button
             onClick={() => setViewMode('map')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 font-medium border-b-2 transition-colors ${
+              isLandscape ? 'text-[10px]' : 'text-sm'
+            } ${
               viewMode === 'map'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
             }`}
           >
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`${isLandscape ? 'w-2.5 h-2.5' : 'w-4 h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
               <span>지도</span>
@@ -712,14 +731,16 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           </button>
           <button
             onClick={() => setViewMode('completed')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2 font-medium border-b-2 transition-colors ${
+              isLandscape ? 'text-[10px]' : 'text-sm'
+            } ${
               viewMode === 'completed'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
             }`}
           >
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`${isLandscape ? 'w-2.5 h-2.5' : 'w-4 h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>점검이력</span>

@@ -49,7 +49,7 @@ function MobileHeaderComponent({ user }: MobileHeaderProps) {
   };
 
   return (
-    <header className="bg-gray-900 border-b border-gray-700 md:hidden">
+    <header className="bg-gray-900 border-b border-gray-700 md:hidden portrait:block">
       <div className="px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-shrink">
           <div className="w-7 h-7 bg-green-500 rounded-lg flex items-center justify-center relative flex-shrink-0">

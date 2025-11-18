@@ -30,6 +30,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
   const [initialLocationLoading, setInitialLocationLoading] = useState(true);
   const [filterCollapsed, setFilterCollapsed] = useState(false);
   const [resumeInspectionEquipment, setResumeInspectionEquipment] = useState<string | null>(null);
+  const [isLandscape, setIsLandscape] = useState(false);
   const queryClient = useQueryClient();
 
   // ✅ 매일 교체되는 데이터셋 캐시 무효화 훅
@@ -43,6 +44,20 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
       });
     }
   }, [isDataFresh, lastUpdated, snapshotDate]);
+
+  // 가로모드 감지
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight && window.innerWidth < 1024);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   // ✅ 일정추가 상태는 메인 쿼리에 포함되어 있음 (별도 API 호출 제거)
   // ✅ 컴포넌트에서 필요 시 Set으로 변환 (메모이제이션)
@@ -557,14 +572,16 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
         <div className="flex gap-0 sm:gap-1 w-full sm:w-auto">
             <button
               onClick={() => setViewMode('toAdd')}
-              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 font-medium border-b-2 transition-colors ${
+                isLandscape ? 'text-[10px]' : 'text-sm'
+              } ${
                 viewMode === 'toAdd'
                   ? 'border-blue-500 text-blue-400'
                   : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
               }`}
             >
               <div className="flex items-center justify-center gap-1 sm:gap-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`${isLandscape ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4 sm:h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 <span>추가할목록</span>
@@ -572,14 +589,16 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 font-medium border-b-2 transition-colors ${
+                isLandscape ? 'text-[10px]' : 'text-sm'
+              } ${
                 viewMode === 'map'
                   ? 'border-blue-500 text-blue-400'
                   : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
               }`}
             >
               <div className="flex items-center justify-center gap-1 sm:gap-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`${isLandscape ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4 sm:h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
                 <span>지도</span>
@@ -587,14 +606,16 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
             </button>
             <button
               onClick={() => setViewMode('scheduled')}
-              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 font-medium border-b-2 transition-colors ${
+                isLandscape ? 'text-[10px]' : 'text-sm'
+              } ${
                 viewMode === 'scheduled'
                   ? 'border-blue-500 text-blue-400'
                   : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
               }`}
             >
               <div className="flex items-center justify-center gap-1 sm:gap-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`${isLandscape ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4 sm:h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>추가된목록</span>
@@ -602,14 +623,16 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
             </button>
             <button
               onClick={() => setViewMode('all')}
-              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex-1 sm:flex-none px-1 sm:px-3 md:px-4 py-2 sm:py-2.5 font-medium border-b-2 transition-colors ${
+                isLandscape ? 'text-[10px]' : 'text-sm'
+              } ${
                 viewMode === 'all'
                   ? 'border-blue-500 text-blue-400'
                   : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-700'
               }`}
             >
               <div className="flex items-center justify-center gap-1 sm:gap-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`${isLandscape ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5 sm:w-4 sm:h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
                 <span>전체목록</span>
