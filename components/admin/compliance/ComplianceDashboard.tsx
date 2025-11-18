@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/ui/pagination';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
@@ -349,7 +350,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                   <CardTitle>기관별 매칭 현황</CardTitle>
                   <CardDescription>매칭된 장비 수 기준으로 정렬</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col flex-1">
+                <CardContent className="flex-1 overflow-auto">
                   {matchingData.institutions.length === 0 ? (
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
@@ -365,54 +366,120 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                       </AlertDescription>
                     </Alert>
                   ) : (
-                    <>
-                      <div className="flex-1 overflow-auto border rounded-lg">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2 px-4">기관명</th>
-                              <th className="text-left py-2 px-4">시도</th>
-                              <th className="text-left py-2 px-4">구군</th>
-                              <th className="text-left py-2 px-4">세부구분</th>
-                              <th className="text-right py-2 px-4">매칭된 장비</th>
-                              <th className="text-center py-2 px-4">상태</th>
+                    <div className="border rounded-lg">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2 px-4">기관명</th>
+                            <th className="text-left py-2 px-4">시도</th>
+                            <th className="text-left py-2 px-4">구군</th>
+                            <th className="text-left py-2 px-4">세부구분</th>
+                            <th className="text-right py-2 px-4">매칭된 장비</th>
+                            <th className="text-center py-2 px-4">상태</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {matchingData.institutions.map((institution) => (
+                            <tr key={institution.target_key} className="border-b hover:bg-muted/50">
+                              <td className="py-2 px-4 font-medium">{institution.institution_name}</td>
+                              <td className="py-2 px-4 text-muted-foreground">{institution.sido}</td>
+                              <td className="py-2 px-4 text-muted-foreground">{institution.gugun}</td>
+                              <td className="py-2 px-4 text-muted-foreground">{institution.sub_division}</td>
+                              <td className="py-2 px-4 text-right font-semibold">{institution.matched_equipment_count}대</td>
+                              <td className="py-2 px-4 text-center">
+                                {institution.is_matched ? (
+                                  <Badge variant="default" className="bg-green-500">매칭완료</Badge>
+                                ) : (
+                                  <Badge variant="secondary">미매칭</Badge>
+                                )}
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {matchingData.institutions.map((institution) => (
-                              <tr key={institution.target_key} className="border-b hover:bg-muted/50">
-                                <td className="py-2 px-4 font-medium">{institution.institution_name}</td>
-                                <td className="py-2 px-4 text-muted-foreground">{institution.sido}</td>
-                                <td className="py-2 px-4 text-muted-foreground">{institution.gugun}</td>
-                                <td className="py-2 px-4 text-muted-foreground">{institution.sub_division}</td>
-                                <td className="py-2 px-4 text-right font-semibold">{institution.matched_equipment_count}대</td>
-                                <td className="py-2 px-4 text-center">
-                                  {institution.is_matched ? (
-                                    <Badge variant="default" className="bg-green-500">매칭완료</Badge>
-                                  ) : (
-                                    <Badge variant="secondary">미매칭</Badge>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* 페이지네이션 */}
-                      <div className="mt-4 pt-4 border-t">
-                        <Pagination
-                          currentPage={matchingData.pagination.page}
-                          totalPages={matchingData.pagination.totalPages}
-                          pageSize={matchingData.pagination.pageSize}
-                          total={matchingData.pagination.totalCount}
-                          onPageChange={(page) => setMatchingPage(page)}
-                        />
-                      </div>
-                    </>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
+
+              {/* 페이지네이션 */}
+              {matchingData.institutions.length > 0 && (
+                <div className="flex items-center justify-between border-t bg-background p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">페이지당</span>
+                          <Select
+                            value={matchingPageSize.toString()}
+                            onValueChange={(value) => {
+                              setMatchingPageSize(parseInt(value));
+                              setMatchingPage(1);
+                            }}
+                          >
+                            <SelectTrigger className="w-24">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="10">10개</SelectItem>
+                              <SelectItem value="20">20개</SelectItem>
+                              <SelectItem value="30">30개</SelectItem>
+                              <SelectItem value="50">50개</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className="text-sm text-muted-foreground">보기</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMatchingPage(prev => Math.max(1, prev - 1))}
+                            disabled={matchingPage === 1 || matchingLoading}
+                          >
+                            이전
+                          </Button>
+
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(15, matchingData.pagination.totalPages) }, (_, i) => {
+                              let pageNum;
+                              if (matchingData.pagination.totalPages <= 15) {
+                                pageNum = i + 1;
+                              } else if (matchingPage <= 7) {
+                                pageNum = i + 1;
+                              } else if (matchingPage >= matchingData.pagination.totalPages - 6) {
+                                pageNum = matchingData.pagination.totalPages - 14 + i;
+                              } else {
+                                pageNum = matchingPage - 6 + i;
+                              }
+
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant={matchingPage === pageNum ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setMatchingPage(pageNum)}
+                                  disabled={matchingLoading}
+                                  className="w-10"
+                                >
+                                  {pageNum}
+                                </Button>
+                              );
+                            })}
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMatchingPage(prev => Math.min(matchingData.pagination.totalPages, prev + 1))}
+                            disabled={matchingPage === matchingData.pagination.totalPages || matchingLoading}
+                          >
+                            다음
+                          </Button>
+
+                          <span className="text-sm text-muted-foreground ml-2">
+                            {matchingPage} / {matchingData.pagination.totalPages} 페이지
+                          </span>
+                        </div>
+                      </div>
+              )}
             </>
           )}
         </TabsContent>
@@ -474,8 +541,8 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                   <CardTitle>기관별 점검 현황</CardTitle>
                   <CardDescription>점검 완료 장비 수 기준으로 정렬</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col flex-1">
-                  <div className="flex-1 overflow-auto border rounded-lg">
+                <CardContent className="flex-1 overflow-auto">
+                  <div className="border rounded-lg">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
@@ -507,19 +574,85 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                       </tbody>
                     </table>
                   </div>
-
-                  {/* 페이지네이션 */}
-                  <div className="mt-4 pt-4 border-t">
-                    <Pagination
-                      currentPage={inspectionData.pagination.page}
-                      totalPages={inspectionData.pagination.totalPages}
-                      pageSize={inspectionData.pagination.pageSize}
-                      total={inspectionData.pagination.totalCount}
-                      onPageChange={(page) => setInspectionPage(page)}
-                    />
-                  </div>
                 </CardContent>
               </Card>
+
+              {/* 페이지네이션 */}
+              <div className="flex items-center justify-between border-t bg-background p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">페이지당</span>
+                      <Select
+                        value={inspectionPageSize.toString()}
+                        onValueChange={(value) => {
+                          setInspectionPageSize(parseInt(value));
+                          setInspectionPage(1);
+                        }}
+                      >
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10개</SelectItem>
+                          <SelectItem value="20">20개</SelectItem>
+                          <SelectItem value="30">30개</SelectItem>
+                          <SelectItem value="50">50개</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-sm text-muted-foreground">보기</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInspectionPage(prev => Math.max(1, prev - 1))}
+                        disabled={inspectionPage === 1 || inspectionLoading}
+                      >
+                        이전
+                      </Button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(15, inspectionData.pagination.totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (inspectionData.pagination.totalPages <= 15) {
+                            pageNum = i + 1;
+                          } else if (inspectionPage <= 7) {
+                            pageNum = i + 1;
+                          } else if (inspectionPage >= inspectionData.pagination.totalPages - 6) {
+                            pageNum = inspectionData.pagination.totalPages - 14 + i;
+                          } else {
+                            pageNum = inspectionPage - 6 + i;
+                          }
+
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={inspectionPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setInspectionPage(pageNum)}
+                              disabled={inspectionLoading}
+                              className="w-10"
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInspectionPage(prev => Math.min(inspectionData.pagination.totalPages, prev + 1))}
+                        disabled={inspectionPage === inspectionData.pagination.totalPages || inspectionLoading}
+                      >
+                        다음
+                      </Button>
+
+                      <span className="text-sm text-muted-foreground ml-2">
+                        {inspectionPage} / {inspectionData.pagination.totalPages} 페이지
+                      </span>
+                    </div>
+                  </div>
             </>
           )}
         </TabsContent>
@@ -584,8 +717,8 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                   <CardTitle>기관별 의무이행률</CardTitle>
                   <CardDescription>매칭률, 점검률, 양호율의 평균으로 산출</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col flex-1">
-                  <div className="flex-1 overflow-auto border rounded-lg">
+                <CardContent className="flex-1 overflow-auto">
+                  <div className="border rounded-lg">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
@@ -631,19 +764,85 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                       </tbody>
                     </table>
                   </div>
-
-                  {/* 페이지네이션 */}
-                  <div className="mt-4 pt-4 border-t">
-                    <Pagination
-                      currentPage={complianceData.pagination.page}
-                      totalPages={complianceData.pagination.totalPages}
-                      pageSize={complianceData.pagination.pageSize}
-                      total={complianceData.pagination.totalCount}
-                      onPageChange={(page) => setCompliancePage(page)}
-                    />
-                  </div>
                 </CardContent>
               </Card>
+
+              {/* 페이지네이션 */}
+              <div className="flex items-center justify-between border-t bg-background p-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">페이지당</span>
+                  <Select
+                    value={compliancePageSize.toString()}
+                    onValueChange={(value) => {
+                      setCompliancePageSize(parseInt(value));
+                      setCompliancePage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10개</SelectItem>
+                      <SelectItem value="20">20개</SelectItem>
+                      <SelectItem value="30">30개</SelectItem>
+                      <SelectItem value="50">50개</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">보기</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCompliancePage(prev => Math.max(1, prev - 1))}
+                    disabled={compliancePage === 1 || complianceLoading}
+                  >
+                    이전
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(15, complianceData.pagination.totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (complianceData.pagination.totalPages <= 15) {
+                        pageNum = i + 1;
+                      } else if (compliancePage <= 7) {
+                        pageNum = i + 1;
+                      } else if (compliancePage >= complianceData.pagination.totalPages - 6) {
+                        pageNum = complianceData.pagination.totalPages - 14 + i;
+                      } else {
+                        pageNum = compliancePage - 6 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={compliancePage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCompliancePage(pageNum)}
+                          disabled={complianceLoading}
+                          className="w-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCompliancePage(prev => Math.min(complianceData.pagination.totalPages, prev + 1))}
+                    disabled={compliancePage === complianceData.pagination.totalPages || complianceLoading}
+                  >
+                    다음
+                  </Button>
+
+                  <span className="text-sm text-muted-foreground ml-2">
+                    {compliancePage} / {complianceData.pagination.totalPages} 페이지
+                  </span>
+                </div>
+              </div>
             </>
           )}
         </TabsContent>
