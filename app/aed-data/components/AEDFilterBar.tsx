@@ -769,7 +769,7 @@ export function AEDFilterBar() {
               value={queryCriteria}
               onValueChange={(value) => setQueryCriteria(value as QueryCriteria)}
             >
-              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[40px] lg:w-[55px] xl:w-[80px]")}>
+              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[60px] lg:w-[80px] xl:w-[100px]")}>
                 <SelectValue className="truncate">
                   {queryCriteria === 'address' ? (isMobileLayout ? '기준' : '구분') : '보건소'}
                 </SelectValue>
@@ -806,7 +806,7 @@ export function AEDFilterBar() {
                 }) as any);
               }}
             >
-              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[42px] lg:w-[50px] xl:w-[70px]")}>
+              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[55px] lg:w-[75px] xl:w-[95px]")}>
                 <SelectValue className="truncate">
                   {(() => {
                     const value = !draftFilters.category_1 || draftFilters.category_1.length === 0
@@ -844,7 +844,7 @@ export function AEDFilterBar() {
               }}
             >
               <SelectTrigger
-                className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[40px] lg:w-[50px] xl:w-[70px]")}
+                className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[55px] lg:w-[75px] xl:w-[95px]")}
                 title={(draftFilters.category_2?.[0] && draftFilters.category_2[0] !== 'all') ? draftFilters.category_2[0] : '분류2'}
               >
                 <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
@@ -881,7 +881,7 @@ export function AEDFilterBar() {
                 }}
               >
                 <SelectTrigger
-                  className="h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none w-[40px] lg:w-[50px] xl:w-[70px]"
+                  className="h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none w-[55px] lg:w-[75px] xl:w-[95px]"
                   title={(draftFilters.category_3?.[0] && draftFilters.category_3[0] !== 'all') ? draftFilters.category_3[0] : '분류3'}
                 >
                   <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
@@ -979,7 +979,7 @@ export function AEDFilterBar() {
                   external_display: value === 'all' ? undefined : value as ExternalDisplayFilter | undefined,
                 }))}
               >
-                <SelectTrigger className="h-6 lg:h-7 xl:h-8 w-[55px] lg:w-[65px] xl:w-[85px] text-[10px] lg:text-xs xl:text-sm px-0.5 py-0">
+                <SelectTrigger className="h-6 lg:h-7 xl:h-8 w-[70px] lg:w-[90px] xl:w-[110px] text-[10px] lg:text-xs xl:text-sm px-0.5 py-0">
                   <SelectValue className="truncate">
                     {draftFilters.external_display
                       ? (EXTERNAL_DISPLAY_OPTIONS.find(opt => opt.value === draftFilters.external_display)?.label || '외부표출')
@@ -1005,7 +1005,7 @@ export function AEDFilterBar() {
                   matching_status: value === 'all' ? undefined : value as 'matched' | 'unmatched',
                 }))}
               >
-                <SelectTrigger className="h-6 lg:h-7 xl:h-8 w-[55px] lg:w-[65px] xl:w-[85px] text-[10px] lg:text-xs xl:text-sm px-0.5 py-0">
+                <SelectTrigger className="h-6 lg:h-7 xl:h-8 w-[70px] lg:w-[90px] xl:w-[110px] text-[10px] lg:text-xs xl:text-sm px-0.5 py-0">
                   <SelectValue className="truncate">
                     {draftFilters.matching_status === 'matched' ? '매칭완료' : draftFilters.matching_status === 'unmatched' ? '미매칭' : '매칭상태'}
                   </SelectValue>
@@ -1023,7 +1023,7 @@ export function AEDFilterBar() {
 
         {/* 검색창 + 버튼들 - PC에서만 표시 (모바일은 하단으로 이동) */}
         {!isMobileLayout && (
-          <div className="flex items-center gap-2 ml-auto flex-shrink-0 min-w-0">
+          <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
             <div className="relative w-[90px] lg:w-[110px] xl:w-[140px] min-w-0">
               <Search className="absolute left-1 top-1/2 h-3 w-3 lg:h-3.5 lg:w-3.5 xl:h-4 xl:w-4 -translate-y-1/2 text-gray-400 flex-shrink-0" />
               <Input
@@ -1384,7 +1384,7 @@ function ExpirySelectControl({ label, shortLabel, value, options, onChange, isMo
         className={cn(
           "h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0",
           withBorder && "border-r rounded-none",
-          isMobile ? "flex-1" : "w-[40px] lg:w-[50px] xl:w-[70px]"
+          isMobile ? "flex-1" : "w-[55px] lg:w-[75px] xl:w-[95px]"
         )}
         title={label}
       >
