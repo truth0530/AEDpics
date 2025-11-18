@@ -278,10 +278,10 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
   }, [activeTab, fetchMatchingStatus, fetchInspectionStatus, fetchComplianceRate]);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-120px)]">
       {/* 지역 필터 표시 */}
       {(selectedSido || selectedGugun) && (
-        <Alert>
+        <Alert className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {selectedSido && <span className="font-medium">{selectedSido}</span>}
@@ -291,7 +291,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
         </Alert>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'matching' | 'inspection' | 'rate')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'matching' | 'inspection' | 'rate')} className="flex flex-col flex-1">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="matching">매칭 현황</TabsTrigger>
           <TabsTrigger value="inspection">점검 현황</TabsTrigger>
@@ -299,7 +299,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
         </TabsList>
 
         {/* 매칭 현황 탭 */}
-        <TabsContent value="matching" className="space-y-4">
+        <TabsContent value="matching" className="flex flex-col flex-1 space-y-4 mt-4">
           {matchingLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -344,12 +344,12 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
               </div>
 
               {/* 기관 목록 */}
-              <Card>
+              <Card className="flex flex-col flex-1">
                 <CardHeader>
                   <CardTitle>기관별 매칭 현황</CardTitle>
                   <CardDescription>매칭된 장비 수 기준으로 정렬</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col flex-1">
                   {matchingData.institutions.length === 0 ? (
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
@@ -366,7 +366,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                     </Alert>
                   ) : (
                     <>
-                      <div className="overflow-x-auto">
+                      <div className="flex-1 overflow-auto border rounded-lg">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b">
@@ -400,7 +400,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                       </div>
 
                       {/* 페이지네이션 */}
-                      <div className="mt-4">
+                      <div className="mt-4 pt-4 border-t">
                         <Pagination
                           currentPage={matchingData.pagination.page}
                           totalPages={matchingData.pagination.totalPages}
@@ -418,7 +418,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
         </TabsContent>
 
         {/* 점검 현황 탭 */}
-        <TabsContent value="inspection" className="space-y-4">
+        <TabsContent value="inspection" className="flex flex-col flex-1 space-y-4 mt-4">
           {inspectionLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -469,13 +469,13 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
               </div>
 
               {/* 기관 목록 */}
-              <Card>
+              <Card className="flex flex-col flex-1">
                 <CardHeader>
                   <CardTitle>기관별 점검 현황</CardTitle>
                   <CardDescription>점검 완료 장비 수 기준으로 정렬</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
+                <CardContent className="flex flex-col flex-1">
+                  <div className="flex-1 overflow-auto border rounded-lg">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
@@ -509,7 +509,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                   </div>
 
                   {/* 페이지네이션 */}
-                  <div className="mt-4">
+                  <div className="mt-4 pt-4 border-t">
                     <Pagination
                       currentPage={inspectionData.pagination.page}
                       totalPages={inspectionData.pagination.totalPages}
@@ -525,7 +525,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
         </TabsContent>
 
         {/* 의무이행률 탭 */}
-        <TabsContent value="rate" className="space-y-4">
+        <TabsContent value="rate" className="flex flex-col flex-1 space-y-4 mt-4">
           {complianceLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -579,13 +579,13 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
               </div>
 
               {/* 기관 목록 */}
-              <Card>
+              <Card className="flex flex-col flex-1">
                 <CardHeader>
                   <CardTitle>기관별 의무이행률</CardTitle>
                   <CardDescription>매칭률, 점검률, 양호율의 평균으로 산출</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
+                <CardContent className="flex flex-col flex-1">
+                  <div className="flex-1 overflow-auto border rounded-lg">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
@@ -633,7 +633,7 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                   </div>
 
                   {/* 페이지네이션 */}
-                  <div className="mt-4">
+                  <div className="mt-4 pt-4 border-t">
                     <Pagination
                       currentPage={complianceData.pagination.page}
                       totalPages={complianceData.pagination.totalPages}
