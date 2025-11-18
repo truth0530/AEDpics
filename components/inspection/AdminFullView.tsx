@@ -9,6 +9,7 @@ import { InspectionFilterBar } from './InspectionFilterBar';
 import { MapView } from './MapView';
 import { useToast } from '@/components/ui/Toast';
 import { Search } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import {
   REGION_CODE_TO_DB_LABELS,
   REGION_LONG_LABELS,
@@ -132,6 +133,10 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
 
   // 점검 이력 목록 (엑셀 다운로드용)
   const [inspectionHistoryList, setInspectionHistoryList] = useState<InspectionHistory[]>([]);
+
+  // 점검이력 탭 페이지네이션 상태
+  const [historyCurrentPage, setHistoryCurrentPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(20);
 
   // 점검자 필터용 고유 점검자 목록 추출
   const uniqueInspectors = useMemo(() => {
@@ -411,6 +416,27 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   }) || [];
 
   const dataCount = viewMode === 'completed' ? inspectionHistoryList.length : (filteredData?.length || 0);
+
+  // 점검이력 탭 페이지네이션 계산
+  const totalPages = Math.ceil(inspectionHistoryList.length / historyPageSize);
+  const paginatedInspectionHistory = useMemo(() => {
+    const startIndex = (historyCurrentPage - 1) * historyPageSize;
+    const endIndex = startIndex + historyPageSize;
+    return inspectionHistoryList.slice(startIndex, endIndex);
+  }, [inspectionHistoryList, historyCurrentPage, historyPageSize]);
+
+  // 페이지 변경 시 최상단으로 스크롤 리셋
+  useEffect(() => {
+    if (viewMode === 'completed') {
+      setHistoryCurrentPage(1);
+    }
+  }, [viewMode, filters.regionCodes, filters.cityCodes, selectedInspector, statusFilter]);
+
+  // 페이지 크기 변경 핸들러
+  const handleHistoryPageSizeChange = (newSize: number) => {
+    setHistoryPageSize(newSize);
+    setHistoryCurrentPage(1); // 페이지 크기 변경 시 1페이지로 리셋
+  };
 
   // 점검 세션 핸들러
   // 🔴 Phase B: inspection_status도 함께 저장
@@ -949,7 +975,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           />
         ) : viewMode === 'completed' ? (
           // 완료 탭: inspectionHistoryList 직접 사용 (권한 필터링 이미 적용됨)
-          <div className="flex-1 overflow-y-auto bg-gray-900">
+          <div className="flex flex-col h-[calc(100vh-280px)]">
+            <div className="flex-1 overflow-y-auto bg-gray-900">
             {inspectionHistoryList.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-400">
                 <div className="text-center">
@@ -961,7 +988,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               <>
                 {/* 모바일 레이아웃 (< 640px) */}
                 <div className="sm:hidden px-2 py-3 space-y-3">
-                  {inspectionHistoryList.map((inspection) => (
+                  {paginatedInspectionHistory.map((inspection) => (
                     <div
                       key={inspection.id}
                       className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:bg-gray-750 transition-colors"
@@ -1077,7 +1104,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                       </tr>
                     </thead>
                     <tbody>
-                      {inspectionHistoryList.map((inspection) => (
+                      {paginatedInspectionHistory.map((inspection) => (
                         <tr
                           key={inspection.id}
                           className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors"
@@ -1158,6 +1185,20 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
                   </table>
                 </div>
               </>
+            )}
+            </div>
+
+            {/* 페이지네이션 - 하단 고정 */}
+            {inspectionHistoryList.length > 0 && (
+              <Pagination
+                currentPage={historyCurrentPage}
+                hasMore={historyCurrentPage < totalPages}
+                onPageChange={setHistoryCurrentPage}
+                pageSize={historyPageSize}
+                pageItemCount={paginatedInspectionHistory.length}
+                totalCount={inspectionHistoryList.length}
+                onPageSizeChange={handleHistoryPageSizeChange}
+              />
             )}
           </div>
         ) : (
