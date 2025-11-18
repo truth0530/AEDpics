@@ -40,6 +40,7 @@ export function getOrganizationType(role: string): OrganizationType {
     case 'master':
       return 'central';
     case 'regional_emergency_center_admin':
+    case 'regional_admin':
       return 'provincial';
     case 'local_admin':
       return 'district';
@@ -86,6 +87,14 @@ export function getTeamMemberFilter(
 
     case 'district':
       // 동일 region_code + district
+      // district가 null인 경우 팀원 조회 불가 (데이터 정합성 문제)
+      if (!currentUser.district) {
+        return {
+          ...baseFilter,
+          id: { in: [] }, // 빈 결과 반환
+        };
+      }
+
       return {
         ...baseFilter,
         region_code: currentUser.region_code,
