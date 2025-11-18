@@ -362,7 +362,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-160px)]">
+    <div className="flex flex-col h-[calc(100vh-180px)]">
       {/* 완료 목록 테이블 */}
       <div className="flex-1 border rounded-lg overflow-auto">
         <Table>
