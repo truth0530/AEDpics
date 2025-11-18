@@ -764,7 +764,7 @@ export function AEDFilterBar() {
             <Button
               onClick={handleApply}
               size="sm"
-              className="h-6 lg:h-7 xl:h-8 px-1.5 sm:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
+              className="h-6 lg:h-7 xl:h-8 px-2 sm:px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
             >
               조회
             </Button>
@@ -1074,10 +1074,7 @@ export function AEDFilterBar() {
             <Button
               onClick={handleApply}
               size="sm"
-              className={cn(
-                "bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap",
-                isLandscape ? "h-4 px-1.5" : "h-6 lg:h-7 xl:h-8 px-2 lg:px-2.5 xl:px-3"
-              )}
+              className="h-6 lg:h-7 xl:h-8 px-2 sm:px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
             >
               조회
             </Button>
@@ -1247,7 +1244,7 @@ export function AEDFilterBar() {
                   <Button
                     onClick={handleApply}
                     size="sm"
-                    className="h-10 lg:h-7 xl:h-8 px-3 lg:px-1.5 xl:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-sm lg:text-xs xl:text-sm whitespace-nowrap"
+                    className="h-6 lg:h-7 xl:h-8 px-2 sm:px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
                   >
                     조회
                   </Button>
