@@ -427,6 +427,21 @@ export const GET = async (request: NextRequest) => {
           }
         }
 
+        // 매칭 상태 필터
+        if (filters.matching_status === 'matched') {
+          sqlConditions.push(`EXISTS (
+            SELECT 1 FROM aedpics.target_list_devices
+            WHERE equipment_serial = a.equipment_serial
+            AND target_list_year = 2025
+          )`);
+        } else if (filters.matching_status === 'unmatched') {
+          sqlConditions.push(`NOT EXISTS (
+            SELECT 1 FROM aedpics.target_list_devices
+            WHERE equipment_serial = a.equipment_serial
+            AND target_list_year = 2025
+          )`);
+        }
+
         // 상태 필터
         if (filters.status && filters.status.length > 0) {
           sqlConditions.push(`a.operation_status = ANY($${paramIndex}::text[])`);
@@ -551,7 +566,8 @@ export const GET = async (request: NextRequest) => {
             ia.status as inspection_status,
             ia.scheduled_date,
             ia.assigned_to,
-            ia.assigned_by
+            ia.assigned_by,
+            CASE WHEN tld.equipment_serial IS NOT NULL THEN true ELSE false END as is_matched
           FROM aedpics.aed_data a
           LEFT JOIN LATERAL (
             SELECT status, scheduled_date, assigned_to, assigned_by, created_at
@@ -569,6 +585,9 @@ export const GET = async (request: NextRequest) => {
               created_at DESC
             LIMIT 1
           ) ia ON TRUE
+          LEFT JOIN aedpics.target_list_devices tld
+            ON tld.equipment_serial = a.equipment_serial
+            AND tld.target_list_year = 2025
           ${whereClause}
           ORDER BY a.id ASC
           LIMIT ${queryLimit}
@@ -687,6 +706,21 @@ export const GET = async (request: NextRequest) => {
               }
             }
 
+            // 매칭 상태 필터
+            if (filters.matching_status === 'matched') {
+              whereClauses.push(`EXISTS (
+                SELECT 1 FROM target_list_devices
+                WHERE equipment_serial = aed_data.equipment_serial
+                AND target_list_year = 2025
+              )`);
+            } else if (filters.matching_status === 'unmatched') {
+              whereClauses.push(`NOT EXISTS (
+                SELECT 1 FROM target_list_devices
+                WHERE equipment_serial = aed_data.equipment_serial
+                AND target_list_year = 2025
+              )`);
+            }
+
             // Cursor 페이지네이션
             if (cursorId) {
               whereClauses.push(`id > ${cursorId}`);
@@ -702,22 +736,26 @@ export const GET = async (request: NextRequest) => {
 
             const sql = `
               SELECT
-                id, equipment_serial, management_number, model_name, manufacturer,
-                manufacturing_country, manufacturing_date, serial_number, installation_date,
-                first_installation_date, installation_institution, installation_address,
-                installation_position, installation_method, jurisdiction_health_center,
-                manager, institution_contact, establisher, purchase_institution,
-                sido, gugun, longitude, latitude, operation_status, display_allowed,
-                external_display, external_non_display_reason, government_support,
-                battery_expiry_date, patch_available, patch_expiry_date, last_inspection_date,
-                last_use_date, replacement_date, category_1, category_2, category_3,
-                registration_date, remarks, created_at, updated_at, report_date,
-                installation_location_address, saeum_deletion_status, data_status,
-                first_seen_date, last_seen_date, consecutive_missing_days,
-                deletion_suspected_date, sync_batch_id
-              FROM aed_data
-              ${whereClause}
-              ORDER BY id ASC
+                a.id, a.equipment_serial, a.management_number, a.model_name, a.manufacturer,
+                a.manufacturing_country, a.manufacturing_date, a.serial_number, a.installation_date,
+                a.first_installation_date, a.installation_institution, a.installation_address,
+                a.installation_position, a.installation_method, a.jurisdiction_health_center,
+                a.manager, a.institution_contact, a.establisher, a.purchase_institution,
+                a.sido, a.gugun, a.longitude, a.latitude, a.operation_status, a.display_allowed,
+                a.external_display, a.external_non_display_reason, a.government_support,
+                a.battery_expiry_date, a.patch_available, a.patch_expiry_date, a.last_inspection_date,
+                a.last_use_date, a.replacement_date, a.category_1, a.category_2, a.category_3,
+                a.registration_date, a.remarks, a.created_at, a.updated_at, a.report_date,
+                a.installation_location_address, a.saeum_deletion_status, a.data_status,
+                a.first_seen_date, a.last_seen_date, a.consecutive_missing_days,
+                a.deletion_suspected_date, a.sync_batch_id,
+                CASE WHEN tld.equipment_serial IS NOT NULL THEN true ELSE false END as is_matched
+              FROM aed_data a
+              LEFT JOIN target_list_devices tld
+                ON tld.equipment_serial = a.equipment_serial
+                AND tld.target_list_year = 2025
+              ${whereClause.replace(/aed_data\./g, 'a.')}
+              ORDER BY a.id ASC
               LIMIT ${queryLimit}
             `;
 
