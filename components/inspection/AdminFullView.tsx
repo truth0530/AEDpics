@@ -30,6 +30,7 @@ import {
 import { getInspectionActionButtons } from '@/lib/inspections/permissions';
 import { InspectionInProgressModal } from './InspectionInProgressModal';
 import { InspectionHistoryModal } from './InspectionHistoryModal';
+import { InspectionEditModal } from './InspectionEditModal';
 import { DeleteInspectionModal } from './DeleteInspectionModal';
 import * as XLSX from 'xlsx';
 
@@ -124,6 +125,8 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   // 점검 이력 모달 상태 관리
   const [selectedInspection, setSelectedInspection] = useState<InspectionHistory | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [inspectionToEdit, setInspectionToEdit] = useState<InspectionHistory | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [inspectionToDelete, setInspectionToDelete] = useState<InspectionHistory | null>(null);
 
@@ -1244,7 +1247,11 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
               setSelectedInspection(null);
             }}
             inspection={selectedInspection}
-            onUpdate={handleUpdateInspection}
+            onEdit={(inspection) => {
+              setInspectionToEdit(inspection);
+              setShowHistoryModal(false);
+              setShowEditModal(true);
+            }}
             onDelete={handleDeleteInspection}
             canEdit={actionButtons.showEdit}
             canDelete={actionButtons.showDelete}
@@ -1264,6 +1271,17 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
           onConfirm={handleConfirmDelete}
         />
       )}
+
+      {/* 점검 이력 수정 모달 */}
+      <InspectionEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setInspectionToEdit(null);
+        }}
+        inspection={inspectionToEdit}
+        onSave={handleUpdateInspection}
+      />
 
       {/* 점검 시작 선택 모달 */}
       {showInspectionChoiceModal && selectedDeviceForInspection && (
