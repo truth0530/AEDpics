@@ -44,11 +44,11 @@ const getColumnTemplate = (enableSelection: boolean, showInspectionStatus: boole
   // 세부위치와 거리는 xl 해상도에서만 표시됨
   const baseColumns = showInspectionStatus
     ? showAssignmentInfo
-      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
-      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px"
+      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
+      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px"
     : showAssignmentInfo
-      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
-      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(45px, 0.3fr) minmax(200px, 1.6fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px";
+      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
+      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px";
 
   return enableSelection ? `35px ${baseColumns}` : baseColumns;
 };
@@ -253,9 +253,9 @@ const DesktopTableRow = memo(({
         </div>
       )}
 
-      {/* 7. 표출 - 축소, N은 붉은색 */}
-      <div className="min-w-0 pl-2">
-        <div className={`text-[10px] lg:text-xs xl:text-sm truncate ${device.external_display === 'N' ? 'text-red-400 font-semibold' : 'text-gray-300'}`} title={device.external_display || '-'}>
+      {/* 7. 표출 - Y/N 딱 맞게, N은 붉은색 */}
+      <div className="min-w-0 flex items-center justify-center">
+        <div className={`text-[10px] lg:text-xs xl:text-sm ${device.external_display === 'N' ? 'text-red-400 font-semibold' : 'text-gray-300'}`} title={device.external_display || '-'}>
           {device.external_display || '-'}
         </div>
       </div>
