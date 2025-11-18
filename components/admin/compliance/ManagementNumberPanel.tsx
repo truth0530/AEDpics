@@ -1372,9 +1372,9 @@ export default function ManagementNumberPanel({
             <DialogTitle>이중 매칭 확인</DialogTitle>
             <DialogDescription>
               {duplicateMatchDialog.item && (
-                <span>
+                <span className="text-foreground">
                   관리번호 <strong>{duplicateMatchDialog.item.management_number}</strong>는 이미{' '}
-                  <strong className="text-amber-600">
+                  <strong className="text-amber-600 dark:text-amber-400">
                     {duplicateMatchDialog.item.matched_institution_name || '다른 기관'}
                   </strong>에 매칭된 장비입니다.
                   <br />
@@ -1423,10 +1423,10 @@ export default function ManagementNumberPanel({
 
             {/* 매칭불가 처리 안내 */}
             {duplicateReason === 'no_match' && (
-              <Alert className="bg-blue-50 border-blue-200">
-                <AlertTriangle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  마땅히 매칭할 대상이 없다면 <strong>'매칭불가 처리'</strong>를 권장합니다.
+              <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-blue-800 dark:text-blue-300">
+                  마땅히 매칭할 대상이 없다면 <strong className="dark:text-blue-200">'매칭불가 처리'</strong>를 권장합니다.
                   <br />
                   섹션 1에서 해당 의무기관을 선택 후 '매칭불가' 버튼을 눌러주세요.
                 </AlertDescription>
@@ -1444,7 +1444,7 @@ export default function ManagementNumberPanel({
             <Button
               onClick={handleConfirmDuplicateMatch}
               disabled={duplicateReason === 'other' && !otherReason.trim()}
-              className="bg-amber-600 hover:bg-amber-700"
+              className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-800 text-white"
             >
               이중 매칭 진행
             </Button>

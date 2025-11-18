@@ -477,17 +477,22 @@ export async function PATCH(request: NextRequest) {
             });
           }
 
-          return updatedSession;
+          return {
+            session: updatedSession,
+            inspection: createdInspection
+          };
         });
 
         logger.info('InspectionSessions:PATCH', 'Session completed successfully', {
           sessionId: sessionId,
+          inspectionId: result.inspection.id,
           userId: session.user.id,
         });
 
         return NextResponse.json({
           success: true,
-          session: result,
+          session: result.session,
+          inspection: result.inspection,
         });
       } catch (transactionError) {
         logger.error('InspectionSessions:PATCH', 'Transaction failed during completion', {

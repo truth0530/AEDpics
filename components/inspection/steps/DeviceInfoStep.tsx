@@ -81,7 +81,7 @@ export function DeviceInfoStep() {
     }
   }, [sessionDeviceInfo, deviceInfo.initialized]);
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | string[]) => {
     updateStepData('deviceInfo', {
       ...deviceInfo,
       [field]: value,

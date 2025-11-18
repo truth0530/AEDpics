@@ -10,18 +10,55 @@ export function ManagerEducationStep() {
   const { stepData, updateStepData } = useInspectionSessionStore();
   const managerEducation = (stepData.managerEducation || {}) as ManagerEducationData;
 
+  // 복수선택을 위한 배열 관리
+  const educationStatuses = (managerEducation.education_statuses || []) as string[];
+
+  // 토글 핸들러
+  const handleToggleStatus = (status: string) => {
+    const isSelected = educationStatuses.includes(status);
+    let newStatuses: string[];
+
+    if (isSelected) {
+      // 이미 선택된 경우 제거
+      newStatuses = educationStatuses.filter(s => s !== status);
+    } else {
+      // 선택 추가
+      newStatuses = [...educationStatuses, status];
+    }
+
+    // 하위 필드 초기화 로직
+    const updated: Record<string, unknown> = {
+      ...managerEducation,
+      education_statuses: newStatuses,
+      education_status: newStatuses[0] || undefined, // 호환성을 위해 첫 번째 값 유지
+    };
+
+    // 미이수가 선택 해제되면 관련 필드 제거
+    if (status === 'not_completed' && isSelected) {
+      delete updated.not_completed_reason;
+      delete updated.not_completed_other_text;
+    }
+
+    // 기타가 선택 해제되면 관련 필드 제거
+    if (status === 'other' && isSelected) {
+      delete updated.education_other_text;
+    }
+
+    updateStepData('managerEducation', updated);
+  };
+
   // 필수 항목 체크
   const missingFields: string[] = [];
-  if (!managerEducation.education_status) {
+  if (educationStatuses.length === 0) {
     missingFields.push('관리책임자 교육 이수 현황을 선택해주세요');
   }
-  if (managerEducation.education_status === 'not_completed' && !managerEducation.not_completed_reason) {
+  if (educationStatuses.includes('not_completed') && !managerEducation.not_completed_reason) {
     missingFields.push('미이수 사유를 선택해주세요');
   }
   if (managerEducation.not_completed_reason === 'other' && !managerEducation.not_completed_other_text) {
     missingFields.push('미이수 기타 사유를 입력해주세요');
   }
-  if (managerEducation.education_status === 'other' && !managerEducation.education_other_text) {
+  if (educationStatuses.includes('other') && !managerEducation.education_other_text) {
     missingFields.push('교육 이수 현황 기타 내용을 입력해주세요');
   }
 
@@ -36,24 +73,14 @@ export function ManagerEducationStep() {
         </div>
 
         <div className="space-y-3">
-          {/* 메인 선택 버튼들 */}
+          {/* 메인 선택 버튼들 - 복수선택 가능 (다중선택 가능) */}
+          <div className="text-xs text-gray-400 mb-2">다중선택 가능</div>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => {
-                // 선택 변경 시 관련 필드 초기화 (명시적 undefined 대신 필드 생략)
-                const updated = {
-                  ...(managerEducation as Record<string, unknown>),
-                  education_status: 'manager_education'
-                } as Record<string, unknown>;
-                // 불필요한 필드 제거
-                delete updated.not_completed_reason;
-                delete updated.not_completed_other_text;
-                delete updated.education_other_text;
-                updateStepData('managerEducation', updated);
-              }}
+              onClick={() => handleToggleStatus('manager_education')}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
-                managerEducation.education_status === 'manager_education'
+                educationStatuses.includes('manager_education')
                   ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
                   : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
               }`}
@@ -63,18 +90,9 @@ export function ManagerEducationStep() {
 
             <button
               type="button"
-              onClick={() => {
-                const updated = {
-                  ...(managerEducation as Record<string, unknown>),
-                  education_status: 'legal_mandatory_education'
-                } as Record<string, unknown>;
-                delete updated.not_completed_reason;
-                delete updated.not_completed_other_text;
-                delete updated.education_other_text;
-                updateStepData('managerEducation', updated);
-              }}
+              onClick={() => handleToggleStatus('legal_mandatory_education')}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
-                managerEducation.education_status === 'legal_mandatory_education'
+                educationStatuses.includes('legal_mandatory_education')
                   ? 'bg-blue-600 text-white border-2 border-blue-500 shadow-lg shadow-blue-500/20'
                   : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
               }`}
@@ -84,16 +102,9 @@ export function ManagerEducationStep() {
 
             <button
               type="button"
-              onClick={() => {
-                const updated = {
-                  ...(managerEducation as Record<string, unknown>),
-                  education_status: 'not_completed'
-                } as Record<string, unknown>;
-                delete updated.education_other_text;
-                updateStepData('managerEducation', updated);
-              }}
+              onClick={() => handleToggleStatus('not_completed')}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
-                managerEducation.education_status === 'not_completed'
+                educationStatuses.includes('not_completed')
                   ? 'bg-yellow-600 text-white border-2 border-yellow-500 shadow-lg shadow-yellow-500/20'
                   : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
               }`}
@@ -103,17 +114,9 @@ export function ManagerEducationStep() {
 
             <button
               type="button"
-              onClick={() => {
-                const updated = {
-                  ...(managerEducation as Record<string, unknown>),
-                  education_status: 'other'
-                } as Record<string, unknown>;
-                delete updated.not_completed_reason;
-                delete updated.not_completed_other_text;
-                updateStepData('managerEducation', updated);
-              }}
+              onClick={() => handleToggleStatus('other')}
               className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
-                managerEducation.education_status === 'other'
+                educationStatuses.includes('other')
                   ? 'bg-purple-600 text-white border-2 border-purple-500 shadow-lg shadow-purple-500/20'
                   : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
               }`}
@@ -123,7 +126,7 @@ export function ManagerEducationStep() {
           </div>
 
           {/* 미이수 선택 시 세부 사유 */}
-          {managerEducation.education_status === 'not_completed' && (
+          {educationStatuses.includes('not_completed') && (
             <div className="pl-2 space-y-2 border-l-2 border-yellow-600">
               <Label className="text-xs font-medium text-yellow-400">미이수 사유</Label>
               <div className="space-y-2">
@@ -200,7 +203,7 @@ export function ManagerEducationStep() {
           )}
 
           {/* 기타 선택 시 텍스트 입력 */}
-          {managerEducation.education_status === 'other' && (
+          {educationStatuses.includes('other') && (
             <div className="pl-2 space-y-2 border-l-2 border-purple-600">
               <Label className="text-xs font-medium text-purple-400">교육 이수 현황 기타 내용</Label>
               <input

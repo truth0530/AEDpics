@@ -2,7 +2,7 @@
 
 import { useInspectionSessionStore } from '@/lib/state/inspection-session-store';
 import { useMemo, useState } from 'react';
-import { useUser } from '@/lib/auth/hooks';
+import { useSession } from 'next-auth/react';
 import { captureAndShareReport, isReportSharingSupported } from '@/lib/utils/report-sharing';
 
 interface SummaryItem {
@@ -87,14 +87,15 @@ interface StepData {
 }
 
 export function InspectionSummaryStep() {
-  const session = useInspectionSessionStore((state) => state.session);
+  const inspectionSession = useInspectionSessionStore((state) => state.session);
   const stepData = useInspectionSessionStore((state) => state.stepData) as StepData;
   const updateStepData = useInspectionSessionStore((state) => state.updateStepData);
-  const { user } = useUser();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   const [isSharing, setIsSharing] = useState(false);
 
-  const deviceInfo = (session?.current_snapshot || session?.device_info || {}) as Record<string, any>;
+  const deviceInfo = (inspectionSession?.current_snapshot || inspectionSession?.device_info || {}) as Record<string, any>;
 
   const formatKSTTime = (isoString: string) => {
     try {
@@ -519,8 +520,8 @@ export function InspectionSummaryStep() {
     try {
       const fileName = `AED점검보고서_${new Date().toISOString().split('T')[0]}.png`;
       const success = await captureAndShareReport('inspection-report-container', fileName, {
-        name: user?.user_metadata?.name || user?.email || '점검자',
-        organization: user?.user_metadata?.organization || '조직명 미등록',
+        name: user?.name || user?.email || '점검자',
+        organization: (user as any)?.organization?.organization_name || '조직명 미등록',
       });
 
       if (!success && isReportSharingSupported()) {
@@ -984,7 +985,7 @@ export function InspectionSummaryStep() {
         <div className="report-section" style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #4b5563', textAlign: 'right' }}>
           <p style={{ margin: 0, marginBottom: '5px', fontSize: '11px', color: '#d1d5db' }}>{formatDate(documentation.completed_time || new Date().toISOString())}</p>
           <p style={{ margin: 0, marginBottom: '3px', fontSize: '11px', color: '#d1d5db' }}>관리책임자: {stepData.basicInfo?.manager || deviceInfo.manager || '-'}</p>
-          <p style={{ margin: 0, fontSize: '11px', color: '#d1d5db' }}>점검자: {user?.user_metadata?.name || user?.email || '-'}</p>
+          <p style={{ margin: 0, fontSize: '11px', color: '#d1d5db' }}>점검자: {user?.name || user?.email || '-'}</p>
         </div>
 
         {/* 11. 하단 페이지 정보 */}

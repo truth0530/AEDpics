@@ -89,46 +89,88 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
     onChange(newSchedule);
   };
 
-  // 월~금 일괄 적용
+  // 월~금 일괄 적용/해제 (토글)
   const applyWeekdayBatch = () => {
-    const newSchedule = { ...value, is24hours: false } as any;
     const weekdays = DAYS.filter(d => d.group === 'weekday' && d.key !== 'is24hours');
 
-    weekdays.forEach(({ key }) => {
-      newSchedule[key] = {
-        timeRange: batchTime
-      };
+    // 모든 평일이 이미 입력된 시간과 같은지 확인
+    const allWeekdaysMatch = weekdays.every(({ key }) => {
+      const dayData = value[key] as DaySchedule | undefined;
+      return dayData?.timeRange === batchTime;
     });
+
+    const newSchedule = { ...value, is24hours: false } as any;
+
+    if (allWeekdaysMatch) {
+      // 모두 일치하면 → 일괄 지우기
+      weekdays.forEach(({ key }) => {
+        delete newSchedule[key];
+      });
+    } else {
+      // 하나라도 다르면 → 일괄 적용
+      weekdays.forEach(({ key }) => {
+        newSchedule[key] = {
+          timeRange: batchTime
+        };
+      });
+    }
 
     onChange(newSchedule);
   };
 
-  // 월~토 일괄 적용
+  // 월~토 일괄 적용/해제 (토글)
   const applyWeekdaySaturdayBatch = () => {
-    const newSchedule = { ...value, is24hours: false } as any;
     const weekdaysAndSaturday = DAYS.filter(d =>
       (d.group === 'weekday' && d.key !== 'is24hours') || d.key === 'saturday'
     );
 
-    weekdaysAndSaturday.forEach(({ key }) => {
-      newSchedule[key] = {
-        timeRange: batchTime
-      };
+    // 모든 월~토가 이미 입력된 시간과 같은지 확인
+    const allMatch = weekdaysAndSaturday.every(({ key }) => {
+      const dayData = value[key] as DaySchedule | undefined;
+      return dayData?.timeRange === batchTime;
     });
+
+    const newSchedule = { ...value, is24hours: false } as any;
+
+    if (allMatch) {
+      // 모두 일치하면 → 일괄 지우기
+      weekdaysAndSaturday.forEach(({ key }) => {
+        delete newSchedule[key];
+      });
+    } else {
+      // 하나라도 다르면 → 일괄 적용
+      weekdaysAndSaturday.forEach(({ key }) => {
+        newSchedule[key] = {
+          timeRange: batchTime
+        };
+      });
+    }
 
     onChange(newSchedule);
   };
 
-  // 일요일, 공휴일 일괄 적용
+  // 일요일, 공휴일 일괄 적용/해제 (토글)
   const applySundayHolidayBatch = () => {
+    // 일요일과 공휴일이 모두 입력된 시간과 같은지 확인
+    const sundayData = value.sunday as DaySchedule | undefined;
+    const holidayData = value.holiday as DaySchedule | undefined;
+    const bothMatch = sundayData?.timeRange === batchTime && holidayData?.timeRange === batchTime;
+
     const newSchedule = { ...value, is24hours: false } as any;
 
-    newSchedule.sunday = {
-      timeRange: batchTime
-    };
-    newSchedule.holiday = {
-      timeRange: batchTime
-    };
+    if (bothMatch) {
+      // 모두 일치하면 → 일괄 지우기
+      delete newSchedule.sunday;
+      delete newSchedule.holiday;
+    } else {
+      // 하나라도 다르면 → 일괄 적용
+      newSchedule.sunday = {
+        timeRange: batchTime
+      };
+      newSchedule.holiday = {
+        timeRange: batchTime
+      };
+    }
 
     onChange(newSchedule);
   };
