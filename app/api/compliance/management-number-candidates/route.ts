@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
                 WHERE tld.target_list_year = ${yearInt}
+                  AND tld.target_institution_id = ${targetKey}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -176,6 +177,7 @@ export async function GET(request: NextRequest) {
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
                 WHERE tld.target_list_year = ${yearInt}
+                  AND tld.target_institution_id = ${targetKey}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -254,6 +256,7 @@ export async function GET(request: NextRequest) {
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
                 WHERE tld.target_list_year = ${yearInt}
+                  AND tld.target_institution_id = ${targetKey}
                   AND ad.equipment_serial = ANY(
                     SELECT ad2.equipment_serial
                     FROM aedpics.aed_data ad2
@@ -343,6 +346,7 @@ export async function GET(request: NextRequest) {
           EXISTS(
             SELECT 1 FROM aedpics.target_list_devices tld
             WHERE tld.target_list_year = ${yearInt}
+              AND tld.target_institution_id = ${targetKey}
               AND ad.equipment_serial = ANY(
                 SELECT ad2.equipment_serial
                 FROM aedpics.aed_data ad2
