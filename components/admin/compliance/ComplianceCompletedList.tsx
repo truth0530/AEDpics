@@ -40,24 +40,29 @@ interface CompletedTarget {
     division: string;
     sub_division: string;
   };
-  matches: Array<{
+  matches?: Array<{
     management_number: string;
     institution_name: string;
     address: string;
     equipment_count: number;
     confidence: number;
   }>;
-  status: 'installed' | 'not_installed' | 'confirmed' | 'pending';
+  status: 'installed' | 'not_installed' | 'confirmed' | 'pending' | 'unmatchable';
+  requiresMatching?: boolean;
   confirmedBy?: string;
   confirmedAt?: Date;
   note?: string;
+  // unmatchable 관련 필드
+  reason?: string;
+  markedBy?: string;
+  markedAt?: Date;
 }
 
 interface ComplianceCompletedListProps {
   year?: string;
   sido?: string | null;
   gugun?: string | null;
-  statusFilter?: 'all' | 'installed' | 'not_installed';
+  statusFilter?: 'all' | 'installed' | 'not_installed' | 'unmatchable';
   subDivisionFilter?: string;
   searchTerm?: string;
 }
@@ -68,6 +73,7 @@ export interface ComplianceCompletedListRef {
     total: number;
     installed: number;
     notInstalled: number;
+    unmatchable: number;
     avgConfidence: number;
   };
   availableSubDivisions: string[];
@@ -95,6 +101,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
     total: 0,
     installed: 0,
     notInstalled: 0,
+    unmatchable: 0,
     avgConfidence: 0
   });
   const [availableSubDivisions, setAvailableSubDivisions] = useState<string[]>([]);
@@ -145,32 +152,49 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       const statsParams = new URLSearchParams({
         year: selectedYear,
         ...(effectiveSido && { sido: effectiveSido }),
-        ...(effectiveGugun && { gugun: effectiveGugun })
+        ...(effectiveGugun && { gugun: effectiveGugun }),
+        ...(searchTerm && { search: searchTerm })
       });
       const statsResponse = await fetch(`/api/compliance/stats?${statsParams}`);
       const statsData = await statsResponse.json();
 
-      // 페이지 데이터 조회
+      // 페이지 데이터 조회 - 필터를 API에 전달하여 서버에서 필터링
       const params = new URLSearchParams({
         year: selectedYear,
         page: currentPage.toString(),
         limit: pageSize.toString(),
         ...(effectiveSido && { sido: effectiveSido }),
         ...(effectiveGugun && { gugun: effectiveGugun }),
-        ...(searchTerm && { search: searchTerm })
+        ...(searchTerm && { search: searchTerm }),
+        ...(subDivisionFilter !== 'all' && { sub_division: subDivisionFilter })
       });
 
-      // check-optimized API 사용 (target_list_devices 기반)
-      // showOnlyUnmatched=false로 설정하여 모든 기관 조회
-      const response = await fetch(`/api/compliance/check-optimized?${params}&showOnlyUnmatched=false`);
+      // statusFilter에 따라 API 및 파라미터 결정
+      let response;
+      if (statusFilter === 'unmatchable') {
+        // 매칭불가 리스트 조회 (별도 API)
+        response = await fetch(`/api/compliance/unmatchable-list?${params}`);
+      } else {
+        // check-optimized API 사용 (target_list_devices 기반)
+        let showOnlyUnmatched = 'false';
+        if (statusFilter === 'not_installed') {
+          showOnlyUnmatched = 'true'; // 미매칭만 보기
+        } else if (statusFilter === 'installed') {
+          showOnlyUnmatched = 'matched_only'; // 매칭완료만 보기
+        }
+        response = await fetch(`/api/compliance/check-optimized?${params}&showOnlyUnmatched=${showOnlyUnmatched}`);
+      }
       const data = await response.json();
 
-      const allMatches = data.matches || [];
+      // API 응답에 따라 데이터 형식 통일
+      const allMatches = statusFilter === 'unmatchable'
+        ? (data.unmatchableInstitutions || [])
+        : (data.matches || []);
 
       // 페이지 정보 업데이트
       setTotalPages(data.totalPages || 1);
 
-      // sub_division 목록 추출 (현재 페이지 기준)
+      // sub_division 목록 추출 (전체 데이터 기준이어야 하지만, 현재는 응답 데이터 기준)
       const subDivisions = Array.from(new Set(
         allMatches
           .map((m: any) => m.targetInstitution?.sub_division)
@@ -178,33 +202,15 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
       )) as string[];
       setAvailableSubDivisions(subDivisions);
 
-      // 상태 필터 적용 (현재 페이지 데이터만)
-      // check-optimized API는 'confirmed'/'pending' status를 반환
-      let filtered;
-      if (statusFilter === 'installed') {
-        filtered = allMatches.filter((m: any) => m.status === 'confirmed');
-      } else if (statusFilter === 'not_installed') {
-        filtered = allMatches.filter((m: any) =>
-          !m.status || m.status === 'pending' || m.requiresMatching === true
-        );
-      } else {
-        filtered = allMatches;
-      }
-
-      // 구분 필터 적용
-      if (subDivisionFilter !== 'all') {
-        filtered = filtered.filter((m: any) =>
-          m.targetInstitution?.sub_division === subDivisionFilter
-        );
-      }
-
-      setCompletedTargets(filtered);
+      // API에서 이미 필터링된 데이터를 받으므로 클라이언트 필터링 불필요
+      setCompletedTargets(allMatches);
 
       // 통계는 stats API 결과 사용
       setStatistics({
         total: statsData.stats?.total || 0,
         installed: statsData.stats?.installed || 0,
         notInstalled: statsData.stats?.notInstalled || 0,
+        unmatchable: statsData.stats?.unmatchable || 0,
         avgConfidence: 0 // TODO: stats API에 추가 가능
       });
     } catch (error) {
@@ -357,6 +363,170 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
 
   return (
     <div className="space-y-4">
+      {/* 완료 목록 테이블 */}
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>시도</TableHead>
+              <TableHead>구군</TableHead>
+              <TableHead>구분</TableHead>
+              <TableHead>의무설치기관명</TableHead>
+              <TableHead>매칭된 기관명</TableHead>
+              <TableHead>매칭된 관리번호</TableHead>
+              <TableHead>매칭된 장비연번</TableHead>
+              <TableHead>주소</TableHead>
+              <TableHead className="text-right">작업</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {completedTargets.map((target) => (
+              <TableRow key={target.targetInstitution.target_key}>
+                {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
+                <TableCell>{shortenSidoInAddress(target.targetInstitution.sido)}</TableCell>
+                <TableCell>{target.targetInstitution.gugun}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {target.targetInstitution.sub_division}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium">
+                  {target.targetInstitution.institution_name}
+                </TableCell>
+                <TableCell>
+                  {target.status === 'unmatchable' ? (
+                    <Badge variant="destructive" className="text-xs">매칭불가</Badge>
+                  ) : target.status === 'confirmed' && target.matches[0] ? (
+                    <div className="flex items-center gap-2">
+                      <span>{target.matches[0].institution_name}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {target.matches[0].confidence}%
+                      </Badge>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">매칭 없음</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {target.status === 'unmatchable' ? (
+                    <span className="text-sm text-muted-foreground">{target.reason || '-'}</span>
+                  ) : target.status === 'confirmed' && target.matches[0] ? (
+                    <span className="font-mono text-sm">{target.matches[0].management_number}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {target.status === 'unmatchable' ? (
+                    <span className="text-muted-foreground">-</span>
+                  ) : target.status === 'confirmed' && target.matches[0] ? (
+                    <span className="text-sm">{target.matches[0].equipment_count}대</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="max-w-xs">
+                  {target.status === 'unmatchable' ? (
+                    <span className="text-muted-foreground">-</span>
+                  ) : target.status === 'confirmed' && target.matches[0] ? (
+                    <span className="text-sm truncate">{target.matches[0].address}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex gap-2 justify-end">
+                    {target.status === 'unmatchable' ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (confirm('매칭불가 상태를 취소하시겠습니까?')) {
+                            try {
+                              const response = await fetch('/api/compliance/mark-unmatchable', {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  target_key: target.targetInstitution.target_key,
+                                  year: selectedYear
+                                })
+                              });
+                              if (response.ok) {
+                                await loadCompletedTargets();
+                              } else {
+                                alert('매칭불가 취소 실패');
+                              }
+                            } catch (error) {
+                              console.error('Failed to cancel unmatchable:', error);
+                              alert('매칭불가 취소 중 오류 발생');
+                            }
+                          }
+                        }}
+                        title="매칭불가 취소"
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        취소
+                      </Button>
+                    ) : target.status === 'confirmed' ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTarget(target);
+                            setEditNote(target.note || '');
+                            setShowEditDialog(true);
+                          }}
+                          title="매칭 정보 수정"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTarget(target);
+                            setUnmatchReason('');
+                            setShowUnmatchDialog(true);
+                          }}
+                          title="매칭 취소"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // 미완료: 매칭하기 탭으로 전환 + 해당 기관 자동 선택
+                          window.dispatchEvent(new CustomEvent('openMatchingWorkflow', {
+                            detail: { institution: target.targetInstitution }
+                          }));
+                        }}
+                        title="매칭하기"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {target.note && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title={target.note}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
       {/* 페이지 크기 선택 및 페이지네이션 컨트롤 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -433,131 +603,6 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
             {currentPage} / {totalPages} 페이지
           </span>
         </div>
-      </div>
-
-      {/* 완료 목록 테이블 */}
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>시도</TableHead>
-              <TableHead>구군</TableHead>
-              <TableHead>구분</TableHead>
-              <TableHead>의무설치기관명</TableHead>
-              <TableHead>매칭된 기관명</TableHead>
-              <TableHead>매칭된 관리번호</TableHead>
-              <TableHead>매칭된 장비연번</TableHead>
-              <TableHead>주소</TableHead>
-              <TableHead className="text-right">작업</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {completedTargets.map((target) => (
-              <TableRow key={target.targetInstitution.target_key}>
-                {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
-                <TableCell>{shortenSidoInAddress(target.targetInstitution.sido)}</TableCell>
-                <TableCell>{target.targetInstitution.gugun}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {target.targetInstitution.sub_division}
-                  </Badge>
-                </TableCell>
-                <TableCell className="font-medium">
-                  {target.targetInstitution.institution_name}
-                </TableCell>
-                <TableCell>
-                  {target.status === 'confirmed' && target.matches[0] ? (
-                    <div className="flex items-center gap-2">
-                      <span>{target.matches[0].institution_name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {target.matches[0].confidence}%
-                      </Badge>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">매칭 없음</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {target.status === 'confirmed' && target.matches[0] ? (
-                    <span className="font-mono text-sm">{target.matches[0].management_number}</span>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {target.status === 'confirmed' && target.matches[0] ? (
-                    <span className="text-sm">{target.matches[0].equipment_count}대</span>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="max-w-xs">
-                  {target.status === 'confirmed' && target.matches[0] ? (
-                    <span className="text-sm truncate">{target.matches[0].address}</span>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-2 justify-end">
-                    {target.status === 'confirmed' ? (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTarget(target);
-                            setEditNote(target.note || '');
-                            setShowEditDialog(true);
-                          }}
-                          title="매칭 정보 수정"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTarget(target);
-                            setUnmatchReason('');
-                            setShowUnmatchDialog(true);
-                          }}
-                          title="매칭 취소"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // 미완료: 매칭하기 탭으로 전환 + 해당 기관 자동 선택
-                          window.dispatchEvent(new CustomEvent('openMatchingWorkflow', {
-                            detail: { institution: target.targetInstitution }
-                          }));
-                        }}
-                        title="매칭하기"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {target.note && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title={target.note}
-                      >
-                        <FileText className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
       </div>
 
       {completedTargets.length === 0 && (

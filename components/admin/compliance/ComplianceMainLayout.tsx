@@ -12,7 +12,6 @@ import { Calendar, CheckCircle2, Target, ChevronRight, AlertCircle, Download, Se
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import ComplianceMatchingWorkflow from './ComplianceMatchingWorkflow';
 import ComplianceCompletedList, { ComplianceCompletedListRef } from './ComplianceCompletedList';
-import UnmatchableInstitutionsList from './UnmatchableInstitutionsList';
 import ComplianceDashboard from './ComplianceDashboard';
 import { UserProfile } from '@/packages/types';
 
@@ -65,11 +64,12 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
     total: 0,
     installed: 0,
     notInstalled: 0,
+    unmatchable: 0,
     avgConfidence: 0
   });
 
   // 필터 상태
-  const [statusFilter, setStatusFilter] = useState<'all' | 'installed' | 'not_installed'>('not_installed');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'installed' | 'not_installed' | 'unmatchable'>('not_installed');
   const [subDivisionFilter, setSubDivisionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [availableSubDivisions, setAvailableSubDivisions] = useState<string[]>([]);
@@ -228,7 +228,16 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                   }`}
                   onClick={() => setStatusFilter('not_installed')}
                 >
-                  미완료: <span className="font-semibold ml-1">{statistics.total - statistics.installed}</span>
+                  미완료: <span className="font-semibold ml-1">{statistics.total - statistics.installed - statistics.unmatchable}</span>
+                </Badge>
+                <Badge
+                  variant={statusFilter === 'unmatchable' ? 'default' : 'outline'}
+                  className={`text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity ${
+                    statusFilter === 'unmatchable' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500 text-red-700'
+                  }`}
+                  onClick={() => setStatusFilter('unmatchable')}
+                >
+                  매칭불가: <span className="font-semibold ml-1">{statistics.unmatchable}</span>
                 </Badge>
 
                 {/* 구분 드롭다운 */}
@@ -280,24 +289,15 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
             </TabsContent>
 
             <TabsContent value="completed" className="mt-0 h-full overflow-auto">
-              <div className="space-y-4 pb-4">
-                <ComplianceCompletedList
-                  ref={completedListRef}
-                  year={selectedYear}
-                  sido={selectedSido}
-                  gugun={selectedGugun}
-                  statusFilter={statusFilter}
-                  subDivisionFilter={subDivisionFilter}
-                  searchTerm={searchTerm}
-                />
-
-                {/* 매칭 불가 기관 목록 */}
-                <UnmatchableInstitutionsList
-                  year={selectedYear}
-                  sido={selectedSido}
-                  gugun={selectedGugun}
-                />
-              </div>
+              <ComplianceCompletedList
+                ref={completedListRef}
+                year={selectedYear}
+                sido={selectedSido}
+                gugun={selectedGugun}
+                statusFilter={statusFilter}
+                subDivisionFilter={subDivisionFilter}
+                searchTerm={searchTerm}
+              />
             </TabsContent>
 
             {/* 통계 탭 */}

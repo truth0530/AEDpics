@@ -18,6 +18,7 @@ export interface FilterState {
   category_2?: string[];
   category_3?: string[];
   external_display?: ExternalDisplayFilter;
+  matching_status?: 'all' | 'matched' | 'unmatched';
   search?: string;
   queryCriteria?: QueryCriteria;
 }

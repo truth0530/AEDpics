@@ -33,8 +33,11 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const subDivision = searchParams.get('sub_division');
 
-    // 미매칭만 필터 파라미터 (기본값: true)
-    const showOnlyUnmatched = searchParams.get('showOnlyUnmatched') !== 'false';
+    // 미매칭만 필터 파라미터
+    // 'true' = 미매칭만, 'matched_only' = 매칭완료만, 'false' = 전체
+    const showOnlyUnmatchedParam = searchParams.get('showOnlyUnmatched');
+    const showOnlyUnmatched = showOnlyUnmatchedParam === 'true';
+    const showOnlyMatched = showOnlyUnmatchedParam === 'matched_only';
 
     if (subDivision) {
       console.log('[ComplianceAPI] Received sub_division filter:', subDivision);
@@ -69,6 +72,35 @@ export async function GET(request: NextRequest) {
 
     console.log('[ComplianceAPI] Final WHERE clause:', JSON.stringify(targetWhere));
 
+    // 매칭 상태 필터링을 위한 target_key 목록 조회
+    let matchedTargetKeys: string[] = [];
+    if (showOnlyMatched || showOnlyUnmatched) {
+      // target_list_devices에서 매칭된 target_institution_id 목록 가져오기
+      const matchedInstitutions = await prisma.target_list_devices.findMany({
+        where: {
+          target_list_year: parseInt(year)
+        },
+        select: {
+          target_institution_id: true
+        },
+        distinct: ['target_institution_id']
+      });
+      matchedTargetKeys = matchedInstitutions.map(m => m.target_institution_id);
+
+      // 매칭 상태에 따라 WHERE 조건 추가
+      if (showOnlyMatched) {
+        targetWhere.target_key = { in: matchedTargetKeys };
+      } else if (showOnlyUnmatched) {
+        targetWhere.target_key = { notIn: matchedTargetKeys };
+      }
+    }
+
+    console.log('[ComplianceAPI] After matching filter:', {
+      showOnlyMatched,
+      showOnlyUnmatched,
+      matchedCount: matchedTargetKeys.length
+    });
+
     // Check cache for count
     const cacheKey = JSON.stringify(targetWhere);
     let totalCount = 0;
@@ -94,7 +126,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get minimal target list
+    // Get minimal target list (이미 필터링된 조건으로 조회)
     const targetList = await prisma.target_list_2025.findMany({
       where: targetWhere,
       select: {

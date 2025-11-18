@@ -509,6 +509,7 @@ export function AEDFilterBar() {
     category_2: filters.category_2,
     category_3: filters.category_3,
     external_display: filters.external_display,
+    matching_status: filters.matching_status,
     search: filters.search,
     queryCriteria: filters.queryCriteria || defaultCriteria,
   }), [convertedRegionCodes, filteredCities, filters, defaultCriteria]);
@@ -587,6 +588,7 @@ export function AEDFilterBar() {
     if (draftFilters.category_2 && draftFilters.category_2.length > 0) count += 1;
     if (draftFilters.category_3 && draftFilters.category_3.length > 0) count += 1;
     if (draftFilters.external_display) count += 1;
+    if (draftFilters.matching_status && draftFilters.matching_status !== 'all') count += 1;
     if (searchTerm.trim().length > 0) count += 1;
     if (queryCriteria && queryCriteria !== defaultCriteria) count += 1;
     return count;
@@ -673,6 +675,7 @@ export function AEDFilterBar() {
       category_2: draftFilters.category_2,
       category_3: draftFilters.category_3,
       external_display: draftFilters.external_display || undefined,
+      matching_status: draftFilters.matching_status,
       search: searchTerm.trim() || undefined,
       queryCriteria: queryCriteria,
     };
@@ -980,6 +983,28 @@ export function AEDFilterBar() {
                       {option.label}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 매칭 상태 필터 (외부표출 우측) */}
+            <div className="flex items-center gap-0.5 border-r border-gray-700 pr-0.5 flex-shrink-0">
+              <Select
+                value={draftFilters.matching_status || 'all'}
+                onValueChange={(value) => setDraftFilters((prev) => ({
+                  ...prev,
+                  matching_status: value === 'all' ? undefined : value as 'matched' | 'unmatched',
+                }))}
+              >
+                <SelectTrigger className="h-6 lg:h-7 xl:h-8 w-[55px] lg:w-[65px] xl:w-[85px] text-[10px] lg:text-xs xl:text-sm px-0.5 py-0">
+                  <SelectValue className="truncate">
+                    {draftFilters.matching_status === 'matched' ? '매칭완료' : draftFilters.matching_status === 'unmatched' ? '미매칭' : '매칭상태'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
+                  <SelectItem value="matched" className="text-[10px] lg:text-xs xl:text-sm py-1">매칭완료</SelectItem>
+                  <SelectItem value="unmatched" className="text-[10px] lg:text-xs xl:text-sm py-1">미매칭</SelectItem>
                 </SelectContent>
               </Select>
             </div>

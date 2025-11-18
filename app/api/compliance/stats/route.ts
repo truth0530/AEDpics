@@ -26,12 +26,14 @@ export async function GET(request: NextRequest) {
     const sido = sidoParam ? normalizeRegionName(sidoParam) : undefined;
     const gugunParam = searchParams.get('gugun');
     const gugun = gugunParam ? normalizeRegionName(gugunParam) : undefined;
+    const search = searchParams.get('search');
 
     console.log('[compliance/stats] Request params:', {
       sidoParam,
       sido,
       gugunParam,
-      gugun
+      gugun,
+      search
     });
 
     // 1. Build WHERE clause for target institutions
@@ -44,6 +46,13 @@ export async function GET(request: NextRequest) {
     }
     if (gugun && gugun !== '전체' && gugun !== '구군') {
       targetWhere.gugun = gugun;
+    }
+    if (search) {
+      targetWhere.OR = [
+        { institution_name: { contains: search, mode: 'insensitive' } },
+        { target_key: { contains: search, mode: 'insensitive' } },
+        { unique_key: { contains: search, mode: 'insensitive' } }
+      ];
     }
 
     // 2. Count total target institutions
@@ -75,11 +84,34 @@ export async function GET(request: NextRequest) {
 
     const installedCount = matchedInstitutions.length;
 
-    // 5. Count not installed (total - matched)
+    // 5. Count unmatchable institutions (latest action is 'mark_unmatchable')
+    let unmatchableCount = 0;
+    if (targetKeyList.length > 0) {
+      const unmatchableLogs = await prisma.$queryRaw<Array<{ target_key: string }>>`
+        WITH latest_actions AS (
+          SELECT
+            target_key,
+            action,
+            ROW_NUMBER() OVER (PARTITION BY target_key ORDER BY created_at DESC) as rn
+          FROM aedpics.target_list_match_logs
+          WHERE
+            target_list_year = ${parseInt(year)}
+            AND action IN ('mark_unmatchable', 'cancel_unmatchable')
+        )
+        SELECT la.target_key
+        FROM latest_actions la
+        WHERE la.rn = 1
+          AND la.action = 'mark_unmatchable'
+          AND la.target_key = ANY(ARRAY[${targetKeyList.map(k => `'${k}'`).join(',')}]::text[])
+      `;
+      unmatchableCount = unmatchableLogs.length;
+    }
+
+    // 6. Count not installed (total - matched - unmatchable)
     const confirmedNotInstalledCount = 0;
 
-    // 6. Calculate pending (not yet confirmed)
-    const notInstalledCount = totalCount - installedCount;
+    // 7. Calculate pending (not yet confirmed)
+    const notInstalledCount = totalCount - installedCount - unmatchableCount;
 
     return NextResponse.json({
       success: true,
@@ -87,7 +119,8 @@ export async function GET(request: NextRequest) {
         total: totalCount,
         installed: installedCount,
         notInstalled: notInstalledCount,
-        pending: totalCount - installedCount - confirmedNotInstalledCount
+        unmatchable: unmatchableCount,
+        pending: totalCount - installedCount - confirmedNotInstalledCount - unmatchableCount
       },
       metadata: {
         year,

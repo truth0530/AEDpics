@@ -54,6 +54,7 @@ export interface ParsedFilters {
   category_2?: string[];
   category_3?: string[];
   external_display?: ExternalDisplayFilter;
+  matching_status?: 'all' | 'matched' | 'unmatched';
   search?: string;
   management_number?: string;  // 관리번호로 단일 장비 조회
   equipment_serial?: string;  // 장비연번으로 단일 장비 조회
@@ -159,6 +160,12 @@ export function parseQueryParams(searchParams: URLSearchParams): ParsedFilters {
     parsed.external_display = externalDisplay as ExternalDisplayFilter;
   }
 
+  // 매칭 상태
+  const matchingStatus = searchParams.get('matching_status');
+  if (matchingStatus && ['all', 'matched', 'unmatched'].includes(matchingStatus)) {
+    parsed.matching_status = matchingStatus as 'all' | 'matched' | 'unmatched';
+  }
+
   // 조회 기준 (address | jurisdiction)
   const criteria = searchParams.get('criteria');
   if (criteria === 'address' || criteria === 'jurisdiction') {
@@ -245,6 +252,10 @@ export function buildQueryString(filters: ParsedFilters): string {
     params.set('external_display', filters.external_display);
   } else {
     logger.info('QueryParser:buildQueryString', 'Skipping external_display (falsy)');
+  }
+
+  if (filters.matching_status && filters.matching_status !== 'all') {
+    params.set('matching_status', filters.matching_status);
   }
 
   if (filters.queryCriteria) {

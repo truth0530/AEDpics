@@ -192,10 +192,15 @@ const DesktopTableRow = memo(({
       </div>
 
       {/* 4. 장비연번 */}
-      <div className="min-w-0 pl-2">
+      <div className="min-w-0 pl-2 flex items-center gap-1">
         <div className="text-xs lg:text-sm xl:text-base text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis" title={device.equipment_serial || '없음'}>
           {device.equipment_serial || '-'}
         </div>
+        {(device as any).is_matched && (
+          <span className="text-[8px] lg:text-[9px] xl:text-[10px] px-1 py-[1px] bg-blue-500 text-white rounded flex-shrink-0 font-semibold leading-tight">
+            매칭완료
+          </span>
+        )}
       </div>
 
       {/* 5. 최근점검일 - 축소 */}
@@ -666,6 +671,11 @@ const MobileCard = memo(({
             <span className="truncate">
               {device.equipment_serial || '-'}
             </span>
+            {(device as any).is_matched && (
+              <span className="text-[8px] px-1 py-[1px] bg-blue-500 text-white rounded flex-shrink-0 font-semibold leading-tight">
+                매칭완료
+              </span>
+            )}
           </div>
 
           {/* 셋째 줄: 주소 + 최종점검일 */}
