@@ -45,9 +45,10 @@ export function Pagination({
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="bg-gray-700 border border-gray-600 rounded px-1 py-0.5 text-[10px] text-white focus:outline-none"
           >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
             <option value={30}>30</option>
             <option value={50}>50</option>
-            <option value={100}>100</option>
           </select>
         </div>
 
@@ -65,9 +66,10 @@ export function Pagination({
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            <option value={10}>10개</option>
+            <option value={20}>20개</option>
             <option value={30}>30개</option>
             <option value={50}>50개</option>
-            <option value={100}>100개</option>
           </select>
         </div>
       </div>
@@ -93,6 +95,38 @@ export function Pagination({
         >
           <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
         </button>
+
+        {/* 페이지 번호 버튼 (데스크톱만) */}
+        <div className="hidden sm:flex items-center gap-1">
+          {Array.from({ length: 15 }, (_, i) => {
+            // 현재 페이지를 중심으로 15개 페이지 번호 표시
+            let pageNum;
+            if (currentPage <= 7) {
+              // 현재 페이지가 7 이하면 1-15 표시
+              pageNum = i + 1;
+            } else {
+              // 현재 페이지가 8 이상이면 (currentPage - 7)부터 표시
+              pageNum = currentPage - 7 + i;
+            }
+
+            // 페이지 번호가 1보다 작으면 표시하지 않음
+            if (pageNum < 1) return null;
+
+            return (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={`min-w-[32px] h-8 px-2 text-sm rounded transition-colors ${
+                  currentPage === pageNum
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+        </div>
 
         {/* 현재 페이지 표시 (모바일) */}
         <span className="sm:hidden text-[10px] font-medium text-gray-300 px-1">

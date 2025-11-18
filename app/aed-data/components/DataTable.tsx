@@ -878,7 +878,7 @@ export function DataTable({
     }
 
     const parsed = Number(storedLimit);
-    const allowedLimits = [30, 50, 100];
+    const allowedLimits = [10, 20, 30, 50];
     if (!Number.isFinite(parsed) || !allowedLimits.includes(parsed)) {
       hasAppliedStoredLimit.current = true;
       return;

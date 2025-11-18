@@ -645,7 +645,7 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
       )}
 
       {/* Content Area */}
-      <div ref={contentRef} className="flex-1 overflow-hidden flex flex-col">
+      <div ref={contentRef} className="flex-1 overflow-hidden flex flex-col h-[calc(100vh-180px)]">
         {/* 지도 뷰일 때 필터바 - flex 레이아웃 (반응형) */}
         {viewMode === 'map' && (
           <div className="flex-shrink-0">

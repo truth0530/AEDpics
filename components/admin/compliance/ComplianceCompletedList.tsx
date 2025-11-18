@@ -542,9 +542,10 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="15">15개</SelectItem>
+              <SelectItem value="10">10개</SelectItem>
+              <SelectItem value="20">20개</SelectItem>
               <SelectItem value="30">30개</SelectItem>
-              <SelectItem value="100">100개</SelectItem>
+              <SelectItem value="50">50개</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-sm text-muted-foreground">보기</span>
