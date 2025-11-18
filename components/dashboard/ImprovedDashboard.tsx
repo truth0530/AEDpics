@@ -323,50 +323,54 @@ export default function ImprovedDashboard({
   } satisfies ChartConfig;
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:p-6">
       {/* 헤더 */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="space-y-2">
+        {/* 타이틀 */}
         <div>
-          <h1 className="text-2xl font-bold text-white">{dashboardData.title}</h1>
-          <p className="text-sm text-gray-300 mt-1">실시간 AED 점검 현황을 확인하세요</p>
+          <h1 className="text-lg md:text-2xl font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+            {dashboardData.title}
+          </h1>
+          <p className="text-xs text-gray-400 mt-0.5 md:mt-1">실시간 AED 점검 현황을 확인하세요</p>
         </div>
 
-        {/* 의무기관매칭 현황 통계 */}
-        <div className="flex items-center gap-3">
+        {/* 의무기관매칭 현황 통계 - 모바일 2열 그리드 */}
+        <div className="grid grid-cols-2 gap-1.5 md:flex md:items-center md:gap-3">
           {complianceLoading ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary col-span-2" />
           ) : (
             <>
-              <Link href="/admin/compliance">
+              <Link href="/admin/compliance" className="col-span-2 md:col-span-1">
                 <Badge
                   variant="outline"
-                  className="text-xs px-2 py-1 cursor-pointer hover:bg-muted transition-colors"
+                  className="text-[11px] px-2 py-1 cursor-pointer hover:bg-muted transition-colors w-full justify-center md:text-xs md:px-3 md:py-2"
                 >
-                  의무시설: <span className="font-semibold ml-1">{formatNumber(complianceStats.total)}</span>
+                  의무시설: <span className="font-semibold ml-0.5">{formatNumber(complianceStats.total)}</span>
                 </Badge>
               </Link>
               <Link href="/admin/compliance">
                 <Badge
                   variant="outline"
-                  className="text-xs px-2 py-1 border-green-500 text-green-700 dark:text-green-400 cursor-pointer hover:bg-muted transition-colors"
+                  className="text-[11px] px-2 py-1 border-green-500 text-green-700 dark:text-green-400 cursor-pointer hover:bg-muted transition-colors w-full justify-center md:text-xs md:px-3 md:py-2"
                 >
-                  매칭완료: <span className="font-semibold ml-1">{formatNumber(complianceStats.installed)}</span>
+                  매칭완료: <span className="font-semibold ml-0.5">{formatNumber(complianceStats.installed)}</span>
                 </Badge>
               </Link>
               <Link href="/admin/compliance">
                 <Badge
                   variant="outline"
-                  className="text-xs px-2 py-1 border-amber-500 text-amber-700 dark:text-amber-400 cursor-pointer hover:bg-muted transition-colors"
+                  className="text-[11px] px-2 py-1 border-amber-500 text-amber-700 dark:text-amber-400 cursor-pointer hover:bg-muted transition-colors w-full justify-center md:text-xs md:px-3 md:py-2"
                 >
-                  미완료: <span className="font-semibold ml-1">{formatNumber(complianceStats.notInstalled)}</span>
+                  미완료: <span className="font-semibold ml-0.5">{formatNumber(complianceStats.notInstalled)}</span>
                 </Badge>
               </Link>
             </>
           )}
         </div>
 
+        {/* 날짜 범위 선택 */}
         <Select value={dateRange} onValueChange={onDateRangeChange}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full h-8 text-xs md:w-40 md:h-10 md:text-sm">
             <SelectValue placeholder="기간 선택" />
           </SelectTrigger>
           <SelectContent>
