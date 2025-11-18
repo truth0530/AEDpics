@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeRegionName } from '@/lib/constants/regions';
@@ -87,7 +88,8 @@ export async function GET(request: NextRequest) {
     // 5. Count unmatchable institutions (latest action is 'mark_unmatchable')
     let unmatchableCount = 0;
     if (targetKeyList.length > 0) {
-      const unmatchableLogs = await prisma.$queryRaw<Array<{ target_key: string }>>`
+      // Get all latest unmatchable actions for the year, then filter in JavaScript
+      const allUnmatchableLogs = await prisma.$queryRaw<Array<{ target_key: string }>>`
         WITH latest_actions AS (
           SELECT
             target_key,
@@ -102,8 +104,11 @@ export async function GET(request: NextRequest) {
         FROM latest_actions la
         WHERE la.rn = 1
           AND la.action = 'mark_unmatchable'
-          AND la.target_key = ANY(ARRAY[${targetKeyList.map(k => `'${k}'`).join(',')}]::text[])
       `;
+
+      // Filter to only include target_keys in our region
+      const targetKeySet = new Set(targetKeyList);
+      const unmatchableLogs = allUnmatchableLogs.filter(log => targetKeySet.has(log.target_key));
       unmatchableCount = unmatchableLogs.length;
     }
 

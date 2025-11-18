@@ -455,26 +455,26 @@ export default function InstitutionListPanel({
             </SelectTrigger>
             <SelectContent className="max-h-[300px]">
               <SelectItem value="전체">전체</SelectItem>
-              <SelectItem value="119 및 의료기관 구급차">119 및 의료기관 구급차</SelectItem>
+              <SelectItem value="119및 의료기관 구급차">119및 의료기관 구급차</SelectItem>
+              <SelectItem value="20톤이상 선박">20톤이상 선박</SelectItem>
+              <SelectItem value="300명이상 사업장">300명이상 사업장</SelectItem>
+              <SelectItem value="500세대 이상 공동주택">500세대 이상 공동주택</SelectItem>
               <SelectItem value="경마장">경마장</SelectItem>
               <SelectItem value="경주장">경주장</SelectItem>
               <SelectItem value="공공의료기관">공공의료기관</SelectItem>
-              <SelectItem value="공동주택(500세대 이상)">공동주택(500세대 이상)</SelectItem>
               <SelectItem value="공항">공항</SelectItem>
               <SelectItem value="관광단지">관광단지</SelectItem>
               <SelectItem value="관광지">관광지</SelectItem>
-              <SelectItem value="교도소">교도소</SelectItem>
-              <SelectItem value="상시근로자 300인이상">상시근로자 300인이상</SelectItem>
-              <SelectItem value="선박(20톤이상)">선박(20톤이상)</SelectItem>
-              <SelectItem value="시도 청사">시도 청사</SelectItem>
+              <SelectItem value="교도소등">교도소등</SelectItem>
+              <SelectItem value="시도청사">시도청사</SelectItem>
               <SelectItem value="어선">어선</SelectItem>
               <SelectItem value="여객자동차터미널">여객자동차터미널</SelectItem>
               <SelectItem value="여객항공기">여객항공기</SelectItem>
-              <SelectItem value="운동장(5000석 이상)">운동장(5000석 이상)</SelectItem>
+              <SelectItem value="운동장">운동장</SelectItem>
               <SelectItem value="중앙행정기관청사">중앙행정기관청사</SelectItem>
               <SelectItem value="지역보건의료기관">지역보건의료기관</SelectItem>
-              <SelectItem value="철도역사 대합실">철도역사 대합실</SelectItem>
-              <SelectItem value="철도차랑 객차">철도차랑 객차</SelectItem>
+              <SelectItem value="철도역사대합실">철도역사대합실</SelectItem>
+              <SelectItem value="철도차량객차">철도차량객차</SelectItem>
               <SelectItem value="카지노">카지노</SelectItem>
               <SelectItem value="항만대합실">항만대합실</SelectItem>
             </SelectContent>

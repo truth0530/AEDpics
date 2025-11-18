@@ -98,13 +98,9 @@ export async function GET(request: NextRequest) {
               ad.category_2,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
+                JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 WHERE tld.target_list_year = ${yearInt}
-                  AND tld.target_institution_id = ${targetKey}
-                  AND ad.equipment_serial = ANY(
-                    SELECT ad2.equipment_serial
-                    FROM aedpics.aed_data ad2
-                    WHERE ad2.management_number = ad.management_number
-                  )
+                  AND ad2.management_number = ad.management_number
               ) as is_matched,
               (
                 SELECT t.target_key
@@ -176,13 +172,9 @@ export async function GET(request: NextRequest) {
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
+                JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 WHERE tld.target_list_year = ${yearInt}
-                  AND tld.target_institution_id = ${targetKey}
-                  AND ad.equipment_serial = ANY(
-                    SELECT ad2.equipment_serial
-                    FROM aedpics.aed_data ad2
-                    WHERE ad2.management_number = ad.management_number
-                  )
+                  AND ad2.management_number = ad.management_number
               ) as is_matched,
               (
                 SELECT t.target_key
@@ -255,13 +247,9 @@ export async function GET(request: NextRequest) {
               ad.equipment_serial,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
+                JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 WHERE tld.target_list_year = ${yearInt}
-                  AND tld.target_institution_id = ${targetKey}
-                  AND ad.equipment_serial = ANY(
-                    SELECT ad2.equipment_serial
-                    FROM aedpics.aed_data ad2
-                    WHERE ad2.management_number = ad.management_number
-                  )
+                  AND ad2.management_number = ad.management_number
               ) as is_matched,
               (
                 SELECT t.target_key

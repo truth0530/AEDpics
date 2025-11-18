@@ -550,6 +550,13 @@ export default function ComplianceMatchingWorkflow({
         }
       }));
 
+      // 성공 메시지 표시
+      const matchedCount = currentBasket.reduce((sum, item) => {
+        const count = item.selected_serials?.length || item.equipment_count;
+        return sum + count;
+      }, 0);
+      alert(`매칭이 완료되었습니다.\n\n• 기관: ${selectedInstitution.institution_name}\n• 매칭된 관리번호: ${currentBasket.length}개\n• 매칭된 장비: ${matchedCount}대`);
+
       // 선택된 기관 초기화 (리스트에서 사라지므로)
       setSelectedInstitution(null);
 

@@ -30,6 +30,7 @@ import {
   Download
 } from 'lucide-react';
 import { shortenSidoInAddress } from '@/lib/utils/address-formatter';
+import { TableCellTooltip } from '@/components/ui/table-cell-tooltip';
 
 interface CompletedTarget {
   targetInstitution: {
@@ -368,73 +369,85 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>시도</TableHead>
-              <TableHead>구군</TableHead>
-              <TableHead>구분</TableHead>
-              <TableHead>의무설치기관명</TableHead>
-              <TableHead>매칭된 기관명</TableHead>
-              <TableHead>매칭된 관리번호</TableHead>
-              <TableHead>매칭된 장비연번</TableHead>
-              <TableHead>주소</TableHead>
-              <TableHead className="text-right">작업</TableHead>
+              <TableHead className="whitespace-nowrap">시도</TableHead>
+              <TableHead className="whitespace-nowrap">구군</TableHead>
+              <TableHead className="whitespace-nowrap">구분</TableHead>
+              <TableHead className="whitespace-nowrap">의무설치기관명</TableHead>
+              <TableHead className="whitespace-nowrap">매칭된 기관명</TableHead>
+              <TableHead className="whitespace-nowrap">매칭된 관리번호</TableHead>
+              <TableHead className="whitespace-nowrap">매칭된 장비연번</TableHead>
+              <TableHead className="whitespace-nowrap">주소</TableHead>
+              <TableHead className="text-right whitespace-nowrap">작업</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {completedTargets.map((target) => (
               <TableRow key={target.targetInstitution.target_key}>
                 {/* 중앙 관리: 시도명 약어 변환 (대구광역시 → 대구) */}
-                <TableCell>{shortenSidoInAddress(target.targetInstitution.sido)}</TableCell>
-                <TableCell>{target.targetInstitution.gugun}</TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap">{shortenSidoInAddress(target.targetInstitution.sido)}</TableCell>
+                <TableCell className="whitespace-nowrap">{target.targetInstitution.gugun}</TableCell>
+                <TableCell className="whitespace-nowrap">
                   <Badge variant="outline" className="text-xs">
                     {target.targetInstitution.sub_division}
                   </Badge>
                 </TableCell>
-                <TableCell className="font-medium">
-                  {target.targetInstitution.institution_name}
+                <TableCell className="font-medium whitespace-nowrap">
+                  <TableCellTooltip content={target.targetInstitution.institution_name}>
+                    <span className="truncate block max-w-xs">{target.targetInstitution.institution_name}</span>
+                  </TableCellTooltip>
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap">
                   {target.status === 'unmatchable' ? (
                     <Badge variant="destructive" className="text-xs">매칭불가</Badge>
                   ) : target.status === 'confirmed' && target.matches[0] ? (
-                    <div className="flex items-center gap-2">
-                      <span>{target.matches[0].institution_name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {target.matches[0].confidence}%
-                      </Badge>
-                    </div>
+                    <TableCellTooltip content={target.matches[0].institution_name}>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate block max-w-xs">{target.matches[0].institution_name}</span>
+                        <Badge variant="secondary" className="text-xs flex-shrink-0">
+                          {target.matches[0].confidence}%
+                        </Badge>
+                      </div>
+                    </TableCellTooltip>
                   ) : (
                     <span className="text-muted-foreground">매칭 없음</span>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap">
                   {target.status === 'unmatchable' ? (
-                    <span className="text-sm text-muted-foreground">{target.reason || '-'}</span>
+                    <TableCellTooltip content={target.reason || '-'}>
+                      <span className="text-sm text-muted-foreground truncate block max-w-xs">{target.reason || '-'}</span>
+                    </TableCellTooltip>
                   ) : target.status === 'confirmed' && target.matches[0] ? (
-                    <span className="font-mono text-sm">{target.matches[0].management_number}</span>
+                    <TableCellTooltip content={target.matches[0].management_number}>
+                      <span className="font-mono text-sm truncate block max-w-xs">{target.matches[0].management_number}</span>
+                    </TableCellTooltip>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap">
                   {target.status === 'unmatchable' ? (
                     <span className="text-muted-foreground">-</span>
                   ) : target.status === 'confirmed' && target.matches[0] ? (
-                    <span className="text-sm">{target.matches[0].equipment_count}대</span>
+                    <TableCellTooltip content={`${target.matches[0].equipment_count}대`}>
+                      <span className="text-sm">{target.matches[0].equipment_count}대</span>
+                    </TableCellTooltip>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell className="max-w-xs">
+                <TableCell className="max-w-xs whitespace-nowrap">
                   {target.status === 'unmatchable' ? (
                     <span className="text-muted-foreground">-</span>
                   ) : target.status === 'confirmed' && target.matches[0] ? (
-                    <span className="text-sm truncate">{target.matches[0].address}</span>
+                    <TableCellTooltip content={target.matches[0].address}>
+                      <span className="text-sm truncate block">{target.matches[0].address}</span>
+                    </TableCellTooltip>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   <div className="flex gap-2 justify-end">
                     {target.status === 'unmatchable' ? (
                       <Button
@@ -468,33 +481,18 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                         취소
                       </Button>
                     ) : target.status === 'confirmed' ? (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTarget(target);
-                            setEditNote(target.note || '');
-                            setShowEditDialog(true);
-                          }}
-                          title="매칭 정보 수정"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTarget(target);
-                            setUnmatchReason('');
-                            setShowUnmatchDialog(true);
-                          }}
-                          title="매칭 취소"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </Button>
-                      </>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTarget(target);
+                          setUnmatchReason('');
+                          setShowUnmatchDialog(true);
+                        }}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+                      >
+                        매칭취소
+                      </Button>
                     ) : (
                       <Button
                         variant="ghost"
