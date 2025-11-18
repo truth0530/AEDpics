@@ -76,7 +76,15 @@ export async function GET(request: NextRequest) {
         startDate.setDate(now.getDate() - 30);
     }
 
-    // 5. 전체 점검 통계
+    // 5. 캐싱 키 생성
+    const cacheKey = `stats:${period}:${groupBy}`;
+    const cachedData = getCachedStats(cacheKey);
+
+    if (cachedData) {
+      return NextResponse.json(cachedData);
+    }
+
+    // 6. 전체 점검 통계
     const [totalInspections, completedInspections, inProgressInspections] = await Promise.all([
       prisma.inspections.count({
         where: {
@@ -102,7 +110,7 @@ export async function GET(request: NextRequest) {
       })
     ]);
 
-    // 6. overall_status별 점검 분포
+    // 7. overall_status별 점검 분포
     const inspectionsByStatus = await prisma.inspections.groupBy({
       by: ['overall_status'],
       where: {
@@ -113,7 +121,7 @@ export async function GET(request: NextRequest) {
       _count: true
     });
 
-    // 7. inspection_type별 점검 분포
+    // 8. inspection_type별 점검 분포
     const inspectionsByType = await prisma.inspections.groupBy({
       by: ['inspection_type'],
       where: {
@@ -124,7 +132,7 @@ export async function GET(request: NextRequest) {
       _count: true
     });
 
-    // 8. 기간별 점검 추이
+    // 9. 기간별 점검 추이
     const inspectionTrend = await prisma.$queryRaw<Array<{
       date: Date;
       count: bigint;
@@ -138,7 +146,7 @@ export async function GET(request: NextRequest) {
       ORDER BY date ASC
     `;
 
-    // 9. 지역별 점검 현황 (시도 기준)
+    // 10. 지역별 점검 현황 (시도 기준)
     const inspectionsByRegion = await prisma.$queryRaw<Array<{
       sido: string;
       count: bigint;
@@ -154,7 +162,7 @@ export async function GET(request: NextRequest) {
       LIMIT 20
     `;
 
-    // 10. 점검자별 점검 실적 (상위 10명)
+    // 11. 점검자별 점검 실적 (상위 10명)
     const inspectorPerformance = await prisma.$queryRaw<Array<{
       inspector_id: string;
       full_name: string;
@@ -177,7 +185,7 @@ export async function GET(request: NextRequest) {
       LIMIT 10
     `;
 
-    // 11. 오늘의 점검 현황
+    // 12. 오늘의 점검 현황
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -189,7 +197,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 12. 평균 점검 소요 시간
+    // 13. 평균 점검 소요 시간
     const avgInspectionDuration = await prisma.$queryRaw<Array<{
       avg_duration: number;
     }>>`
@@ -200,8 +208,8 @@ export async function GET(request: NextRequest) {
         AND completed_at IS NOT NULL
     `;
 
-    // 13. 응답 데이터 구성
-    return NextResponse.json({
+    // 14. 응답 데이터 구성
+    const responseData = {
       overview: {
         total: totalInspections,
         completed: completedInspections,
@@ -236,7 +244,12 @@ export async function GET(request: NextRequest) {
       groupBy,
       startDate,
       endDate: now
-    });
+    };
+
+    // 캐시 저장 (5분)
+    setCachedStats(cacheKey, responseData);
+
+    return NextResponse.json(responseData);
 
   } catch (error) {
     logger.error('InspectionStats:GET', 'Inspection stats error',
@@ -247,4 +260,27 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// --- Simple In-Memory Cache ---
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const statsCache = new Map<string, { data: any; expiresAt: number }>();
+
+function getCachedStats(key: string) {
+  const cached = statsCache.get(key);
+  if (!cached) return null;
+
+  if (Date.now() > cached.expiresAt) {
+    statsCache.delete(key);
+    return null;
+  }
+
+  return cached.data;
+}
+
+function setCachedStats(key: string, data: any) {
+  statsCache.set(key, {
+    data,
+    expiresAt: Date.now() + CACHE_TTL_MS
+  });
 }

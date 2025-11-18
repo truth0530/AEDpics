@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { TableCellTooltip } from '@/components/ui/table-cell-tooltip';
 
 interface ComplianceDashboardProps {
   selectedSido?: string | null;
@@ -381,10 +382,26 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                         <tbody>
                           {matchingData.institutions.map((institution) => (
                             <tr key={institution.target_key} className="border-b hover:bg-muted/50">
-                              <td className="py-2 px-4 font-medium">{institution.institution_name}</td>
-                              <td className="py-2 px-4 text-muted-foreground">{institution.sido}</td>
-                              <td className="py-2 px-4 text-muted-foreground">{institution.gugun}</td>
-                              <td className="py-2 px-4 text-muted-foreground">{institution.sub_division}</td>
+                              <td className="py-2 px-4 font-medium">
+                                <TableCellTooltip content={institution.institution_name}>
+                                  <span className="truncate block max-w-xs">{institution.institution_name}</span>
+                                </TableCellTooltip>
+                              </td>
+                              <td className="py-2 px-4 text-muted-foreground">
+                                <TableCellTooltip content={institution.sido}>
+                                  <span className="truncate block">{institution.sido}</span>
+                                </TableCellTooltip>
+                              </td>
+                              <td className="py-2 px-4 text-muted-foreground">
+                                <TableCellTooltip content={institution.gugun}>
+                                  <span className="truncate block">{institution.gugun}</span>
+                                </TableCellTooltip>
+                              </td>
+                              <td className="py-2 px-4 text-muted-foreground">
+                                <TableCellTooltip content={institution.sub_division}>
+                                  <span className="truncate block">{institution.sub_division}</span>
+                                </TableCellTooltip>
+                              </td>
                               <td className="py-2 px-4 text-right font-semibold">{institution.matched_equipment_count}대</td>
                               <td className="py-2 px-4 text-center">
                                 {institution.is_matched ? (
@@ -560,9 +577,21 @@ export default function ComplianceDashboard({ selectedSido, selectedGugun }: Com
                       <tbody>
                         {inspectionData.institutions.map((institution) => (
                           <tr key={institution.target_key} className="border-b hover:bg-muted/50">
-                            <td className="py-2 px-4 font-medium">{institution.institution_name}</td>
-                            <td className="py-2 px-4 text-muted-foreground">{institution.sido}</td>
-                            <td className="py-2 px-4 text-muted-foreground">{institution.gugun}</td>
+                            <td className="py-2 px-4 font-medium">
+                              <TableCellTooltip content={institution.institution_name}>
+                                <span className="truncate block max-w-xs">{institution.institution_name}</span>
+                              </TableCellTooltip>
+                            </td>
+                            <td className="py-2 px-4 text-muted-foreground">
+                              <TableCellTooltip content={institution.sido}>
+                                <span className="truncate block">{institution.sido}</span>
+                              </TableCellTooltip>
+                            </td>
+                            <td className="py-2 px-4 text-muted-foreground">
+                              <TableCellTooltip content={institution.gugun}>
+                                <span className="truncate block">{institution.gugun}</span>
+                              </TableCellTooltip>
+                            </td>
                             <td className="py-2 px-4 text-right">{institution.matched_equipment_count}대</td>
                             <td className="py-2 px-4 text-right font-semibold">{institution.inspected_equipment_count}대</td>
                             <td className="py-2 px-4 text-right">{institution.inspection_rate}</td>

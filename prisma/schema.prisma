@@ -286,6 +286,7 @@ model inspections {
   user_profiles                user_profiles?                 @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
   approved_by                  user_profiles?                 @relation("InspectionApprovedBy", fields: [approved_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_approved_by_id_fkey")
   inspection_field_comparisons inspection_field_comparisons[]
+  inspection_edit_logs         inspection_edit_logs[]
 
   @@index([equipment_serial], map: "idx_inspections_equipment_serial")
   @@index([inspector_id], map: "idx_inspections_inspector_id")
@@ -737,6 +738,7 @@ model user_profiles {
   organization_change_requests_as_user     organization_change_requests[] @relation("change_request_user")
   organization_change_requests_as_reviewer organization_change_requests[] @relation("change_request_reviewer")
   target_list_match_logs                   target_list_match_logs[]
+  inspection_edit_logs                     inspection_edit_logs[]
 
   @@index([account_type], map: "idx_user_profiles_account_type")
   @@index([email], map: "idx_user_profiles_email")
@@ -1247,4 +1249,20 @@ model institution_metrics {
   created_at                  DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([metric_date], map: "idx_institution_metrics_date")
+}
+
+model inspection_edit_logs {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inspection_id String        @db.Uuid
+  editor_id     String        @db.Uuid
+  field_name    String        @db.VarChar(100)
+  old_value     String?
+  new_value     String?
+  edited_at     DateTime      @default(now()) @db.Timestamptz(6)
+  
+  inspection    inspections   @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
+  editor        user_profiles @relation(fields: [editor_id], references: [id])
+
+  @@index([inspection_id], map: "idx_inspection_edit_logs_inspection")
+  @@index([editor_id], map: "idx_inspection_edit_logs_editor")
 }

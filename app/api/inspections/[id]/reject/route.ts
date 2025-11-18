@@ -50,10 +50,10 @@ export async function PATCH(
       );
     }
 
-    // Can only reject submitted or pending inspections
-    if (inspection.approval_status !== 'submitted' && inspection.approval_status !== 'pending') {
+    // Can only reject submitted inspections
+    if (inspection.approval_status !== 'submitted') {
       return NextResponse.json(
-        { error: `Cannot reject inspection with status: ${inspection.approval_status}` },
+        { error: `Cannot reject inspection with status: ${inspection.approval_status}. Only submitted inspections can be rejected.` },
         { status: 400 }
       );
     }
@@ -80,7 +80,8 @@ export async function PATCH(
           select: {
             id: true,
             email: true,
-            full_name: true
+            full_name: true,
+            notification_settings: true
           }
         },
         approved_by: {
@@ -108,6 +109,9 @@ export async function PATCH(
         }
       }
     });
+
+    // TODO: Send notification to inspector (updatedInspection.user_profiles.email)
+    // Notify them that inspection was rejected and they need to re-inspect or fix issues
 
     return NextResponse.json({
       success: true,

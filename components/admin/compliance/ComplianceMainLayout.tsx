@@ -176,8 +176,8 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
       {/* 메인 컨텐츠 */}
       <div className="flex-1 px-6 py-2 bg-gray-50 dark:bg-gray-900">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'targets' | 'completed' | 'dashboard')} className="h-full flex flex-col">
-          <div className="flex items-center gap-3 mb-0">
-            <TabsList className="grid w-fit grid-cols-3">
+          <div className="flex items-center gap-3 mb-0 flex-nowrap overflow-x-auto">
+            <TabsList className="grid w-fit grid-cols-3 flex-shrink-0">
               <TabsTrigger
                 value="targets"
                 className={isLandscape ? "px-2 text-[10px]" : "px-8"}
@@ -233,14 +233,14 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                 {/* 클릭 가능한 통계 뱃지 (필터 기능) */}
                 <Badge
                   variant={statusFilter === 'all' ? 'default' : 'outline'}
-                  className={isLandscape ? "text-[9px] px-1 py-0.5 cursor-pointer hover:opacity-80 transition-opacity" : "text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity"}
+                  className={isLandscape ? "text-[9px] px-1 py-0.5 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 whitespace-nowrap" : "text-xs px-2 py-1 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 whitespace-nowrap"}
                   onClick={() => setStatusFilter('all')}
                 >
                   의무시설: <span className="font-semibold ml-1">{statistics.total}</span>
                 </Badge>
                 <Badge
                   variant={statusFilter === 'installed' ? 'default' : 'outline'}
-                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity ${
+                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 whitespace-nowrap ${
                     statusFilter === 'installed' ? 'bg-green-600 hover:bg-green-700' : 'border-green-500 text-green-700'
                   }`}
                   onClick={() => setStatusFilter('installed')}
@@ -249,7 +249,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                 </Badge>
                 <Badge
                   variant={statusFilter === 'not_installed' ? 'default' : 'outline'}
-                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity ${
+                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 whitespace-nowrap ${
                     statusFilter === 'not_installed' ? 'bg-amber-600 hover:bg-amber-700' : 'border-amber-500 text-amber-700'
                   }`}
                   onClick={() => setStatusFilter('not_installed')}
@@ -258,7 +258,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                 </Badge>
                 <Badge
                   variant={statusFilter === 'unmatchable' ? 'default' : 'outline'}
-                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity ${
+                  className={`${isLandscape ? "text-[9px] px-1 py-0.5" : "text-xs px-2 py-1"} cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 whitespace-nowrap ${
                     statusFilter === 'unmatchable' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500 text-red-700'
                   }`}
                   onClick={() => setStatusFilter('unmatchable')}
@@ -268,21 +268,38 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
 
                 {/* 구분 드롭다운 */}
                 <Select value={subDivisionFilter} onValueChange={setSubDivisionFilter}>
-                  <SelectTrigger className={isLandscape ? "w-[80px] h-5 text-[9px]" : "w-[150px] h-8 text-xs"}>
+                  <SelectTrigger className={isLandscape ? "w-[80px] h-5 text-[9px] flex-shrink-0" : "w-[150px] h-8 text-xs flex-shrink-0"}>
                     <SelectValue placeholder="구분 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">전체</SelectItem>
-                    {availableSubDivisions.map((subDivision) => (
-                      <SelectItem key={subDivision} value={subDivision}>
-                        {subDivision}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="119및 의료기관 구급차">119및 의료기관 구급차</SelectItem>
+                    <SelectItem value="20톤이상 선박">20톤이상 선박</SelectItem>
+                    <SelectItem value="300명이상 사업장">300명이상 사업장</SelectItem>
+                    <SelectItem value="500세대 이상 공동주택">500세대 이상 공동주택</SelectItem>
+                    <SelectItem value="경마장">경마장</SelectItem>
+                    <SelectItem value="경주장">경주장</SelectItem>
+                    <SelectItem value="공공의료기관">공공의료기관</SelectItem>
+                    <SelectItem value="공항">공항</SelectItem>
+                    <SelectItem value="관광단지">관광단지</SelectItem>
+                    <SelectItem value="관광지">관광지</SelectItem>
+                    <SelectItem value="교도소 등">교도소 등</SelectItem>
+                    <SelectItem value="시도청사">시도청사</SelectItem>
+                    <SelectItem value="어선">어선</SelectItem>
+                    <SelectItem value="여객자동차터미널">여객자동차터미널</SelectItem>
+                    <SelectItem value="여객항공기">여객항공기</SelectItem>
+                    <SelectItem value="운동장">운동장</SelectItem>
+                    <SelectItem value="중앙행정기관청사">중앙행정기관청사</SelectItem>
+                    <SelectItem value="지역보건의료기관">지역보건의료기관</SelectItem>
+                    <SelectItem value="철도역사대합실">철도역사대합실</SelectItem>
+                    <SelectItem value="철도차량객차">철도차량객차</SelectItem>
+                    <SelectItem value="카지노">카지노</SelectItem>
+                    <SelectItem value="항만대합실">항만대합실</SelectItem>
                   </SelectContent>
                 </Select>
 
                 {/* 기관명 검색 */}
-                <div className={isLandscape ? "relative w-[100px]" : "relative w-[200px]"}>
+                <div className={isLandscape ? "relative w-[100px] flex-shrink-0" : "relative w-[200px] flex-shrink-0"}>
                   <Search className={isLandscape ? "absolute left-1 top-1/2 transform -translate-y-1/2 text-muted-foreground h-2.5 w-2.5" : "absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3"} />
                   <Input
                     placeholder="기관명 검색..."
@@ -297,7 +314,7 @@ export default function ComplianceMainLayout({ initialProfile }: ComplianceMainL
                   variant="outline"
                   size="sm"
                   onClick={() => completedListRef.current?.exportToExcel()}
-                  className={isLandscape ? "ml-auto h-5 text-[9px] px-1" : "ml-auto h-8"}
+                  className={isLandscape ? "ml-auto h-5 text-[9px] px-1 flex-shrink-0 whitespace-nowrap" : "ml-auto h-8 flex-shrink-0 whitespace-nowrap"}
                 >
                   <Download className={isLandscape ? "w-2 h-2 mr-0.5" : "w-3 h-3 mr-1"} />
                   엑셀 다운로드

@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
             where: { id: existingSession.id },
             data: {
               status: 'active',
-              current_snapshot: deviceData as any // 재개 시에도 최신 장비 데이터 반영
+              resumed_at: new Date()
             },
             include: {
               user_profiles: {
@@ -299,7 +299,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { sessionId, currentStep, stepData, fieldChanges, status, notes, finalizeData } = body;
+    const { sessionId, currentStep, stepData, fieldChanges, status, notes, finalizeData, action } = body;
 
     if (!sessionId) {
       return NextResponse.json(
@@ -326,6 +326,38 @@ export async function PATCH(request: NextRequest) {
         { error: '다른 사용자의 점검 세션은 수정할 수 없습니다.' },
         { status: 403 }
       );
+    }
+
+    // 세션 일시정지 처리
+    if (action === 'pause') {
+      const pausedSession = await prisma.inspection_sessions.update({
+        where: { id: sessionId },
+        data: {
+          status: 'paused',
+          paused_at: new Date(),
+          updated_at: new Date()
+        },
+        include: {
+          user_profiles: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      logger.info('InspectionSessions:PATCH', 'Session paused', {
+        sessionId,
+        userId: session.user.id
+      });
+
+      return NextResponse.json({
+        success: true,
+        session: pausedSession,
+        message: '점검 세션이 일시정지되었습니다.'
+      });
     }
 
     // 점검 완료 처리 (트랜잭션)

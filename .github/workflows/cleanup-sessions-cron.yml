@@ -1,0 +1,30 @@
+name: Cleanup Stale Inspection Sessions
+
+on:
+  schedule:
+    # 30분마다 실행 (매시 0분, 30분)
+    - cron: '0,30 * * * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call Cleanup API
+        run: |
+          response=$(curl -s -w "\n%{http_code}" https://aed.pics/api/cron/cleanup-sessions)
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Cleanup API returned non-200 status code: $http_code"
+            exit 1
+          fi
+
+          # JSON 파싱하여 정리된 세션 수 표시
+          count=$(echo "$body" | grep -o '"count":[0-9]*' | cut -d':' -f2 || echo "0")
+          echo "::notice::Cleaned up $count stale sessions"

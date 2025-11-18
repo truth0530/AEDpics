@@ -45,14 +45,13 @@ export async function PATCH(
       );
     }
 
-    // Can only approve submitted or pending inspections
-    // This enforces first-come-first-served: if status is already 'approved', 'rejected', etc.,
-    // it means another admin approved it first
-    if (inspection.approval_status !== 'submitted' && inspection.approval_status !== 'pending') {
+    // Can only approve submitted inspections (strict workflow)
+    // Pending inspections must be submitted first
+    if (inspection.approval_status !== 'submitted') {
       return NextResponse.json(
         {
-          error: `Cannot approve inspection - already ${inspection.approval_status} by another admin. This is first-come-first-served approval.`,
-          code: 'ALREADY_APPROVED'
+          error: `Cannot approve inspection with status: ${inspection.approval_status}. Only submitted inspections can be approved.`,
+          code: 'INVALID_STATUS_TRANSITION'
         },
         { status: 400 }
       );
@@ -71,7 +70,8 @@ export async function PATCH(
           select: {
             id: true,
             email: true,
-            full_name: true
+            full_name: true,
+            notification_settings: true // Include settings for notification logic
           }
         },
         approved_by: {
@@ -98,6 +98,9 @@ export async function PATCH(
         }
       }
     });
+
+    // TODO: Send notification to inspector (updatedInspection.user_profiles.email)
+    // if (updatedInspection.user_profiles.notification_settings?.email_notifications) { ... }
 
     return NextResponse.json({
       success: true,

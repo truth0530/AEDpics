@@ -163,6 +163,13 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
       id: true,
       inspector_id: true,
       equipment_serial: true,
+      visual_status: true,
+      battery_status: true,
+      pad_status: true,
+      operation_status: true,
+      overall_status: true,
+      issues_found: true,
+      notes: true,
       aed_data: {
         select: {
           equipment_serial: true,
@@ -271,11 +278,42 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
     }
   });
 
-  // === Step 12: 업데이트 실행 ===
+  // === Step 12: 업데이트 실행 (트랜잭션 & 로깅) ===
   try {
-    const updatedInspection = await prisma.inspections.update({
-      where: { id: inspectionId },
-      data: updateData
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. 변경 사항 로깅
+      const logPromises = Object.keys(updateData).map(async (field) => {
+        // 기존 값 가져오기 (타입 안전하게)
+        const oldValue = (inspection as any)[field];
+        const newValue = updateData[field];
+
+        // 값이 다를 경우에만 로그 생성
+        // 배열인 경우(issues_found) JSON 문자열로 변환하여 비교
+        const strOld = Array.isArray(oldValue) ? JSON.stringify(oldValue) : String(oldValue || '');
+        const strNew = Array.isArray(newValue) ? JSON.stringify(newValue) : String(newValue || '');
+
+        if (strOld !== strNew) {
+          await tx.inspection_edit_logs.create({
+            data: {
+              inspection_id: inspectionId,
+              editor_id: session.user.id,
+              field_name: field,
+              old_value: strOld,
+              new_value: strNew
+            }
+          });
+        }
+      });
+
+      await Promise.all(logPromises);
+
+      // 2. 점검 이력 업데이트
+      const updated = await tx.inspections.update({
+        where: { id: inspectionId },
+        data: updateData
+      });
+
+      return updated;
     });
 
     logger.info('InspectionDetail:PATCH', 'Inspection updated successfully', {
@@ -289,7 +327,7 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
     return NextResponse.json({
       success: true,
       message: '점검 이력이 수정되었습니다.',
-      inspection: updatedInspection,
+      inspection: result,
     });
   } catch (updateError) {
     logger.error('InspectionDetail:PATCH', 'Update inspection error',

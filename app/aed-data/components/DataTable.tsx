@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { HealthCenterMatcher } from '@/utils/healthCenterMatcher';
 import { Pagination } from '@/components/Pagination';
 import { shortenSidoInAddress } from '@/lib/utils/address-formatter';
+import { TableCellTooltip } from '@/components/ui/table-cell-tooltip';
 
 function getDeviceId(device: AEDDevice): string {
   return (
@@ -42,13 +43,14 @@ const TOUCH_TARGET_BUTTON = 'min-h-[40px] px-3 sm:min-h-[36px] touch-manipulatio
 const getColumnTemplate = (enableSelection: boolean, showInspectionStatus: boolean = false, showAssignmentInfo: boolean = false) => {
   // 태블릿에서도 작업 버튼이 보이도록 컬럼 크기 최적화
   // 세부위치와 거리는 xl 해상도에서만 표시됨
+  // 주소 칼럼 확대: 215px → 280px (+65px), 설치기관 확대: 130px → 150px (+20px)
   const baseColumns = showInspectionStatus
     ? showAssignmentInfo
-      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
-      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px"
+      ? "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
+      : "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(40px, 0.25fr) 120px"
     : showAssignmentInfo
-      ? "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
-      : "minmax(40px, 0.25fr) minmax(130px, 0.95fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(215px, 1.75fr) minmax(80px, 0.5fr) minmax(40px, 0.25fr) 120px";
+      ? "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
+      : "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(40px, 0.25fr) 120px";
 
   return enableSelection ? `35px ${baseColumns}` : baseColumns;
 };
@@ -168,15 +170,16 @@ const DesktopTableRow = memo(({
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
         )}
-        <button
-          onClick={() => onViewDetails(device)}
-          className={`text-[10px] lg:text-xs xl:text-sm hover:text-green-400 hover:underline text-left flex-1 whitespace-nowrap overflow-hidden text-ellipsis ${
-            isScheduled ? 'text-gray-400' : 'text-gray-100'
-          }`}
-          title={device.installation_institution || '미등록'}
-        >
-          {device.installation_institution || '미등록'}
-        </button>
+        <TableCellTooltip content={device.installation_institution || '미등록'}>
+          <button
+            onClick={() => onViewDetails(device)}
+            className={`text-[10px] lg:text-xs xl:text-sm hover:text-green-400 hover:underline text-left flex-1 whitespace-nowrap overflow-hidden text-ellipsis ${
+              isScheduled ? 'text-gray-400' : 'text-gray-100'
+            }`}
+          >
+            {device.installation_institution || '미등록'}
+          </button>
+        </TableCellTooltip>
         {isCriticalDevice && (
           <span className="text-[8px] lg:text-[9px] xl:text-[10px] px-1 py-[1px] bg-red-500 text-white rounded flex-shrink-0 font-semibold leading-tight">
             차단
@@ -186,16 +189,20 @@ const DesktopTableRow = memo(({
 
       {/* 3. 관리번호 - 폰트 축소 */}
       <div className="min-w-0 pl-2">
-        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis" title={device.management_number || '없음'}>
-          {device.management_number || '-'}
-        </div>
+        <TableCellTooltip content={device.management_number || '없음'}>
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+            {device.management_number || '-'}
+          </div>
+        </TableCellTooltip>
       </div>
 
       {/* 4. 장비연번 */}
       <div className="min-w-0 pl-2 flex items-center gap-1">
-        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis" title={device.equipment_serial || '없음'}>
-          {device.equipment_serial || '-'}
-        </div>
+        <TableCellTooltip content={device.equipment_serial || '없음'}>
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+            {device.equipment_serial || '-'}
+          </div>
+        </TableCellTooltip>
         {(device as any).is_matched && (
           <span className="text-[8px] lg:text-[9px] xl:text-[10px] px-1 py-[1px] bg-blue-500 text-white rounded flex-shrink-0 font-semibold leading-tight">
             매칭완료
@@ -205,30 +212,32 @@ const DesktopTableRow = memo(({
 
       {/* 5. 최근점검일 - 축소 */}
       <div className="min-w-0 pl-2">
-        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-300 truncate" title={device.last_inspection_date || '-'}>
-          {(() => {
-            if (!device.last_inspection_date) return '-';
+        <TableCellTooltip content={device.last_inspection_date ? new Date(device.last_inspection_date).toLocaleDateString('ko-KR') : '-'}>
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-300 truncate">
+            {(() => {
+              if (!device.last_inspection_date) return '-';
 
-            // 디버깅: 문제가 있는 장비들의 날짜 확인
-            if (device.equipment_serial === '11-0010656' || device.equipment_serial === '11-0010666') {
-              console.log(`[날짜 디버그 ${device.equipment_serial}]`, {
-                raw: device.last_inspection_date,
-                parsed: new Date(device.last_inspection_date),
-                formatted: new Date(device.last_inspection_date).toLocaleDateString('ko-KR', {
-                  year: '2-digit',
-                  month: '2-digit',
-                  day: '2-digit'
-                })
-              });
-            }
+              // 디버깅: 문제가 있는 장비들의 날짜 확인
+              if (device.equipment_serial === '11-0010656' || device.equipment_serial === '11-0010666') {
+                console.log(`[날짜 디버그 ${device.equipment_serial}]`, {
+                  raw: device.last_inspection_date,
+                  parsed: new Date(device.last_inspection_date),
+                  formatted: new Date(device.last_inspection_date).toLocaleDateString('ko-KR', {
+                    year: '2-digit',
+                    month: '2-digit',
+                    day: '2-digit'
+                  })
+                });
+              }
 
-            const date = new Date(device.last_inspection_date);
-            const year = String(date.getFullYear()).slice(-2);
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}.${month}.${day}`;
-          })()}
-        </div>
+              const date = new Date(device.last_inspection_date);
+              const year = String(date.getFullYear()).slice(-2);
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}.${month}.${day}`;
+            })()}
+          </div>
+        </TableCellTooltip>
       </div>
 
       {/* 6. 상태 (점검 모드일 때만) */}
@@ -255,23 +264,29 @@ const DesktopTableRow = memo(({
 
       {/* 7. 표출 - Y/N 딱 맞게, N은 붉은색 */}
       <div className="min-w-0 flex items-center justify-center">
-        <div className={`text-[10px] lg:text-xs xl:text-sm ${device.external_display === 'N' ? 'text-red-400' : 'text-gray-300'}`} title={device.external_display || '-'}>
-          {device.external_display || '-'}
-        </div>
+        <TableCellTooltip content={device.external_display || '-'}>
+          <div className={`text-[10px] lg:text-xs xl:text-sm ${device.external_display === 'N' ? 'text-red-400' : 'text-gray-300'}`}>
+            {device.external_display || '-'}
+          </div>
+        </TableCellTooltip>
       </div>
 
       {/* 8. 주소 - 폰트 축소 */}
       <div className="min-w-0 pl-2">
-        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-100 truncate" title={device.installation_address || device.installation_location_address || '주소 미등록'}>
-          {shortenSidoInAddress(device.installation_address || device.installation_location_address || '주소 미등록')}
-        </div>
+        <TableCellTooltip content={device.installation_address || device.installation_location_address || '주소 미등록'}>
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-100 truncate">
+            {shortenSidoInAddress(device.installation_address || device.installation_location_address || '주소 미등록')}
+          </div>
+        </TableCellTooltip>
       </div>
 
       {/* 9. 세부위치 */}
       <div className="min-w-0 pl-2">
-        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-400 truncate" title={device.installation_position || ''}>
-          {device.installation_position || '-'}
-        </div>
+        <TableCellTooltip content={device.installation_position || '-'}>
+          <div className="text-[10px] lg:text-xs xl:text-sm text-gray-400 truncate">
+            {device.installation_position || '-'}
+          </div>
+        </TableCellTooltip>
       </div>
 
       {/* 10. 거리 - 1km 미만은 소수점 1자리, 이상은 정수 */}
@@ -580,19 +595,21 @@ const MobileCard = memo(({
         <div className="flex-1 space-y-0.5">
           {/* 첫 줄: 설치기관명 + 버튼 */}
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleViewDetailsClick}
-              className={`text-xs hover:text-green-400 hover:underline text-left truncate flex-1 min-w-0 ${
-                isScheduled ? 'text-gray-400' : 'text-gray-100'
-              }`}
-            >
-              {device.installation_institution || '미등록'}
-              {isCriticalDevice && (
-                <span className="ml-1.5 text-[8px] px-1 py-[1px] bg-red-500 text-white rounded font-semibold leading-tight">
-                  차단
-                </span>
-              )}
-            </button>
+            <TableCellTooltip content={device.installation_institution || '미등록'}>
+              <button
+                onClick={handleViewDetailsClick}
+                className={`text-xs hover:text-green-400 hover:underline text-left truncate flex-1 min-w-0 ${
+                  isScheduled ? 'text-gray-400' : 'text-gray-100'
+                }`}
+              >
+                {device.installation_institution || '미등록'}
+                {isCriticalDevice && (
+                  <span className="ml-1.5 text-[8px] px-1 py-[1px] bg-red-500 text-white rounded font-semibold leading-tight">
+                    차단
+                  </span>
+                )}
+              </button>
+            </TableCellTooltip>
             {device.assignment_status === 'unavailable' ? (
               <button
                 onClick={() => onShowUnavailable && onShowUnavailable(device)}
@@ -680,9 +697,11 @@ const MobileCard = memo(({
 
           {/* 셋째 줄: 주소 + 최종점검일 */}
           <div className="flex items-center justify-between gap-1.5 text-[10px]">
-            <span className="text-gray-400 truncate flex-1">
-              {shortenSidoInAddress(device.installation_address || device.installation_location_address || '주소 미등록')}
-            </span>
+            <TableCellTooltip content={device.installation_address || device.installation_location_address || '주소 미등록'}>
+              <span className="text-gray-400 truncate flex-1">
+                {shortenSidoInAddress(device.installation_address || device.installation_location_address || '주소 미등록')}
+              </span>
+            </TableCellTooltip>
             {device.last_inspection_date && (
               <span className="text-gray-500 flex-shrink-0 text-[9px]">
                 {new Date(device.last_inspection_date).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}
