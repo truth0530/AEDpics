@@ -170,7 +170,7 @@ const DesktopTableRow = memo(({
         )}
         <button
           onClick={() => onViewDetails(device)}
-          className={`text-xs lg:text-sm xl:text-base font-medium hover:text-green-400 hover:underline text-left flex-1 whitespace-nowrap overflow-hidden text-ellipsis ${
+          className={`text-[10px] lg:text-xs xl:text-sm hover:text-green-400 hover:underline text-left flex-1 whitespace-nowrap overflow-hidden text-ellipsis ${
             isScheduled ? 'text-gray-400' : 'text-gray-100'
           }`}
           title={device.installation_institution || '미등록'}
@@ -193,7 +193,7 @@ const DesktopTableRow = memo(({
 
       {/* 4. 장비연번 */}
       <div className="min-w-0 pl-2 flex items-center gap-1">
-        <div className="text-xs lg:text-sm xl:text-base text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis" title={device.equipment_serial || '없음'}>
+        <div className="text-[10px] lg:text-xs xl:text-sm text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis" title={device.equipment_serial || '없음'}>
           {device.equipment_serial || '-'}
         </div>
         {(device as any).is_matched && (
@@ -235,18 +235,18 @@ const DesktopTableRow = memo(({
       {showInspectionStatus && (
         <div className="flex justify-center">
           {inspectionUnavailable?.has(device.equipment_serial) ? (
-            <span className="px-2 py-0.5 text-xs lg:text-sm xl:text-base bg-red-500/20 text-red-400 rounded">
+            <span className="px-2 py-0.5 text-[10px] lg:text-xs xl:text-sm bg-red-500/20 text-red-400 rounded">
               점검불가
             </span>
           ) : device.inspection_status === 'completed' || inspectionCompleted?.has(device.equipment_serial) ? (
             <button
               onClick={() => onViewInspectionHistory?.(device.equipment_serial)}
-              className="px-2 py-0.5 text-xs lg:text-sm xl:text-base bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-colors cursor-pointer"
+              className="px-2 py-0.5 text-[10px] lg:text-xs xl:text-sm bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-colors cursor-pointer"
             >
               점검완료
             </button>
           ) : (
-            <span className="px-2 py-0.5 text-xs lg:text-sm xl:text-base bg-yellow-500/20 text-yellow-400 rounded">
+            <span className="px-2 py-0.5 text-[10px] lg:text-xs xl:text-sm bg-yellow-500/20 text-yellow-400 rounded">
               진행중
             </span>
           )}
@@ -255,7 +255,7 @@ const DesktopTableRow = memo(({
 
       {/* 7. 표출 - Y/N 딱 맞게, N은 붉은색 */}
       <div className="min-w-0 flex items-center justify-center">
-        <div className={`text-[10px] lg:text-xs xl:text-sm ${device.external_display === 'N' ? 'text-red-400 font-semibold' : 'text-gray-300'}`} title={device.external_display || '-'}>
+        <div className={`text-[10px] lg:text-xs xl:text-sm ${device.external_display === 'N' ? 'text-red-400' : 'text-gray-300'}`} title={device.external_display || '-'}>
           {device.external_display || '-'}
         </div>
       </div>
@@ -582,7 +582,7 @@ const MobileCard = memo(({
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleViewDetailsClick}
-              className={`font-medium text-sm hover:text-green-400 hover:underline text-left truncate flex-1 min-w-0 ${
+              className={`text-xs hover:text-green-400 hover:underline text-left truncate flex-1 min-w-0 ${
                 isScheduled ? 'text-gray-400' : 'text-gray-100'
               }`}
             >
@@ -663,7 +663,7 @@ const MobileCard = memo(({
           </div>
 
           {/* 둘째 줄: 관리번호 | 장비연번 */}
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-white tracking-wide">
+          <div className="flex items-center gap-1.5 text-xs text-white tracking-wide">
             <span className="truncate">
               {device.management_number || '-'}
             </span>
