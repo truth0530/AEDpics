@@ -757,203 +757,212 @@ export function AEDFilterBar() {
           </div>
         ) : (
           <>
-        {/* 첫 번째 줄 (모바일) 또는 인라인 (PC) - 모바일에서 균등 분배 */}
-        <div className={cn("flex items-center", isMobileLayout ? "w-full" : "flex-shrink-0 gap-0.5")}>
-          {/* 조회기준: 드롭다운 */}
-          <Select
-            value={queryCriteria}
-            onValueChange={(value) => setQueryCriteria(value as QueryCriteria)}
-          >
-            <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[40px] lg:w-[55px] xl:w-[80px]")}>
-              <SelectValue className="truncate">
-                {queryCriteria === 'address' ? (isMobileLayout ? '기준' : '구분') : '보건소'}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="address" className="text-[10px] lg:text-xs xl:text-sm py-1">구군기준</SelectItem>
-              <SelectItem value="jurisdiction" className="text-[10px] lg:text-xs xl:text-sm py-1">관할보건소기준</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* 분류1 */}
-          <Select
-            value={
-              !draftFilters.category_1 || draftFilters.category_1.length === 0
-                ? 'all'
-                : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관'
-                ? 'mandatory'
-                : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관 외'
-                ? 'non-mandatory'
-                : 'all'
-            }
-            onValueChange={(value) => {
-              if (typeof window !== 'undefined') {
-                window.sessionStorage.setItem('aed_filters_user_modified', 'true');
-              }
-              setDraftFilters((prev) => ({
-                ...prev,
-                category_1:
-                  value === 'all'
-                    ? undefined
-                    : value === 'mandatory'
-                    ? ['구비의무기관']
-                    : ['구비의무기관 외'],
-              }) as any);
-            }}
-          >
-            <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[42px] lg:w-[50px] xl:w-[70px]")}>
-              <SelectValue className="truncate">
-                {(() => {
-                  const value = !draftFilters.category_1 || draftFilters.category_1.length === 0
-                    ? 'all'
-                    : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관'
-                    ? 'mandatory'
-                    : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관 외'
-                    ? 'non-mandatory'
-                    : 'all';
-
-                  if (value === 'all') return '분류1';
-                  if (value === 'mandatory') return '의무';
-                  return '외';
-                })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
-              <SelectItem value="mandatory" className="text-[10px] lg:text-xs xl:text-sm py-1">구비의무기관</SelectItem>
-              <SelectItem value="non-mandatory" className="text-[10px] lg:text-xs xl:text-sm py-1">구비의무기관 외</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* 분류2 */}
-          <Select
-            value={draftFilters.category_2?.[0] || 'all'}
-            onValueChange={(value) => {
-              if (typeof window !== 'undefined') {
-                window.sessionStorage.setItem('aed_filters_user_modified', 'true');
-              }
-              setDraftFilters((prev) => ({
-                ...prev,
-                category_2: value === 'all' ? undefined : [value],
-              }) as any);
-            }}
-          >
-            <SelectTrigger
-              className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[40px] lg:w-[50px] xl:w-[70px]")}
-              title={(draftFilters.category_2?.[0] && draftFilters.category_2[0] !== 'all') ? draftFilters.category_2[0] : '분류2'}
-            >
-              <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
-                {(() => {
-                  const value = draftFilters.category_2?.[0];
-                  if (!value || value === 'all') return '분류2';
-                  // PC에서는 최대 4글자만 표시
-                  return isMobileLayout ? value : (value.length > 4 ? value.substring(0, 4) + '..' : value);
-                })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
-              {filteredCategory2Options.map((option) => (
-                <SelectItem key={option} value={option} className="text-[10px] lg:text-xs xl:text-sm py-1">
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* 분류3 - 모바일에서 숨김 */}
-          {!isMobileLayout && (
+        {/* PC: 모든 필터 1줄 여백 확보 / 모바일: 2줄로 분리 */}
+        <div className={cn(
+          "flex items-center",
+          isMobileLayout ? "w-full flex-wrap gap-0.5" : "flex-shrink-0 gap-2"
+        )}>
+          {/* 첫 번째 그룹: 구분~분류3 */}
+          <div className={cn("flex items-center", isMobileLayout ? "w-full gap-0.5" : "gap-2")}>
+            {/* 조회기준: 드롭다운 */}
             <Select
-              value={draftFilters.category_3?.[0] || 'all'}
+              value={queryCriteria}
+              onValueChange={(value) => setQueryCriteria(value as QueryCriteria)}
+            >
+              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[40px] lg:w-[55px] xl:w-[80px]")}>
+                <SelectValue className="truncate">
+                  {queryCriteria === 'address' ? (isMobileLayout ? '기준' : '구분') : '보건소'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="address" className="text-[10px] lg:text-xs xl:text-sm py-1">구군기준</SelectItem>
+                <SelectItem value="jurisdiction" className="text-[10px] lg:text-xs xl:text-sm py-1">관할보건소기준</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* 분류1 */}
+            <Select
+              value={
+                !draftFilters.category_1 || draftFilters.category_1.length === 0
+                  ? 'all'
+                  : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관'
+                  ? 'mandatory'
+                  : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관 외'
+                  ? 'non-mandatory'
+                  : 'all'
+              }
               onValueChange={(value) => {
                 if (typeof window !== 'undefined') {
                   window.sessionStorage.setItem('aed_filters_user_modified', 'true');
                 }
                 setDraftFilters((prev) => ({
                   ...prev,
-                  category_3: value === 'all' ? undefined : [value],
+                  category_1:
+                    value === 'all'
+                      ? undefined
+                      : value === 'mandatory'
+                      ? ['구비의무기관']
+                      : ['구비의무기관 외'],
                 }) as any);
               }}
             >
-              <SelectTrigger
-                className="h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none w-[40px] lg:w-[50px] xl:w-[70px]"
-                title={(draftFilters.category_3?.[0] && draftFilters.category_3[0] !== 'all') ? draftFilters.category_3[0] : '분류3'}
-              >
-                <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
+              <SelectTrigger className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[42px] lg:w-[50px] xl:w-[70px]")}>
+                <SelectValue className="truncate">
                   {(() => {
-                    const value = draftFilters.category_3?.[0];
-                    if (!value || value === 'all') return '분류3';
-                    // PC에서는 최대 4글자만 표시
-                    return value.length > 4 ? value.substring(0, 4) + '..' : value;
+                    const value = !draftFilters.category_1 || draftFilters.category_1.length === 0
+                      ? 'all'
+                      : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관'
+                      ? 'mandatory'
+                      : draftFilters.category_1.length === 1 && draftFilters.category_1[0] === '구비의무기관 외'
+                      ? 'non-mandatory'
+                      : 'all';
+
+                    if (value === 'all') return '분류1';
+                    if (value === 'mandatory') return '의무';
+                    return '외';
                   })()}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
-                {filteredCategory3Options.map((option) => (
+                <SelectItem value="mandatory" className="text-[10px] lg:text-xs xl:text-sm py-1">구비의무기관</SelectItem>
+                <SelectItem value="non-mandatory" className="text-[10px] lg:text-xs xl:text-sm py-1">구비의무기관 외</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* 분류2 */}
+            <Select
+              value={draftFilters.category_2?.[0] || 'all'}
+              onValueChange={(value) => {
+                if (typeof window !== 'undefined') {
+                  window.sessionStorage.setItem('aed_filters_user_modified', 'true');
+                }
+                setDraftFilters((prev) => ({
+                  ...prev,
+                  category_2: value === 'all' ? undefined : [value],
+                }) as any);
+              }}
+            >
+              <SelectTrigger
+                className={cn("h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none", isMobileLayout ? "flex-1" : "w-[40px] lg:w-[50px] xl:w-[70px]")}
+                title={(draftFilters.category_2?.[0] && draftFilters.category_2[0] !== 'all') ? draftFilters.category_2[0] : '분류2'}
+              >
+                <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
+                  {(() => {
+                    const value = draftFilters.category_2?.[0];
+                    if (!value || value === 'all') return '분류2';
+                    // PC에서는 최대 4글자만 표시
+                    return isMobileLayout ? value : (value.length > 4 ? value.substring(0, 4) + '..' : value);
+                  })()}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
+                {filteredCategory2Options.map((option) => (
                   <SelectItem key={option} value={option} className="text-[10px] lg:text-xs xl:text-sm py-1">
                     {option}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          )}
 
-          {/* 배터리 */}
-          <ExpirySelectControl
-            label="배터리만료일"
-            shortLabel="배터리"
-            value={draftFilters.battery_expiry_date || 'all'}
-            options={BATTERY_EXPIRY_OPTIONS}
-            isMobile={isMobileLayout}
-            withBorder={true}
-            onChange={(value: string) => setDraftFilters((prev) => ({
-              ...prev,
-              battery_expiry_date: value === 'all' ? undefined : value as ExpiryFilter,
-            }))}
-          />
+            {/* 분류3 - 모바일에서 숨김 */}
+            {!isMobileLayout && (
+              <Select
+                value={draftFilters.category_3?.[0] || 'all'}
+                onValueChange={(value) => {
+                  if (typeof window !== 'undefined') {
+                    window.sessionStorage.setItem('aed_filters_user_modified', 'true');
+                  }
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    category_3: value === 'all' ? undefined : [value],
+                  }) as any);
+                }}
+              >
+                <SelectTrigger
+                  className="h-6 lg:h-7 xl:h-8 text-[10px] lg:text-xs xl:text-sm px-0.5 py-0 border-r rounded-none w-[40px] lg:w-[50px] xl:w-[70px]"
+                  title={(draftFilters.category_3?.[0] && draftFilters.category_3[0] !== 'all') ? draftFilters.category_3[0] : '분류3'}
+                >
+                  <SelectValue className="truncate overflow-hidden text-ellipsis whitespace-nowrap block">
+                    {(() => {
+                      const value = draftFilters.category_3?.[0];
+                      if (!value || value === 'all') return '분류3';
+                      // PC에서는 최대 4글자만 표시
+                      return value.length > 4 ? value.substring(0, 4) + '..' : value;
+                    })()}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-[10px] lg:text-xs xl:text-sm py-1">전체</SelectItem>
+                  {filteredCategory3Options.map((option) => (
+                    <SelectItem key={option} value={option} className="text-[10px] lg:text-xs xl:text-sm py-1">
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
 
-          {/* 패드 */}
-          <ExpirySelectControl
-            label="패드만료일"
-            shortLabel="패드"
-            value={draftFilters.patch_expiry_date || 'all'}
-            options={PATCH_EXPIRY_OPTIONS}
-            isMobile={isMobileLayout}
-            withBorder={true}
-            onChange={(value: string) => setDraftFilters((prev) => ({
-              ...prev,
-              patch_expiry_date: value === 'all' ? undefined : value as ExpiryFilter,
-            }))}
-          />
+          {/* 두 번째 그룹: 배터리~점검 */}
+          <div className={cn("flex items-center", isMobileLayout ? "w-full gap-0.5" : "gap-2")}>
+            {/* 배터리 */}
+            <ExpirySelectControl
+              label="배터리만료일"
+              shortLabel="배터리"
+              value={draftFilters.battery_expiry_date || 'all'}
+              options={BATTERY_EXPIRY_OPTIONS}
+              isMobile={isMobileLayout}
+              withBorder={true}
+              onChange={(value: string) => setDraftFilters((prev) => ({
+                ...prev,
+                battery_expiry_date: value === 'all' ? undefined : value as ExpiryFilter,
+              }))}
+            />
 
-          {/* 교체 */}
-          <ExpirySelectControl
-            label="교체예정"
-            shortLabel="교체"
-            value={draftFilters.replacement_date || 'all'}
-            options={REPLACEMENT_OPTIONS}
-            isMobile={isMobileLayout}
-            withBorder={true}
-            onChange={(value: string) => setDraftFilters((prev) => ({
-              ...prev,
-              replacement_date: value === 'all' ? undefined : value as ExpiryFilter,
-            }))}
-          />
+            {/* 패드 */}
+            <ExpirySelectControl
+              label="패드만료일"
+              shortLabel="패드"
+              value={draftFilters.patch_expiry_date || 'all'}
+              options={PATCH_EXPIRY_OPTIONS}
+              isMobile={isMobileLayout}
+              withBorder={true}
+              onChange={(value: string) => setDraftFilters((prev) => ({
+                ...prev,
+                patch_expiry_date: value === 'all' ? undefined : value as ExpiryFilter,
+              }))}
+            />
 
-          {/* 점검 */}
-          <ExpirySelectControl
-            label="최근점검"
-            shortLabel="점검"
-            value={draftFilters.last_inspection_date || 'all'}
-            options={INSPECTION_OPTIONS}
-            isMobile={isMobileLayout}
-            withBorder={false}
-            onChange={(value: string) => setDraftFilters((prev) => ({
-              ...prev,
-              last_inspection_date: value === 'all' ? undefined : value as ExpiryFilter,
-            }))}
-          />
+            {/* 교체 */}
+            <ExpirySelectControl
+              label="교체예정"
+              shortLabel="교체"
+              value={draftFilters.replacement_date || 'all'}
+              options={REPLACEMENT_OPTIONS}
+              isMobile={isMobileLayout}
+              withBorder={true}
+              onChange={(value: string) => setDraftFilters((prev) => ({
+                ...prev,
+                replacement_date: value === 'all' ? undefined : value as ExpiryFilter,
+              }))}
+            />
+
+            {/* 점검 */}
+            <ExpirySelectControl
+              label="최근점검"
+              shortLabel="점검"
+              value={draftFilters.last_inspection_date || 'all'}
+              options={INSPECTION_OPTIONS}
+              isMobile={isMobileLayout}
+              withBorder={false}
+              onChange={(value: string) => setDraftFilters((prev) => ({
+                ...prev,
+                last_inspection_date: value === 'all' ? undefined : value as ExpiryFilter,
+              }))}
+            />
+          </div>
         </div>
 
         {/* 필터 섹션 (PC에서만 인라인 표시) */}
@@ -961,8 +970,8 @@ export function AEDFilterBar() {
           <>
             {/* 배터리/패드/교체예정일/월간점검은 이미 위 첫 번째 줄에 표시되므로 PC 중복 제거 */}
 
-            {/* PC에서도 외부표출 필터 표시 (드롭다운) */}
-            <div className="flex items-center gap-0.5 border-r border-gray-700 pr-0.5 flex-shrink-0">
+            {/* PC에서도 외부표출 필터 표시 (드롭다운) - 여백 추가 */}
+            <div className="flex items-center gap-2 border-r border-gray-700 pr-2 flex-shrink-0">
               <Select
                 value={draftFilters.external_display || 'all'}
                 onValueChange={(value) => setDraftFilters((prev) => ({
@@ -987,8 +996,8 @@ export function AEDFilterBar() {
               </Select>
             </div>
 
-            {/* 매칭 상태 필터 (외부표출 우측) */}
-            <div className="flex items-center gap-0.5 border-r border-gray-700 pr-0.5 flex-shrink-0">
+            {/* 매칭 상태 필터 (외부표출 우측) - 여백 추가 */}
+            <div className="flex items-center gap-2 border-r border-gray-700 pr-2 flex-shrink-0">
               <Select
                 value={draftFilters.matching_status || 'all'}
                 onValueChange={(value) => setDraftFilters((prev) => ({
@@ -1014,7 +1023,7 @@ export function AEDFilterBar() {
 
         {/* 검색창 + 버튼들 - PC에서만 표시 (모바일은 하단으로 이동) */}
         {!isMobileLayout && (
-          <div className="flex items-center gap-0.5 ml-auto flex-shrink-0 min-w-0">
+          <div className="flex items-center gap-2 ml-auto flex-shrink-0 min-w-0">
             <div className="relative w-[90px] lg:w-[110px] xl:w-[140px] min-w-0">
               <Search className="absolute left-1 top-1/2 h-3 w-3 lg:h-3.5 lg:w-3.5 xl:h-4 xl:w-4 -translate-y-1/2 text-gray-400 flex-shrink-0" />
               <Input
@@ -1027,22 +1036,22 @@ export function AEDFilterBar() {
               />
             </div>
 
-            {/* 초기화 버튼 - 크기 축소 */}
+            {/* 초기화 버튼 */}
             <Button
               variant="outline"
               onClick={handleClear}
               disabled={!hasActiveFilters}
               size="sm"
-              className="h-6 lg:h-7 xl:h-8 px-1 lg:px-1.5 xl:px-2 text-[10px] lg:text-xs xl:text-sm flex-shrink-0 whitespace-nowrap"
+              className="h-6 lg:h-7 xl:h-8 px-2 lg:px-2.5 xl:px-3 text-[10px] lg:text-xs xl:text-sm flex-shrink-0 whitespace-nowrap"
             >
               초기화
             </Button>
 
-            {/* 조회 버튼 - 크기 축소 */}
+            {/* 조회 버튼 */}
             <Button
               onClick={handleApply}
               size="sm"
-              className="h-6 lg:h-7 xl:h-8 px-1 lg:px-1.5 xl:px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
+              className="h-6 lg:h-7 xl:h-8 px-2 lg:px-2.5 xl:px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex-shrink-0 text-[10px] lg:text-xs xl:text-sm whitespace-nowrap"
             >
               조회
             </Button>
