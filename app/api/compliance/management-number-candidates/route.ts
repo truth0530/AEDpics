@@ -333,13 +333,9 @@ export async function GET(request: NextRequest) {
           0::numeric as confidence,
           EXISTS(
             SELECT 1 FROM aedpics.target_list_devices tld
+            JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
             WHERE tld.target_list_year = ${yearInt}
-              AND tld.target_institution_id = ${targetKey}
-              AND ad.equipment_serial = ANY(
-                SELECT ad2.equipment_serial
-                FROM aedpics.aed_data ad2
-                WHERE ad2.management_number = ad.management_number
-              )
+              AND ad2.management_number = ad.management_number
           ) as is_matched,
           (
             SELECT t.target_key
@@ -350,6 +346,15 @@ export async function GET(request: NextRequest) {
               AND tld.target_list_year = ${yearInt}
             LIMIT 1
           ) as matched_to,
+          (
+            SELECT t.institution_name
+            FROM aedpics.target_list_devices tld
+            JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
+            JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
+            WHERE ad2.management_number = ad.management_number
+              AND tld.target_list_year = ${yearInt}
+            LIMIT 1
+          ) as matched_institution_name,
           ad.category_1,
           ad.category_2
         FROM aedpics.aed_data ad
