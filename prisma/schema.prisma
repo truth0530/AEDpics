@@ -78,10 +78,10 @@ model aed_data {
   sync_batch_id                 String?
   search_vector                 Unsupported("tsvector")?
   gps_issues                    gps_issues[]
+  inspection_field_comparisons  inspection_field_comparisons[]
   inspection_schedules          inspection_schedules[]
   inspection_sessions           inspection_sessions[]          @relation("SessionToAedData")
   inspections                   inspections[]                  @relation("InspectionToAedData")
-  inspection_field_comparisons  inspection_field_comparisons[]
 
   @@index([latitude, longitude], map: "idx_aed_data_coordinates")
   @@index([data_status], map: "idx_aed_data_data_status")
@@ -92,6 +92,7 @@ model aed_data {
   @@index([search_vector], map: "idx_aed_data_search_vector", type: Gin)
   @@index([sido, gugun], map: "idx_aed_data_sido_gugun")
   @@index([sido, manufacturer], map: "idx_aed_data_sido_manufacturer")
+  @@index([sido, gugun], map: "idx_aed_sido_gugun")
 }
 
 model audit_logs {
@@ -100,12 +101,12 @@ model audit_logs {
   action        String
   entity_type   String?
   entity_id     String?        @db.Uuid
-  resource_type String?
-  actor_id      String?        @db.Uuid
   metadata      Json           @default("{}")
   ip_address    String?
   user_agent    String?
   created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  actor_id      String?        @db.Uuid
+  resource_type String?
   user_profiles user_profiles? @relation(fields: [user_id], references: [id])
 
   @@index([action], map: "idx_audit_logs_action")
@@ -161,22 +162,22 @@ model gps_issues {
 }
 
 model inspection_assignments {
-  id                                                              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  equipment_serial                                                String            @db.VarChar(255)
-  assigned_to                                                     String?           @db.Uuid
-  assigned_by                                                     String?           @db.Uuid
+  id                                                              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  equipment_serial                                                String           @db.VarChar(255)
+  assigned_to                                                     String?          @db.Uuid
+  assigned_by                                                     String?          @db.Uuid
   assignment_type                                                 String?
-  scheduled_date                                                  DateTime?         @db.Date
-  scheduled_time                                                  DateTime?         @db.Time(6)
-  status                                                          String?           @default("pending")
+  scheduled_date                                                  DateTime?        @db.Date
+  scheduled_time                                                  DateTime?        @db.Time(6)
+  status                                                          String?          @default("pending")
   priority_level                                                  Int?
   notes                                                           String?
-  started_at                                                      DateTime?         @db.Timestamptz(6)
-  completed_at                                                    DateTime?         @db.Timestamptz(6)
-  cancelled_at                                                    DateTime?         @db.Timestamptz(6)
-  assignment_scope                                                assignment_scope  @default(assigned)
-  created_at                                                      DateTime?         @default(now()) @db.Timestamptz(6)
-  updated_at                                                      DateTime?         @default(now()) @updatedAt @db.Timestamptz(6)
+  started_at                                                      DateTime?        @db.Timestamptz(6)
+  completed_at                                                    DateTime?        @db.Timestamptz(6)
+  cancelled_at                                                    DateTime?        @db.Timestamptz(6)
+  created_at                                                      DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at                                                      DateTime?        @default(now()) @updatedAt @db.Timestamptz(6)
+  assignment_scope                                                assignment_scope @default(assigned)
   user_profiles_inspection_assignments_assigned_byTouser_profiles user_profiles?   @relation("inspection_assignments_assigned_byTouser_profiles", fields: [assigned_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user_profiles_inspection_assignments_assigned_toTouser_profiles user_profiles?   @relation("inspection_assignments_assigned_toTouser_profiles", fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -184,6 +185,8 @@ model inspection_assignments {
   @@index([assigned_to], map: "idx_inspection_assignments_assigned_to")
   @@index([equipment_serial], map: "idx_inspection_assignments_equipment")
   @@index([equipment_serial, status], map: "idx_inspection_assignments_equipment_status")
+  @@index([equipment_serial], map: "idx_assignment_equipment_serial")
+  @@index([equipment_serial], map: "idx_ia_equipment_serial")
 }
 
 model inspection_schedule_entries {
@@ -202,6 +205,7 @@ model inspection_schedule_entries {
   @@index([created_by], map: "idx_inspection_schedule_entries_created_by")
   @@index([device_equipment_serial], map: "idx_inspection_schedule_entries_device")
   @@index([scheduled_for(sort: Desc)], map: "idx_inspection_schedule_entries_scheduled_for")
+  @@index([device_equipment_serial], map: "idx_ise_device_equipment_serial")
 }
 
 model inspection_schedules {
@@ -211,13 +215,13 @@ model inspection_schedules {
   scheduled_for       DateTime?       @db.Timestamptz(6)
   assignee_identifier String?
   priority            String?
-  status              schedule_status @default(scheduled)
   notes               String?
-  created_by          String?        @db.Uuid
-  created_at          DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
-  aed_data            aed_data?      @relation(fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  user_profiles       user_profiles? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  created_by          String?         @db.Uuid
+  created_at          DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?       @default(now()) @updatedAt @db.Timestamptz(6)
+  status              schedule_status @default(scheduled)
+  aed_data            aed_data?       @relation(fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_profiles       user_profiles?  @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([equipment_serial], map: "idx_inspection_schedules_equipment")
 }
@@ -245,7 +249,7 @@ model inspection_sessions {
   refresh_error       String?
   created_at          DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
-  aed_data            aed_data?      @relation("SessionToAedData", fields: [equipment_serial], references: [equipment_serial], onDelete: NoAction, onUpdate: NoAction)
+  aed_data            aed_data       @relation("SessionToAedData", fields: [equipment_serial], references: [equipment_serial], onDelete: NoAction, onUpdate: NoAction)
   user_profiles       user_profiles? @relation(fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([equipment_serial], map: "idx_inspection_sessions_equipment")
@@ -275,18 +279,17 @@ model inspections {
   original_data                Json?
   registered_data              Json?
   inspected_data               Json?
-  approval_status              inspection_approval_status    @default(submitted)
-  approved_by_id               String?                        @db.Uuid
-  approved_at                  DateTime?                      @db.Timestamptz(6)
-  rejection_reason             String?
   created_at                   DateTime?                      @default(now()) @db.Timestamptz(6)
   updated_at                   DateTime?                      @default(now()) @updatedAt @db.Timestamptz(6)
   completed_at                 DateTime?                      @db.Timestamptz(6)
-  aed_data                     aed_data?                      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
-  user_profiles                user_profiles?                 @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
-  approved_by                  user_profiles?                 @relation("InspectionApprovedBy", fields: [approved_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_approved_by_id_fkey")
+  approval_status              inspection_approval_status     @default(submitted)
+  approved_by_id               String?                        @db.Uuid
+  approved_at                  DateTime?                      @db.Timestamptz(6)
+  rejection_reason             String?
   inspection_field_comparisons inspection_field_comparisons[]
-  inspection_edit_logs         inspection_edit_logs[]
+  aed_data                     aed_data?                      @relation("InspectionToAedData", fields: [aed_data_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_aed_data_id_fkey")
+  approved_by                  user_profiles?                 @relation("InspectionApprovedBy", fields: [approved_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_approved_by_id_fkey")
+  user_profiles                user_profiles?                 @relation("InspectionToInspector", fields: [inspector_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inspections_inspector_id_fkey")
 
   @@index([equipment_serial], map: "idx_inspections_equipment_serial")
   @@index([inspector_id], map: "idx_inspections_inspector_id")
@@ -295,34 +298,25 @@ model inspections {
 }
 
 model inspection_field_comparisons {
-  id               String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  inspection_id    String @db.Uuid
-  equipment_serial String @db.VarChar(255)
-  field_name       String @db.VarChar(100)
-  field_category   String @db.VarChar(50)
-
-  // 점검 시점 데이터
-  inspection_value String?
-  aed_data_value   String?
-  inspection_time  DateTime @db.Timestamptz(6)
-
-  // 분류
-  status_at_inspection String  @db.VarChar(20)
-  issue_severity       String? @db.VarChar(20)
-
-  // 개선 추적
+  id                    String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inspection_id         String      @db.Uuid
+  equipment_serial      String      @db.VarChar(255)
+  field_name            String      @db.VarChar(100)
+  field_category        String      @db.VarChar(50)
+  inspection_value      String?
+  aed_data_value        String?
+  inspection_time       DateTime    @db.Timestamptz(6)
+  status_at_inspection  String      @db.VarChar(20)
+  issue_severity        String?     @db.VarChar(20)
   current_aed_value     String?
-  last_checked_at       DateTime  @default(now()) @db.Timestamptz(6)
-  improvement_status    String?   @db.VarChar(20)
-  improved_at           DateTime? @db.Timestamptz(6)
+  last_checked_at       DateTime    @default(now()) @db.Timestamptz(6)
+  improvement_status    String?     @db.VarChar(20)
+  improved_at           DateTime?   @db.Timestamptz(6)
   days_since_inspection Int?
-
-  // 관계
-  inspection inspections @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
-  aed_device aed_data    @relation(fields: [equipment_serial], references: [equipment_serial], onDelete: Cascade)
-
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  created_at            DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime    @default(now()) @updatedAt @db.Timestamptz(6)
+  aed_device            aed_data    @relation(fields: [equipment_serial], references: [equipment_serial], onDelete: Cascade)
+  inspection            inspections @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
 
   @@index([inspection_id], map: "idx_field_comparisons_inspection")
   @@index([equipment_serial], map: "idx_field_comparisons_equipment")
@@ -420,21 +414,21 @@ model organizations {
   type                         organization_type
   parent_id                    String?                        @db.Uuid
   region_code                  String?
-  city_code                    String?
   address                      String?
   contact                      String?
   latitude                     Decimal?                       @db.Decimal(10, 8)
   longitude                    Decimal?                       @db.Decimal(11, 8)
   created_at                   DateTime                       @default(now()) @db.Timestamptz(6)
   updated_at                   DateTime                       @default(now()) @updatedAt @db.Timestamptz(6)
+  city_code                    String?
+  change_requests_as_current   organization_change_requests[] @relation("change_request_current_org")
+  change_requests_as_requested organization_change_requests[] @relation("change_request_requested_org")
   organizations                organizations?                 @relation("organizationsToorganizations", fields: [parent_id], references: [id])
   other_organizations          organizations[]                @relation("organizationsToorganizations")
   task_assignments             task_assignments[]
   team_activity_logs           team_activity_logs[]
   team_members                 team_members[]
   user_profiles                user_profiles[]
-  change_requests_as_current   organization_change_requests[] @relation("change_request_current_org")
-  change_requests_as_requested organization_change_requests[] @relation("change_request_requested_org")
 
   @@index([region_code], map: "idx_organizations_region")
   @@index([type], map: "idx_organizations_type")
@@ -519,22 +513,21 @@ model target_list_2024 {
 }
 
 model target_list_2025 {
-  target_key        String                 @id @db.VarChar(255)
-  no                Int?
-  sido              String?                @db.VarChar(50)
-  gugun             String?                @db.VarChar(100)
-  division          String?                @db.VarChar(100)
-  sub_division      String?                @db.VarChar(100)
-  institution_name  String?                @db.VarChar(255)
-  unique_key        String?                @db.VarChar(100)
-  address           String?                @db.VarChar(500)
-  contact           String?                @db.VarChar(100)
-  target_keygroup   String?                @db.VarChar(255)
-  data_year         Int?                   @default(2025)
-  imported_at       DateTime?              @db.Timestamptz(6)
-  created_at        DateTime?              @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime?              @default(now()) @updatedAt @db.Timestamptz(6)
-  target_list_devices target_list_devices[]
+  target_key       String    @id @db.VarChar(255)
+  no               Int?
+  sido             String?   @db.VarChar(50)
+  gugun            String?   @db.VarChar(100)
+  division         String?   @db.VarChar(100)
+  sub_division     String?   @db.VarChar(100)
+  institution_name String?   @db.VarChar(255)
+  unique_key       String?   @db.VarChar(100)
+  address          String?   @db.VarChar(500)
+  contact          String?   @db.VarChar(100)
+  target_keygroup  String?   @db.VarChar(255)
+  data_year        Int?      @default(2025)
+  imported_at      DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@index([target_keygroup], map: "idx_target_2025_keygroup")
   @@index([sido, gugun], map: "idx_target_2025_location")
@@ -555,11 +548,10 @@ model target_list_devices {
   verified_at                                                  DateTime?       @db.Timestamptz(6)
   created_at                                                   DateTime        @default(now()) @db.Timestamptz(6)
   updated_at                                                   DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
-  user_profiles_target_list_devices_matched_byTouser_profiles  user_profiles?   @relation("target_list_devices_matched_byTouser_profiles", fields: [matched_by], references: [id])
-  user_profiles_target_list_devices_verified_byTouser_profiles user_profiles?   @relation("target_list_devices_verified_byTouser_profiles", fields: [verified_by], references: [id])
-  target_list_2025                                             target_list_2025? @relation(fields: [target_institution_id], references: [target_key], onDelete: NoAction, onUpdate: NoAction)
+  user_profiles_target_list_devices_matched_byTouser_profiles  user_profiles?  @relation("target_list_devices_matched_byTouser_profiles", fields: [matched_by], references: [id])
+  user_profiles_target_list_devices_verified_byTouser_profiles user_profiles?  @relation("target_list_devices_verified_byTouser_profiles", fields: [verified_by], references: [id])
 
-  @@unique([target_list_year, equipment_serial, target_institution_id], map: "unique_year_serial_institution")
+  @@unique([target_list_year, equipment_serial])
   @@index([equipment_serial], map: "idx_target_devices_equipment")
   @@index([matching_method], map: "idx_target_devices_method")
   @@index([target_list_year], map: "idx_target_devices_year")
@@ -706,24 +698,31 @@ model user_profiles {
   account_type                                                                                     String?                           @db.VarChar(20)
   assigned_devices                                                                                 String[]
   accounts                                                                                         accounts[]
+  approval_notifications_received                                                                  approval_notifications[]          @relation("approval_notifications_recipient")
+  approval_notifications_sent                                                                      approval_notifications[]          @relation("approval_notifications_sender")
   audit_logs                                                                                       audit_logs[]
   inspection_assignments_inspection_assignments_assigned_byTouser_profiles                         inspection_assignments[]          @relation("inspection_assignments_assigned_byTouser_profiles")
   inspection_assignments_inspection_assignments_assigned_toTouser_profiles                         inspection_assignments[]          @relation("inspection_assignments_assigned_toTouser_profiles")
   inspection_schedule_entries                                                                      inspection_schedule_entries[]
   inspection_schedules                                                                             inspection_schedules[]
   inspection_sessions                                                                              inspection_sessions[]
-  inspections                                                                                      inspections[]                     @relation("InspectionToInspector")
   inspections_approved_by                                                                          inspections[]                     @relation("InspectionApprovedBy")
+  inspections                                                                                      inspections[]                     @relation("InspectionToInspector")
   login_history                                                                                    login_history[]
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2024Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2024Touser_profiles")
   management_number_group_mapping_management_number_group_mapping_confirmed_by_2025Touser_profiles management_number_group_mapping[] @relation("management_number_group_mapping_confirmed_by_2025Touser_profiles")
   management_number_group_mapping_management_number_group_mapping_modified_by_2024Touser_profiles  management_number_group_mapping[] @relation("management_number_group_mapping_modified_by_2024Touser_profiles")
   management_number_group_mapping_management_number_group_mapping_modified_by_2025Touser_profiles  management_number_group_mapping[] @relation("management_number_group_mapping_modified_by_2025Touser_profiles")
+  notification_settings                                                                            notification_settings?
   notifications_notifications_recipient_idTouser_profiles                                          notifications[]                   @relation("notifications_recipient_idTouser_profiles")
   notifications_notifications_sender_idTouser_profiles                                             notifications[]                   @relation("notifications_sender_idTouser_profiles")
+  organization_change_requests_as_reviewer                                                         organization_change_requests[]    @relation("change_request_reviewer")
+  organization_change_requests_as_user                                                             organization_change_requests[]    @relation("change_request_user")
+  push_subscriptions                                                                               push_subscriptions[]
   sessions                                                                                         sessions[]
   target_list_devices_target_list_devices_matched_byTouser_profiles                                target_list_devices[]             @relation("target_list_devices_matched_byTouser_profiles")
   target_list_devices_target_list_devices_verified_byTouser_profiles                               target_list_devices[]             @relation("target_list_devices_verified_byTouser_profiles")
+  target_list_match_logs                                                                           target_list_match_logs[]
   task_assignments                                                                                 task_assignments[]
   team_activity_logs                                                                               team_activity_logs[]
   team_members_team_members_added_byTouser_profiles                                                team_members[]                    @relation("team_members_added_byTouser_profiles")
@@ -733,15 +732,6 @@ model user_profiles {
   other_user_profiles                                                                              user_profiles[]                   @relation("user_profilesTouser_profiles")
   organizations                                                                                    organizations?                    @relation(fields: [organization_id], references: [id])
 
-  approval_notifications_sent              approval_notifications[]       @relation("approval_notifications_sender")
-  approval_notifications_received          approval_notifications[]       @relation("approval_notifications_recipient")
-  notification_settings                    notification_settings?
-  push_subscriptions                       push_subscriptions[]
-  organization_change_requests_as_user     organization_change_requests[] @relation("change_request_user")
-  organization_change_requests_as_reviewer organization_change_requests[] @relation("change_request_reviewer")
-  target_list_match_logs                   target_list_match_logs[]
-  inspection_edit_logs                     inspection_edit_logs[]
-
   @@index([account_type], map: "idx_user_profiles_account_type")
   @@index([email], map: "idx_user_profiles_email")
   @@index([organization_name], map: "idx_user_profiles_organization_name")
@@ -749,6 +739,7 @@ model user_profiles {
   @@index([role, is_active], map: "idx_user_profiles_role_active")
   @@index([created_at, role], map: "idx_user_profiles_created_at_role")
   @@index([region_code, role], map: "idx_user_profiles_region_role")
+  @@index([email], map: "idx_user_email")
 }
 
 model verification_tokens {
@@ -757,6 +748,275 @@ model verification_tokens {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model approval_notifications {
+  id                String         @id @default(uuid()) @db.Uuid
+  recipient_id      String         @db.Uuid
+  sender_id         String?        @db.Uuid
+  new_user_id       String         @db.Uuid
+  new_user_email    String
+  new_user_name     String
+  new_user_region   String?
+  new_user_org      String?
+  notification_type String         @db.VarChar(50)
+  is_read           Boolean        @default(false)
+  read_at           DateTime?      @db.Timestamptz(6)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  recipient         user_profiles  @relation("approval_notifications_recipient", fields: [recipient_id], references: [id], onDelete: Cascade)
+  sender            user_profiles? @relation("approval_notifications_sender", fields: [sender_id], references: [id])
+
+  @@index([recipient_id, is_read, created_at], map: "idx_approval_notif_recipient")
+  @@index([new_user_id], map: "idx_approval_notif_new_user")
+  @@index([created_at], map: "idx_approval_notif_created_at")
+}
+
+model notification_settings {
+  id                   String        @id @default(uuid()) @db.Uuid
+  user_id              String        @unique @db.Uuid
+  sound_enabled        Boolean       @default(true)
+  voice_enabled        Boolean       @default(true)
+  browser_push_enabled Boolean       @default(true)
+  toast_enabled        Boolean       @default(true)
+  reminder_enabled     Boolean       @default(true)
+  reminder_interval    Int           @default(60)
+  quiet_hours_enabled  Boolean       @default(false)
+  quiet_hours_start    String?       @db.VarChar(5)
+  quiet_hours_end      String?       @db.VarChar(5)
+  created_at           DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+  user                 user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_notification_settings_user")
+}
+
+model push_subscriptions {
+  id           String        @id @default(uuid()) @db.Uuid
+  user_id      String        @db.Uuid
+  endpoint     String        @db.VarChar(500)
+  p256dh_key   String        @db.VarChar(200)
+  auth_key     String        @db.VarChar(200)
+  user_agent   String?       @db.VarChar(500)
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+  last_used_at DateTime?     @db.Timestamptz(6)
+  user         user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, endpoint])
+  @@index([user_id], map: "idx_push_subscriptions_user")
+  @@index([endpoint], map: "idx_push_subscriptions_endpoint")
+}
+
+model organization_change_requests {
+  id                        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                   String         @db.Uuid
+  current_organization_id   String?        @db.Uuid
+  requested_organization_id String         @db.Uuid
+  reason                    String?
+  status                    review_status  @default(pending)
+  requested_at              DateTime       @default(now()) @db.Timestamptz(6)
+  reviewed_by               String?        @db.Uuid
+  reviewed_at               DateTime?      @db.Timestamptz(6)
+  review_notes              String?
+  created_at                DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  current_organization      organizations? @relation("change_request_current_org", fields: [current_organization_id], references: [id])
+  requested_organization    organizations  @relation("change_request_requested_org", fields: [requested_organization_id], references: [id], onDelete: Cascade)
+  reviewer                  user_profiles? @relation("change_request_reviewer", fields: [reviewed_by], references: [id])
+  user                      user_profiles  @relation("change_request_user", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_org_change_requests_user")
+  @@index([status], map: "idx_org_change_requests_status")
+  @@index([requested_at], map: "idx_org_change_requests_requested_at")
+}
+
+model target_list_match_logs {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action             String        @db.VarChar(20)
+  target_list_year   Int
+  target_key         String        @db.VarChar(255)
+  management_numbers String[]
+  user_id            String        @db.Uuid
+  reason             String?
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  user               user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([target_list_year, target_key], map: "idx_match_logs_target")
+  @@index([user_id], map: "idx_match_logs_user")
+  @@index([created_at(sort: Desc)], map: "idx_match_logs_created")
+  @@index([action], map: "idx_match_logs_action")
+}
+
+model administrative_regions {
+  region_code        String                   @id @db.VarChar(20)
+  region_type        String?                  @db.VarChar(20)
+  korean_name        String                   @db.VarChar(100)
+  short_name         String?                  @db.VarChar(50)
+  parent_code        String?                  @db.VarChar(20)
+  level              Int?
+  is_active          Boolean                  @default(true)
+  source_url         String?                  @db.VarChar(500)
+  last_verified_date DateTime?                @db.Date
+  created_at         DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                 @default(now()) @updatedAt @db.Timestamptz(6)
+  parent             administrative_regions?  @relation("RegionHierarchy", fields: [parent_code], references: [region_code])
+  children           administrative_regions[] @relation("RegionHierarchy")
+  institutions       institution_registry[]
+
+  @@index([korean_name], map: "idx_administrative_regions_name")
+  @@index([parent_code], map: "idx_administrative_regions_parent")
+}
+
+model institution_registry {
+  standard_code        String                  @id @db.VarChar(50)
+  canonical_name       String                  @db.VarChar(255)
+  region_code          String?                 @db.VarChar(20)
+  category             String?                 @db.VarChar(50)
+  sub_category         String?                 @db.VarChar(100)
+  road_address         String?                 @db.VarChar(255)
+  lot_address          String?                 @db.VarChar(255)
+  postal_code          String?                 @db.VarChar(10)
+  latitude             Decimal?                @db.Decimal(10, 7)
+  longitude            Decimal?                @db.Decimal(10, 7)
+  address_hash         String?                 @db.VarChar(64)
+  is_active            Boolean                 @default(true)
+  created_at           DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                @default(now()) @updatedAt @db.Timestamptz(6)
+  created_by           String?                 @db.VarChar(255)
+  last_modified_by     String?                 @db.VarChar(255)
+  last_modified_reason String?
+  aliases              institution_aliases[]
+  region               administrative_regions? @relation(fields: [region_code], references: [region_code])
+
+  @@index([canonical_name], map: "idx_institution_registry_name")
+  @@index([region_code], map: "idx_institution_registry_region")
+  @@index([address_hash], map: "idx_institution_registry_address_hash")
+  @@index([is_active], map: "idx_institution_registry_active")
+}
+
+model institution_aliases {
+  id                    BigInt               @id @default(autoincrement())
+  standard_code         String               @db.VarChar(50)
+  alias_name            String               @db.VarChar(255)
+  alias_source          String?              @db.VarChar(50)
+  source_road_address   String?              @db.VarChar(255)
+  source_lot_address    String?              @db.VarChar(255)
+  source_postal_code    String?              @db.VarChar(10)
+  match_score           Int                  @default(100)
+  normalization_applied Boolean              @default(false)
+  address_match         Boolean              @default(false)
+  is_active             Boolean              @default(true)
+  created_at            DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
+  reviewed_by           String?              @db.VarChar(255)
+  reviewed_at           DateTime?            @db.Timestamptz(6)
+  institution           institution_registry @relation(fields: [standard_code], references: [standard_code], onDelete: Cascade)
+
+  @@index([alias_name], map: "idx_institution_aliases_name")
+  @@index([alias_source], map: "idx_institution_aliases_source")
+  @@index([standard_code], map: "idx_institution_aliases_standard_code")
+  @@index([source_road_address], map: "idx_institution_aliases_address")
+}
+
+model normalization_rules {
+  rule_id     Int      @id @default(autoincrement())
+  rule_name   String   @unique @db.VarChar(100)
+  rule_type   String?  @db.VarChar(50)
+  rule_spec   Json
+  priority    Int      @default(100)
+  is_active   Boolean  @default(true)
+  description String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  updated_by  String?  @db.VarChar(255)
+
+  @@index([priority], map: "idx_normalization_rules_priority")
+  @@index([is_active], map: "idx_normalization_rules_active")
+}
+
+model tnms_matching_results {
+  id                        Int       @id @default(autoincrement())
+  target_key                String    @unique(map: "uk_target_key") @db.VarChar(255)
+  target_institution_name   String?   @db.VarChar(500)
+  target_sido               String?   @db.VarChar(100)
+  target_gugun              String?   @db.VarChar(100)
+  target_address            String?
+  target_normalized_name    String?   @db.VarChar(500)
+  matched_management_number String?   @db.VarChar(255)
+  matched_equipment_serial  String?   @db.VarChar(255)
+  matched_institution_name  String?   @db.VarChar(500)
+  matched_address           String?
+  matched_normalized_name   String?   @db.VarChar(500)
+  confidence_score          Decimal?  @db.Decimal(5, 2)
+  name_confidence           Decimal?  @db.Decimal(5, 2)
+  address_confidence        Decimal?  @db.Decimal(5, 2)
+  matching_rules            String[]
+  match_type                String?   @db.VarChar(50)
+  created_at                DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+  updated_by                String?   @db.VarChar(255)
+
+  @@index([matched_equipment_serial], map: "idx_tnms_equipment_serial")
+  @@index([matched_management_number], map: "idx_tnms_management_number")
+  @@index([confidence_score(sort: Desc)], map: "idx_tnms_confidence")
+  @@index([match_type], map: "idx_tnms_match_type")
+  @@index([target_key], map: "idx_tnms_target_key")
+}
+
+model institution_validation_log {
+  log_id                BigInt    @id @default(autoincrement())
+  validation_run_id     String?   @db.VarChar(100)
+  run_type              String?   @db.VarChar(50)
+  source_table          String?   @db.VarChar(100)
+  source_name           String    @db.VarChar(255)
+  matched_standard_code String?   @db.VarChar(50)
+  match_confidence      Int?
+  is_successful         Boolean?
+  error_reason          String?   @db.VarChar(500)
+  manual_review_status  String?   @db.VarChar(50)
+  manual_review_notes   String?
+  reviewed_by           String?   @db.VarChar(255)
+  reviewed_at           DateTime? @db.Timestamptz(6)
+  debug_signals         Json?
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([validation_run_id], map: "idx_institution_validation_run")
+  @@index([is_successful], map: "idx_institution_validation_success")
+  @@index([manual_review_status], map: "idx_institution_validation_status")
+}
+
+model institution_audit_log {
+  audit_id       BigInt   @id @default(autoincrement())
+  table_name     String   @db.VarChar(100)
+  record_id      String   @db.VarChar(64)
+  action         String   @db.VarChar(50)
+  changed_fields Json?
+  actor_id       String?  @db.VarChar(255)
+  actor_role     String?  @db.VarChar(50)
+  reason         String?
+  ip_address     String?  @db.Inet
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([table_name, record_id], map: "idx_institution_audit_record")
+  @@index([actor_id], map: "idx_institution_audit_actor")
+  @@index([action], map: "idx_institution_audit_action")
+}
+
+model institution_metrics {
+  metric_id                   BigInt   @id @default(autoincrement())
+  metric_date                 DateTime @db.Date
+  total_institutions          Int?
+  total_aliases               Int?
+  matched_count               Int?
+  unmatched_count             Int?
+  match_success_rate          Decimal? @db.Decimal(5, 2)
+  auto_recommend_success_rate Decimal? @db.Decimal(5, 2)
+  search_hit_rate             Decimal? @db.Decimal(5, 2)
+  address_match_rate          Decimal? @db.Decimal(5, 2)
+  validation_run_count        Int?
+  created_at                  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([metric_date], map: "idx_institution_metrics_date")
 }
 
 enum access_scope {
@@ -996,275 +1256,7 @@ enum user_role {
   local_admin
   pending_approval
   email_verified
-  rejected
   regional_emergency_center_admin
   temporary_inspector
-}
-
-// ========== 알림 시스템 ==========
-
-model approval_notifications {
-  id                String    @id @default(uuid()) @db.Uuid
-  recipient_id      String    @db.Uuid
-  sender_id         String?   @db.Uuid
-  new_user_id       String    @db.Uuid
-  new_user_email    String
-  new_user_name     String
-  new_user_region   String?
-  new_user_org      String?
-  notification_type String    @db.VarChar(50) // 'new_signup', 'reminder'
-  is_read           Boolean   @default(false)
-  read_at           DateTime? @db.Timestamptz(6)
-  created_at        DateTime  @default(now()) @db.Timestamptz(6)
-
-  recipient user_profiles  @relation("approval_notifications_recipient", fields: [recipient_id], references: [id], onDelete: Cascade)
-  sender    user_profiles? @relation("approval_notifications_sender", fields: [sender_id], references: [id], onDelete: SetNull)
-
-  @@index([recipient_id, is_read, created_at], map: "idx_approval_notif_recipient")
-  @@index([new_user_id], map: "idx_approval_notif_new_user")
-  @@index([created_at], map: "idx_approval_notif_created_at")
-}
-
-model notification_settings {
-  id                   String   @id @default(uuid()) @db.Uuid
-  user_id              String   @unique @db.Uuid
-  sound_enabled        Boolean  @default(true)
-  voice_enabled        Boolean  @default(true)
-  browser_push_enabled Boolean  @default(true)
-  toast_enabled        Boolean  @default(true)
-  reminder_enabled     Boolean  @default(true)
-  reminder_interval    Int      @default(60) // 초 단위 (기본: 60초 = 1분)
-  quiet_hours_enabled  Boolean  @default(false)
-  quiet_hours_start    String?  @db.VarChar(5) // "22:00" 형식
-  quiet_hours_end      String?  @db.VarChar(5) // "08:00" 형식
-  created_at           DateTime @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-
-  user user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id], map: "idx_notification_settings_user")
-}
-
-model push_subscriptions {
-  id           String    @id @default(uuid()) @db.Uuid
-  user_id      String    @db.Uuid
-  endpoint     String    @db.VarChar(500)
-  p256dh_key   String    @db.VarChar(200)
-  auth_key     String    @db.VarChar(200)
-  user_agent   String?   @db.VarChar(500)
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
-  last_used_at DateTime? @db.Timestamptz(6)
-
-  user user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, endpoint])
-  @@index([user_id], map: "idx_push_subscriptions_user")
-  @@index([endpoint], map: "idx_push_subscriptions_endpoint")
-}
-
-// ========== 조직 변경 요청 ==========
-
-model organization_change_requests {
-  id                        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id                   String        @db.Uuid
-  current_organization_id   String?       @db.Uuid
-  requested_organization_id String        @db.Uuid
-  reason                    String?
-  status                    review_status @default(pending)
-  requested_at              DateTime      @default(now()) @db.Timestamptz(6)
-  reviewed_by               String?       @db.Uuid
-  reviewed_at               DateTime?     @db.Timestamptz(6)
-  review_notes              String?
-  created_at                DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at                DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
-
-  user                   user_profiles  @relation("change_request_user", fields: [user_id], references: [id], onDelete: Cascade)
-  current_organization   organizations? @relation("change_request_current_org", fields: [current_organization_id], references: [id], onDelete: SetNull)
-  requested_organization organizations  @relation("change_request_requested_org", fields: [requested_organization_id], references: [id], onDelete: Cascade)
-  reviewer               user_profiles? @relation("change_request_reviewer", fields: [reviewed_by], references: [id], onDelete: SetNull)
-
-  @@index([user_id], map: "idx_org_change_requests_user")
-  @@index([status], map: "idx_org_change_requests_status")
-  @@index([requested_at], map: "idx_org_change_requests_requested_at")
-}
-
-model target_list_match_logs {
-  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  action               String        @db.VarChar(20) // 'match' or 'unmatch'
-  target_list_year     Int
-  target_key           String        @db.VarChar(255)
-  management_numbers   String[]      // Array of management numbers
-  user_id              String        @db.Uuid
-  reason               String?       // Required when unmatching others' matches
-  created_at           DateTime      @default(now()) @db.Timestamptz(6)
-
-  user                 user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([target_list_year, target_key], map: "idx_match_logs_target")
-  @@index([user_id], map: "idx_match_logs_user")
-  @@index([created_at(sort: Desc)], map: "idx_match_logs_created")
-  @@index([action], map: "idx_match_logs_action")
-}
-
-model administrative_regions {
-  region_code        String   @id @db.VarChar(20)
-  region_type        String?  @db.VarChar(20)
-  korean_name        String   @db.VarChar(100)
-  short_name         String?  @db.VarChar(50)
-  parent_code        String?  @db.VarChar(20)
-  level              Int?
-  is_active          Boolean  @default(true)
-  source_url         String?  @db.VarChar(500)
-  last_verified_date DateTime? @db.Date
-  created_at         DateTime @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-
-  parent       administrative_regions?  @relation("RegionHierarchy", fields: [parent_code], references: [region_code])
-  children     administrative_regions[] @relation("RegionHierarchy")
-  institutions institution_registry[]
-
-  @@index([korean_name], map: "idx_administrative_regions_name")
-  @@index([parent_code], map: "idx_administrative_regions_parent")
-}
-
-model institution_registry {
-  standard_code        String   @id @db.VarChar(50)
-  canonical_name       String   @db.VarChar(255)
-  region_code          String?  @db.VarChar(20)
-  category             String?  @db.VarChar(50)
-  sub_category         String?  @db.VarChar(100)
-  road_address         String?  @db.VarChar(255)
-  lot_address          String?  @db.VarChar(255)
-  postal_code          String?  @db.VarChar(10)
-  latitude             Decimal? @db.Decimal(10, 7)
-  longitude            Decimal? @db.Decimal(10, 7)
-  address_hash         String?  @db.VarChar(64)
-  is_active            Boolean  @default(true)
-  created_at           DateTime @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  created_by           String?  @db.VarChar(255)
-  last_modified_by     String?  @db.VarChar(255)
-  last_modified_reason String?  @db.Text
-
-  region administrative_regions? @relation(fields: [region_code], references: [region_code])
-  aliases institution_aliases[]
-
-  @@index([canonical_name], map: "idx_institution_registry_name")
-  @@index([region_code], map: "idx_institution_registry_region")
-  @@index([address_hash], map: "idx_institution_registry_address_hash")
-  @@index([is_active], map: "idx_institution_registry_active")
-}
-
-model institution_aliases {
-  id                    BigInt   @id @default(autoincrement())
-  standard_code         String   @db.VarChar(50)
-  alias_name            String   @db.VarChar(255)
-  alias_source          String?  @db.VarChar(50)
-  source_road_address   String?  @db.VarChar(255)
-  source_lot_address    String?  @db.VarChar(255)
-  source_postal_code    String?  @db.VarChar(10)
-  match_score           Int      @default(100)
-  normalization_applied Boolean  @default(false)
-  address_match         Boolean  @default(false)
-  is_active             Boolean  @default(true)
-  created_at            DateTime @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  reviewed_by           String?  @db.VarChar(255)
-  reviewed_at           DateTime? @db.Timestamptz(6)
-
-  institution institution_registry @relation(fields: [standard_code], references: [standard_code], onDelete: Cascade)
-
-  @@index([alias_name], map: "idx_institution_aliases_name")
-  @@index([alias_source], map: "idx_institution_aliases_source")
-  @@index([standard_code], map: "idx_institution_aliases_standard_code")
-  @@index([source_road_address], map: "idx_institution_aliases_address")
-}
-
-model normalization_rules {
-  rule_id     Int      @id @default(autoincrement())
-  rule_name   String   @unique @db.VarChar(100)
-  rule_type   String?  @db.VarChar(50)
-  rule_spec   Json
-  priority    Int      @default(100)
-  is_active   Boolean  @default(true)
-  description String?  @db.Text
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
-  updated_by  String?  @db.VarChar(255)
-
-  @@index([priority], map: "idx_normalization_rules_priority")
-  @@index([is_active], map: "idx_normalization_rules_active")
-}
-
-model institution_validation_log {
-  log_id                BigInt    @id @default(autoincrement())
-  validation_run_id     String?   @db.VarChar(100)
-  run_type              String?   @db.VarChar(50)
-  source_table          String?   @db.VarChar(100)
-  source_name           String    @db.VarChar(255)
-  matched_standard_code String?   @db.VarChar(50)
-  match_confidence      Int?
-  is_successful         Boolean?
-  error_reason          String?   @db.VarChar(500)
-  manual_review_status  String?   @db.VarChar(50)
-  manual_review_notes   String?   @db.Text
-  reviewed_by           String?   @db.VarChar(255)
-  reviewed_at           DateTime? @db.Timestamptz(6)
-  debug_signals         Json?
-  created_at            DateTime  @default(now()) @db.Timestamptz(6)
-
-  @@index([validation_run_id], map: "idx_institution_validation_run")
-  @@index([is_successful], map: "idx_institution_validation_success")
-  @@index([manual_review_status], map: "idx_institution_validation_status")
-}
-
-model institution_audit_log {
-  audit_id      BigInt   @id @default(autoincrement())
-  table_name    String   @db.VarChar(100)
-  record_id     String   @db.VarChar(64)
-  action        String   @db.VarChar(50)
-  changed_fields Json?
-  actor_id      String?  @db.VarChar(255)
-  actor_role    String?  @db.VarChar(50)
-  reason        String?  @db.Text
-  ip_address    String?  @db.Inet
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-
-  @@index([table_name, record_id], map: "idx_institution_audit_record")
-  @@index([actor_id], map: "idx_institution_audit_actor")
-  @@index([action], map: "idx_institution_audit_action")
-}
-
-model institution_metrics {
-  metric_id                   BigInt   @id @default(autoincrement())
-  metric_date                 DateTime @db.Date
-  total_institutions          Int?
-  total_aliases               Int?
-  matched_count               Int?
-  unmatched_count             Int?
-  match_success_rate          Decimal? @db.Decimal(5, 2)
-  auto_recommend_success_rate Decimal? @db.Decimal(5, 2)
-  search_hit_rate             Decimal? @db.Decimal(5, 2)
-  address_match_rate          Decimal? @db.Decimal(5, 2)
-  validation_run_count        Int?
-  created_at                  DateTime @default(now()) @db.Timestamptz(6)
-
-  @@index([metric_date], map: "idx_institution_metrics_date")
-}
-
-model inspection_edit_logs {
-  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  inspection_id String        @db.Uuid
-  editor_id     String        @db.Uuid
-  field_name    String        @db.VarChar(100)
-  old_value     String?
-  new_value     String?
-  edited_at     DateTime      @default(now()) @db.Timestamptz(6)
-  
-  inspection    inspections   @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
-  editor        user_profiles @relation(fields: [editor_id], references: [id])
-
-  @@index([inspection_id], map: "idx_inspection_edit_logs_inspection")
-  @@index([editor_id], map: "idx_inspection_edit_logs_editor")
+  rejected
 }

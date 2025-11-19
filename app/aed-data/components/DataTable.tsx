@@ -41,16 +41,15 @@ function getDeviceId(device: AEDDevice): string {
 const TOUCH_TARGET_BUTTON = 'min-h-[40px] px-3 sm:min-h-[36px] touch-manipulation';
 
 const getColumnTemplate = (enableSelection: boolean, showInspectionStatus: boolean = false, showAssignmentInfo: boolean = false) => {
-  // 태블릿에서도 작업 버튼이 보이도록 컬럼 크기 최적화
-  // 세부위치와 거리는 xl 해상도에서만 표시됨
-  // 주소 칼럼 확대: 215px → 280px (+65px), 설치기관 확대: 130px → 150px (+20px)
+  // 작업 칼럼 고정: 58px (gap-2 8px를 고려하여 버튼이 우측 끝까지)
+  // 세부위치 칼럼: 280px → 302px (작업 칼럼에서 줄어든 22px + gap 감안)
   const baseColumns = showInspectionStatus
     ? showAssignmentInfo
-      ? "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
-      : "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(40px, 0.25fr) 120px"
+      ? "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(302px, 2.4fr) minmax(100px, 0.65fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 58px"
+      : "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(75px, 0.45fr) minmax(30px, 0.2fr) minmax(302px, 2.4fr) minmax(100px, 0.65fr) minmax(40px, 0.25fr) 58px"
     : showAssignmentInfo
-      ? "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 120px"
-      : "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(280px, 2.2fr) minmax(100px, 0.65fr) minmax(40px, 0.25fr) 120px";
+      ? "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(302px, 2.4fr) minmax(100px, 0.65fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) minmax(100px, 0.75fr) 58px"
+      : "minmax(40px, 0.25fr) minmax(150px, 1.2fr) minmax(85px, 0.55fr) minmax(85px, 0.55fr) minmax(60px, 0.35fr) minmax(30px, 0.2fr) minmax(302px, 2.4fr) minmax(100px, 0.65fr) minmax(40px, 0.25fr) 58px";
 
   return enableSelection ? `35px ${baseColumns}` : baseColumns;
 };
@@ -338,8 +337,8 @@ const DesktopTableRow = memo(({
         </div>
       )}
 
-      {/* 12. 작업 - 우측 여백 추가 */}
-      <div className="flex items-center justify-center gap-1 pr-3">
+      {/* 12. 작업 - 우측 여백 완전 제거 */}
+      <div className="flex items-center justify-center gap-1 pr-0">
         {device.assignment_status === 'unavailable' ? (
           <button
             onClick={() => onShowUnavailable && onShowUnavailable(device)}
@@ -763,6 +762,7 @@ interface DataTableProps {
   onViewInspectionHistory?: (equipmentSerial: string) => void;
   // 배너 표시용
   totalDataCount?: number; // 전체 데이터 개수
+  notScheduledCount?: number; // 일정미추가 전체 개수 (일정관리 페이지에서만)
   currentViewMode?: 'list' | 'completed' | 'map'; // 현재 탭 모드
   pageType?: 'inspection' | 'schedule'; // 페이지 타입 (현장점검 vs 일정관리)
   showAssignmentInfo?: boolean; // scheduled 탭에서 추가일시, 추가자 표시 여부
@@ -785,6 +785,7 @@ export function DataTable({
   onInspectionInProgress,
   onViewInspectionHistory,
   totalDataCount,
+  notScheduledCount,
   currentViewMode,
   pageType = 'schedule',
   showAssignmentInfo
@@ -1074,8 +1075,22 @@ export function DataTable({
       .filter((device): device is AEDDevice => Boolean(device));
   }, [enableSelection, selectedIds, deviceMap]);
 
-  const totalCount = summary?.totalCount ?? devices.length;
-  const pageSize = filters.limit ?? pagination?.limit ?? 30;
+  // ✅ 클라이언트 사이드 페이지네이션
+  const [clientPage, setClientPage] = useState(1);
+  const pageSize = 10; // 클라이언트에서 10개씩 표시
+  const totalCount = devices.length; // 필터링된 전체 개수
+
+  // devices 변경 시 페이지를 1로 리셋
+  useEffect(() => {
+    setClientPage(1);
+  }, [devices.length]);
+
+  // 현재 페이지의 devices만 슬라이스
+  const paginatedDevices = useMemo(() => {
+    const startIndex = (clientPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return devices.slice(startIndex, endIndex);
+  }, [devices, clientPage, pageSize]);
 
   const selectedCount = enableSelection ? selectedIds.size : 0;
   const isAllSelected = enableSelection && devices.length > 0 && devices.every((device) => selectedIds.has(getDeviceId(device)));
@@ -1350,7 +1365,7 @@ export function DataTable({
               {showAssignmentInfo && <div className="text-center text-[10px] whitespace-nowrap">추가일시</div>}
               {showAssignmentInfo && <div className="text-center text-[10px]">추가자</div>}
               {showAssignmentInfo && <div className="text-center text-[10px]">담당</div>}
-              <div className="flex justify-center pr-3 text-[10px]">작업</div>
+              <div className="flex justify-center pr-0 text-[10px]">작업</div>
             </div>
           </div>
         )}
@@ -1360,7 +1375,7 @@ export function DataTable({
           {/* 모바일 뷰 (세로 모드만) */}
           {isMobile && (
             <div className="p-1.5 space-y-1">
-              {devices.map((device, index) => {
+              {paginatedDevices.map((device, index) => {
                 const deviceId = getDeviceId(device);
                 return (
                   <MobileCard
@@ -1395,7 +1410,7 @@ export function DataTable({
           {/* 데스크톱 뷰 (PC 및 가로모드) */}
           {!isMobile && (
             <div className="pr-4 text-[10px]">
-            {devices.map((device, index) => {
+            {paginatedDevices.map((device, index) => {
               const deviceId = getDeviceId(device);
               return (
                 <DesktopTableRow
@@ -1430,31 +1445,35 @@ export function DataTable({
         </div>
       </div>
 
-      {/* 페이지네이션 - 하단 고정 (상단 카운트 정보 통합) */}
-      {pagination && (
-        <div className="flex-shrink-0">
-          <Pagination
-            currentPage={currentPage}
-            hasMore={hasMore}
-            onPageChange={handlePageChange}
-            pageSize={pageSize}
-            pageItemCount={devices.length}    // ✅ 현재 페이지 아이템 개수
-            totalCount={totalCount}           // ✅ 전체 아이템 개수 (표시용)
-            onPageSizeChange={handlePageSizeChange}
-            summaryText={
-              totalDataCount !== undefined && currentViewMode
-                ? pageType === 'inspection'
-                  ? `${
-                      currentViewMode === 'list' ? '점검미시행' : currentViewMode === 'completed' ? '점검진행중' : '지도'
-                    } ${devices.length.toLocaleString()} / ${totalDataCount.toLocaleString()}`
-                  : `${
-                      currentViewMode === 'list' ? '일정추가 필요' : currentViewMode === 'completed' ? '완료' : '전체'
-                    } ${devices.length.toLocaleString()} / ${totalDataCount.toLocaleString()}`
-                : undefined
-            }
-          />
-        </div>
-      )}
+      {/* 페이지네이션 - 하단 고정 (클라이언트 사이드) */}
+      <div className="flex-shrink-0">
+        <Pagination
+          currentPage={clientPage}
+          hasMore={clientPage * pageSize < totalCount}
+          onPageChange={(page) => setClientPage(page)}
+          pageSize={pageSize}
+          pageItemCount={paginatedDevices.length}    // ✅ 현재 페이지 아이템 개수
+          totalCount={totalCount}           // ✅ 전체 아이템 개수 (필터링 후)
+          onPageSizeChange={() => {}} // 페이지 크기는 고정 (10개)
+          summaryText={
+            totalDataCount !== undefined && currentViewMode
+              ? pageType === 'inspection'
+                ? currentViewMode === 'list'
+                  ? `점검미시행 ${totalCount.toLocaleString()}개 (전체 ${totalDataCount.toLocaleString()}개)`
+                  : currentViewMode === 'completed'
+                  ? `점검진행중 ${totalCount.toLocaleString()}개`
+                  : `전체 ${totalDataCount.toLocaleString()}개 중 ${totalCount.toLocaleString()}개`
+                : currentViewMode === 'list'
+                  ? notScheduledCount !== undefined
+                    ? `${notScheduledCount.toLocaleString()}개 일정추가 필요 / 전체 ${totalDataCount.toLocaleString()}개`
+                    : `${totalCount.toLocaleString()}개 일정추가 필요 / 전체 ${totalDataCount.toLocaleString()}개`
+                  : currentViewMode === 'completed'
+                  ? `일정추가됨 ${totalCount.toLocaleString()}개`
+                  : `전체 ${totalDataCount.toLocaleString()}개 중 ${totalCount.toLocaleString()}개`
+              : undefined
+          }
+        />
+      </div>
 
       {/* 모달들 */}
       {selectedDevice && (

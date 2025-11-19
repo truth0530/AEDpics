@@ -293,15 +293,16 @@ export const PATCH = apiHandler(async (request: NextRequest, { params }: { param
         const strNew = Array.isArray(newValue) ? JSON.stringify(newValue) : String(newValue || '');
 
         if (strOld !== strNew) {
-          await tx.inspection_edit_logs.create({
-            data: {
-              inspection_id: inspectionId,
-              editor_id: session.user.id,
-              field_name: field,
-              old_value: strOld,
-              new_value: strNew
-            }
-          });
+          // TODO: inspection_edit_logs 테이블 생성 후 활성화
+          // await tx.inspection_edit_logs.create({
+          //   data: {
+          //     inspection_id: inspectionId,
+          //     editor_id: session.user.id,
+          //     field_name: field,
+          //     old_value: strOld,
+          //     new_value: strNew
+          //   }
+          // });
         }
       });
 

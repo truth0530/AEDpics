@@ -4,6 +4,10 @@
  *
  * 2025-11-14: Created for temporary institution name matching improvement
  * Solves: "광주남구보건소" vs "광주광역시남구보건소" matching problem
+ *
+ * IMPORTANT: 지역명 정규화 시 반드시 docs/REGION_MANAGEMENT_RULES.md 참조
+ * - 절대 임의로 정규화 규칙을 만들지 말 것
+ * - lib/constants/regions.ts의 함수만 사용할 것
  */
 
 /**
@@ -71,28 +75,51 @@ export function getSimilarityScore(str1: string, str2: string): number {
  */
 export function normalizeKoreanText(text: string): string {
   return text
+    // 공백 제거 (먼저 수행)
+    .replace(/\s+/g, '')
+
+    // 특수문자 제거 (괄호 내용 포함, 먼저 수행)
+    // "중부소방서(본대구급대)" → "중부소방서"
+    .replace(/\([^)]*\)/g, '')         // 괄호와 내용 제거
+    .replace(/[,.\-·]/g, '')
+
     // 행정구역 약칭화
     .replace(/광역시/g, '광시')
     .replace(/특별시/g, '특시')
     .replace(/자치도/g, '도')
 
+    // 지역명 접두어 제거 (소방서 매칭 개선)
+    // "대구중부소방서" vs "중부소방서" 매칭 개선
+    .replace(/^서울/g, '')
+    .replace(/^부산/g, '')
+    .replace(/^대구/g, '')
+    .replace(/^인천/g, '')
+    .replace(/^광주/g, '')
+    .replace(/^대전/g, '')
+    .replace(/^울산/g, '')
+    .replace(/^세종/g, '')
+    .replace(/^경기/g, '')
+    .replace(/^강원/g, '')
+    .replace(/^충북/g, '')
+    .replace(/^충남/g, '')
+    .replace(/^전북/g, '')
+    .replace(/^전남/g, '')
+    .replace(/^경북/g, '')
+    .replace(/^경남/g, '')
+    .replace(/^제주/g, '')
+
     // 공통 기관 접사 제거 (기관명 동일성 판단 시)
     // "광주남구보건소" vs "광주광역시남구보건소" → "광주남구" vs "광주광시남구" → Levenshtein 개선
     .replace(/보건소$/g, '')           // 보건소
     .replace(/보건지소$/g, '')         // 보건지소
+    .replace(/소방서$/g, '')           // 소방서
     .replace(/센터$/g, '')             // 센터
     .replace(/지소$/g, '')             // 지소
     .replace(/의료원$/g, '')           // 의료원
     .replace(/병원$/g, '')             // 병원
     .replace(/의원$/g, '')             // 의원
     .replace(/주민센터$/g, '')         // 주민센터
-    .replace(/행정복지센터$/g, '')     // 행정복지센터
-
-    // 공백 제거
-    .replace(/\s+/g, '')
-
-    // 특수문자 제거 (괄호, 쉼표 등)
-    .replace(/[()(),.\-·]/g, '');
+    .replace(/행정복지센터$/g, '');    // 행정복지센터
 }
 
 /**
@@ -161,8 +188,20 @@ export function getAddressMatchLevel(
 export function compareAddresses(aedAddress: string, targetAddress: string): number {
   if (!aedAddress || !targetAddress) return 0;
 
-  const aedNorm = aedAddress.replace(/\s+/g, '');
-  const targetNorm = targetAddress.replace(/\s+/g, '');
+  // 2025-11-19: 주소 비교 시 "광역시" → "광시", "특별시" → "특시" 등 약어 변환
+  // 이유: "대구광역시 군위군"과 "대구 군위군"을 동일하게 인식하기 위함
+  const normalizeAddressForComparison = (addr: string): string => {
+    return addr
+      .replace(/광역시/g, '')
+      .replace(/특별시/g, '')
+      .replace(/자치도/g, '')
+      .replace(/특별자치시/g, '')
+      .replace(/특별자치도/g, '')
+      .replace(/\s+/g, '');
+  };
+
+  const aedNorm = normalizeAddressForComparison(aedAddress);
+  const targetNorm = normalizeAddressForComparison(targetAddress);
 
   // 정확 일치
   if (aedNorm === targetNorm) return 100;

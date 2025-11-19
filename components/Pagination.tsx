@@ -49,29 +49,31 @@ export function Pagination({
   const startItem = pageItemCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endItem = pageItemCount === 0 ? 0 : startItem + pageItemCount - 1;
 
+  // 총 페이지 수 계산
+  const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : currentPage;
+
   // 가로 모드일 때는 PC 레이아웃 사용
   const showDesktop = isLandscape;
 
   return (
-    <div className={`flex items-center justify-between bg-gray-800/50 border-t border-gray-700/50 ${showDesktop ? 'gap-2 py-2 px-2' : 'gap-1 py-1.5 px-1.5'}`}>
+    <div className={`flex items-center justify-center bg-gray-800/50 border-t border-gray-700/50 ${showDesktop ? 'gap-2 py-2 px-2' : 'gap-1 py-1.5 px-1.5'}`}>
       {/* 왼쪽: 항목 정보 및 페이지 크기 선택 - 모바일 1줄 */}
       <div className={`flex items-center text-gray-400 ${showDesktop ? 'gap-2 text-[10px]' : 'gap-1 text-xs'}`}>
         {/* 모바일: 초압축 1줄 */}
         {!showDesktop && (
           <div className="flex items-center gap-1">
             <span className="font-medium text-[10px] leading-none">
-              {startItem}-{endItem}{totalCount ? `/${totalCount.toLocaleString()}` : ''}
-              {summaryText && <span className="text-green-400 ml-0.5">({summaryText})</span>}
+              {summaryText && <span className="text-green-400">({summaryText})</span>}
             </span>
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className="bg-gray-700 border border-gray-600 rounded px-1 py-0.5 text-[10px] text-white focus:outline-none"
             >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={30}>30</option>
-              <option value={50}>50</option>
+              <option value={10}>10개씩</option>
+              <option value={20}>20개씩</option>
+              <option value={30}>30개씩</option>
+              <option value={50}>50개씩</option>
             </select>
           </div>
         )}
@@ -80,9 +82,7 @@ export function Pagination({
         {showDesktop && (
           <>
             <span className="font-medium whitespace-nowrap">
-              {startItem.toLocaleString()}-{endItem.toLocaleString()}
-              {totalCount ? `/${totalCount.toLocaleString()}` : ''}
-              {summaryText && <span className="text-green-400 ml-1">({summaryText})</span>}
+              {summaryText && <span className="text-green-400">({summaryText})</span>}
             </span>
 
             <select
@@ -90,10 +90,10 @@ export function Pagination({
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className="bg-gray-700 border border-gray-600 rounded px-1.5 py-0.5 text-[10px] text-white focus:outline-none"
             >
-              <option value={10}>10개</option>
-              <option value={20}>20개</option>
-              <option value={30}>30개</option>
-              <option value={50}>50개</option>
+              <option value={10}>10개씩 보기</option>
+              <option value={20}>20개씩 보기</option>
+              <option value={30}>30개씩 보기</option>
+              <option value={50}>50개씩 보기</option>
             </select>
           </>
         )}
@@ -121,34 +121,68 @@ export function Pagination({
         {/* 페이지 번호 버튼 (PC 및 가로 모드만) */}
         {showDesktop && (
           <div className="flex items-center gap-0.5">
-            {Array.from({ length: 15 }, (_, i) => {
-              // 현재 페이지를 중심으로 15개 페이지 번호 표시
-              let pageNum;
-              if (currentPage <= 7) {
-                // 현재 페이지가 7 이하면 1-15 표시
-                pageNum = i + 1;
+            {(() => {
+              const maxVisiblePages = 15;
+              const pages: (number | string)[] = [];
+
+              if (totalPages <= maxVisiblePages) {
+                // 총 페이지가 15개 이하면 모두 표시
+                for (let i = 1; i <= totalPages; i++) {
+                  pages.push(i);
+                }
               } else {
-                // 현재 페이지가 8 이상이면 (currentPage - 7)부터 표시
-                pageNum = currentPage - 7 + i;
+                // 15개 초과 시 생략 표시 포함
+                if (currentPage <= 7) {
+                  // 앞쪽에 있을 때: 1-13, ..., 마지막
+                  for (let i = 1; i <= 13; i++) {
+                    pages.push(i);
+                  }
+                  pages.push('ellipsis');
+                  pages.push(totalPages);
+                } else if (currentPage >= totalPages - 6) {
+                  // 뒤쪽에 있을 때: 1, ..., 마지막-12 ~ 마지막
+                  pages.push(1);
+                  pages.push('ellipsis');
+                  for (let i = totalPages - 12; i <= totalPages; i++) {
+                    pages.push(i);
+                  }
+                } else {
+                  // 중간에 있을 때: 1, ..., 중심-5 ~ 중심+5, ..., 마지막
+                  pages.push(1);
+                  pages.push('ellipsis');
+                  for (let i = currentPage - 5; i <= currentPage + 5; i++) {
+                    pages.push(i);
+                  }
+                  pages.push('ellipsis');
+                  pages.push(totalPages);
+                }
               }
 
-              // 페이지 번호가 1보다 작으면 표시하지 않음
-              if (pageNum < 1) return null;
+              return pages.map((page, idx) => {
+                if (page === 'ellipsis') {
+                  return (
+                    <span key={`ellipsis-${idx}`} className="text-gray-400 px-1 text-[10px]">
+                      ...
+                    </span>
+                  );
+                }
 
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => onPageChange(pageNum)}
-                  className={`min-w-[24px] h-6 px-1 text-[10px] rounded transition-colors ${
-                    currentPage === pageNum
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+                const pageNum = page as number;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => onPageChange(pageNum)}
+                    className={`min-w-[24px] h-6 px-1 text-[10px] rounded transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white font-semibold'
+                        : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              });
+            })()}
           </div>
         )}
 

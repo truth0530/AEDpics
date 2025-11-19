@@ -5,7 +5,7 @@ import type { ParsedFilters } from '@/lib/utils/query-parser';
 
 const DEFAULT_FILTERS: ParsedFilters = {
   page: 1,
-  limit: 100,  // ✅ 50 → 100으로 증가 (Phase 0)
+  limit: 100,  // ✅ API 호출 시 100개 가져오기 (클라이언트 필터링 성능 최적화)
   cursor: undefined,
   queryCriteria: 'address',
   // category_1 제거: 사용자가 선택한 값 존중

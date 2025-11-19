@@ -5,6 +5,10 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeGugunForDB, normalizeRegionName } from '@/lib/constants/regions';
 import { getDisplayAddress } from '@/lib/utils/aed-address-helpers';
 
+// IMPORTANT: 지역명 정규화 시 반드시 docs/REGION_MANAGEMENT_RULES.md 참조
+// - 절대 임의로 정규화 규칙을 만들지 말 것
+// - lib/constants/regions.ts의 함수만 사용할 것
+
 // Ultra-optimized version with minimal data loading
 const MINIMAL_PAGE_SIZE = 10; // Start with very small pages
 const MAX_PAGE_SIZE = 50;

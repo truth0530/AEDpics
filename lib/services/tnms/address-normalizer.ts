@@ -1,6 +1,10 @@
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 
+// IMPORTANT: 지역명 정규화 시 반드시 docs/REGION_MANAGEMENT_RULES.md 참조
+// - 절대 임의로 정규화 규칙을 만들지 말 것
+// - lib/constants/regions.ts의 함수만 사용할 것
+
 export interface AddressNormalizationResult {
   road_address: string;
   lot_address: string;

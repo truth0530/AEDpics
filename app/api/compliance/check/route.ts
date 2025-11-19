@@ -6,6 +6,10 @@ import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeRegionName } from '@/lib/constants/regions';
 import { getDisplayAddressWithDefault } from '@/lib/utils/aed-address-helpers';
 
+// IMPORTANT: 지역명 정규화 시 반드시 docs/REGION_MANAGEMENT_RULES.md 참조
+// - 절대 임의로 정규화 규칙을 만들지 말 것
+// - lib/constants/regions.ts의 함수만 사용할 것
+
 // Optimize query with pagination and limits
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 10000; // 대시보드 통계 등 전체 데이터 조회를 위해 증가

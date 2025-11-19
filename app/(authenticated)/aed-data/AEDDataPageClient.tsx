@@ -23,7 +23,7 @@ interface AEDDataPageClientProps {
 function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'toAdd' | 'map' | 'scheduled' | 'all'>('toAdd'); // 기본 탭을 '추가할목록'으로 변경
-  const { data, isLoading, isFetching, error, filters, setFilters, scheduled, refetch } = useAEDData();
+  const { data, isLoading, isFetching, error, filters, setFilters, scheduled, refetch, summary } = useAEDData();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedDevices, setSelectedDevices] = useState<any[]>([]);
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<Set<string>>(new Set());
@@ -720,7 +720,8 @@ function AEDDataContent({ userProfile }: { userProfile: UserProfile }) {
                 viewMode === 'scheduled' ? 'scheduled' : // 추가된목록: 추가된 장비만
                 'all' // 전체목록: 모든 장비 표시
               }
-              totalDataCount={data?.length || 0}
+              totalDataCount={summary?.totalCount || data?.length || 0}
+              notScheduledCount={summary?.notScheduledCount}
               currentViewMode={viewMode === 'toAdd' ? 'list' : viewMode === 'scheduled' ? 'completed' : 'map'}
               pageType="schedule"
               showAssignmentInfo={viewMode === 'scheduled'}

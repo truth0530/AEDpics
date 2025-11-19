@@ -4,9 +4,14 @@ import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { normalizeGugunForDB } from '@/lib/constants/regions';
-import { calculateInstitutionMatchConfidence } from '@/lib/utils/string-similarity';
+// TNMS 통합 버전으로 교체 (하드코딩 제거)
+// import { calculateInstitutionMatchConfidence } from '@/lib/utils/string-similarity';
+import { calculateInstitutionMatchConfidence } from '@/lib/utils/string-similarity-tnms';
 import { getSqlAddressCoalesce } from '@/lib/utils/aed-address-helpers';
 
+// IMPORTANT: 지역명 정규화 시 반드시 docs/REGION_MANAGEMENT_RULES.md 참조
+// - 절대 임의로 정규화 규칙을 만들지 말 것
+// - lib/constants/regions.ts의 함수만 사용할 것
 // DEBUG: Added filtering debug logs on 2025-11-17
 /**
  * GET /api/compliance/management-number-candidates
@@ -156,7 +161,7 @@ export async function GET(request: NextRequest) {
             gd.category_2
           FROM grouped_data gd
           ORDER BY confidence DESC, equipment_count DESC
-          LIMIT 20
+          LIMIT 100
         `;
       } else if (!includeAllRegion) {
         // 시도만 필터
@@ -224,13 +229,10 @@ export async function GET(request: NextRequest) {
             gd.is_matched,
             gd.matched_to
           FROM grouped_data gd
-          WHERE (
-            REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '')
-            OR REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%'
-            OR REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%'
-          )
+          WHERE gd.sido = ${normalizedSido}
+            AND gd.gugun = ${normalizedGugun}
           ORDER BY confidence DESC, equipment_count DESC
-          LIMIT 20
+          LIMIT 100
         `;
       } else {
         // 지역 필터 없음
@@ -297,13 +299,8 @@ export async function GET(request: NextRequest) {
             gd.is_matched,
             gd.matched_to
           FROM grouped_data gd
-          WHERE (
-            REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '')
-            OR REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%'
-            OR REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%'
-          )
           ORDER BY confidence DESC, equipment_count DESC
-          LIMIT 20
+          LIMIT 100
         `;
       }
     } else {
@@ -585,17 +582,15 @@ export async function GET(request: NextRequest) {
       const targetGugun = targetInfo?.gugun || '';
 
       // 각 후보의 신뢰도를 퍼지 매칭으로 재계산 (주소 + 지역 + 키워드 보너스 포함)
-      improvedAutoSuggestions = autoSuggestionsQuery.map(item => {
-        const fuzzyConfidence = calculateInstitutionMatchConfidence(
+      const enhancedCandidates = await Promise.all(autoSuggestionsQuery.map(async item => {
+        // TNMS 통합 버전 - 비동기 처리
+        const matchResult = await calculateInstitutionMatchConfidence(
+          targetName,          // target이 먼저
           item.institution_name,
-          targetName,
-          item.address,        // AED 설치 주소
           targetAddress,       // 의무설치기관 주소
-          item.sido,           // AED 시도
-          targetSido,          // 의무설치기관 시도
-          item.gugun,          // AED 구군 (키워드 보너스용)
-          targetGugun          // 의무설치기관 구군 (키워드 보너스용)
+          item.address        // AED 설치 주소
         );
+        const fuzzyConfidence = matchResult.confidence;
 
         // 퍼지 매칭이 더 나은 점수를 제공하면 사용
         if (fuzzyConfidence !== null && fuzzyConfidence > Number(item.confidence || 0)) {
@@ -606,7 +601,9 @@ export async function GET(request: NextRequest) {
         }
 
         return item;
-      }).sort((a, b) => {
+      }));
+
+      improvedAutoSuggestions = enhancedCandidates.sort((a, b) => {
         // 재정렬: 신뢰도 높은 순, 같으면 장비 수 많은 순
         const confDiff = Number(b.confidence || 0) - Number(a.confidence || 0);
         return confDiff !== 0 ? confDiff : Number(b.equipment_count) - Number(a.equipment_count);

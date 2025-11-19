@@ -1007,6 +1007,7 @@ export const GET = async (request: NextRequest) => {
       expiringSoonCount: number;
       hiddenCount: number;
       withSensitiveDataCount: number;
+      notScheduledCount?: number;  // 일정미추가 전체 개수 (includeSchedule=true일 때만)
     };
 
     // 지역 필터 (jurisdiction vs address 모드)
@@ -1195,6 +1196,45 @@ export const GET = async (request: NextRequest) => {
         count: scheduledEquipment.length,
         userId: session.user.id,
         filter: 'assigned_by = current_user'
+      });
+
+      // ✅ 일정미추가 전체 개수 계산 (전체 - 일정추가됨)
+      // NOT EXISTS 서브쿼리로 일정이 없는 장비만 카운트
+      const sidoFilter = regionFiltersForQuery && regionFiltersForQuery.length > 0
+        ? `AND a.sido = ANY($2::text[])`
+        : '';
+      const gugunFilter = cityFiltersForQuery && cityFiltersForQuery.length > 0
+        ? `AND a.gugun = ANY($${regionFiltersForQuery && regionFiltersForQuery.length > 0 ? 3 : 2}::text[])`
+        : '';
+
+      const notScheduledCountQuery = `
+        SELECT COUNT(*)
+        FROM aedpics.aed_data a
+        WHERE NOT EXISTS (
+          SELECT 1 FROM aedpics.inspection_assignments ia
+          WHERE ia.equipment_serial = a.equipment_serial
+          AND ia.assigned_to = $1::uuid
+          AND ia.status IN ('pending', 'in_progress')
+        )
+        ${sidoFilter}
+        ${gugunFilter}
+      `;
+
+      const queryParams: (string | string[])[] = [session.user.id];
+      if (regionFiltersForQuery && regionFiltersForQuery.length > 0) queryParams.push(regionFiltersForQuery);
+      if (cityFiltersForQuery && cityFiltersForQuery.length > 0) queryParams.push(cityFiltersForQuery);
+
+      const notScheduledResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+        notScheduledCountQuery,
+        ...queryParams
+      );
+
+      summary.notScheduledCount = Number(notScheduledResult[0]?.count || 0);
+
+      logger.info('AEDDataAPI:GET', 'includeSchedule: Calculated notScheduledCount', {
+        notScheduledCount: summary.notScheduledCount,
+        scheduledCount: scheduledEquipment.length,
+        totalCount: summary.totalCount
       });
     }
 

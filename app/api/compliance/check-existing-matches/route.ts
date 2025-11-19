@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
         management_number: true,
         installation_institution: true,
         installation_address: true,
+        installation_position: true,
       },
     });
 
@@ -74,14 +75,7 @@ export async function POST(request: NextRequest) {
         },
         target_list_year: year,
       },
-      include: {
-        target_list_2025: {
-          select: {
-            target_key: true,
-            institution_name: true,
-          },
-        },
-      },
+      include: {},
     });
 
     // 3. 충돌 분석
@@ -91,10 +85,12 @@ export async function POST(request: NextRequest) {
       device_info: {
         institution_name: string;
         address: string;
+        installation_position?: string;
       };
       existing_matches: Array<{
         target_key: string;
         institution_name: string;
+        management_number: string;
         matched_at: string;
         is_target_match: boolean;
       }>;
@@ -134,10 +130,12 @@ export async function POST(request: NextRequest) {
             device_info: {
               institution_name: device.installation_institution || '',
               address: device.installation_address || '',
+              installation_position: device.installation_position || undefined,
             },
             existing_matches: deviceMatches.map((m) => ({
               target_key: m.target_institution_id,
-              institution_name: m.target_list_2025?.institution_name || '',
+              institution_name: '',
+              management_number: device.management_number || '',
               matched_at: m.matched_at.toISOString(),
               is_target_match: m.target_institution_id === target_key,
             })),

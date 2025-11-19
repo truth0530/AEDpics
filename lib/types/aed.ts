@@ -157,6 +157,7 @@ export interface AEDDataResponse {
     expiringSoonCount: number;
     hiddenCount: number;
     withSensitiveDataCount: number;
+    notScheduledCount?: number;  // 일정미추가 전체 개수 (includeSchedule=true일 때만)
   };
   filters: {
     applied: {

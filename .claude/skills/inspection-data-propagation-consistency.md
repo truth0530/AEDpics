@@ -52,7 +52,7 @@
 28. **관리책임자 교육 이수 현황** (Manager Training Status) - 선택
     - 이수: 표시만 필요
     - 미이수 선택 시: 확장되어 **미이수 사유** (Reason for Non-completion) - 텍스트 입력 필드 활성화
-29. **보건복지부 재난의료대응과로 전달할 사항** (Report Items) - 텍스트
+29. **보건복지부 재난의료정책과로 전달할 사항** (Report Items) - 텍스트
 
 ---
 

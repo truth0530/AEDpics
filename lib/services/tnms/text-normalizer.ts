@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma';
 
+// IMPORTANT: 지역명 정규화 시 반드시 docs/REGION_MANAGEMENT_RULES.md 참조
+// - 절대 임의로 정규화 규칙을 만들지 말 것
+// - lib/constants/regions.ts의 함수만 사용할 것
+// - 이 파일은 TNMS normalization_rules 테이블 기반의 정규화만 수행
+
 export interface NormalizationSignal {
   rule_id: number;
   rule_name: string;
@@ -139,6 +144,22 @@ export class TextNormalizer {
             result = afterRegion;
             break;
 
+          case 'region_prefix_removal':
+            // 지역 접두어 선택적 제거
+            const regionPrefixes = rule.rule_spec.prefixes || [];
+            if (regionPrefixes.length > 0) {
+              for (const prefix of regionPrefixes) {
+                const regex = new RegExp(`^${prefix}`, 'g');
+                const afterPrefix = result.replace(regex, '');
+                if (afterPrefix !== result) {
+                  result = afterPrefix;
+                  applied = true;
+                  break; // 첫 번째 매칭된 접두어만 제거
+                }
+              }
+            }
+            break;
+
           case 'whitespace_normalize':
             const afterWhitespace = this.normalizeWhitespace(result);
             applied = afterWhitespace !== result;
@@ -150,6 +171,18 @@ export class TextNormalizer {
             const afterSpecial = this.removeSpecialCharacters(result, excludeChars);
             applied = afterSpecial !== result;
             result = afterSpecial;
+            break;
+
+          case 'pattern_removal':
+            // 패턴 기반 제거 (예: 괄호와 내용)
+            const pattern = rule.rule_spec.pattern;
+            const replacement = rule.rule_spec.replacement || '';
+            if (pattern) {
+              const regex = new RegExp(pattern, 'g');
+              const afterPattern = result.replace(regex, replacement);
+              applied = afterPattern !== result;
+              result = afterPattern;
+            }
             break;
 
           case 'korean_numeral_normalize':

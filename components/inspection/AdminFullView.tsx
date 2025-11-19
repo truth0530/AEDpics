@@ -78,7 +78,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
   // 통합검색 상태
   const [searchTerm, setSearchTerm] = useState('');
   const [isLandscape, setIsLandscape] = useState(false);
-  const { data, isLoading, setFilters, filters } = useAEDData();
+  const { data, isLoading, setFilters, filters, summary } = useAEDData();
   const router = useRouter();
   const { showSuccess, showError } = useToast();
 
@@ -976,7 +976,7 @@ function AdminFullViewContent({ user, pageType = 'schedule' }: { user: UserProfi
             inspectionSessions={inspectionSessions}
             onInspectionInProgress={handleInspectionInProgress}
             onViewInspectionHistory={handleViewInspectionHistory}
-            totalDataCount={data?.length || 0}
+            totalDataCount={summary?.totalCount || data?.length || 0}
             currentViewMode={viewMode}
             pageType="inspection"
             onQuickInspect={(device) => {

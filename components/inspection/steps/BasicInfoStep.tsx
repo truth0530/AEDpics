@@ -68,10 +68,10 @@ export function BasicInfoStep() {
   const [roadviewError, setRoadviewError] = useState<string>('');
 
   // GPS 좌표
-  const initialLat = deviceInfo.latitude || deviceInfo.gps_latitude || 37.5665;
-  const initialLng = deviceInfo.longitude || deviceInfo.gps_longitude || 126.9780;
-  const [currentLat, setCurrentLat] = useState(initialLat);
-  const [currentLng, setCurrentLng] = useState(initialLng);
+  const initialLat = deviceInfo.latitude || deviceInfo.gps_latitude || null;
+  const initialLng = deviceInfo.longitude || deviceInfo.gps_longitude || null;
+  const [currentLat, setCurrentLat] = useState<number | null>(initialLat);
+  const [currentLng, setCurrentLng] = useState<number | null>(initialLng);
   const [hasMovedMarker, setHasMovedMarker] = useState(false);
 
   // ✅ SSR-safe: 클라이언트에서 화면 크기에 따라 Roadview 기본 상태 설정
@@ -115,63 +115,87 @@ export function BasicInfoStep() {
       .then(() => {
         if (cancelled || !mapRef.current) return;
 
+        // 좌표가 없으면 서울 시청을 중심으로 설정
+        const centerLat = currentLat || 37.5665;
+        const centerLng = currentLng || 126.9780;
+
         const options = {
-          center: new window.kakao.maps.LatLng(currentLat, currentLng),
+          center: new window.kakao.maps.LatLng(centerLat, centerLng),
           level: 3,
         };
 
         const mapInstance = new window.kakao.maps.Map(mapRef.current, options);
         setMap(mapInstance);
 
-        // AED 파란색 기본 마커 생성
-        const markerPosition = new window.kakao.maps.LatLng(currentLat, currentLng);
+        // 마커 생성 및 이벤트 연결 함수
+        const createMarker = (lat: number, lng: number) => {
+          const markerPosition = new window.kakao.maps.LatLng(lat, lng);
+          // @ts-ignore - Marker API
+          const newMarker = new window.kakao.maps.Marker({
+            position: markerPosition,
+            map: mapInstance,
+            draggable: true,
+          });
 
-        // @ts-ignore - Marker API
-        const marker = new window.kakao.maps.Marker({
-          position: markerPosition,
-          map: mapInstance,
-          draggable: true,
-        });
+          // 마커 드래그 이벤트
+          window.kakao.maps.event.addListener(newMarker, 'dragstart', () => {
+            setIsDragging(true);
+          });
 
-        // 마커 드래그 이벤트 처리
-        window.kakao.maps.event.addListener(marker, 'dragstart', () => {
-          console.log('[Marker] dragstart');
-          setIsDragging(true);
-        });
+          window.kakao.maps.event.addListener(newMarker, 'dragend', () => {
+            setIsDragging(false);
+            const position = newMarker.getPosition();
+            const lat = position.getLat();
+            const lng = position.getLng();
 
-        window.kakao.maps.event.addListener(marker, 'drag', () => {
-          const position = marker.getPosition();
-          const lat = position.getLat();
-          const lng = position.getLng();
-          console.log('[Marker] drag:', lat, lng);
-          // drag 이벤트에서는 콘솔 로그만 남김 (성능 최적화)
-        });
+            setCurrentLat(lat);
+            setCurrentLng(lng);
+            setHasMovedMarker(true);
 
-        window.kakao.maps.event.addListener(marker, 'dragend', () => {
-          console.log('[Marker] dragend');
-          setIsDragging(false);
-          const position = marker.getPosition();
-          const lat = position.getLat();
-          const lng = position.getLng();
-          console.log('[Marker] final position:', lat, lng);
+            const currentBasicInfo = (useInspectionSessionStore.getState().stepData.basicInfo || {}) as Record<string, unknown>;
+            updateStepData('basicInfo', {
+              ...currentBasicInfo,
+              gps_latitude: lat,
+              gps_longitude: lng,
+              gps_verified: false,
+            });
+          });
 
-          // dragend에서만 상태 업데이트 (한 번만)
+          return newMarker;
+        };
+
+        // 좌표가 있을 때만 마커 생성
+        let currentMarker: any = null;
+        if (currentLat && currentLng) {
+          currentMarker = createMarker(currentLat, currentLng);
+          setMarker(currentMarker);
+        }
+
+        // 지도 클릭 이벤트 (마커 이동/생성)
+        window.kakao.maps.event.addListener(mapInstance, 'click', function (mouseEvent: any) {
+          const latlng = mouseEvent.latLng;
+          const lat = latlng.getLat();
+          const lng = latlng.getLng();
+
+          if (currentMarker) {
+            currentMarker.setPosition(latlng);
+          } else {
+            currentMarker = createMarker(lat, lng);
+            setMarker(currentMarker);
+          }
+
           setCurrentLat(lat);
           setCurrentLng(lng);
           setHasMovedMarker(true);
 
-          // 최신 basicInfo 객체 생성하여 업데이트
-          // 마커를 움직이면 gps_verified를 false로 리셋 (위치가 변경되었으므로 재확인 필요)
           const currentBasicInfo = (useInspectionSessionStore.getState().stepData.basicInfo || {}) as Record<string, unknown>;
           updateStepData('basicInfo', {
             ...currentBasicInfo,
             gps_latitude: lat,
             gps_longitude: lng,
-            gps_verified: false,  // 위치 변경 시 확인 상태 리셋
+            gps_verified: false,
           });
         });
-
-        setMarker(marker);
 
         // 줌 컨트롤 추가
         const zoomControl = new window.kakao.maps.ZoomControl();
@@ -193,6 +217,12 @@ export function BasicInfoStep() {
   // 로드뷰 초기화
   useEffect(() => {
     if (!showRoadview || !roadviewRef.current) return;
+
+    // 좌표가 없으면 로드뷰를 초기화하지 않음
+    if (!currentLat || !currentLng) {
+      setRoadviewError('좌표가 없으니 실제 위치로 마커를 움직여 좌표를 지정해주세요');
+      return;
+    }
 
     // 로드뷰 초기화
     const initializeRoadview = async () => {
@@ -345,7 +375,7 @@ export function BasicInfoStep() {
 
   // 현재 위치로 이동
   const moveToCurrentLocation = () => {
-    if (navigator.geolocation && map && marker) {
+    if (navigator.geolocation && map) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude;
@@ -353,19 +383,59 @@ export function BasicInfoStep() {
           const newPosition = new window.kakao.maps.LatLng(lat, lng);
 
           map.setCenter(newPosition);
-          marker.setPosition(newPosition);
+
+          // 마커가 없으면 생성, 있으면 이동
+          if (marker) {
+            marker.setPosition(newPosition);
+          } else {
+            // @ts-ignore - Marker API
+            const newMarker = new window.kakao.maps.Marker({
+              position: newPosition,
+              map: map,
+              draggable: true,
+            });
+
+            // 마커 드래그 이벤트 리스너 추가
+            window.kakao.maps.event.addListener(newMarker, 'dragstart', () => {
+              setIsDragging(true);
+            });
+
+            window.kakao.maps.event.addListener(newMarker, 'dragend', () => {
+              setIsDragging(false);
+              const pos = newMarker.getPosition();
+              const lat = pos.getLat();
+              const lng = pos.getLng();
+              setCurrentLat(lat);
+              setCurrentLng(lng);
+              setHasMovedMarker(true);
+
+              const currentBasicInfo = (useInspectionSessionStore.getState().stepData.basicInfo || {}) as Record<string, unknown>;
+              updateStepData('basicInfo', {
+                ...currentBasicInfo,
+                gps_latitude: lat,
+                gps_longitude: lng,
+                gps_verified: false,
+              });
+            });
+
+            setMarker(newMarker);
+          }
 
           setCurrentLat(lat);
           setCurrentLng(lng);
           setHasMovedMarker(true);
+
+          const currentBasicInfo = (useInspectionSessionStore.getState().stepData.basicInfo || {}) as Record<string, unknown>;
           updateStepData('basicInfo', {
-            ...basicInfo,
+            ...currentBasicInfo,
             gps_latitude: lat,
             gps_longitude: lng,
+            gps_verified: false,
           });
         },
         (error) => {
           console.error('위치 정보를 가져올 수 없습니다:', error);
+          alert('위치 정보를 가져올 수 없습니다. 브라우저 설정을 확인해주세요.');
         }
       );
     }
@@ -875,17 +945,16 @@ export function BasicInfoStep() {
               type="button"
               onClick={handleEditAll}
               disabled={(isEditMode && isBasicInfoMatching) || (basicInfo.all_matched === 'edited' && isBasicInfoMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                isEditMode
-                  ? isBasicInfoMatching
-                    ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
-                    : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
-                  : basicInfo.all_matched === 'edited'
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${isEditMode
+                ? isBasicInfoMatching
+                  ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
+                  : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
+                : basicInfo.all_matched === 'edited'
                   ? isBasicInfoMatching
                     ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
                     : 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
                   : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
-              }`}
+                }`}
             >
               {isEditMode ? (
                 isBasicInfoMatching ? (
@@ -923,15 +992,14 @@ export function BasicInfoStep() {
                 }
               }}
               disabled={basicInfo.all_matched === true || (!isEditMode && !isBasicInfoMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                basicInfo.all_matched === true
-                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                  : isBasicInfoMatching && !isEditMode
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${basicInfo.all_matched === true
+                ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                : isBasicInfoMatching && !isEditMode
                   ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
                   : isEditMode
-                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
-                  : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-              }`}
+                    ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
+                    : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                }`}
             >
               {isEditMode ? (
                 '취소'
@@ -967,11 +1035,11 @@ export function BasicInfoStep() {
         <div className="flex items-center gap-1 mb-2">
           <div className="text-[10px] sm:text-xs font-medium text-gray-400">GPS 위도</div>
           <div className="text-[10px] sm:text-sm font-medium text-gray-300 font-mono">
-            {currentLat.toFixed(7)}
+            {currentLat ? currentLat.toFixed(7) : '좌표없음'}
           </div>
           <div className="text-[10px] sm:text-xs font-medium text-gray-400 ml-3 sm:ml-4">GPS 경도</div>
           <div className="text-[10px] sm:text-sm font-medium text-gray-300 font-mono">
-            {currentLng.toFixed(7)}
+            {currentLng ? currentLng.toFixed(7) : '좌표없음'}
           </div>
         </div>
 
@@ -1017,7 +1085,7 @@ export function BasicInfoStep() {
               title="현재 위치로 지도 이동"
             >
               <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+                <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
               </svg>
             </button>
 
@@ -1029,7 +1097,7 @@ export function BasicInfoStep() {
               title={showRoadview ? "로드뷰 접기" : "로드뷰 펼치기"}
             >
               <svg className="w-4 h-4 flex-shrink-0 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24" style={{ transform: showRoadview ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                <path d="M7 10l5 5 5-5z"/>
+                <path d="M7 10l5 5 5-5z" />
               </svg>
               <span>{showRoadview ? "로드뷰 접기" : "로드뷰 펼치기"}</span>
             </button>
@@ -1063,7 +1131,7 @@ export function BasicInfoStep() {
                 title="로드뷰 닫기"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
                 </svg>
               </button>
             </div>
@@ -1092,23 +1160,22 @@ export function BasicInfoStep() {
               }
             }}
             disabled={basicInfo.gps_verified === true || !isMapLoaded}
-            className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-              basicInfo.gps_verified === true
-                ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                : hasMovedMarker
+            className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${basicInfo.gps_verified === true
+              ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+              : hasMovedMarker
                 ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
                 : 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
-            }`}
+              }`}
           >
             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
             </svg>
             <span>
               {basicInfo.gps_verified === true
                 ? '위치 확인됨'
                 : hasMovedMarker
-                ? '변경된 위치로 저장'
-                : '설치위치와 동일'
+                  ? '변경된 위치로 저장'
+                  : '설치위치와 동일'
               }
             </span>
           </button>
@@ -1191,17 +1258,16 @@ export function BasicInfoStep() {
                 }
               }}
               disabled={(isLocationEditMode && isLocationMatching) || (basicInfo.location_matched === 'edited' && isLocationMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                isLocationEditMode
-                  ? isLocationMatching
-                    ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
-                    : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
-                  : basicInfo.location_matched === 'edited'
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${isLocationEditMode
+                ? isLocationMatching
+                  ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
+                  : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
+                : basicInfo.location_matched === 'edited'
                   ? isLocationMatching
                     ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
                     : 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
                   : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
-              }`}
+                }`}
             >
               {isLocationEditMode ? (
                 isLocationMatching ? (
@@ -1239,15 +1305,14 @@ export function BasicInfoStep() {
                 }
               }}
               disabled={basicInfo.location_matched === true || (!isLocationEditMode && !isLocationMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                basicInfo.location_matched === true
-                  ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                  : isLocationMatching && !isLocationEditMode
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${basicInfo.location_matched === true
+                ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+                : isLocationMatching && !isLocationEditMode
                   ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
                   : isLocationEditMode
-                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
-                  : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-              }`}
+                    ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
+                    : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                }`}
             >
               {isLocationEditMode ? (
                 '취소'
@@ -1292,11 +1357,10 @@ export function BasicInfoStep() {
                   delete newAccessibility.accessibility_reason;
                   updateStepData('basicInfo', { accessibility: newAccessibility });
                 }}
-                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  basicInfo.accessibility?.accessibility_level === 'public'
-                    ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
-                    : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
-                }`}
+                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'public'
+                  ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
+                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                  }`}
               >
                 누구나
               </button>
@@ -1311,11 +1375,10 @@ export function BasicInfoStep() {
                   };
                   updateStepData('basicInfo', { accessibility: newAccessibility });
                 }}
-                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  basicInfo.accessibility?.accessibility_level === 'restricted'
-                    ? 'bg-yellow-600 text-white border-2 border-yellow-500 shadow-lg shadow-yellow-500/20'
-                    : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
-                }`}
+                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'restricted'
+                  ? 'bg-yellow-600 text-white border-2 border-yellow-500 shadow-lg shadow-yellow-500/20'
+                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                  }`}
               >
                 일부
               </button>
@@ -1330,11 +1393,10 @@ export function BasicInfoStep() {
                   };
                   updateStepData('basicInfo', { accessibility: newAccessibility });
                 }}
-                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  basicInfo.accessibility?.accessibility_level === 'private'
-                    ? 'bg-red-600 text-white border-2 border-red-500 shadow-lg shadow-red-500/20'
-                    : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
-                }`}
+                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'private'
+                  ? 'bg-red-600 text-white border-2 border-red-500 shadow-lg shadow-red-500/20'
+                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                  }`}
               >
                 불가
               </button>
@@ -1343,22 +1405,22 @@ export function BasicInfoStep() {
             {/* 접근 제한 사유 입력 */}
             {(basicInfo.accessibility?.accessibility_level === 'restricted' ||
               basicInfo.accessibility?.accessibility_level === 'private') && (
-              <div className="mt-2">
-                <input
-                  type="text"
-                  placeholder="접근 제한 사유를 입력하세요"
-                  value={basicInfo.accessibility?.accessibility_reason || ''}
-                  onChange={(e) => {
-                    const newAccessibility = {
-                      ...(basicInfo.accessibility || {}),
-                      accessibility_reason: e.target.value,
-                    };
-                    updateStepData('basicInfo', { accessibility: newAccessibility });
-                  }}
-                  className="w-full px-3 py-2 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
-                />
-              </div>
-            )}
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    placeholder="접근 제한 사유를 입력하세요"
+                    value={basicInfo.accessibility?.accessibility_reason || ''}
+                    onChange={(e) => {
+                      const newAccessibility = {
+                        ...(basicInfo.accessibility || {}),
+                        accessibility_reason: e.target.value,
+                      };
+                      updateStepData('basicInfo', { accessibility: newAccessibility });
+                    }}
+                    className="w-full px-3 py-2 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+                  />
+                </div>
+              )}
           </div>
 
           {/* 2. 사용 가능 시간 확인 */}
