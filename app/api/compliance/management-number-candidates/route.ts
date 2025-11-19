@@ -112,13 +112,12 @@ export async function GET(request: NextRequest) {
                 LIMIT 1
               ) as matched_to,
               (
-                SELECT t.institution_name
+                SELECT STRING_AGG(DISTINCT t.institution_name, ', ' ORDER BY t.institution_name)
                 FROM aedpics.target_list_devices tld
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
                   AND tld.target_list_year = ${yearInt}
-                LIMIT 1
               ) as matched_institution_name
             FROM aedpics.aed_data ad
             WHERE ad.management_number IS NOT NULL
@@ -186,13 +185,12 @@ export async function GET(request: NextRequest) {
                 LIMIT 1
               ) as matched_to,
               (
-                SELECT t.institution_name
+                SELECT STRING_AGG(DISTINCT t.institution_name, ', ' ORDER BY t.institution_name)
                 FROM aedpics.target_list_devices tld
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
                   AND tld.target_list_year = ${yearInt}
-                LIMIT 1
               ) as matched_institution_name
             FROM aedpics.aed_data ad
             WHERE ad.management_number IS NOT NULL
@@ -261,13 +259,12 @@ export async function GET(request: NextRequest) {
                 LIMIT 1
               ) as matched_to,
               (
-                SELECT t.institution_name
+                SELECT STRING_AGG(DISTINCT t.institution_name, ', ' ORDER BY t.institution_name)
                 FROM aedpics.target_list_devices tld
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
                 JOIN ${targetTableRaw} t ON tld.target_institution_id = t.target_key
                 WHERE ad2.management_number = ad.management_number
                   AND tld.target_list_year = ${yearInt}
-                LIMIT 1
               ) as matched_institution_name
             FROM aedpics.aed_data ad
             WHERE ad.management_number IS NOT NULL
