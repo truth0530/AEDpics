@@ -264,7 +264,6 @@ export async function batchNormalize(
  */
 export function clearNormalizationCache(): void {
   normalizationCache.clear();
-  textNormalizer.clearCache();
   addressNormalizer.clearCache();
 }
 
