@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth/auth-options';
 import { logger } from '@/lib/logger';
+import { analyzeInspectionFields } from '@/lib/inspections/field-comparison';
 
 export async function GET(request: NextRequest) {
   try {
@@ -520,6 +521,31 @@ export async function PATCH(request: NextRequest) {
           inspectionId: result.inspection.id,
           userId: session.user.id,
         });
+
+        // 5. 트랜잭션 외부에서 필드 비교 분석 수행
+        try {
+          logger.info('InspectionSessions:PATCH', 'Starting field comparison analysis', {
+            inspectionId: result.inspection.id,
+            equipment_serial: existingSession.equipment_serial,
+          });
+
+          await analyzeInspectionFields(
+            result.inspection.id,
+            existingSession.equipment_serial,
+            inspectedData
+          );
+
+          logger.info('InspectionSessions:PATCH', 'Field comparison analysis completed', {
+            inspectionId: result.inspection.id,
+          });
+        } catch (analysisError) {
+          // 필드 분석 실패는 치명적이지 않으므로 경고만 로그
+          logger.warn('InspectionSessions:PATCH', 'Field comparison analysis failed', {
+            inspectionId: result.inspection.id,
+            equipment_serial: existingSession.equipment_serial,
+            error: analysisError instanceof Error ? analysisError.message : 'Unknown error',
+          });
+        }
 
         return NextResponse.json({
           success: true,
