@@ -625,18 +625,16 @@ export async function GET(request: NextRequest) {
       }))
     });
 
-    // 매칭된 항목 필터링 (includeMatched가 false일 때)
-    const filteredAutoSuggestions = includeMatched
-      ? improvedAutoSuggestions
-      : improvedAutoSuggestions.filter(item => !item.is_matched);
+    // 2025-11-19: includeMatched 파라미터 무시
+    // 이유: 프론트엔드에서 showAlreadyMatched 상태로 UI 접기/펼치기를 제어하므로
+    // API는 항상 모든 데이터를 반환하고, 프론트엔드가 표시 여부를 결정
+    const filteredAutoSuggestions = improvedAutoSuggestions;
+    const filteredSearchResults = searchResults;
 
-    const filteredSearchResults = includeMatched
-      ? searchResults
-      : searchResults.filter(item => !item.is_matched);
-
-    console.log('[DEBUG] After filtering:', {
+    console.log('[DEBUG] After filtering (no filtering applied):', {
       auto_suggestions: filteredAutoSuggestions.length,
-      search_results: filteredSearchResults.length
+      search_results: filteredSearchResults.length,
+      matched_items: filteredAutoSuggestions.filter(item => item.is_matched).length
     });
 
     return NextResponse.json({

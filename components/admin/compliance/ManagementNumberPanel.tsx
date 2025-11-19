@@ -454,9 +454,10 @@ export default function ManagementNumberPanel({
   }, [selectedInstitution]);
 
   // 선택된 기관이 변경되거나 필터 옵션이 변경되면 데이터 조회
+  // 2025-11-19: showAlreadyMatched 의존성 제거 (UI 상태만 변경, API 재호출 불필요)
   useEffect(() => {
     fetchCandidates();
-  }, [selectedInstitution, includeAllRegion, showAlreadyMatched]);
+  }, [selectedInstitution, includeAllRegion]);
 
   // 검색어 변경 시 검색 실행 (디바운싱)
   useEffect(() => {
@@ -504,8 +505,9 @@ export default function ManagementNumberPanel({
     try {
       const params = new URLSearchParams({
         year,
-        include_all_region: includeAllRegion.toString(),
-        include_matched: showAlreadyMatched.toString()
+        include_all_region: includeAllRegion.toString()
+        // 2025-11-19: include_matched 제거
+        // API는 항상 모든 데이터를 반환하고, UI에서 showAlreadyMatched 상태로 접기/펼치기 제어
       });
 
       // 의무설치기관이 선택된 경우에만 target_key 추가
@@ -523,6 +525,20 @@ export default function ManagementNumberPanel({
       const data = await response.json();
       const autoSugs = data.auto_suggestions || [];
       const searchRes = data.search_results || [];
+
+      // DEBUG: 매칭된 항목 확인
+      console.log('[ManagementNumberPanel] API Response:', {
+        auto_suggestions_total: autoSugs.length,
+        auto_suggestions_matched: autoSugs.filter((item: any) => item.is_matched).length,
+        search_results_total: searchRes.length,
+        search_results_matched: searchRes.filter((item: any) => item.is_matched).length,
+        sample_auto: autoSugs.slice(0, 3).map((item: any) => ({
+          management_number: item.management_number,
+          institution_name: item.institution_name,
+          is_matched: item.is_matched,
+          matched_to: item.matched_to
+        }))
+      });
 
       setAutoSuggestions(autoSugs);
       setSearchResults(searchRes);
@@ -582,6 +598,21 @@ export default function ManagementNumberPanel({
   };
 
   const renderCandidateList = (items: ManagementNumberCandidate[], showConfidence: boolean) => {
+    // 이미 다른 기관에 매칭된 항목 (원본에서 가져오기 - basket 상태와 무관)
+    const matchedItems = items.filter(item => item.is_matched);
+
+    // DEBUG: matchedItems 확인
+    console.log('[renderCandidateList] matchedItems check:', {
+      items_total: items.length,
+      matched_items_count: matchedItems.length,
+      matched_items_sample: matchedItems.slice(0, 3).map(item => ({
+        management_number: item.management_number,
+        institution_name: item.institution_name,
+        is_matched: item.is_matched,
+        matched_to: item.matched_to
+      }))
+    });
+
     // 완전 매칭된 항목만 필터링 (부분 매칭은 유지)
     const filteredItems = items.filter(item => {
       const basketItem = basketedItems.find(b => b.management_number === item.management_number);
@@ -602,8 +633,7 @@ export default function ManagementNumberPanel({
       return !isFullyMatched;
     });
 
-    // 이미 매칭된 항목과 미매칭 항목으로 분리
-    const matchedItems = filteredItems.filter(item => item.is_matched);
+    // 미매칭 항목만 분리
     const unmatchedItems = filteredItems.filter(item => !item.is_matched);
 
     // 미매칭 항목을 60% 초과와 60% 이하로 분리
