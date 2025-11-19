@@ -6,6 +6,14 @@ import { authOptions } from '@/lib/auth/auth-options';
 /**
  * POST /api/compliance/match-basket
  * 담기 박스의 관리번호들을 의무설치기관에 일괄 매칭
+ *
+ * Request body:
+ * - target_key: string (매칭할 기관)
+ * - management_numbers: string[] (매칭할 관리번호들)
+ * - year?: number (기본값: 2025)
+ * - strategy?: 'add' | 'replace' (기본값: 'add')
+ *   - 'add': 기존 매칭 유지 + 새로운 기관에 추가 (중복 허용)
+ *   - 'replace': 기존 매칭 해제 + 새로운 기관으로 이동
  */
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { target_key, year, management_numbers } = body;
+    const { target_key, year, management_numbers, strategy = 'add' } = body;
 
     // year는 2025년만 허용
     const validYear = 2025;
@@ -65,21 +73,46 @@ export async function POST(request: NextRequest) {
 
     // 트랜잭션으로 매칭 처리
     const result = await prisma.$transaction(async (tx) => {
-      // 1. 기존 매칭 레코드 삭제 (재매칭 방지)
-      await tx.target_list_devices.deleteMany({
-        where: {
-          equipment_serial: {
-            in: serialsToMatch,
+      // 1. 전략에 따른 처리
+      let deletedCount = 0;
+      if (strategy === 'replace') {
+        // 기존 매칭 레코드 삭제 (다른 기관의 매칭 해제)
+        const deleteResult = await tx.target_list_devices.deleteMany({
+          where: {
+            equipment_serial: {
+              in: serialsToMatch,
+            },
+            target_list_year: validYear,
+            // 현재 기관의 매칭은 제외 (같은 기관 재매칭은 무시)
+            NOT: {
+              target_institution_id: target_key,
+            },
           },
-          target_list_year: validYear,
-        },
-      });
+        });
+        deletedCount = deleteResult.count;
+      }
 
       // 2. 새로운 매칭 레코드 생성
-      // Note: createMany는 PostgreSQL default 생성을 건너뛸 수 있으므로 개별 create 사용
-      await Promise.all(
-        serialsToMatch.map((serial) =>
-          tx.target_list_devices.create({
+      // 'add' 전략: 중복 체크 후 없는 것만 생성
+      // 'replace' 전략: 모두 생성 (이미 삭제했으므로)
+      const matchResults = await Promise.all(
+        serialsToMatch.map(async (serial) => {
+          // 이미 같은 기관에 매칭되어 있는지 확인
+          const existing = await tx.target_list_devices.findFirst({
+            where: {
+              target_institution_id: target_key,
+              equipment_serial: serial,
+              target_list_year: validYear,
+            },
+          });
+
+          if (existing) {
+            // 이미 매칭됨 - 건너뛰기
+            return { serial, status: 'already_matched' };
+          }
+
+          // 새로운 매칭 생성
+          await tx.target_list_devices.create({
             data: {
               target_institution_id: target_key,
               equipment_serial: serial,
@@ -87,11 +120,16 @@ export async function POST(request: NextRequest) {
               matched_at: new Date(),
               matched_by: session.user!.id,
             },
-          })
-        )
+          });
+
+          return { serial, status: 'newly_matched' };
+        })
       );
 
       // 3. 매칭 로그 기록
+      const newlyMatchedCount = matchResults.filter((r) => r.status === 'newly_matched').length;
+      const alreadyMatchedCount = matchResults.filter((r) => r.status === 'already_matched').length;
+
       const log = await tx.target_list_match_logs.create({
         data: {
           action: 'match',
@@ -99,13 +137,17 @@ export async function POST(request: NextRequest) {
           target_key,
           management_numbers,
           user_id: session.user!.id,
-          reason: null, // 매칭 시에는 사유 불필요
+          reason: strategy === 'replace' ? '기존 매칭 해제 후 이동' : null,
         },
       });
 
       return {
+        strategy,
         matched_count: management_numbers.length,
         equipment_count: serialsToMatch.length,
+        newly_matched: newlyMatchedCount,
+        already_matched: alreadyMatchedCount,
+        deleted_previous: deletedCount,
         log_id: log.id,
       };
     });
