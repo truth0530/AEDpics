@@ -644,6 +644,14 @@ export default function ManagementNumberPanel({
     const highConfidenceItems = unmatchedItems.filter(item => !item.confidence || item.confidence > 60);
     const lowConfidenceItems = unmatchedItems.filter(item => item.confidence && item.confidence <= 60);
 
+    // DEBUG: filteredItems 길이 확인
+    console.log('[renderCandidateList] filteredItems check:', {
+      original_items: items.length,
+      filtered_items: filteredItems.length,
+      matched_in_filtered: filteredItems.filter(item => item.is_matched).length,
+      unmatched_items: unmatchedItems.length
+    });
+
     if (filteredItems.length === 0) {
       return (
         <div className="text-center py-8 text-muted-foreground text-sm space-y-2">
