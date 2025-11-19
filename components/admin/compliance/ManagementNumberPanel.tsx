@@ -527,7 +527,7 @@ export default function ManagementNumberPanel({
       const searchRes = data.search_results || [];
 
       // DEBUG: 매칭된 항목 확인
-      console.log('[ManagementNumberPanel] API Response:', {
+      const debugData = {
         auto_suggestions_total: autoSugs.length,
         auto_suggestions_matched: autoSugs.filter((item: any) => item.is_matched).length,
         search_results_total: searchRes.length,
@@ -538,7 +538,8 @@ export default function ManagementNumberPanel({
           is_matched: item.is_matched,
           matched_to: item.matched_to
         }))
-      });
+      };
+      console.log('[ManagementNumberPanel] API Response:', JSON.stringify(debugData, null, 2));
 
       setAutoSuggestions(autoSugs);
       setSearchResults(searchRes);
@@ -602,7 +603,7 @@ export default function ManagementNumberPanel({
     const matchedItems = items.filter(item => item.is_matched);
 
     // DEBUG: matchedItems 확인
-    console.log('[renderCandidateList] matchedItems check:', {
+    const renderDebug = {
       items_total: items.length,
       matched_items_count: matchedItems.length,
       matched_items_sample: matchedItems.slice(0, 3).map(item => ({
@@ -611,7 +612,8 @@ export default function ManagementNumberPanel({
         is_matched: item.is_matched,
         matched_to: item.matched_to
       }))
-    });
+    };
+    console.log('[renderCandidateList] matchedItems check:', JSON.stringify(renderDebug, null, 2));
 
     // 완전 매칭된 항목만 필터링 (부분 매칭은 유지)
     const filteredItems = items.filter(item => {
