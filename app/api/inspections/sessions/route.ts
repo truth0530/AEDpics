@@ -524,6 +524,14 @@ export async function PATCH(request: NextRequest) {
 
         // 5. 트랜잭션 외부에서 필드 비교 분석 수행
         try {
+          // stepData에서 inspectedData 추출
+          const finalStepData = stepData || existingSession.step_data || {};
+          const inspectedData = {
+            deviceInfo: (finalStepData as any).deviceInfo || {},
+            basicInfo: (finalStepData as any).basicInfo || {},
+            storage: (finalStepData as any).storage || {},
+          };
+
           logger.info('InspectionSessions:PATCH', 'Starting field comparison analysis', {
             inspectionId: result.inspection.id,
             equipment_serial: existingSession.equipment_serial,
