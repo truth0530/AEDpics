@@ -429,7 +429,7 @@ export default function ManagementNumberPanel({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [includeAllRegion, setIncludeAllRegion] = useState(false);
-  const [showAlreadyMatched, setShowAlreadyMatched] = useState(false); // 기본: 이미 매칭된 항목 숨김
+  const [showAlreadyMatched, setShowAlreadyMatched] = useState(true); // 기본: 이미 매칭된 항목 펼침
   // 펼쳐진 관리번호 Set (관리번호별 펼침/접힘 상태 관리)
   // 접힌 상태를 추적 (기본값은 펼쳐진 상태)
   const [collapsedManagementNumbers, setCollapsedManagementNumbers] = useState<Set<string>>(new Set());
@@ -911,8 +911,8 @@ export default function ManagementNumberPanel({
                       const displayedEquipmentDetails = remainingEquipmentDetails.slice(0, displayCount);
 
                       return displayedEquipmentDetails.length > 0 ? (
-                        <div className="mt-2 pt-2 border-t border-border">
-                          <div className="space-y-0">
+                        <div className="mt-1.5 pt-1.5 border-t border-border/50">
+                          <div className="space-y-0.5">
                             {displayedEquipmentDetails.map((detail) => {
                               // 고유키 매칭 여부 확인
                               const isUniqueKeyMatched = uniqueKey && hasUniqueKeyMatch(detail.location_detail, uniqueKey);
@@ -921,11 +921,11 @@ export default function ManagementNumberPanel({
                                 <div
                                   key={detail.serial}
                                   className={cn(
-                                    "flex items-center gap-1.5 p-1 rounded transition-colors",
-                                    !item.is_matched && "cursor-pointer hover:opacity-80",
+                                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-xs transition-colors",
+                                    !item.is_matched && "cursor-pointer hover:bg-muted/50",
                                     isUniqueKeyMatched
-                                      ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-400 dark:border-purple-500"
-                                      : "bg-green-900/[0.06]"
+                                      ? "bg-purple-50 dark:bg-purple-900/20 border border-purple-300 dark:border-purple-700"
+                                      : "bg-muted/30 dark:bg-muted/20"
                                   )}
                                   onClick={() => {
                                     if (!item.is_matched) {
@@ -935,32 +935,31 @@ export default function ManagementNumberPanel({
                                 >
                                   {detail.location_detail && (
                                     <span className={cn(
-                                      "text-xs leading-tight flex-1 min-w-0 truncate",
-                                      isUniqueKeyMatched ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"
+                                      "leading-tight flex-1 min-w-0 truncate",
+                                      isUniqueKeyMatched
+                                        ? "text-purple-700 dark:text-purple-300 font-medium"
+                                        : "text-foreground/80 dark:text-foreground/90"
                                     )}>
                                       {highlightVehicleText(detail.location_detail)}
                                     </span>
                                   )}
-                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
                                   <span className={cn(
-                                    "font-mono font-medium text-xs leading-tight flex-shrink-0",
-                                    isUniqueKeyMatched ? "text-purple-700 dark:text-purple-300" : ""
+                                    "font-mono font-medium leading-tight flex-shrink-0",
+                                    isUniqueKeyMatched
+                                      ? "text-purple-800 dark:text-purple-200"
+                                      : "text-foreground dark:text-foreground"
                                   )}>
                                     {detail.serial}
                                   </span>
                                   {isUniqueKeyMatched && (
-                                    <>
-                                      <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
-                                      <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-300 flex-shrink-0">
-                                        고유키일치
-                                      </Badge>
-                                    </>
+                                    <Badge variant="outline" className="text-[10px] py-0 px-1 h-4 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-600 flex-shrink-0">
+                                      고유키
+                                    </Badge>
                                   )}
-                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="h-auto text-xs px-1 py-0 flex-shrink-0"
+                                    className="h-4 text-[10px] px-1.5 py-0 flex-shrink-0 border-foreground/20 dark:border-foreground/30 hover:bg-foreground/10 dark:hover:bg-foreground/20"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       onAddEquipmentSerial(item, detail.serial);
@@ -1262,8 +1261,8 @@ export default function ManagementNumberPanel({
                       const displayedEquipmentDetails = remainingEquipmentDetails.slice(0, displayCount);
 
                       return displayedEquipmentDetails.length > 0 ? (
-                        <div className="mt-2 pt-2 border-t border-border">
-                          <div className="space-y-0">
+                        <div className="mt-1.5 pt-1.5 border-t border-border/50">
+                          <div className="space-y-0.5">
                             {displayedEquipmentDetails.map((detail) => {
                               // 고유키 매칭 여부 확인
                               const isUniqueKeyMatched = uniqueKey && hasUniqueKeyMatch(detail.location_detail, uniqueKey);
@@ -1272,11 +1271,11 @@ export default function ManagementNumberPanel({
                                 <div
                                   key={detail.serial}
                                   className={cn(
-                                    "flex items-center gap-1.5 p-1 rounded transition-colors",
-                                    !item.is_matched && "cursor-pointer hover:opacity-80",
+                                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-xs transition-colors",
+                                    !item.is_matched && "cursor-pointer hover:bg-muted/50",
                                     isUniqueKeyMatched
-                                      ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-400 dark:border-purple-500"
-                                      : "bg-green-900/[0.06]"
+                                      ? "bg-purple-50 dark:bg-purple-900/20 border border-purple-300 dark:border-purple-700"
+                                      : "bg-muted/30 dark:bg-muted/20"
                                   )}
                                   onClick={() => {
                                     if (!item.is_matched) {
@@ -1286,32 +1285,31 @@ export default function ManagementNumberPanel({
                                 >
                                   {detail.location_detail && (
                                     <span className={cn(
-                                      "text-xs leading-tight flex-1 min-w-0 truncate",
-                                      isUniqueKeyMatched ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"
+                                      "leading-tight flex-1 min-w-0 truncate",
+                                      isUniqueKeyMatched
+                                        ? "text-purple-700 dark:text-purple-300 font-medium"
+                                        : "text-foreground/80 dark:text-foreground/90"
                                     )}>
                                       {highlightVehicleText(detail.location_detail)}
                                     </span>
                                   )}
-                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
                                   <span className={cn(
-                                    "font-mono font-medium text-xs leading-tight flex-shrink-0",
-                                    isUniqueKeyMatched ? "text-purple-700 dark:text-purple-300" : ""
+                                    "font-mono font-medium leading-tight flex-shrink-0",
+                                    isUniqueKeyMatched
+                                      ? "text-purple-800 dark:text-purple-200"
+                                      : "text-foreground dark:text-foreground"
                                   )}>
                                     {detail.serial}
                                   </span>
                                   {isUniqueKeyMatched && (
-                                    <>
-                                      <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
-                                      <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-300 flex-shrink-0">
-                                        고유키일치
-                                      </Badge>
-                                    </>
+                                    <Badge variant="outline" className="text-[10px] py-0 px-1 h-4 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-600 flex-shrink-0">
+                                      고유키
+                                    </Badge>
                                   )}
-                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="h-auto text-xs px-1 py-0 flex-shrink-0"
+                                    className="h-4 text-[10px] px-1.5 py-0 flex-shrink-0 border-foreground/20 dark:border-foreground/30 hover:bg-foreground/10 dark:hover:bg-foreground/20"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       onAddEquipmentSerial(item, detail.serial);
@@ -2065,25 +2063,25 @@ export default function ManagementNumberPanel({
             )}
 
             {/* 사유 선택 */}
-            <RadioGroup value={duplicateReason} onValueChange={(value: any) => setDuplicateReason(value)} className="space-y-2">
+            <RadioGroup value={duplicateReason} onValueChange={(value: any) => setDuplicateReason(value)} className="space-y-1.5">
               <div className="flex items-start space-x-2 p-2 rounded-md hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors">
                 <RadioGroupItem value="duplicate_institution" id="duplicate_institution" className="mt-0.5" />
                 <Label htmlFor="duplicate_institution" className="cursor-pointer font-normal leading-tight flex-1">
-                  <span className="block text-sm">같은 의무시설이 중복 등록됨</span>
-                  <span className="block text-xs text-muted-foreground mt-0.5">동일 기관이 다른 이름으로 등록된 경우</span>
+                  <span className="block text-sm text-foreground dark:text-foreground">같은 의무시설이 중복 등록됨</span>
+                  <span className="block text-xs text-muted-foreground dark:text-muted-foreground/80 mt-0.5">동일 기관이 다른 이름으로 등록된 경우</span>
                 </Label>
               </div>
               <div className="flex items-start space-x-2 p-2 rounded-md hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors">
                 <RadioGroupItem value="no_match" id="no_match" className="mt-0.5" />
                 <Label htmlFor="no_match" className="cursor-pointer font-normal leading-tight flex-1">
-                  <span className="block text-sm">매칭할 대상이 없음</span>
-                  <span className="block text-xs text-muted-foreground mt-0.5">올바른 매칭 대상을 찾을 수 없는 경우</span>
+                  <span className="block text-sm text-foreground dark:text-foreground">매칭할 대상이 없음</span>
+                  <span className="block text-xs text-muted-foreground dark:text-muted-foreground/80 mt-0.5">올바른 매칭 대상을 찾을 수 없는 경우</span>
                 </Label>
               </div>
               <div className="flex items-start space-x-2 p-2 rounded-md hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors">
                 <RadioGroupItem value="other" id="other" className="mt-0.5" />
                 <Label htmlFor="other" className="cursor-pointer font-normal leading-tight flex-1">
-                  <span className="block text-sm">기타 사유</span>
+                  <span className="block text-sm text-foreground dark:text-foreground">기타 사유</span>
                 </Label>
               </div>
             </RadioGroup>
