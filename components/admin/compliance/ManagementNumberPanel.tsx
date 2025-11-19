@@ -606,6 +606,8 @@ export default function ManagementNumberPanel({
     const renderDebug = {
       items_total: items.length,
       matched_items_count: matchedItems.length,
+      searchTerm_active: !!searchTerm,  // 검색어 활성 여부
+      using_searchResults: searchTerm ? true : false,  // searchResults 사용 여부
       matched_items_sample: matchedItems.slice(0, 3).map(item => ({
         management_number: item.management_number,
         institution_name: item.institution_name,
