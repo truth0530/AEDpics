@@ -7,7 +7,7 @@
  * - TNMS normalization_rules 테이블 기반 정규화 사용
  */
 
-import { textNormalizer } from '@/lib/services/tnms/text-normalizer';
+import { dbTextNormalizer } from '@/lib/services/tnms/db-text-normalizer';
 import { addressNormalizer } from '@/lib/services/tnms/address-normalizer';
 import type { NormalizationSignal } from '@/lib/services/tnms/text-normalizer';
 
@@ -37,7 +37,12 @@ async function normalizeWithCache(text: string): Promise<{
     };
   }
 
-  const result = await textNormalizer.normalize(text);
+  // DB 정규화 함수 호출
+  const normalized = await dbTextNormalizer.normalize(text);
+  const result = {
+    normalized,
+    signals: [] as NormalizationSignal[]  // DB 함수는 시그널을 반환하지 않음
+  };
 
   // 캐시 크기 제한 (최대 1000개)
   if (normalizationCache.size > 1000) {

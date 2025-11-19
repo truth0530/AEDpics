@@ -79,6 +79,9 @@ export async function GET(request: NextRequest) {
       category_2: string | null;
     }> = [];
 
+    // TNMS 사전 계산된 매칭 결과를 Map으로 변환 (모든 코드 경로에서 사용 가능하도록)
+    const tnmsConfidenceMap = new Map<string, number>();
+
     if (targetInstitution) {
       // 선택된 의무설치기관 정보 조회
       const targetInfo = await prisma.target_list_2025.findUnique({
@@ -86,6 +89,30 @@ export async function GET(request: NextRequest) {
         select: { institution_name: true }
       });
       const targetName = targetInfo?.institution_name || '';
+
+      // TNMS 사전 계산된 매칭 결과 확인 (29,295개 데이터 활용)
+      const tnmsMatching = await prisma.$queryRaw<Array<{
+        matched_equipment_serial: string;
+        confidence_score: number;
+        match_type: string;
+      }>>`
+        SELECT
+          matched_equipment_serial,
+          confidence_score,
+          match_type
+        FROM aedpics.tnms_matching_results
+        WHERE target_key = ${targetKey}
+      `;
+
+      // 사전 계산된 매칭 결과를 Map에 저장 (빠른 조회를 위해)
+      tnmsMatching.forEach(match => {
+        // matched_equipment_serial이 있으면 해당 장비의 신뢰도 저장
+        if (match.matched_equipment_serial) {
+          tnmsConfidenceMap.set(match.matched_equipment_serial, Number(match.confidence_score));
+        }
+      });
+
+      console.log(`[TNMS] Found ${tnmsMatching.length} pre-calculated matches for ${targetKey}`);
 
       // 의무설치기관 선택 시: 실시간 유사도 계산
       if (!includeAllRegion && normalizedGugun) {
@@ -152,7 +179,7 @@ export async function GET(request: NextRequest) {
               WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
               WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
               WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
-              ELSE 60
+              ELSE 0  -- TNMS가 계산하도록 0점 부여
             END as confidence,
             gd.is_matched,
             gd.matched_to,
@@ -224,7 +251,7 @@ export async function GET(request: NextRequest) {
               WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
               WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
               WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
-              ELSE 60
+              ELSE 0  -- TNMS가 계산하도록 0점 부여
             END as confidence,
             gd.is_matched,
             gd.matched_to
@@ -294,7 +321,7 @@ export async function GET(request: NextRequest) {
               WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
               WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
               WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
-              ELSE 60
+              ELSE 0  -- TNMS가 계산하도록 0점 부여
             END as confidence,
             gd.is_matched,
             gd.matched_to
@@ -581,9 +608,27 @@ export async function GET(request: NextRequest) {
       const targetSido = targetInfo?.sido || '';
       const targetGugun = targetInfo?.gugun || '';
 
-      // 각 후보의 신뢰도를 퍼지 매칭으로 재계산 (주소 + 지역 + 키워드 보너스 포함)
+      // 각 후보의 신뢰도를 계산 - TNMS 사전 계산 결과 우선, 없으면 실시간 계산
       const enhancedCandidates = await Promise.all(autoSuggestionsQuery.map(async item => {
-        // TNMS 통합 버전 - 비동기 처리
+        // 1. TNMS 사전 계산된 매칭 결과 확인 (29,295개 데이터)
+        // 관리번호 그룹의 첫 번째 장비연번으로 조회
+        const firstSerial = item.equipment_serials?.[0];
+        let tnmsPreCalculatedScore: number | null = null;
+
+        if (firstSerial && tnmsConfidenceMap.has(firstSerial)) {
+          tnmsPreCalculatedScore = tnmsConfidenceMap.get(firstSerial)!;
+          console.log(`[TNMS] Using pre-calculated score for ${item.management_number}: ${tnmsPreCalculatedScore}%`);
+        }
+
+        // 사전 계산된 점수가 있으면 바로 사용
+        if (tnmsPreCalculatedScore !== null) {
+          return {
+            ...item,
+            confidence: tnmsPreCalculatedScore
+          };
+        }
+
+        // 2. 사전 계산 결과가 없으면 실시간 TNMS 정규화 계산
         const matchResult = await calculateInstitutionMatchConfidence(
           targetName,          // target이 먼저
           item.institution_name,
@@ -592,12 +637,17 @@ export async function GET(request: NextRequest) {
         );
         const fuzzyConfidence = matchResult.confidence;
 
-        // 퍼지 매칭이 더 나은 점수를 제공하면 사용
-        if (fuzzyConfidence !== null && fuzzyConfidence > Number(item.confidence || 0)) {
-          return {
-            ...item,
-            confidence: fuzzyConfidence
-          };
+        // TNMS 점수를 항상 사용 (0점인 경우 TNMS가 계산)
+        // SQL에서 이미 높은 점수(90, 85, 100)를 받은 경우 유지
+        if (fuzzyConfidence !== null) {
+          const sqlConfidence = Number(item.confidence || 0);
+          // SQL에서 0점을 받았거나, TNMS 점수가 더 나은 경우 TNMS 사용
+          if (sqlConfidence === 0 || fuzzyConfidence > sqlConfidence) {
+            return {
+              ...item,
+              confidence: fuzzyConfidence
+            };
+          }
         }
 
         return item;
