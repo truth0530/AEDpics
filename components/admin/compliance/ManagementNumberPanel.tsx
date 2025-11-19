@@ -429,7 +429,7 @@ export default function ManagementNumberPanel({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [includeAllRegion, setIncludeAllRegion] = useState(false);
-  const [hideAlreadyMatched, setHideAlreadyMatched] = useState(true); // 기본: 이미 매칭된 항목 숨김
+  const [showAlreadyMatched, setShowAlreadyMatched] = useState(false); // 기본: 이미 매칭된 항목 숨김
   // 펼쳐진 관리번호 Set (관리번호별 펼침/접힘 상태 관리)
   // 접힌 상태를 추적 (기본값은 펼쳐진 상태)
   const [collapsedManagementNumbers, setCollapsedManagementNumbers] = useState<Set<string>>(new Set());
@@ -448,15 +448,15 @@ export default function ManagementNumberPanel({
   useEffect(() => {
     if (selectedInstitution) {
       setSearchTerm('');
-      // 기본값: 이미 매칭된 관리번호 숨기기 (hideAlreadyMatched = true)
-      setHideAlreadyMatched(true);
+      // 기본값: 이미 매칭된 관리번호 숨김 (showAlreadyMatched = false)
+      setShowAlreadyMatched(false);
     }
   }, [selectedInstitution]);
 
   // 선택된 기관이 변경되거나 필터 옵션이 변경되면 데이터 조회
   useEffect(() => {
     fetchCandidates();
-  }, [selectedInstitution, includeAllRegion, hideAlreadyMatched]);
+  }, [selectedInstitution, includeAllRegion, showAlreadyMatched]);
 
   // 검색어 변경 시 검색 실행 (디바운싱)
   useEffect(() => {
@@ -505,7 +505,7 @@ export default function ManagementNumberPanel({
       const params = new URLSearchParams({
         year,
         include_all_region: includeAllRegion.toString(),
-        include_matched: (!hideAlreadyMatched).toString() // 반전된 로직
+        include_matched: showAlreadyMatched.toString()
       });
 
       // 의무설치기관이 선택된 경우에만 target_key 추가
@@ -602,9 +602,13 @@ export default function ManagementNumberPanel({
       return !isFullyMatched;
     });
 
-    // 60% 초과와 60% 이하로 분리
-    const highConfidenceItems = filteredItems.filter(item => !item.confidence || item.confidence > 60);
-    const lowConfidenceItems = filteredItems.filter(item => item.confidence && item.confidence <= 60);
+    // 이미 매칭된 항목과 미매칭 항목으로 분리
+    const matchedItems = filteredItems.filter(item => item.is_matched);
+    const unmatchedItems = filteredItems.filter(item => !item.is_matched);
+
+    // 미매칭 항목을 60% 초과와 60% 이하로 분리
+    const highConfidenceItems = unmatchedItems.filter(item => !item.confidence || item.confidence > 60);
+    const lowConfidenceItems = unmatchedItems.filter(item => item.confidence && item.confidence <= 60);
 
     if (filteredItems.length === 0) {
       return (
@@ -922,22 +926,18 @@ export default function ManagementNumberPanel({
                                   </Badge>
                                 </>
                               )}
-                              {!item.is_matched && (
-                                <>
-                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-auto text-xs px-1 py-0 flex-shrink-0"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onAddEquipmentSerial(item, detail.serial);
-                                    }}
-                                  >
-                                    담기
-                                  </Button>
-                                </>
-                              )}
+                              <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-auto text-xs px-1 py-0 flex-shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onAddEquipmentSerial(item, detail.serial);
+                                }}
+                              >
+                                담기
+                              </Button>
                           </div>
                           );
                         })}
@@ -950,6 +950,304 @@ export default function ManagementNumberPanel({
           );
         })}
         </div>
+
+        {/* 이미 매칭된 항목 펼치기 버튼 */}
+        {matchedItems.length > 0 && (
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAlreadyMatched(!showAlreadyMatched)}
+              className="w-full text-xs"
+            >
+              {showAlreadyMatched ? (
+                <>
+                  <ChevronUp className="h-3 w-3 mr-1" />
+                  이미 매칭된 항목 {matchedItems.length}개 접기
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3 mr-1" />
+                  이미 매칭된 항목 {matchedItems.length}개 펼치기
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* 이미 매칭된 항목 리스트 (펼쳐진 경우만 표시) */}
+        {showAlreadyMatched && matchedItems.length > 0 && (
+          <div className="space-y-0.5">
+            {matchedItems.map((item) => {
+              // 접힌 상태가 아니면 펼쳐진 상태
+              const isExpanded = !collapsedManagementNumbers.has(item.management_number);
+              const hasMultipleEquipment = item.equipment_count > 1;
+
+              // 부분 매칭 여부 확인
+              const basketItem = basketedItems.find(b => b.management_number === item.management_number);
+
+              // 개별 장비가 모두 담긴 경우도 완전 매칭으로 취급
+              const isFullyMatchedByIndividual = basketItem &&
+                basketItem.selected_serials &&
+                basketItem.selected_serials.length === item.equipment_count;
+
+              const isPartiallyMatched = basketItem &&
+                basketItem.selected_serials &&
+                basketItem.selected_serials.length > 0 &&
+                basketItem.selected_serials.length < item.equipment_count;
+
+              const isFullyMatched = (basketedManagementNumbers.includes(item.management_number) && !basketItem?.selected_serials) || isFullyMatchedByIndividual;
+
+              // 이미 담긴 장비연번 목록
+              const basketedSerials = basketItem?.selected_serials || [];
+
+              // 남은 장비 개수 (담기지 않은 장비)
+              const remainingEquipmentCount = item.equipment_count - basketedSerials.length;
+
+              // 고유키 매칭 여부 확인
+              const uniqueKey = selectedInstitution?.unique_key;
+              const hasUniqueKeyInEquipment = uniqueKey && item.equipment_details?.some(detail =>
+                hasUniqueKeyMatch(detail.location_detail, uniqueKey)
+              );
+
+              // 주소 일치 수준 계산 (2: 시도+구군, 3: 시도+구군+읍면동)
+              const addressMatchLevel = selectedInstitution ? getAddressMatchLevel(
+                item.address,
+                selectedInstitution.address,
+                item.sido,
+                selectedInstitution.sido,
+                item.gugun,
+                selectedInstitution.gugun
+              ) : 0;
+
+              // isPartiallyMatched일 때 주소 일치 수준에 따라 색상 차별화
+              const isPartiallyMatchedLevel2 = isPartiallyMatched && addressMatchLevel === 2; // 시도+구군만 일치
+              const isPartiallyMatchedLevel3 = isPartiallyMatched && addressMatchLevel === 3; // 시도+구군+읍면동 일치
+
+              return (
+                <Card
+                  key={item.management_number}
+                  className={cn(
+                    "p-2 transition-all border",
+                    "bg-gray-100 dark:bg-gray-800 border-amber-300 dark:border-amber-700",
+                    isPartiallyMatched && "border-amber-500 dark:border-amber-600",
+                    isFullyMatched && "border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                  )}
+                >
+                  <div className="space-y-1.5">
+                    {/* 동일한 카드 내용 렌더링 */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="font-medium text-sm">
+                            {highlightMatchingInstitutionName(item.institution_name, selectedInstitution?.institution_name, item.confidence)}
+                          </div>
+                          {isFullyMatched && (
+                            <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
+                              전체 담김
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {!isPartiallyMatched && !isFullyMatched && item.equipment_count === 1 ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToBasket(item);
+                                }}
+                                className={cn(
+                                  "flex-shrink-0 h-6 text-xs",
+                                  "bg-transparent text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600"
+                                )}
+                              >
+                                담기
+                              </Button>
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3 text-amber-600" />
+                                <Badge variant="secondary" className="text-xs flex-shrink-0 bg-amber-50 text-amber-800 border-amber-300">
+                                  {item.matched_institution_name
+                                    ? `이미 ${item.matched_institution_name}에 매칭됨`
+                                    : '이미 매칭됨'}
+                                </Badge>
+                              </div>
+                            </>
+                          ) : null}
+                          {showConfidence && item.confidence && (
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "text-xs font-normal flex-shrink-0 px-1 py-0.5 tracking-tighter",
+                                "bg-transparent border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                              )}
+                            >
+                              {item.confidence.toFixed(0)}%
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <div className="text-xs text-muted-foreground flex-shrink-0">
+                          관리번호 {item.management_number}
+                        </div>
+                        {item.category_1 && (
+                          <span className="text-xs text-muted-foreground">
+                            {item.category_1 === '구비의무기관' ? '의무' : item.category_1}
+                          </span>
+                        )}
+                        {item.category_2 && (
+                          <span className="text-xs text-muted-foreground">
+                            {item.category_2 === '구비의무기관' ? '의무' : item.category_2}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <span>{highlightMatchingAddress(shortenAddressSido(item.address), selectedInstitution?.address, addressMatchLevel)}</span>
+                      </div>
+
+                      {hasMultipleEquipment && remainingEquipmentCount > 0 && (
+                        <div className={cn(
+                          "mt-2 p-2 rounded-md border transition-all",
+                          isPartiallyMatchedLevel2 && "border-amber-600 bg-amber-100/30 dark:bg-amber-950/30",
+                          isPartiallyMatchedLevel3 && "border-amber-400 bg-amber-50/50 dark:bg-amber-950/20",
+                          !isPartiallyMatched && "border-transparent"
+                        )}>
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              {isPartiallyMatched && (
+                                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                                  부분 매칭
+                                </Badge>
+                              )}
+                              <div
+                                className="text-xs text-blue-400 dark:text-blue-300 flex items-center gap-1 cursor-pointer hover:text-blue-500 dark:hover:text-blue-200 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpanded(item.management_number);
+                                }}
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronUp className="h-3 w-3" />
+                                    {isPartiallyMatched
+                                      ? `장비연번 ${remainingEquipmentCount}대 접기(${basketedSerials.length}대 부분매칭)`
+                                      : `장비연번 접기(${item.equipment_count}/${item.equipment_count}개)`
+                                    }
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="h-3 w-3" />
+                                    {isPartiallyMatched
+                                      ? `장비연번 ${remainingEquipmentCount}대 펼치기(${basketedSerials.length}대 부분매칭)`
+                                      : `장비연번 펼치기(${item.equipment_count}대)`
+                                    }
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            {!isPartiallyMatched && !isFullyMatched && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToBasket(item);
+                                }}
+                                className={cn(
+                                  "flex-shrink-0 h-6 text-xs",
+                                  "bg-transparent text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600"
+                                )}
+                              >
+                                일괄담기
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {hasMultipleEquipment && item.equipment_details && (() => {
+                      const remainingEquipmentDetails = item.equipment_details.filter(
+                        detail => !basketedSerials.includes(detail.serial)
+                      );
+
+                      const displayCount = isExpanded
+                        ? remainingEquipmentDetails.length
+                        : 0;
+
+                      const displayedEquipmentDetails = remainingEquipmentDetails.slice(0, displayCount);
+
+                      return displayedEquipmentDetails.length > 0 ? (
+                        <div className="mt-2 pt-2 border-t border-border">
+                          <div className="space-y-0">
+                            {displayedEquipmentDetails.map((detail) => {
+                              const isUniqueKeyMatched = uniqueKey && hasUniqueKeyMatch(detail.location_detail, uniqueKey);
+
+                              return (
+                                <div
+                                  key={detail.serial}
+                                  className={cn(
+                                    "flex items-center gap-1.5 p-1 rounded transition-colors cursor-pointer hover:opacity-80",
+                                    isUniqueKeyMatched
+                                      ? "bg-purple-100 dark:bg-purple-900/30 border border-purple-400 dark:border-purple-500"
+                                      : "bg-green-900/[0.06]"
+                                  )}
+                                  onClick={() => {
+                                    onAddEquipmentSerial(item, detail.serial);
+                                  }}
+                                >
+                                  {detail.location_detail && (
+                                    <span className={cn(
+                                      "text-xs leading-tight flex-1 min-w-0 truncate",
+                                      isUniqueKeyMatched ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"
+                                    )}>
+                                      {highlightVehicleText(detail.location_detail)}
+                                    </span>
+                                  )}
+                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
+                                  <span className={cn(
+                                    "font-mono font-medium text-xs leading-tight flex-shrink-0",
+                                    isUniqueKeyMatched ? "text-purple-700 dark:text-purple-300" : ""
+                                  )}>
+                                    {detail.serial}
+                                  </span>
+                                  {isUniqueKeyMatched && (
+                                    <>
+                                      <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
+                                      <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-300 flex-shrink-0">
+                                        고유키일치
+                                      </Badge>
+                                    </>
+                                  )}
+                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-auto text-xs px-1 py-0 flex-shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onAddEquipmentSerial(item, detail.serial);
+                                    }}
+                                  >
+                                    담기
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
         {/* 60% 이하 후보 펼치기 버튼 */}
         {lowConfidenceItems.length > 0 && (
@@ -1254,22 +1552,18 @@ export default function ManagementNumberPanel({
                                       </Badge>
                                     </>
                                   )}
-                                  {!item.is_matched && (
-                                    <>
-                                      <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-auto text-xs px-1 py-0 flex-shrink-0"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          onAddEquipmentSerial(item, detail.serial);
-                                        }}
-                                      >
-                                        담기
-                                      </Button>
-                                    </>
-                                  )}
+                                  <span className="text-muted-foreground text-xs flex-shrink-0">|</span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-auto text-xs px-1 py-0 flex-shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onAddEquipmentSerial(item, detail.serial);
+                                    }}
+                                  >
+                                    담기
+                                  </Button>
                                 </div>
                               );
                             })}
@@ -1294,6 +1588,10 @@ export default function ManagementNumberPanel({
     return !basketedManagementNumbers.includes(item.management_number);
   }).length;
 
+  // 이미 매칭된 항목 개수 계산
+  const alreadyMatchedItems = displayItems.filter(item => item.is_matched);
+  const alreadyMatchedCount = alreadyMatchedItems.length;
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-green-900/[0.06]">
       {/* 필터 옵션 및 통합 검색창 - 상단 고정 */}
@@ -1314,22 +1612,6 @@ export default function ManagementNumberPanel({
                 전지역 조회
               </label>
             </div>
-            {/* 의무설치기관이 선택된 경우 항상 표시 */}
-            {selectedInstitution && (
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="hide-matched"
-                  checked={hideAlreadyMatched}
-                  onCheckedChange={(checked) => setHideAlreadyMatched(checked === true)}
-                />
-                <label
-                  htmlFor="hide-matched"
-                  className="text-sm font-medium leading-none whitespace-nowrap"
-                >
-                  매칭완료 항목 숨기기
-                </label>
-              </div>
-            )}
           </div>
 
           {/* 검색창 */}

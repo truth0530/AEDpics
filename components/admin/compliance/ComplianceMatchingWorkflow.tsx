@@ -12,6 +12,7 @@ import InstitutionListPanel from './InstitutionListPanel';
 import ManagementNumberPanel from './ManagementNumberPanel';
 import BasketPanel from './BasketPanel';
 import { UnmatchableReasonDialog } from './UnmatchableReasonDialog';
+import { MatchingStrategyDialog, type MatchingStrategy } from './MatchingStrategyDialog';
 
 // 타입 정의
 interface EquipmentDetail {
@@ -50,6 +51,32 @@ interface BasketItem extends ManagementNumberCandidate {
   selected_serials?: string[]; // 선택된 장비연번 (undefined면 전체, 배열이면 일부만)
 }
 
+interface ConflictCheckResult {
+  has_conflicts: boolean;
+  total_devices: number;
+  already_matched_to_target: number;
+  matched_to_other: number;
+  unmatched: number;
+  conflicts: Array<{
+    equipment_serial: string;
+    management_number: string;
+    device_info: {
+      institution_name: string;
+      address: string;
+    };
+    existing_matches: Array<{
+      target_key: string;
+      institution_name: string;
+      management_number: string;
+      matched_at: string;
+      is_target_match: boolean;
+    }>;
+  }>;
+  summary: {
+    message: string;
+  };
+}
+
 interface ComplianceMatchingWorkflowProps {
   year?: string;
   initialProfile?: UserProfile;
@@ -76,6 +103,10 @@ export default function ComplianceMatchingWorkflow({
     has100PercentMatch: boolean;
     matchingInstitutionName?: string;
   }>({ has100PercentMatch: false });
+
+  // 매칭 전략 선택 모달 상태
+  const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
+  const [conflictData, setConflictData] = useState<ConflictCheckResult | null>(null);
 
   // 헤더 Region Filter에서 선택한 지역 (동적으로 연결)
   const [selectedRegion, setSelectedRegion] = useState<{ sido: string | null; gugun: string | null }>(() => {
@@ -479,25 +510,10 @@ export default function ComplianceMatchingWorkflow({
     });
   };
 
-  // 매칭 실행
-  const handleMatchBasket = async () => {
+  // 실제 매칭 실행 (전략 포함)
+  const executeMatchWithStrategy = async (strategy: MatchingStrategy) => {
     if (currentBasket.length === 0 || !selectedInstitution) return;
-
-    // 90% 이하 매칭률 확인 및 경고
-    const lowConfidenceItems = currentBasket.filter(item => item.confidence !== null && item.confidence <= 90);
-
-    if (lowConfidenceItems.length > 0) {
-      // 경고 메시지 생성
-      const warnings = lowConfidenceItems.map(item =>
-        `• ${selectedInstitution.institution_name}과 ${item.institution_name}은 매칭률이 ${item.confidence?.toFixed(0)}%입니다.`
-      ).join('\n');
-
-      const confirmMessage = `${warnings}\n\n그럼에도 불구하고 같은 기관으로 매칭하시겠습니까?`;
-
-      if (!window.confirm(confirmMessage)) {
-        return; // 사용자가 취소를 선택하면 매칭 중단
-      }
-    }
+    if (strategy === 'cancel') return;
 
     try {
       const response = await fetch('/api/compliance/match-basket', {
@@ -506,7 +522,8 @@ export default function ComplianceMatchingWorkflow({
         body: JSON.stringify({
           target_key: selectedInstitution.target_key,
           year: parseInt(year),
-          management_numbers: currentBasket.map(item => item.management_number)
+          management_numbers: currentBasket.map(item => item.management_number),
+          strategy
         })
       });
 
@@ -564,6 +581,63 @@ export default function ComplianceMatchingWorkflow({
       console.error('매칭 실패:', error);
       alert(error instanceof Error ? error.message : '매칭 중 오류가 발생했습니다.');
     }
+  };
+
+  // 매칭 실행 (충돌 체크 포함)
+  const handleMatchBasket = async () => {
+    if (currentBasket.length === 0 || !selectedInstitution) return;
+
+    // 90% 이하 매칭률 확인 및 경고
+    const lowConfidenceItems = currentBasket.filter(item => item.confidence !== null && item.confidence <= 90);
+
+    if (lowConfidenceItems.length > 0) {
+      const warnings = lowConfidenceItems.map(item =>
+        `• ${selectedInstitution.institution_name}과 ${item.institution_name}은 매칭률이 ${item.confidence?.toFixed(0)}%입니다.`
+      ).join('\n');
+
+      const confirmMessage = `${warnings}\n\n그럼에도 불구하고 같은 기관으로 매칭하시겠습니까?`;
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+    }
+
+    try {
+      // 기존 매칭 상태 확인
+      const checkResponse = await fetch('/api/compliance/check-existing-matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_key: selectedInstitution.target_key,
+          management_numbers: currentBasket.map(item => item.management_number),
+          year: parseInt(year)
+        })
+      });
+
+      if (!checkResponse.ok) {
+        throw new Error('기존 매칭 상태 확인 실패');
+      }
+
+      const conflictCheck: ConflictCheckResult = await checkResponse.json();
+
+      // 충돌이 있으면 모달 표시
+      if (conflictCheck.has_conflicts) {
+        setConflictData(conflictCheck);
+        setStrategyDialogOpen(true);
+      } else {
+        // 충돌이 없으면 바로 매칭 실행
+        await executeMatchWithStrategy('add');
+      }
+
+    } catch (error) {
+      console.error('매칭 충돌 확인 실패:', error);
+      alert(error instanceof Error ? error.message : '매칭 충돌 확인 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 매칭 전략 선택 시 처리
+  const handleStrategyConfirm = (strategy: MatchingStrategy) => {
+    executeMatchWithStrategy(strategy);
   };
 
   // 매칭 대상 없음 처리
@@ -839,6 +913,15 @@ export default function ComplianceMatchingWorkflow({
         institutionName={selectedInstitution?.institution_name || ''}
         has100PercentMatch={unmatchableDialogData.has100PercentMatch}
         matchingInstitutionName={unmatchableDialogData.matchingInstitutionName}
+      />
+
+      {/* 매칭 전략 선택 다이얼로그 */}
+      <MatchingStrategyDialog
+        open={strategyDialogOpen}
+        onOpenChange={setStrategyDialogOpen}
+        conflictData={conflictData}
+        targetInstitutionName={selectedInstitution?.institution_name || ''}
+        onConfirm={handleStrategyConfirm}
       />
     </div>
   );
