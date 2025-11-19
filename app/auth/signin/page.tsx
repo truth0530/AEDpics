@@ -179,7 +179,7 @@ function SignInForm() {
               AED 픽스
             </h1>
             <p className="text-gray-400 text-sm">
-              중앙응급의료센터
+              보건복지부
             </p>
           </div>
 
@@ -318,7 +318,7 @@ function SignInForm() {
 
           <div className="mt-8 pt-6 border-t border-gray-700/50">
             <p className="text-xs text-gray-500 text-center" role="note">
-              본 시스템은 중앙응급의료센터에서 운영합니다.
+              보건복지부 2025년 점검을 지원합니다.('25.12월~'26.3월)
               <br />
               17개 시도, 보건소 담당자만 접근 가능합니다.
             </p>
