@@ -986,28 +986,30 @@ export default function ManagementNumberPanel({
         </div>
 
         {/* 이미 매칭된 항목 펼치기 버튼 */}
-        {matchedItems.length > 0 && (
-          <div className="pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAlreadyMatched(!showAlreadyMatched)}
-              className="w-full text-xs"
-            >
-              {showAlreadyMatched ? (
-                <>
-                  <ChevronUp className="h-3 w-3 mr-1" />
-                  이미 매칭된 항목 {matchedItems.length}개 접기
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-3 w-3 mr-1" />
-                  이미 매칭된 항목 {matchedItems.length}개 펼치기
-                </>
-              )}
-            </Button>
-          </div>
-        )}
+        {/* DEBUG: 강제 표시 테스트 - matchedItems.length > 0 조건 제거 */}
+        <div className="pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              console.log('[Button Click] matchedItems:', matchedItems.length);
+              setShowAlreadyMatched(!showAlreadyMatched);
+            }}
+            className="w-full text-xs bg-yellow-100 dark:bg-yellow-900"
+          >
+            {showAlreadyMatched ? (
+              <>
+                <ChevronUp className="h-3 w-3 mr-1" />
+                이미 매칭된 항목 {matchedItems.length}개 접기 [DEBUG]
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3 mr-1" />
+                이미 매칭된 항목 {matchedItems.length}개 펼치기 [DEBUG]
+              </>
+            )}
+          </Button>
+        </div>
 
         {/* 이미 매칭된 항목 리스트 (펼쳐진 경우만 표시) */}
         {showAlreadyMatched && matchedItems.length > 0 && (
