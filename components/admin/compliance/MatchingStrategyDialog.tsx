@@ -59,7 +59,8 @@ interface MatchingStrategyDialogProps {
   onOpenChange: (open: boolean) => void;
   conflictData: ConflictCheckResult | null;
   targetInstitutionName: string;
-  onConfirm: (strategy: MatchingStrategy) => void;
+  onConfirm: (strategy: MatchingStrategy, removedSerials?: string[]) => void;
+  onAddMore?: (removedSerials?: string[]) => void; // 추가 매칭 선택 시 호출
 }
 
 export function MatchingStrategyDialog({
@@ -68,6 +69,7 @@ export function MatchingStrategyDialog({
   conflictData,
   targetInstitutionName,
   onConfirm,
+  onAddMore,
 }: MatchingStrategyDialogProps) {
   // 제거된 장비연번 추적
   const [removedFromExisting, setRemovedFromExisting] = useState<Set<string>>(new Set());
@@ -94,7 +96,9 @@ export function MatchingStrategyDialog({
   };
 
   const handleStrategySelect = (strategy: MatchingStrategy) => {
-    onConfirm(strategy);
+    // removedFromExisting을 배열로 변환하여 전달
+    const removedSerials = Array.from(removedFromExisting);
+    onConfirm(strategy, removedSerials.length > 0 ? removedSerials : undefined);
     onOpenChange(false);
     // 다이얼로그 닫을 때 상태 초기화
     setRemovedFromExisting(new Set());
@@ -177,6 +181,41 @@ export function MatchingStrategyDialog({
   const handleRemoveAllFromNew = () => {
     const allNewSerials = newMatchingDevices.map(d => d.equipment_serial);
     setRemovedFromNew(new Set(allNewSerials));
+  };
+
+  // 비워진 장비를 다시 담기
+  const handleAddBackToNew = (serial: string) => {
+    setRemovedFromNew(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(serial);
+      return newSet;
+    });
+  };
+
+  // 기존에서 매칭취소된 장비를 새 매칭으로 담기
+  const handleAddToNewFromExisting = (serial: string) => {
+    // 이 장비가 이미 새 매칭 목록에 있으면 removedFromNew에서 제거
+    if (newSerials.has(serial)) {
+      setRemovedFromNew(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(serial);
+        return newSet;
+      });
+    }
+    // 기존 매칭에서는 제거 상태 유지
+  };
+
+  // 추가 매칭 선택 핸들러
+  const handleAddMoreClick = () => {
+    if (onAddMore) {
+      // removedFromExisting을 배열로 변환하여 전달
+      const removedSerials = Array.from(removedFromExisting);
+      onAddMore(removedSerials.length > 0 ? removedSerials : undefined);
+    }
+    onOpenChange(false);
+    // 상태 초기화
+    setRemovedFromExisting(new Set());
+    setRemovedFromNew(new Set());
   };
 
   // 시나리오 감지 및 처리
@@ -317,6 +356,44 @@ export function MatchingStrategyDialog({
                         );
                       })}
                     </div>
+                    {/* 매칭취소된 장비 (담기 가능) */}
+                    {(data as any).devices.some((device: any) => removedFromExisting.has(device.equipment_serial)) && (
+                      <div className="mt-2 pt-2 border-t border-gray-700">
+                        <div className="text-xs text-gray-500 mb-1">매칭취소된 장비 ({(data as any).devices.filter((d: any) => removedFromExisting.has(d.equipment_serial)).length}대)</div>
+                        <div className="space-y-0.5">
+                          {(data as any).devices.map((device: any, idx: number) => {
+                            if (!removedFromExisting.has(device.equipment_serial)) return null;
+                            return (
+                              <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-gray-800/50 border border-gray-700/30 px-1 rounded">
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs leading-tight">
+                                    <span className="font-mono font-medium text-gray-500">
+                                      {device.equipment_serial}
+                                    </span>
+                                    {device.installation_position && (
+                                      <>
+                                        <span className="text-gray-600 mx-1">|</span>
+                                        <span className="text-gray-600">
+                                          {device.installation_position}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
+                                  onClick={() => handleAddToNewFromExisting(device.equipment_serial)}
+                                >
+                                  담기
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -356,46 +433,117 @@ export function MatchingStrategyDialog({
                       모두 비우기
                     </Button>
                   </div>
-                  {/* 장비연번 목록 */}
-                  <div className="space-y-0.5">
-                    {newMatchingDevices.map((device, idx) => {
-                      const isCommon = hasOverlap && commonSerials.has(device.equipment_serial);
-                      const isRemoved = removedFromNew.has(device.equipment_serial);
-                      if (isRemoved) return null;
-                      return (
-                        <div key={idx} className="flex items-center justify-between text-xs py-0.5 hover:bg-gray-800 px-1 rounded">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs leading-tight">
-                              <span className={`font-mono font-medium ${isCommon ? 'text-blue-400' : ''}`}>
-                                {device.equipment_serial}
-                              </span>
-                              {device.installation_position && (
-                                <>
-                                  <span className="text-muted-foreground mx-1">|</span>
-                                  <span className={isCommon ? 'text-blue-400/80' : 'text-muted-foreground'}>
-                                    {device.installation_position}
+                  {/* 담긴 장비 */}
+                  {activeNewDevices.length > 0 && (
+                    <div className="mb-2">
+                      <div className="text-xs text-green-400 mb-1">담긴 장비 ({activeNewDevices.length}대)</div>
+                      <div className="space-y-0.5">
+                        {newMatchingDevices.map((device, idx) => {
+                          const isCommon = hasOverlap && commonSerials.has(device.equipment_serial);
+                          const isRemoved = removedFromNew.has(device.equipment_serial);
+                          if (isRemoved) return null;
+                          return (
+                            <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-green-900/20 border border-green-700/30 px-1 rounded">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs leading-tight">
+                                  <span className={`font-mono font-medium ${isCommon ? 'text-blue-400' : ''}`}>
+                                    {device.equipment_serial}
                                   </span>
-                                </>
-                              )}
+                                  {device.installation_position && (
+                                    <>
+                                      <span className="text-muted-foreground mx-1">|</span>
+                                      <span className={isCommon ? 'text-blue-400/80' : 'text-muted-foreground'}>
+                                        {device.installation_position}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-950 ml-2 flex-shrink-0"
+                                onClick={() => handleRemoveFromNew(device.equipment_serial)}
+                              >
+                                비우기
+                              </Button>
                             </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-950 ml-2 flex-shrink-0"
-                            onClick={() => handleRemoveFromNew(device.equipment_serial)}
-                          >
-                            비우기
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 비워진 장비 */}
+                  {removedFromNew.size > 0 && (
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">비워진 장비 ({removedFromNew.size}대)</div>
+                      <div className="space-y-0.5">
+                        {newMatchingDevices.map((device, idx) => {
+                          if (!removedFromNew.has(device.equipment_serial)) return null;
+                          return (
+                            <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-gray-800/50 border border-gray-700/30 px-1 rounded">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs leading-tight">
+                                  <span className="font-mono font-medium text-gray-500">
+                                    {device.equipment_serial}
+                                  </span>
+                                  {device.installation_position && (
+                                    <>
+                                      <span className="text-gray-600 mx-1">|</span>
+                                      <span className="text-gray-600">
+                                        {device.installation_position}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
+                                onClick={() => handleAddBackToNew(device.equipment_serial)}
+                              >
+                                담기
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* 추가 매칭 질문 */}
+        {onAddMore && (
+          <div className="border border-gray-600 rounded-lg p-3 mt-3 bg-gray-800/30">
+            <div className="text-sm text-center mb-2">추가로 매칭할 장비가 있습니까?</div>
+            <div className="flex justify-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddMoreClick}
+                disabled={activeNewDevices.length === 0}
+                className="px-6"
+              >
+                예
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handlePrimaryAction}
+                disabled={activeExistingDevices.length === 0 && activeNewDevices.length === 0}
+                className="px-6 bg-blue-600 hover:bg-blue-700"
+              >
+                아니오
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* 하단 버튼 */}
         <div className="flex gap-2 justify-end pt-3">
@@ -407,16 +555,18 @@ export function MatchingStrategyDialog({
             취소
           </Button>
 
-          <Button
-            variant="default"
-            onClick={handlePrimaryAction}
-            disabled={activeExistingDevices.length === 0 && activeNewDevices.length === 0}
-            className="px-4 py-2 h-auto text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {!hasOverlap && activeExistingDevices.length > 0 && activeNewDevices.length > 0
-              ? '각각 분리하여 매칭'
-              : '중복 매칭 허용'}
-          </Button>
+          {!onAddMore && (
+            <Button
+              variant="default"
+              onClick={handlePrimaryAction}
+              disabled={activeExistingDevices.length === 0 && activeNewDevices.length === 0}
+              className="px-4 py-2 h-auto text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {!hasOverlap && activeExistingDevices.length > 0 && activeNewDevices.length > 0
+                ? '각각 분리하여 매칭'
+                : '중복 매칭 허용'}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

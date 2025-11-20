@@ -15,7 +15,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { target_key, year, reason } = body;
+    const { target_key, year, reason, equipment_serials } = body;
 
     if (!target_key || !year) {
       return NextResponse.json(
@@ -25,11 +25,20 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 현재 매칭된 레코드 조회
+    const whereClause: any = {
+      target_institution_id: target_key,
+      target_list_year: year,
+    };
+
+    // 특정 장비연번만 해제하는 경우 조건 추가
+    if (equipment_serials && Array.isArray(equipment_serials) && equipment_serials.length > 0) {
+      whereClause.equipment_serial = {
+        in: equipment_serials
+      };
+    }
+
     const existingMatches = await prisma.target_list_devices.findMany({
-      where: {
-        target_institution_id: target_key,
-        target_list_year: year,
-      },
+      where: whereClause,
       select: {
         equipment_serial: true,
         matched_by: true,
@@ -56,13 +65,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const equipmentSerials = existingMatches.map((m) => m.equipment_serial);
+    const targetSerials = existingMatches.map((m) => m.equipment_serial);
 
     // 매칭된 management_number들 조회 (로그 기록용)
     const aedData = await prisma.aed_data.findMany({
       where: {
         equipment_serial: {
-          in: equipmentSerials,
+          in: targetSerials,
         },
       },
       select: {
@@ -79,28 +88,30 @@ export async function DELETE(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       // 1. target_list_devices에서 레코드 삭제
       await tx.target_list_devices.deleteMany({
-        where: {
-          target_institution_id: target_key,
-          target_list_year: year,
-        },
+        where: whereClause,
       });
 
       // 2. 매칭 해제 로그 기록
+      const isPartial = !!(equipment_serials && equipment_serials.length > 0);
+      const logAction = isPartial ? 'unmatch_partial' : 'unmatch';
+      const logReason = reason || (isPartial ? '선택적 해제' : null);
+
       const log = await tx.target_list_match_logs.create({
         data: {
-          action: 'unmatch',
+          action: logAction,
           target_list_year: year,
           target_key,
           management_numbers: managementNumbers,
           user_id: session.user!.id,
-          reason: reason || null,
+          reason: logReason,
         },
       });
 
       return {
         unmatched_count: managementNumbers.length,
-        equipment_count: equipmentSerials.length,
+        equipment_count: targetSerials.length,
         log_id: log.id,
+        partial: isPartial
       };
     });
 

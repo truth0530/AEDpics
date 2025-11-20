@@ -7,8 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
@@ -443,6 +441,18 @@ export default function ManagementNumberPanel({
   }>({ isOpen: false, item: null });
   const [duplicateReason, setDuplicateReason] = useState<'duplicate_institution' | 'no_match' | 'other'>('duplicate_institution');
   const [otherReason, setOtherReason] = useState('');
+  // 모달 내 추가 관리번호 검색
+  const [modalSearchTerm, setModalSearchTerm] = useState('');
+  const [modalSearchResults, setModalSearchResults] = useState<ManagementNumberCandidate[]>([]);
+  const [modalSearchLoading, setModalSearchLoading] = useState(false);
+  // 모달 내 담긴 항목들 (여러 관리번호 지원)
+  const [modalBasketItems, setModalBasketItems] = useState<Array<{
+    item: ManagementNumberCandidate;
+    selectedSerials: string[];
+    removedSerials: string[];  // 비워진 장비연번
+  }>>([]);
+  // 좌측 기존 매칭에서 취소된 장비연번 (매칭취소 버튼용)
+  const [cancelledFromExisting, setCancelledFromExisting] = useState<Set<string>>(new Set());
 
   // 선택된 기관이 변경될 때 초기 설정
   useEffect(() => {
@@ -577,25 +587,242 @@ export default function ManagementNumberPanel({
       setDuplicateMatchDialog({ isOpen: true, item });
       setDuplicateReason('duplicate_institution');
       setOtherReason('');
+      // 모달 내 상태 초기화
+      setModalSearchTerm('');
+      setModalSearchResults([]);
+      // 초기 항목을 modalBasketItems에 추가 - 모든 장비연번 선택된 상태로 시작
+      setModalBasketItems([{
+        item,
+        selectedSerials: item.equipment_serials || [],
+        removedSerials: []
+      }]);
     } else {
       // 일반 매칭
       onAddToBasket(item);
     }
   };
 
-  // 이중매칭 확인
-  const handleConfirmDuplicateMatch = () => {
-    if (!duplicateMatchDialog.item) return;
+  // 모달 내 장비연번을 비워진 목록으로 이동
+  const handleModalRemoveSerial = (itemIndex: number, serial: string) => {
+    setModalBasketItems(prev => {
+      return prev.map((item, idx) => {
+        if (idx !== itemIndex) return item;
+        return {
+          ...item,
+          selectedSerials: item.selectedSerials.filter(s => s !== serial),
+          removedSerials: [...item.removedSerials, serial]
+        };
+      });
+    });
+  };
 
-    // TODO: 이중매칭 로그 저장 (사유와 함께)
+  // 모달 내 비워진 장비연번을 다시 담기
+  const handleModalAddSerial = (itemIndex: number, serial: string) => {
+    setModalBasketItems(prev => {
+      return prev.map((item, idx) => {
+        if (idx !== itemIndex) return item;
+        return {
+          ...item,
+          selectedSerials: [...item.selectedSerials, serial],
+          removedSerials: item.removedSerials.filter(s => s !== serial)
+        };
+      });
+    });
+  };
+
+  // 모달 내 모든 장비연번 비우기
+  const handleModalRemoveAllSerials = (itemIndex: number) => {
+    setModalBasketItems(prev => {
+      return prev.map((item, idx) => {
+        if (idx !== itemIndex) return item;
+        const allSerials = [...item.selectedSerials, ...item.removedSerials];
+        return {
+          ...item,
+          selectedSerials: [],
+          removedSerials: allSerials
+        };
+      });
+    });
+  };
+
+  // 모달 내 항목 제거
+  const handleModalRemoveItem = (itemIndex: number) => {
+    setModalBasketItems(prev => prev.filter((_, i) => i !== itemIndex));
+  };
+
+  // 모달 내 검색
+  const handleModalSearch = async () => {
+    if (!modalSearchTerm.trim()) {
+      setModalSearchResults([]);
+      return;
+    }
+
+    setModalSearchLoading(true);
+    try {
+      const params = new URLSearchParams({
+        year,
+        search: modalSearchTerm,
+        include_all_region: 'true'
+      });
+
+      if (selectedInstitution) {
+        params.append('target_key', selectedInstitution.target_key);
+      }
+
+      const response = await fetch(`/api/compliance/management-number-candidates?${params}`);
+      if (!response.ok) throw new Error('Failed to search');
+
+      const data = await response.json();
+      // 이미 모달에 담긴 항목 제외
+      const existingNumbers = modalBasketItems.map(b => b.item.management_number);
+      const filtered = [...(data.auto_suggestions || []), ...(data.search_results || [])]
+        .filter(item => !existingNumbers.includes(item.management_number));
+      setModalSearchResults(filtered);
+    } catch (error) {
+      console.error('Modal search failed:', error);
+    } finally {
+      setModalSearchLoading(false);
+    }
+  };
+
+  // 모달 내 추가 항목 담기
+  const handleModalAddItem = (item: ManagementNumberCandidate) => {
+    setModalBasketItems(prev => [...prev, {
+      item,
+      selectedSerials: item.equipment_serials || [],
+      removedSerials: []
+    }]);
+    setModalSearchResults(prev => prev.filter(r => r.management_number !== item.management_number));
+    setModalSearchTerm('');
+  };
+
+  // 이중매칭 확인 후 매칭 실행
+  const handleConfirmDuplicateMatch = async () => {
+    if (modalBasketItems.length === 0 || !selectedInstitution) return;
+
+    // 이중매칭 사유
     const reason = duplicateReason === 'other' ? otherReason : duplicateReason;
-    console.log('이중매칭 사유:', reason);
+    console.log('[handleConfirmDuplicateMatch] 이중매칭 사유:', reason);
 
-    // 담기 실행
-    onAddToBasket(duplicateMatchDialog.item);
+    try {
+      // 1. 좌측 "매칭취소된 장비" - 기존 매칭 해제 (unmatch API)
+      // matched_to는 기존에 매칭된 기관의 target_key
+      const existingTargetKey = duplicateMatchDialog.item?.matched_to;
+      const existingInstitutionName = duplicateMatchDialog.item?.matched_institution_name;
 
-    // 모달 닫기
-    setDuplicateMatchDialog({ isOpen: false, item: null });
+      // 같은 기관인지 확인 (target_key로 비교)
+      const isSameInstitution = existingTargetKey === selectedInstitution.target_key;
+
+      if (cancelledFromExisting.size > 0 && existingTargetKey) {
+        if (isSameInstitution) {
+          // 같은 기관에서 같은 기관으로 매칭하는 경우
+          // match API의 strategy: 'replace'가 자동으로 처리하므로 unmatch 스킵
+          console.log('[handleConfirmDuplicateMatch] 같은 기관 매칭 - unmatch 스킵 (match API가 처리)');
+        } else {
+          // 다른 기관에서 현재 기관으로 이동하는 경우에만 unmatch 호출
+          console.log('[handleConfirmDuplicateMatch] Unmatch API 호출:', {
+            existing_institution: existingInstitutionName,
+            existing_target_key: existingTargetKey,
+            equipment_serials: Array.from(cancelledFromExisting),
+            reason: '이중매칭 처리 - 기존 매칭 해제'
+          });
+
+          const unmatchResponse = await fetch('/api/compliance/unmatch', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              target_key: existingTargetKey,  // 기존 매칭 기관의 target_key
+              year: parseInt(year),
+              equipment_serials: Array.from(cancelledFromExisting),
+              reason: '이중매칭 처리 - 기존 매칭 해제'
+            })
+          });
+
+          if (!unmatchResponse.ok) {
+            const errorData = await unmatchResponse.json();
+            console.error('[handleConfirmDuplicateMatch] Unmatch 실패:', errorData);
+            // unmatch 실패해도 계속 진행 (기존 매칭이 없을 수 있음)
+          } else {
+            const unmatchResult = await unmatchResponse.json();
+            console.log('[handleConfirmDuplicateMatch] Unmatch 성공:', unmatchResult);
+          }
+        }
+      }
+
+      // 2. 우측 "담긴 장비" - 새로 매칭 (match-basket API)
+      // 중요: cancelledFromExisting에 포함된 장비만 새 기관으로 이동
+      // 나머지 장비는 기존 기관에 그대로 유지
+
+      // 매칭취소한 장비가 있는 경우에만 해당 장비를 새 기관으로 매칭
+      // 매칭취소하지 않은 장비는 기존 기관 유지
+      const serialsToMatch = cancelledFromExisting.size > 0
+        ? Array.from(cancelledFromExisting)
+        : modalBasketItems.flatMap(item => item.selectedSerials);
+
+      // 매칭할 장비가 속한 관리번호 찾기
+      const managementNumbersToMatch = modalBasketItems
+        .filter(item =>
+          item.selectedSerials.some(serial =>
+            cancelledFromExisting.size === 0 || cancelledFromExisting.has(serial)
+          )
+        )
+        .map(item => item.item.management_number);
+
+      // 매칭할 장비가 없으면 스킵
+      if (serialsToMatch.length === 0 || managementNumbersToMatch.length === 0) {
+        console.log('[handleConfirmDuplicateMatch] 매칭할 장비 없음 - 스킵');
+        alert('매칭할 장비가 없습니다. 매칭취소된 장비가 있어야 새 기관으로 이동할 수 있습니다.');
+        return;
+      }
+
+      console.log('[handleConfirmDuplicateMatch] Match API 호출:', {
+        target_key: selectedInstitution.target_key,
+        management_numbers: managementNumbersToMatch,
+        equipment_serials: serialsToMatch,
+        equipment_count: serialsToMatch.length,
+        strategy: 'replace'  // 기존 매칭 교체
+      });
+
+      const matchResponse = await fetch('/api/compliance/match-basket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_key: selectedInstitution.target_key,
+          year: parseInt(year),
+          management_numbers: managementNumbersToMatch,
+          equipment_serials: serialsToMatch,  // 특정 장비만 매칭
+          strategy: 'replace'  // 기존 매칭이 있으면 교체
+        })
+      });
+
+      if (!matchResponse.ok) {
+        const errorData = await matchResponse.json();
+        console.error('[handleConfirmDuplicateMatch] Match 실패:', errorData);
+        alert(`매칭 실패: ${errorData.error || '알 수 없는 오류'}`);
+        return;
+      }
+
+      const matchResult = await matchResponse.json();
+      console.log('[handleConfirmDuplicateMatch] Match 성공:', matchResult);
+
+      // 성공 메시지
+      alert(`매칭 완료: ${matchResult.matched_count || managementNumbersToMatch.length}개 관리번호, ${matchResult.equipment_count || serialsToMatch.length}대 장비`);
+
+      // 3. 모달 닫기 및 상태 초기화
+      setDuplicateMatchDialog({ isOpen: false, item: null });
+      setModalBasketItems([]);
+      setCancelledFromExisting(new Set());
+
+      // 4. 후보 목록 새로고침을 위해 검색 재실행
+      if (selectedInstitution) {
+        // 페이지 새로고침으로 데이터 갱신
+        window.location.reload();
+      }
+
+    } catch (error) {
+      console.error('[handleConfirmDuplicateMatch] 오류:', error);
+      alert(`오류 발생: ${error}`);
+    }
   };
 
   const renderCandidateList = (items: ManagementNumberCandidate[], showConfidence: boolean) => {
@@ -2034,96 +2261,355 @@ export default function ManagementNumberPanel({
         )}
       </div>
 
-      {/* 이중매칭 확인 모달 */}
+      {/* 이중매칭 확인 모달 - 좌우 비교 구조 */}
       <Dialog open={duplicateMatchDialog.isOpen} onOpenChange={(open) => {
-        if (!open) setDuplicateMatchDialog({ isOpen: false, item: null });
+        if (!open) {
+          setDuplicateMatchDialog({ isOpen: false, item: null });
+          setModalBasketItems([]);
+          setCancelledFromExisting(new Set());
+        }
       }}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-lg">이중 매칭 확인</DialogTitle>
+        <DialogContent className="max-w-[55vw] sm:max-w-[55vw] md:max-w-[55vw] lg:max-w-[55vw] xl:max-w-[55vw] max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-3">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              이중 매칭 확인
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              이미 다른 기관에 매칭된 장비입니다. 처리 방법을 선택하세요.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
-            {/* 매칭 정보 */}
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            {/* 좌우 비교 섹션 */}
             {duplicateMatchDialog.item && (
-              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <p className="text-sm text-foreground leading-relaxed">
-                  <span className="font-semibold text-amber-900 dark:text-amber-100">
-                    {duplicateMatchDialog.item.management_number}
-                  </span>
-                  <span className="text-muted-foreground mx-1">→</span>
-                  <span className="font-semibold text-amber-700 dark:text-amber-300">
-                    {duplicateMatchDialog.item.matched_institution_name || '다른 기관'}
-                  </span>
-                  <span className="block mt-1 text-xs text-amber-700 dark:text-amber-400">
-                    이미 매칭된 관리번호입니다. 이중 매칭 사유를 선택하세요.
-                  </span>
-                </p>
+              <div className="grid grid-cols-2 gap-4 flex-1 overflow-hidden">{/* 좌측: 기존에 매칭된 기관 */}
+                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col">
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="border border-gray-700 rounded-md overflow-hidden">
+                      {/* 헤더: 제목 + 기관명 */}
+                      <div className="bg-amber-900/30 border-b border-amber-700/50 px-3 py-2">
+                        <div className="text-xs font-semibold text-amber-300/80 mb-1">기존에 매칭된 의무기관</div>
+                        <div className="font-semibold text-sm text-amber-400">
+                          {duplicateMatchDialog.item.matched_institution_name || '다른 기관'}
+                        </div>
+                      </div>
+                      {/* AED 데이터 본문 */}
+                      <div className="bg-gray-900/20 px-2 py-2">
+                        {/* 주소 및 관리번호 */}
+                        <div className="text-xs text-gray-400 mb-2 space-y-0.5">
+                          <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
+                          <div>관리번호: {duplicateMatchDialog.item.management_number}</div>
+                        </div>
+
+                        {/* 기존 매칭 장비 (취소되지 않은 장비) */}
+                        {(() => {
+                          const activeSerials = duplicateMatchDialog.item.equipment_serials?.filter(
+                            (serial: string) => !cancelledFromExisting.has(serial)
+                          ) || [];
+                          const newSerials = modalBasketItems.length > 0 ? modalBasketItems[0].selectedSerials : [];
+
+                          return activeSerials.length > 0 && (
+                            <div className="mb-2">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="text-xs text-amber-400">
+                                  기존 매칭 장비 ({activeSerials.length}대)
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-950"
+                                  onClick={() => {
+                                    setCancelledFromExisting(new Set(duplicateMatchDialog.item?.equipment_serials || []));
+                                  }}
+                                >
+                                  일괄매칭취소
+                                </Button>
+                              </div>
+                              <div className="space-y-0.5">
+                                {activeSerials.map((serial: string, idx: number) => {
+                                  const equipmentDetail = duplicateMatchDialog.item?.equipment_details?.find(d => d.serial === serial);
+                                  const isMatchingWithNew = newSerials.includes(serial);
+                                  return (
+                                    <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-amber-900/20 border border-amber-700/30 px-1 rounded">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs leading-tight">
+                                          <span className={`font-mono font-medium ${isMatchingWithNew ? 'text-blue-400' : 'text-white'}`}>
+                                            {serial}
+                                          </span>
+                                          {equipmentDetail?.location_detail && (
+                                            <>
+                                              <span className="text-muted-foreground mx-1">|</span>
+                                              <span className="text-muted-foreground">
+                                                {equipmentDetail.location_detail}
+                                              </span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-950 ml-2 flex-shrink-0"
+                                        onClick={() => {
+                                          setCancelledFromExisting(prev => {
+                                            const newSet = new Set(prev);
+                                            newSet.add(serial);
+                                            return newSet;
+                                          });
+                                        }}
+                                      >
+                                        매칭취소
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* 매칭취소된 장비 */}
+                        {cancelledFromExisting.size > 0 && (
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">
+                              매칭취소된 장비 ({cancelledFromExisting.size}대)
+                            </div>
+                            <div className="space-y-0.5">
+                              {Array.from(cancelledFromExisting).map((serial, idx) => {
+                                const equipmentDetail = duplicateMatchDialog.item?.equipment_details?.find(d => d.serial === serial);
+                                return (
+                                  <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-gray-800/50 border border-gray-700/30 px-1 rounded">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-xs leading-tight">
+                                        <span className="font-mono font-medium text-gray-500">
+                                          {serial}
+                                        </span>
+                                        {equipmentDetail?.location_detail && (
+                                          <>
+                                            <span className="text-gray-600 mx-1">|</span>
+                                            <span className="text-gray-600">
+                                              {equipmentDetail.location_detail}
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
+                                      onClick={() => {
+                                        setCancelledFromExisting(prev => {
+                                          const newSet = new Set(prev);
+                                          newSet.delete(serial);
+                                          return newSet;
+                                        });
+                                      }}
+                                    >
+                                      복원
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 우측: 이번에 매칭하려는 기관 */}
+                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col">
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="border border-gray-700 rounded-md overflow-hidden">
+                      {/* 헤더: 제목 + 기관명 */}
+                      <div className="bg-blue-900/30 border-b border-blue-700/50 px-3 py-2">
+                        <div className="text-xs font-semibold text-blue-300/80 mb-1">이번에 매칭하려는 의무기관</div>
+                        <div className="font-semibold text-sm text-blue-400">{selectedInstitution?.institution_name}</div>
+                      </div>
+                      {/* AED 데이터 본문 */}
+                      <div className="bg-gray-900/20 px-2 py-2">
+                        {/* 주소 및 관리번호 */}
+                        <div className="text-xs text-gray-400 mb-2 space-y-0.5">
+                          <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
+                          <div>관리번호: {duplicateMatchDialog.item.management_number}</div>
+                        </div>
+
+                        {/* 담긴 장비 */}
+                        {modalBasketItems.length > 0 && modalBasketItems[0]?.selectedSerials.length > 0 && (
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="text-xs text-green-400">담긴 장비 ({modalBasketItems[0].selectedSerials.length}대)</div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-950"
+                                onClick={() => handleModalRemoveAllSerials(0)}
+                              >
+                                모두 비우기
+                              </Button>
+                            </div>
+                            <div className="space-y-0.5">
+                              {modalBasketItems[0].selectedSerials.map((serial, idx) => {
+                                const equipmentDetail = modalBasketItems[0].item.equipment_details?.find(d => d.serial === serial);
+                                // 좌측 기존 매칭에 있는 장비연번과 일치 여부 (취소되지 않은 것만)
+                                const existingActiveSerials = duplicateMatchDialog.item?.equipment_serials?.filter(
+                                  (s: string) => !cancelledFromExisting.has(s)
+                                ) || [];
+                                const isMatchingWithExisting = existingActiveSerials.includes(serial);
+                                return (
+                                  <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-green-900/20 border border-green-700/30 px-1 rounded">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-xs leading-tight">
+                                        <span className={`font-mono font-medium ${isMatchingWithExisting ? 'text-blue-400' : 'text-white'}`}>
+                                          {serial}
+                                        </span>
+                                        {equipmentDetail?.location_detail && (
+                                          <>
+                                            <span className="text-muted-foreground mx-1">|</span>
+                                            <span className="text-muted-foreground">
+                                              {equipmentDetail.location_detail}
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-950 ml-2 flex-shrink-0"
+                                      onClick={() => handleModalRemoveSerial(0, serial)}
+                                    >
+                                      비우기
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 비워진 장비 */}
+                        {modalBasketItems.length > 0 && modalBasketItems[0]?.removedSerials.length > 0 && (
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">비워진 장비 ({modalBasketItems[0].removedSerials.length}대)</div>
+                            <div className="space-y-0.5">
+                              {modalBasketItems[0].removedSerials.map((serial, idx) => {
+                                const equipmentDetail = modalBasketItems[0].item.equipment_details?.find(d => d.serial === serial);
+                                return (
+                                  <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-gray-800/50 border border-gray-700/30 px-1 rounded">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-xs leading-tight">
+                                        <span className="font-mono font-medium text-gray-500">
+                                          {serial}
+                                        </span>
+                                        {equipmentDetail?.location_detail && (
+                                          <>
+                                            <span className="text-gray-600 mx-1">|</span>
+                                            <span className="text-gray-600">
+                                              {equipmentDetail.location_detail}
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
+                                      onClick={() => handleModalAddSerial(0, serial)}
+                                    >
+                                      담기
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* 사유 선택 */}
-            <RadioGroup value={duplicateReason} onValueChange={(value: any) => setDuplicateReason(value)} className="space-y-1.5">
-              <div className="flex items-start space-x-2 p-2 rounded-md hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors">
-                <RadioGroupItem value="duplicate_institution" id="duplicate_institution" className="mt-0.5" />
-                <Label htmlFor="duplicate_institution" className="cursor-pointer font-normal leading-tight flex-1">
-                  <span className="block text-sm text-foreground dark:text-foreground">같은 의무시설이 중복 등록됨</span>
-                  <span className="block text-xs text-muted-foreground dark:text-muted-foreground/80 mt-0.5">동일 기관이 다른 이름으로 등록된 경우</span>
-                </Label>
-              </div>
-              <div className="flex items-start space-x-2 p-2 rounded-md hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors">
-                <RadioGroupItem value="no_match" id="no_match" className="mt-0.5" />
-                <Label htmlFor="no_match" className="cursor-pointer font-normal leading-tight flex-1">
-                  <span className="block text-sm text-foreground dark:text-foreground">매칭할 대상이 없음</span>
-                  <span className="block text-xs text-muted-foreground dark:text-muted-foreground/80 mt-0.5">올바른 매칭 대상을 찾을 수 없는 경우</span>
-                </Label>
-              </div>
-              <div className="flex items-start space-x-2 p-2 rounded-md hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors">
-                <RadioGroupItem value="other" id="other" className="mt-0.5" />
-                <Label htmlFor="other" className="cursor-pointer font-normal leading-tight flex-1">
-                  <span className="block text-sm text-foreground dark:text-foreground">기타 사유</span>
-                </Label>
-              </div>
-            </RadioGroup>
+            {/* 추가 매칭 질문 */}
+            {modalBasketItems.length > 0 && (
+              <div className="border border-gray-600 rounded-lg p-3 bg-gray-800/30">
+                <div className="text-sm text-center mb-2">추가로 매칭할 장비가 있습니까?</div>
+                <div className="flex justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // "예" 클릭: basket에 추가하고 섹션 2에서 추가 작업 가능
+                      // 우측 "담긴 장비" 전체를 basket에 추가 (cancelledFromExisting은 별개)
+                      // TODO: cancelledFromExisting 상태를 어떻게 전달할지 검토 필요
 
-            {/* 기타 사유 입력 */}
-            {duplicateReason === 'other' && (
-              <Textarea
-                id="other_reason"
-                placeholder="이중 매칭 사유를 입력하세요..."
-                value={otherReason}
-                onChange={(e) => setOtherReason(e.target.value)}
-                className="text-sm resize-none"
-                rows={2}
-              />
-            )}
-
-            {/* 매칭불가 처리 안내 */}
-            {duplicateReason === 'no_match' && (
-              <Alert className="bg-blue-50/50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800/50">
-                <AlertTriangle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                <AlertDescription className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
-                  섹션 1에서 해당 기관을 선택 후 <strong className="dark:text-blue-200">'매칭불가'</strong> 버튼을 사용하세요.
-                </AlertDescription>
-              </Alert>
+                      if (modalBasketItems.length > 0) {
+                        modalBasketItems.forEach(basketItem => {
+                          // 우측 "담긴 장비" 전체를 basket에 추가
+                          const modifiedItem = {
+                            ...basketItem.item,
+                            equipment_serials: basketItem.selectedSerials,
+                            equipment_count: basketItem.selectedSerials.length,
+                            equipment_details: basketItem.item.equipment_details?.filter(
+                              d => basketItem.selectedSerials.includes(d.serial)
+                            ) || []
+                          };
+                          onAddToBasket(modifiedItem);
+                        });
+                      }
+                      setDuplicateMatchDialog({ isOpen: false, item: null });
+                      setModalBasketItems([]);
+                      // 주의: cancelledFromExisting은 모달이 닫히면서 초기화됨
+                      // "예" 버튼은 추가 작업을 위해 사용하므로, 나중에 "매칭하기" 버튼에서 처리
+                      setCancelledFromExisting(new Set());
+                    }}
+                    disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
+                    className="px-6"
+                  >
+                    예
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleConfirmDuplicateMatch}
+                    disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
+                    className="px-6 bg-amber-600 hover:bg-amber-700"
+                  >
+                    아니오
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
 
-          <DialogFooter className="pt-3">
-            <Button
-              variant="outline"
-              onClick={() => setDuplicateMatchDialog({ isOpen: false, item: null })}
-              className="text-sm"
-            >
-              취소
-            </Button>
-            <Button
-              onClick={handleConfirmDuplicateMatch}
-              disabled={duplicateReason === 'other' && !otherReason.trim()}
-              className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-800 text-white text-sm"
-            >
-              이중 매칭 진행
-            </Button>
+          <DialogFooter className="pt-4 border-t">
+            <div className="flex items-center justify-between w-full">
+              <div className="text-xs text-muted-foreground">
+                {modalBasketItems.length > 0 && (
+                  <span>
+                    총 {modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0)}대 장비연번 선택됨
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDuplicateMatchDialog({ isOpen: false, item: null });
+                    setModalBasketItems([]);
+                  }}
+                  className="text-sm"
+                >
+                  취소
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

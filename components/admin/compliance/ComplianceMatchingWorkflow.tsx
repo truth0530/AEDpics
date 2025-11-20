@@ -587,20 +587,13 @@ export default function ComplianceMatchingWorkflow({
   const handleMatchBasket = async () => {
     if (currentBasket.length === 0 || !selectedInstitution) return;
 
-    // 90% 이하 매칭률 확인 및 경고
-    const lowConfidenceItems = currentBasket.filter(item => item.confidence !== null && item.confidence <= 90);
+    // 바로 충돌 체크 진행
+    await proceedWithMatchCheck(currentBasket);
+  };
 
-    if (lowConfidenceItems.length > 0) {
-      const warnings = lowConfidenceItems.map(item =>
-        `• ${selectedInstitution.institution_name}과 ${item.institution_name}은 매칭률이 ${item.confidence?.toFixed(0)}%입니다.`
-      ).join('\n');
-
-      const confirmMessage = `${warnings}\n\n그럼에도 불구하고 같은 기관으로 매칭하시겠습니까?`;
-
-      if (!window.confirm(confirmMessage)) {
-        return;
-      }
-    }
+  // 충돌 체크 및 매칭 진행
+  const proceedWithMatchCheck = async (itemsToMatch: BasketItem[]) => {
+    if (!selectedInstitution || itemsToMatch.length === 0) return;
 
     try {
       // 기존 매칭 상태 확인
@@ -609,7 +602,7 @@ export default function ComplianceMatchingWorkflow({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           target_key: selectedInstitution.target_key,
-          management_numbers: currentBasket.map(item => item.management_number),
+          management_numbers: itemsToMatch.map(item => item.management_number),
           year: parseInt(year)
         })
       });
@@ -636,8 +629,75 @@ export default function ComplianceMatchingWorkflow({
   };
 
   // 매칭 전략 선택 시 처리
-  const handleStrategyConfirm = (strategy: MatchingStrategy) => {
+  const handleStrategyConfirm = async (strategy: MatchingStrategy, removedSerials?: string[]) => {
+    // 매칭취소된 장비가 있으면 먼저 unmatch API 호출
+    if (removedSerials && removedSerials.length > 0 && conflictData?.conflicts) {
+      try {
+        // 기존 매칭 기관의 target_key 찾기
+        const existingMatch = conflictData.conflicts[0]?.existing_matches?.find(m => !m.is_target_match);
+        if (existingMatch?.target_key) {
+          const unmatchResponse = await fetch('/api/compliance/unmatch', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              target_key: existingMatch.target_key,
+              year: parseInt(year),
+              equipment_serials: removedSerials,
+              reason: '중복 매칭 처리 중 선택적 해제'
+            })
+          });
+
+          if (!unmatchResponse.ok) {
+            const errorData = await unmatchResponse.json();
+            alert(`매칭 해제 실패: ${errorData.error || '알 수 없는 오류'}`);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to unmatch:', error);
+        alert('매칭 해제 중 오류가 발생했습니다.');
+        return;
+      }
+    }
+
     executeMatchWithStrategy(strategy);
+  };
+
+  // 추가 매칭 선택 시 처리 (다이얼로그 닫고 basket 유지)
+  const handleAddMoreFromStrategy = async (removedSerials?: string[]) => {
+    // 매칭취소된 장비가 있으면 먼저 unmatch API 호출
+    if (removedSerials && removedSerials.length > 0 && conflictData?.conflicts) {
+      try {
+        // 기존 매칭 기관의 target_key 찾기
+        const existingMatch = conflictData.conflicts[0]?.existing_matches?.find(m => !m.is_target_match);
+        if (existingMatch?.target_key) {
+          const unmatchResponse = await fetch('/api/compliance/unmatch', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              target_key: existingMatch.target_key,
+              year: parseInt(year),
+              equipment_serials: removedSerials,
+              reason: '중복 매칭 처리 중 선택적 해제 (추가 매칭 선택)'
+            })
+          });
+
+          if (!unmatchResponse.ok) {
+            const errorData = await unmatchResponse.json();
+            alert(`매칭 해제 실패: ${errorData.error || '알 수 없는 오류'}`);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to unmatch:', error);
+        alert('매칭 해제 중 오류가 발생했습니다.');
+        return;
+      }
+    }
+
+    // 다이얼로그 닫기 (onOpenChange가 처리)
+    // basket은 유지되어 사용자가 추가로 장비를 담을 수 있음
+    setStrategyDialogOpen(false);
   };
 
   // 매칭 대상 없음 처리
@@ -922,6 +982,7 @@ export default function ComplianceMatchingWorkflow({
         conflictData={conflictData}
         targetInstitutionName={selectedInstitution?.institution_name || ''}
         onConfirm={handleStrategyConfirm}
+        onAddMore={handleAddMoreFromStrategy}
       />
     </div>
   );
