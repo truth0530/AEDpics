@@ -10,8 +10,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { waitForKakaoMaps } from '@/lib/constants/kakao';
 import { ValidationWarning } from '../ValidationWarning';
 import { ImprovedWeeklyScheduleInput } from '../ImprovedWeeklyScheduleInput';
+import { EditableSectionButtons } from '../EditableSectionButtons';
 import type { ImprovedWeeklySchedule } from '../ImprovedWeeklyScheduleInput';
 import type { Category } from '@/lib/constants/aed-categories';
+import {
+  CATEGORY_HIERARCHY,
+  CATEGORY_1_OPTIONS,
+  getAllCategory2Options,
+  getAllCategory3Options
+} from '@/lib/constants/category-hierarchy';
 
 interface FieldChange {
   original: any;
@@ -121,7 +128,7 @@ export function BasicInfoStep() {
 
         const options = {
           center: new window.kakao.maps.LatLng(centerLat, centerLng),
-          level: 3,
+          level: 1, // 최대 확대 (현장 점검용)
         };
 
         const mapInstance = new window.kakao.maps.Map(mapRef.current, options);
@@ -238,22 +245,39 @@ export function BasicInfoStep() {
         // @ts-ignore - RoadviewClient API
         const rvClient = new window.kakao.maps.RoadviewClient();
 
-        rvClient.getNearestPanoId(position, 50, (panoId: string | null) => {
-          console.log('로드뷰 파노라마 ID:', panoId);
+        // 검색 반경을 단계적으로 증가시키며 재시도
+        const searchRadii = [50, 100, 200];
+        let foundPanoId = false;
 
-          if (!panoId) {
+        const tryWithRadius = (radiusIndex: number) => {
+          if (radiusIndex >= searchRadii.length) {
+            // 모든 반경에서 실패
             const errorMessage = '해당 위치에서 로드뷰를 사용할 수 없습니다';
             console.warn(errorMessage);
             setRoadviewError(errorMessage);
-            // 로드뷰 자동 닫기
-            setShowRoadview(false);
             return;
           }
 
-          // 에러 메시지 제거
-          setRoadviewError('');
-          roadviewInstance.setPanoId(panoId, position);
-        });
+          const radius = searchRadii[radiusIndex];
+          console.log(`로드뷰 검색 시도: 반경 ${radius}m`);
+
+          rvClient.getNearestPanoId(position, radius, (panoId: string | null) => {
+            console.log(`로드뷰 파노라마 ID (${radius}m):`, panoId);
+
+            if (!panoId) {
+              // 다음 반경으로 재시도
+              tryWithRadius(radiusIndex + 1);
+              return;
+            }
+
+            // 성공
+            foundPanoId = true;
+            setRoadviewError('');
+            roadviewInstance.setPanoId(panoId, position);
+          });
+        };
+
+        tryWithRadius(0);
 
         // 로드뷰가 로드된 후 커스텀 오버레이 추가
         window.kakao.maps.event.addListener(roadviewInstance, 'init', () => {
@@ -342,35 +366,16 @@ export function BasicInfoStep() {
     initializeRoadview();
   }, [showRoadview, currentLat, currentLng]);
 
-  // ✅ 카테고리 데이터 로드 (API에서 동적으로)
+  // ✅ 카테고리 데이터 로드 (고정된 분류체계 상수 사용)
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('/api/aed-data/categories');
-        if (response.ok) {
-          const data = await response.json();
-          // category_1: 문자열 배열을 Category 객체로 변환
-          const cat1Options = (data.category_1 || []).map((v: string) => ({ label: v, value: v }));
-          setCategory1Options(cat1Options);
-          setCategory2Options((data.category_2 || []).map((v: string) => ({ label: v, value: v })));
-          setCategory3Options((data.category_3 || []).map((v: string) => ({ label: v, value: v })));
-
-          // 계층적 데이터도 저장
-          if (data.hierarchical) {
-            console.log('[BasicInfoStep] Hierarchical data loaded:', data.hierarchical);
-            setCategoryHierarchy(data.hierarchical);
-          } else {
-            console.warn('[BasicInfoStep] No hierarchical data in response');
-          }
-        }
-      } catch (error) {
-        console.error('[BasicInfoStep] Error loading categories:', error);
-      } finally {
-        setCategoriesLoading(false);
-      }
-    };
-
-    fetchCategories();
+    // 고정된 분류체계 상수에서 데이터 설정
+    const cat1Options = CATEGORY_1_OPTIONS.map((v: string) => ({ label: v, value: v }));
+    setCategory1Options(cat1Options);
+    setCategory2Options(getAllCategory2Options().map((v: string) => ({ label: v, value: v })));
+    setCategory3Options(getAllCategory3Options().map((v: string) => ({ label: v, value: v })));
+    setCategoryHierarchy(CATEGORY_HIERARCHY);
+    setCategoriesLoading(false);
+    console.log('[BasicInfoStep] Fixed category hierarchy loaded');
   }, []);
 
   // 현재 위치로 이동
@@ -790,6 +795,9 @@ export function BasicInfoStep() {
     // ✅ 수정됨 상태일 때는 currentValue를 표시
     const displayValue = (basicInfo.all_matched === 'edited' && currentValue) ? currentValue : originalValue;
 
+    // 수정된 필드인지 확인 (원본과 다른 경우)
+    const isModified = basicInfo.all_matched === 'edited' && currentValue && originalValue !== currentValue;
+
     // Category 필드에 대한 옵션 가져오기 (수정 모드일 때 isEditing 전달)
     const categoryOptions = isCategory ? getCategoryOptions(field.key, isEditing) : [];
 
@@ -802,7 +810,11 @@ export function BasicInfoStep() {
 
         {/* 데이터 */}
         {!isEditing || field.readonly ? (
-          <div className={`text-xs font-medium truncate ${field.readonly ? 'text-gray-300' : 'text-gray-100'}`}>
+          <div className={`text-xs font-medium truncate ${
+            isModified
+              ? 'text-yellow-300'
+              : field.readonly ? 'text-gray-300' : 'text-gray-100'
+          }`}>
             {displayValue || '-'}
           </div>
         ) : isCategory ? (
@@ -906,7 +918,13 @@ export function BasicInfoStep() {
             <div className="space-y-1">
               <div className="text-[10px] font-medium text-gray-400 whitespace-nowrap">외부표출</div>
               {!isEditMode ? (
-                <div className="text-xs font-medium text-gray-100 whitespace-nowrap">
+                <div className={`text-xs font-medium whitespace-nowrap ${
+                  basicInfo.all_matched === 'edited' && basicInfo.external_display && basicInfo.external_display !== deviceInfo.external_display
+                    ? 'text-yellow-300'
+                    : ((basicInfo.all_matched === 'edited' ? basicInfo.external_display : deviceInfo.external_display) === 'N')
+                      ? 'text-red-400 font-semibold'
+                      : 'text-gray-100'
+                }`}>
                   {(basicInfo.all_matched === 'edited' && basicInfo.external_display)
                     ? basicInfo.external_display
                     : (deviceInfo.external_display || '데이터없음')}
@@ -938,85 +956,29 @@ export function BasicInfoStep() {
           </div>
         </div>
 
-        {/* 전체 일치/수정 버튼 */}
+        {/* 수정/전체 일치 버튼 */}
         <div className="mt-3">
-          <div className="flex gap-2 max-w-[60%] mx-auto">
-            <button
-              type="button"
-              onClick={handleEditAll}
-              disabled={(isEditMode && isBasicInfoMatching) || (basicInfo.all_matched === 'edited' && isBasicInfoMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${isEditMode
-                ? isBasicInfoMatching
-                  ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
-                  : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
-                : basicInfo.all_matched === 'edited'
-                  ? isBasicInfoMatching
-                    ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                    : 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                  : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
-                }`}
-            >
-              {isEditMode ? (
-                isBasicInfoMatching ? (
-                  '원본과 동일'
-                ) : (
-                  <span className="flex items-center justify-center gap-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    확인
-                  </span>
-                )
-              ) : basicInfo.all_matched === 'edited' ? (
-                isBasicInfoMatching ? (
-                  '원본과 동일'
-                ) : (
-                  <span className="flex items-center justify-center gap-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                    수정됨
-                  </span>
-                )
-              ) : (
-                '수정'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (isEditMode) {
-                  handleCancelEdit();
-                } else {
-                  handleMatchAll();
-                }
-              }}
-              disabled={basicInfo.all_matched === true || (!isEditMode && !isBasicInfoMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${basicInfo.all_matched === true
-                ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                : isBasicInfoMatching && !isEditMode
-                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                  : isEditMode
-                    ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
-                    : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                }`}
-            >
-              {isEditMode ? (
-                '취소'
-              ) : basicInfo.all_matched === true ? (
-                <span className="flex items-center justify-center gap-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  전체 일치 확인됨
-                </span>
-              ) : basicInfo.all_matched === 'edited' && isBasicInfoMatching ? (
-                '일치로 변경'
-              ) : (
-                '전체 일치'
-              )}
-            </button>
-          </div>
+          <EditableSectionButtons
+            isEditMode={isEditMode}
+            isMatching={isBasicInfoMatching}
+            matchedState={basicInfo.all_matched}
+            onLeftClick={() => {
+              if (isEditMode) {
+                handleCancelEdit();
+              } else {
+                handleEditAll();
+              }
+            }}
+            onRightClick={() => {
+              if (isEditMode) {
+                handleEditAll();
+              } else {
+                handleMatchAll();
+              }
+            }}
+            matchText="전체 일치"
+            matchedText="전체 일치 확인됨"
+          />
         </div>
       </div>
 
@@ -1024,27 +986,96 @@ export function BasicInfoStep() {
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold text-white text-sm">위치 정보</h4>
-          {isDragging && (
-            <div className="text-xs text-yellow-400 animate-pulse">
-              위치 수정 중...
-            </div>
-          )}
         </div>
 
         {/* GPS 좌표 정보 */}
         <div className="flex items-center gap-1 mb-2">
           <div className="text-[10px] sm:text-xs font-medium text-gray-400">GPS 위도</div>
-          <div className="text-[10px] sm:text-sm font-medium text-gray-300 font-mono">
+          <div className={`text-[10px] sm:text-sm font-medium font-mono ${
+            currentLat && initialLat && Math.abs(currentLat - initialLat) > 0.0000001
+              ? 'text-yellow-300'
+              : 'text-gray-300'
+          }`}>
             {currentLat ? currentLat.toFixed(7) : '좌표없음'}
           </div>
           <div className="text-[10px] sm:text-xs font-medium text-gray-400 ml-3 sm:ml-4">GPS 경도</div>
-          <div className="text-[10px] sm:text-sm font-medium text-gray-300 font-mono">
+          <div className={`text-[10px] sm:text-sm font-medium font-mono ${
+            currentLng && initialLng && Math.abs(currentLng - initialLng) > 0.0000001
+              ? 'text-yellow-300'
+              : 'text-gray-300'
+          }`}>
             {currentLng ? currentLng.toFixed(7) : '좌표없음'}
           </div>
         </div>
 
+        {/* GPS 확인 버튼 - 지도 상단 */}
+        <div className="mb-2 flex gap-2">
+          {/* 원본 복원 버튼 */}
+          {currentLat && currentLng && initialLat && initialLng &&
+           (Math.abs(currentLat - initialLat) > 0.0000001 || Math.abs(currentLng - initialLng) > 0.0000001) && (
+            <button
+              type="button"
+              onClick={() => {
+                // GPS 좌표를 원본으로 복원
+                setCurrentLat(initialLat);
+                setCurrentLng(initialLng);
+                setHasMovedMarker(false);
+
+                // 마커 위치도 복원
+                if (marker && map) {
+                  const originalPosition = new window.kakao.maps.LatLng(initialLat, initialLng);
+                  marker.setPosition(originalPosition);
+                  map.setCenter(originalPosition);
+                }
+
+                // stepData 업데이트
+                updateStepData('basicInfo', {
+                  ...basicInfo,
+                  gps_latitude: initialLat,
+                  gps_longitude: initialLng,
+                  gps_verified: false,
+                });
+              }}
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600 transition-colors"
+            >
+              원본 복원
+            </button>
+          )}
+          {/* GPS 확인/저장 버튼 */}
+          <button
+            type="button"
+            onClick={() => {
+              updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
+              const btn = document.activeElement as HTMLButtonElement;
+              if (btn) {
+                btn.classList.add('ring-2', 'ring-green-400');
+                setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
+              }
+            }}
+            disabled={basicInfo.gps_verified === true || !isMapLoaded}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${basicInfo.gps_verified === true
+              ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
+              : hasMovedMarker
+                ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
+                : 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
+              }`}
+          >
+            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+            <span>
+              {basicInfo.gps_verified === true
+                ? '위치 확인됨'
+                : hasMovedMarker
+                  ? '변경된 위치로 저장'
+                  : '설치위치와 동일'
+              }
+            </span>
+          </button>
+        </div>
+
         {/* 지도와 로드뷰 - 반응형 레이아웃 (모바일: 상하, 데스크톱: 좌우) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-gray-700 rounded-lg overflow-hidden">
+        <div className="grid grid-cols-1 gap-0 border border-gray-700 rounded-lg overflow-hidden">
           {/* 지도 섹션 */}
           <div className="relative">
             <div
@@ -1105,7 +1136,7 @@ export function BasicInfoStep() {
 
           {/* 로드뷰 섹션 */}
           {showRoadview ? (
-            <div className="relative bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-700">
+            <div className="relative bg-gray-900 border-t border-gray-700">
               {roadviewError ? (
                 <div className="w-full h-64 bg-gray-900 flex flex-col items-center justify-center p-4">
                   <div className="text-center">
@@ -1136,7 +1167,7 @@ export function BasicInfoStep() {
               </button>
             </div>
           ) : (
-            <div className="bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-700"></div>
+            <div className="bg-gray-900 border-t border-gray-700"></div>
           )}
         </div>
 
@@ -1146,50 +1177,20 @@ export function BasicInfoStep() {
             실제 위치와 다른 경우 마커를 드래그하여 이동해주세요
           </p>
         </div>
-
-        {/* 통합 GPS 확인 버튼 - 로드뷰 상태와 무관하게 항상 표시 */}
-        <div className="mt-2">
-          <button
-            type="button"
-            onClick={() => {
-              updateStepData('basicInfo', { ...basicInfo, gps_verified: true });
-              const btn = document.activeElement as HTMLButtonElement;
-              if (btn) {
-                btn.classList.add('ring-2', 'ring-green-400');
-                setTimeout(() => btn.classList.remove('ring-2', 'ring-green-400'), 1000);
-              }
-            }}
-            disabled={basicInfo.gps_verified === true || !isMapLoaded}
-            className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${basicInfo.gps_verified === true
-              ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-              : hasMovedMarker
-                ? 'bg-yellow-500 hover:bg-yellow-600 text-white border-2 border-yellow-400'
-                : 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
-              }`}
-          >
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-            </svg>
-            <span>
-              {basicInfo.gps_verified === true
-                ? '위치 확인됨'
-                : hasMovedMarker
-                  ? '변경된 위치로 저장'
-                  : '설치위치와 동일'
-              }
-            </span>
-          </button>
-        </div>
       </div>
 
       {/* 위치정보 */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
         {/* 주소와 설치위치 바로 표시 (수정 모드가 아닐 때) */}
         {!isLocationEditMode && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 gap-3 mb-3">
             <div className="space-y-1">
               <div className="text-[10px] font-medium text-gray-400">주소</div>
-              <div className="text-xs font-medium text-gray-100">
+              <div className={`text-xs font-medium ${
+                basicInfo.location_matched === 'edited' && basicInfo.address !== deviceInfo.installation_address
+                  ? 'text-yellow-300'
+                  : 'text-gray-100'
+              }`}>
                 {basicInfo.location_matched === 'edited'
                   ? (basicInfo.address || '-')
                   : (deviceInfo.installation_address || '-')}
@@ -1197,7 +1198,11 @@ export function BasicInfoStep() {
             </div>
             <div className="space-y-1">
               <div className="text-[10px] font-medium text-gray-400">설치위치</div>
-              <div className="text-xs font-medium text-gray-100">
+              <div className={`text-xs font-medium ${
+                basicInfo.location_matched === 'edited' && basicInfo.installation_position !== deviceInfo.installation_position
+                  ? 'text-yellow-300'
+                  : 'text-gray-100'
+              }`}>
                 {basicInfo.location_matched === 'edited'
                   ? (basicInfo.installation_position || '-')
                   : (deviceInfo.installation_position || '-')}
@@ -1209,7 +1214,7 @@ export function BasicInfoStep() {
         {/* 수정 모드일 때만 입력 필드 표시 */}
         {isLocationEditMode && (
           <div className="mb-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+            <div className="grid grid-cols-1 gap-4 mb-2">
               <div>
                 {renderField(FIELDS[2], true)} {/* 주소 (인덱스 수정) */}
               </div>
@@ -1226,111 +1231,28 @@ export function BasicInfoStep() {
           </div>
         )}
 
-        {/* 상태 표시 */}
-        {basicInfo.location_matched === true && !isLocationEditMode && (
-          <div className="mb-3 rounded-lg px-2.5 py-1.5 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
-            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>일치 확인됨</span>
-          </div>
-        )}
-
-        {basicInfo.location_matched === 'edited' && !isLocationEditMode && (
-          <div className="mb-3 rounded-lg px-2.5 py-1.5 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
-            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            <span>수정 완료</span>
-          </div>
-        )}
-
-        {/* 일치/수정 버튼 */}
-        <div>
-          <div className="flex gap-2 max-w-[60%] mx-auto">
-            <button
-              type="button"
-              onClick={() => {
-                if (isLocationEditMode) {
-                  handleLocationSaveEdit();
-                } else {
-                  handleLocationEdit();
-                }
-              }}
-              disabled={(isLocationEditMode && isLocationMatching) || (basicInfo.location_matched === 'edited' && isLocationMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${isLocationEditMode
-                ? isLocationMatching
-                  ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
-                  : 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
-                : basicInfo.location_matched === 'edited'
-                  ? isLocationMatching
-                    ? 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                    : 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                  : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
-                }`}
-            >
-              {isLocationEditMode ? (
-                isLocationMatching ? (
-                  '원본과 동일'
-                ) : (
-                  <span className="flex items-center justify-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    확인
-                  </span>
-                )
-              ) : basicInfo.location_matched === 'edited' ? (
-                isLocationMatching ? (
-                  '원본과 동일'
-                ) : (
-                  <span className="flex items-center justify-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                    수정됨
-                  </span>
-                )
-              ) : (
-                '수정'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (isLocationEditMode) {
-                  handleLocationCancelEdit();
-                } else {
-                  handleLocationMatch();
-                }
-              }}
-              disabled={basicInfo.location_matched === true || (!isLocationEditMode && !isLocationMatching)}
-              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${basicInfo.location_matched === true
-                ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                : isLocationMatching && !isLocationEditMode
-                  ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                  : isLocationEditMode
-                    ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300'
-                    : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                }`}
-            >
-              {isLocationEditMode ? (
-                '취소'
-              ) : basicInfo.location_matched === true ? (
-                <span className="flex items-center justify-center gap-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  일치 확인됨
-                </span>
-              ) : basicInfo.location_matched === 'edited' && isLocationMatching ? (
-                '일치로 변경'
-              ) : (
-                '일치'
-              )}
-            </button>
-          </div>
-        </div>
+        {/* 수정/일치 버튼 */}
+        <EditableSectionButtons
+          isEditMode={isLocationEditMode}
+          isMatching={isLocationMatching}
+          matchedState={basicInfo.location_matched}
+          onLeftClick={() => {
+            if (isLocationEditMode) {
+              handleLocationCancelEdit();
+            } else {
+              handleLocationEdit();
+            }
+          }}
+          onRightClick={() => {
+            if (isLocationEditMode) {
+              handleLocationSaveEdit();
+            } else {
+              handleLocationMatch();
+            }
+          }}
+          matchText="일치"
+          matchedText="일치 확인됨"
+        />
       </div>
 
       {/* 접근성 정보 섹션 - 직접 입력 방식 */}

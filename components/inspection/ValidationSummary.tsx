@@ -2,12 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  CalendarIcon
-} from '@heroicons/react/24/outline';
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ValidationIssue {
   type: 'error' | 'warning' | 'info';
@@ -55,13 +53,23 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
   // 이동식 장비 여부 확인 (정상 정책이므로 경고하지 않음)
   const isMobileEquipment = deviceData.external_non_display_reason?.includes('구비의무기관(119구급차, 여객, 항공기, 객차(철도), 선박');
 
-  // 🔴 [최우선] 외부 미표출 사유 (이동식 장비 제외)
-  if (deviceData.external_non_display_reason && !isMobileEquipment) {
-    alerts.push(
-      <span key="non-display" className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-semibold bg-red-900/70 text-red-200 border border-red-500/50">
-        ⚠️ {deviceData.external_non_display_reason}
-      </span>
-    );
+  // 🔴 [최우선] 외부 미표출 (이동식 장비 제외)
+  if (deviceData.external_display === 'N' && !isMobileEquipment) {
+    if (deviceData.external_non_display_reason) {
+      // 사유가 있는 경우 사유 표시
+      alerts.push(
+        <span key="non-display" className="text-xs font-semibold text-red-300">
+          외부 미표출: {deviceData.external_non_display_reason}
+        </span>
+      );
+    } else {
+      // 사유가 없는 경우
+      alerts.push(
+        <span key="non-display" className="text-xs font-semibold text-red-300">
+          외부 미표출 (사유 없음)
+        </span>
+      );
+    }
   }
 
   // 🔴 배터리 만료 확인
@@ -71,7 +79,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
 
     if (batteryDays <= 30) {
       alerts.push(
-        <span key="battery" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-900/50 text-red-300 border border-red-600/30">
+        <span key="battery" className="text-xs font-medium text-red-300">
           🔋 배터리 {batteryDays <= 0 ? '만료' : `${batteryDays}일`}
         </span>
       );
@@ -85,7 +93,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
 
     if (padDays <= 30) {
       alerts.push(
-        <span key="pad" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-900/50 text-orange-300 border border-orange-600/30">
+        <span key="pad" className="text-xs font-medium text-orange-300">
           패드 {padDays <= 0 ? '만료' : `${padDays}일`}
         </span>
       );
@@ -99,7 +107,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
 
     if (daysSinceCheck > 60) {
       alerts.push(
-        <span key="check" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-300 border border-yellow-600/30">
+        <span key="check" className="text-xs font-medium text-yellow-300">
           {daysSinceCheck}일 미점검
         </span>
       );
@@ -107,7 +115,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
   } else {
     // 점검 이력이 없는 경우
     alerts.push(
-      <span key="check" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-300 border border-yellow-600/30">
+      <span key="check" className="text-xs font-medium text-yellow-300">
         점검 이력 없음
       </span>
     );
@@ -119,20 +127,12 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
       ? `${duplicateInfo.locationInfo} 등 `
       : '';
     alerts.push(
-      <span key="duplicate" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-900/50 text-red-300 border border-red-600/30">
+      <span key="duplicate" className="text-xs font-medium text-red-300">
         제조번호 중복({locationLabel}{duplicateInfo.count}개)
       </span>
     );
   }
 
-  // 🟣 외부표출 N + 사유 없음 (이동식 제외)
-  if (deviceData.external_display === 'N' && !deviceData.external_non_display_reason) {
-    alerts.push(
-      <span key="no-reason" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-900/50 text-purple-300 border border-purple-600/30">
-        미표출 사유 없음
-      </span>
-    );
-  }
 
   // 상세 정보 섹션에 표시할 항목들 (문제가 있는 경우만)
   const detailItems: Array<{ label: string; value: string; shouldShow: boolean }> = [];
@@ -179,12 +179,25 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
     <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700 rounded-2xl p-3">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            점검 전 확인사항
-          </h3>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <h3 className="font-semibold text-white cursor-help">
+                점검 전 확인사항
+              </h3>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs bg-gray-800 text-gray-100 border border-gray-600">
+              <div className="space-y-1 text-xs">
+                <p className="font-semibold mb-2">표시 항목 안내</p>
+                <p><span className="text-red-300">외부 미표출</span> - 외부 표출 N (사유 포함)</p>
+                <p><span className="text-red-300">배터리 만료</span> - 30일 이내 만료/초과</p>
+                <p><span className="text-orange-300">패드 만료</span> - 30일 이내 만료/초과</p>
+                <p><span className="text-yellow-300">미점검 일수</span> - 60일 이상 미점검</p>
+                <p><span className="text-yellow-300">점검 이력 없음</span> - 점검 기록 없음</p>
+                <p><span className="text-red-300">제조번호 중복</span> - 동일 제조번호 존재</p>
+                <p><span className="text-green-300">이상 없음</span> - 모든 항목 정상</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
           <span className="text-xs text-gray-400">{lastInspectionInfo}</span>
         </div>
         {onShowDetails && (
@@ -200,7 +213,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
       {/* 간략 요약 - 배지 형태 */}
       <div className="flex flex-wrap gap-2">
         {alerts.length > 0 ? alerts : (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-900/50 text-green-300 border border-green-600/30">
+          <span className="text-xs font-medium text-green-300">
             이상 없음
           </span>
         )}
