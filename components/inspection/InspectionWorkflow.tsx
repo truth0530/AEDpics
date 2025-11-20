@@ -60,6 +60,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
   const reopenCompletedSession = useInspectionSessionStore((state) => state.reopenCompletedSession);
   const isLoading = useInspectionSessionStore((state) => state.isLoading);
   const stepData = useInspectionSessionStore((state) => state.stepData);
+  const updateStepData = useInspectionSessionStore((state) => state.updateStepData);
   const lastSavedStepData = useInspectionSessionStore((state) => state.lastSavedStepData); // 🆕 store에서 가져옴
   const resetSession = useInspectionSessionStore((state) => state.resetSession);
 
@@ -72,6 +73,29 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
   const [isReopening, setIsReopening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showGuidelineModal, setShowGuidelineModal] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({ 1: true, 2: true, 3: true, 4: true });
+  const [showContactsModal, setShowContactsModal] = useState(false);
+
+  // 지역별 응급의료지원센터 목록
+  const emergencyCenters = [
+    { region: '서울', center: '서울 응급의료지원센터', phone: '02-2133-7542' },
+    { region: '부산', center: '부산 응급의료지원센터', phone: '051-254-3114' },
+    { region: '대구', center: '대구 응급의료지원센터', phone: '053-427-0530' },
+    { region: '인천', center: '인천 응급의료지원센터', phone: '032-440-3254' },
+    { region: '광주', center: '광주 응급의료지원센터', phone: '062-233-1339' },
+    { region: '대전', center: '대전 응급의료지원센터', phone: '042-223-5101' },
+    { region: '울산', center: '울산 응급의료지원센터', phone: '052-229-3666' },
+    { region: '세종', center: '세종 응급의료지원센터', phone: '044-715-5471' },
+    { region: '경기', center: '경기 응급의료지원센터', phone: '031-8008-5641' },
+    { region: '강원', center: '강원 응급의료지원센터', phone: '033-748-4911' },
+    { region: '충북', center: '충북 응급의료지원센터', phone: '043-266-6124' },
+    { region: '충남', center: '충남 응급의료지원센터', phone: '041-634-9351' },
+    { region: '전북', center: '전북 응급의료지원센터', phone: '063-276-9573' },
+    { region: '전남', center: '전남 응급의료지원센터', phone: '061-274-1339' },
+    { region: '경북', center: '경북 응급의료지원센터', phone: '054-441-1339' },
+    { region: '경남', center: '경남 응급의료지원센터', phone: '055-286-9548' },
+    { region: '제주', center: '제주 응급의료지원센터', phone: '064-710-2337' }
+  ];
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
@@ -274,7 +298,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
         // 필수: all_matched 체크 여부 확인 (true 또는 'edited' 모두 완료로 간주)
         if (basicInfo?.all_matched !== true && basicInfo?.all_matched !== 'edited') {
-          missing.push('기본 정보 - 일치 여부를 확인해주세요');
+          missing.push('기본 정보 확인 필요');
         }
 
         // ✅ 'edited' 상태일 때 빈 값 체크
@@ -287,18 +311,18 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           if (!basicInfo.category_3?.trim()) emptyBasicFields.push('설치장소(소)');
 
           if (emptyBasicFields.length > 0) {
-            missing.push(`기본 정보 중 비어있는 항목: ${emptyBasicFields.join(', ')}`);
+            missing.push(`미입력: ${emptyBasicFields.join(', ')}`);
           }
         }
 
         // 필수: location_matched 체크 여부 확인 (true 또는 'edited' 모두 완료로 간주)
         if (basicInfo?.location_matched !== true && basicInfo?.location_matched !== 'edited') {
-          missing.push('위치 정보 - 일치 여부를 확인해주세요');
+          missing.push('위치 정보 확인 필요');
         }
 
         // ✅ 위치 수정 시 주소 체크
         if (basicInfo?.location_matched === 'edited' && !basicInfo.address?.trim()) {
-          missing.push('주소가 비어있음');
+          missing.push('주소 미입력');
         }
 
         // ✅ 접근성 정보 검증
@@ -306,13 +330,13 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
         // 필수: 접근 허용 범위 선택
         if (!accessibility?.accessibility_level) {
-          missing.push('접근성 정보 - 설치 위치 접근 허용 범위를 선택해주세요');
+          missing.push('접근 허용 범위 선택 필요');
         }
 
         // 접근 제한 시 사유 입력 확인
         if (accessibility?.accessibility_level === 'restricted' || accessibility?.accessibility_level === 'private') {
           if (!accessibility.accessibility_reason?.trim()) {
-            missing.push('접근성 정보 - 접근 제한 사유를 입력해주세요');
+            missing.push('접근 제한 사유 미입력');
           }
         }
 
@@ -321,7 +345,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
         // improved_schedule이 없거나, is24hours가 명시적으로 설정되지 않은 경우
         if (!improvedSchedule || improvedSchedule.is24hours === undefined) {
-          missing.push('접근성 정보 - 24시간 사용 가능 여부를 선택해주세요');
+          missing.push('사용 시간 선택 필요');
         }
 
         // 24시간이 아닌 경우 주간 스케줄 확인
@@ -331,7 +355,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             .some(day => improvedSchedule[day]?.timeRange);
 
           if (!hasSchedule) {
-            missing.push('접근성 정보 - 사용 가능한 요일 및 시간을 최소 1개 이상 입력해주세요');
+            missing.push('운영 시간 입력 필요');
           }
         }
         break;
@@ -352,7 +376,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           }
         } else {
           // 아무 것도 하지 않음 → 필수 항목 누락
-          missing.push('장비 정보 (제조사, 모델명, 제조번호) - 일치 또는 수정 확인 필요');
+          missing.push('장비 정보 확인 필요');
         }
 
         // ✅ 소모품 정보 검증 (개별 _matched 플래그 확인, true 또는 'edited' 모두 완료로 간주)
@@ -362,13 +386,13 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
 
         // 하나라도 확인되지 않았으면 경고 (true 또는 'edited'가 아니면 미확인)
         if (batteryMatched !== true && batteryMatched !== 'edited') {
-          missing.push('배터리 유효기간 - 일치 또는 수정 확인 필요');
+          missing.push('배터리 유효기간 확인 필요');
         }
         if (padMatched !== true && padMatched !== 'edited') {
-          missing.push('패드 유효기간 - 일치 또는 수정 확인 필요');
+          missing.push('패드 유효기간 확인 필요');
         }
         if (mfgDateMatched !== true && mfgDateMatched !== 'edited') {
-          missing.push('제조일자 - 일치 또는 수정 확인 필요');
+          missing.push('제조일자 확인 필요');
         }
 
         // 'edited' 상태인데 값이 비어있으면 경고
@@ -806,33 +830,25 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       {/* Required Fields Warning Modal */}
       {showRequiredFieldsModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">⚠️ 필수 항목 미입력</h3>
-            <p className="text-gray-300 mb-3 text-sm">
-              다음 항목을 입력하지 않았습니다:
-            </p>
-            <ul className="list-disc list-inside mb-6 text-yellow-300 text-sm space-y-1">
+          <div className="bg-gray-800 rounded-lg max-w-xs w-full p-4">
+            <h3 className="text-sm font-semibold text-yellow-300 mb-2">미입력 항목</h3>
+            <ul className="list-disc list-inside mb-3 text-gray-200 text-xs space-y-0.5">
               {missingFields.map((field, idx) => (
                 <li key={idx}>{field}</li>
               ))}
             </ul>
-            <p className="text-gray-400 mb-6 text-xs">
-              필수 항목을 입력해야 다음 단계로 진행할 수 있습니다.
-            </p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setShowRequiredFieldsModal(false);
-                  // 미입력 필드로 자동 포커스 이동
-                  setTimeout(() => {
-                    focusFirstMissingField();
-                  }, 100);
-                }}
-                className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                입력하기 (미입력 항목으로 이동)
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setShowRequiredFieldsModal(false);
+                // 미입력 필드로 자동 포커스 이동
+                setTimeout(() => {
+                  focusFirstMissingField();
+                }, 100);
+              }}
+              className="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors"
+            >
+              입력하기
+            </button>
           </div>
         </div>
       )}
@@ -841,67 +857,156 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       {showGuidelineModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-white">AED 점검 지침</h2>
+            <div className="sticky top-0 bg-gray-800 border-b border-gray-700 px-4 py-2 flex justify-between items-center">
+              <h2 className="text-base font-bold text-white">AED픽스 점검 항목</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setExpandedSections({ 1: true, 2: true, 3: true, 4: true })}
+                  className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+                >
+                  모두 펼치기
+                </button>
+                <button
+                  onClick={() => setExpandedSections({ 1: false, 2: false, 3: false, 4: false })}
+                  className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+                >
+                  모두 접기
+                </button>
+                <button
+                  onClick={() => setShowGuidelineModal(false)}
+                  className="text-gray-400 hover:text-white transition-colors ml-2"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="px-4 py-3 space-y-1.5 text-gray-300">
+              <section className="border border-gray-700 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setExpandedSections(prev => ({ ...prev, 1: !prev[1] }))}
+                  className="w-full flex items-center justify-between px-3 py-1.5 bg-gray-700/50 hover:bg-gray-700 transition-colors"
+                >
+                  <h3 className="text-sm font-semibold text-white">1. 기본 정보 확인</h3>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedSections[1] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections[1] && (
+                  <ul className="list-disc list-inside space-y-0.5 text-xs px-3 py-2 bg-gray-800/30">
+                    <li>관리책임자 및 담당자 연락처 확인</li>
+                    <li>외부표출 여부 확인 (Y/N)</li>
+                    <li>분류체계 확인 (대분류/중분류/소분류)</li>
+                    <li>주소 및 설치위치 확인</li>
+                    <li>GPS 좌표 확인 (지도/로드뷰로 위치 검증)</li>
+                    <li>접근 허용 범위 확인 (누구나/일부/불가)</li>
+                    <li>사용 가능 시간 확인 (운영시간 입력)</li>
+                  </ul>
+                )}
+              </section>
+              <section className="border border-gray-700 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setExpandedSections(prev => ({ ...prev, 2: !prev[2] }))}
+                  className="w-full flex items-center justify-between px-3 py-1.5 bg-gray-700/50 hover:bg-gray-700 transition-colors"
+                >
+                  <h3 className="text-sm font-semibold text-white">2. 장비 정보 점검</h3>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedSections[2] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections[2] && (
+                  <ul className="list-disc list-inside space-y-0.5 text-xs px-3 py-2 bg-gray-800/30">
+                    <li>제조사, 모델명, 제조번호가 일치하는지 확인</li>
+                    <li>배터리 유효기간 확인 및 만료 여부 점검</li>
+                    <li>패드 유효기간 확인 및 만료 여부 점검</li>
+                    <li>제조일자 확인</li>
+                    <li>작동상태 확인</li>
+                  </ul>
+                )}
+              </section>
+              <section className="border border-gray-700 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setExpandedSections(prev => ({ ...prev, 3: !prev[3] }))}
+                  className="w-full flex items-center justify-between px-3 py-1.5 bg-gray-700/50 hover:bg-gray-700 transition-colors"
+                >
+                  <h3 className="text-sm font-semibold text-white">3. 보관함 점검</h3>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedSections[3] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections[3] && (
+                  <ul className="list-disc list-inside space-y-0.5 text-xs px-3 py-2 bg-gray-800/30">
+                    <li>보관함 도난경보장치 작동 여부 확인</li>
+                    <li>보관함 없음 / 정상작동 / 미작동 중 선택</li>
+                    <li>안내표지 설치 위치 확인 (다중선택 가능)</li>
+                  </ul>
+                )}
+              </section>
+              <section className="border border-gray-700 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setExpandedSections(prev => ({ ...prev, 4: !prev[4] }))}
+                  className="w-full flex items-center justify-between px-3 py-1.5 bg-gray-700/50 hover:bg-gray-700 transition-colors"
+                >
+                  <h3 className="text-sm font-semibold text-white">4. 관리책임자 교육</h3>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedSections[4] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections[4] && (
+                  <ul className="list-disc list-inside space-y-0.5 text-xs px-3 py-2 bg-gray-800/30">
+                    <li>교육 이수 현황 확인 (관리책임자 교육/법정의무교육/미이수/기타)</li>
+                    <li>미이수 시 사유 입력</li>
+                    <li>보건복지부 전달사항 입력</li>
+                  </ul>
+                )}
+              </section>
+              <div className="pt-2 border-t border-gray-700">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-gray-400">
+                    ※ 점검 중 이상이 발견되면 즉시 관할지역 응급의료지원센터로 연락주세요
+                  </p>
+                  <button
+                    onClick={() => setShowContactsModal(true)}
+                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors whitespace-nowrap flex-shrink-0"
+                  >
+                    연락처보기
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contacts Modal */}
+      {showContactsModal && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-800 border-b border-gray-700 px-4 py-2 flex justify-between items-center">
+              <h2 className="text-base font-bold text-white">응급의료지원센터 연락처</h2>
               <button
-                onClick={() => setShowGuidelineModal(false)}
+                onClick={() => setShowContactsModal(false)}
                 className="text-gray-400 hover:text-white transition-colors"
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="p-6 space-y-4 text-gray-300">
-              <section>
-                <h3 className="text-lg font-semibold text-white mb-2">1. 기본 정보 확인</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>관리번호, 제조번호, 설치기관이 일치하는지 확인</li>
-                  <li>장치의 외관 상태를 육안으로 검사</li>
-                </ul>
-              </section>
-              <section>
-                <h3 className="text-lg font-semibold text-white mb-2">2. 장비 정보 점검</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>모델명과 제조사가 기록과 일치하는지 확인</li>
-                  <li>장치 표시등이 정상 작동하는지 확인</li>
-                </ul>
-              </section>
-              <section>
-                <h3 className="text-lg font-semibold text-white mb-2">3. 위치 검증</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>설치 위치가 접근 가능하고 눈에 잘 띄는지 확인</li>
-                  <li>위치 안내 표지판이 설치되어 있는지 확인</li>
-                </ul>
-              </section>
-              <section>
-                <h3 className="text-lg font-semibold text-white mb-2">4. 보관함 점검</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>보관함이 손상되지 않았는지 확인</li>
-                  <li>보관함 잠금장치가 정상 작동하는지 확인</li>
-                  <li>온도와 습도가 적정 범위 내에 있는지 확인</li>
-                </ul>
-              </section>
-              <section>
-                <h3 className="text-lg font-semibold text-white mb-2">5. 소모품 확인</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>배터리 유효기간을 확인하고 만료 여부 점검</li>
-                  <li>패드 유효기간을 확인하고 만료 여부 점검</li>
-                  <li>소모품이 훼손되지 않았는지 확인</li>
-                </ul>
-              </section>
-              <section>
-                <h3 className="text-lg font-semibold text-white mb-2">6. 사진 촬영</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>AED 전체 사진 촬영</li>
-                  <li>배터리 및 패드 유효기간 표시 촬영</li>
-                  <li>특이사항이 있는 경우 해당 부분 촬영</li>
-                </ul>
-              </section>
-              <div className="pt-4 border-t border-gray-700">
-                <p className="text-sm text-gray-400">
-                  ※ 점검 중 이상이 발견되면 즉시 관리자에게 보고하세요.
-                </p>
+            <div className="p-3">
+              <div className="grid grid-cols-1 gap-1">
+                {emergencyCenters.map((center) => (
+                  <div key={center.region} className="flex items-center justify-between px-3 py-2 bg-gray-700/30 rounded-lg">
+                    <span className="text-xs text-gray-300">{center.region}</span>
+                    <a
+                      href={`tel:${center.phone.replace(/-/g, '')}`}
+                      className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+                    >
+                      {center.phone}
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -909,25 +1014,25 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       )}
 
       {/* Header with Guidelines Button */}
-      <div className="no-print flex items-start justify-between gap-3 mb-2">
-        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-          <h1 className="text-base sm:text-2xl font-semibold text-white whitespace-nowrap">
+      <div className="no-print mb-2">
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h1 className="text-lg font-semibold text-white flex-1 min-w-0">
             {(deviceData?.installation_institution || deviceData?.installation_org || '장비 정보') as React.ReactNode}
           </h1>
-          <div className="flex items-center gap-1 text-[10px] sm:text-sm text-gray-400">
-            <span className="whitespace-nowrap">| 관리번호 {(deviceData?.management_number || '-') as React.ReactNode} |</span>
-            <span className="whitespace-nowrap">장비연번 {(deviceData?.equipment_serial || deviceData?.serial_number || '-') as React.ReactNode}</span>
-          </div>
+          <button
+            onClick={() => setShowGuidelineModal(true)}
+            className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md transition-colors flex-shrink-0 whitespace-nowrap"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            점검항목
+          </button>
         </div>
-        <button
-          onClick={() => setShowGuidelineModal(true)}
-          className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md transition-colors flex-shrink-0 whitespace-nowrap"
-        >
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          지침보기
-        </button>
+        <div className="flex items-center justify-between text-sm text-gray-300 font-medium">
+          <span>관리번호 {(deviceData?.management_number || '-') as React.ReactNode}</span>
+          <span>장비연번 {(deviceData?.equipment_serial || deviceData?.serial_number || '-') as React.ReactNode}</span>
+        </div>
       </div>
 
       {/* Error Display */}
@@ -974,13 +1079,174 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         <ValidationSummary deviceData={deviceData} />
       )}
 
+      {/* Monthly Inspection Check - Only on First Step */}
+      {validatedStep === 0 && (() => {
+        // Calculate days since last inspection
+        const lastInspectionDate = (deviceData as Record<string, any>)?.last_inspection_date;
+        const today = new Date();
+        let daysSinceLastInspection = Infinity;
+
+        if (lastInspectionDate) {
+          const lastDate = new Date(lastInspectionDate);
+          daysSinceLastInspection = Math.ceil((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        // If more than 30 days, disable "inspected" option
+        const canSelectInspected = daysSinceLastInspection <= 30;
+        const currentStatus = (stepData.basicInfo as Record<string, any>)?.monthlyInspectionStatus;
+
+        // Auto-select "not_inspected" if more than 30 days and not already set
+        if (!canSelectInspected && !currentStatus) {
+          // Use setTimeout to avoid state update during render
+          setTimeout(() => {
+            const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+            updateStepData('basicInfo', {
+              ...basicInfo,
+              monthlyInspectionStatus: 'not_inspected'
+            });
+          }, 0);
+        }
+
+        return (
+          <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+            <div className="space-y-2">
+              <div className="font-medium text-gray-200 text-sm">
+                매월 1회 이상 점검 후 시군구에 통보여부
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={!canSelectInspected}
+                  onClick={() => {
+                    if (canSelectInspected) {
+                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                      updateStepData('basicInfo', {
+                        ...basicInfo,
+                        monthlyInspectionStatus: 'inspected',
+                        uninspectedReason: ''
+                      });
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    currentStatus === 'inspected'
+                      ? 'bg-green-600/20 border-2 border-green-500 text-green-300'
+                      : canSelectInspected
+                      ? 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-green-500/50'
+                      : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  매월 1회 점검
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      monthlyInspectionStatus: 'not_inspected'
+                    });
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    currentStatus === 'not_inspected'
+                      ? 'bg-red-600/20 border-2 border-red-500 text-red-300'
+                      : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-red-500/50'
+                  }`}
+                >
+                  매월 1회 미점검
+                </button>
+              </div>
+              {currentStatus === 'not_inspected' && (
+                <div className="mt-2">
+                  <label className="block text-gray-400 text-xs mb-1">
+                    미점검 사유 <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    value={(stepData.basicInfo as Record<string, any>)?.uninspectedReason || ''}
+                    onChange={(e) => {
+                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                      updateStepData('basicInfo', {
+                        ...basicInfo,
+                        uninspectedReason: e.target.value
+                      });
+                    }}
+                    placeholder="미점검 사유를 입력하세요"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                    rows={3}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Current Step Content */}
       <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
         <div className="no-print mb-3 flex items-center gap-2 flex-wrap">
           <h3 className="text-lg font-semibold text-white">{STEP_TITLES[validatedStep]}</h3>
-          {validatedStep === 0 && (
-            <span className="text-[10px] sm:text-xs text-green-400 whitespace-nowrap">| 일치하면 "전체 일치", 수정이 필요하면 "수정" 버튼을 누르세요.</span>
-          )}
+          {validatedStep === 0 && (() => {
+            const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+            const statusParts: Array<{ text: string; isEdited: boolean }> = [];
+
+            // 기본정보 상태 확인
+            if (basicInfo.all_matched === true) {
+              statusParts.push({ text: '기본정보 전체 일치', isEdited: false });
+            } else if (basicInfo.all_matched === 'edited') {
+              // 수정된 필드 확인
+              const editedFields: string[] = [];
+              if (basicInfo.manager && basicInfo.manager !== deviceData?.manager) editedFields.push('관리책임자');
+              if (basicInfo.contact_info && basicInfo.contact_info !== deviceData?.institution_contact) editedFields.push('연락처');
+              if (basicInfo.external_display && basicInfo.external_display !== deviceData?.external_display) editedFields.push('외부표출');
+              if (basicInfo.category_1 && basicInfo.category_1 !== deviceData?.category_1) editedFields.push('대분류');
+              if (basicInfo.category_2 && basicInfo.category_2 !== deviceData?.category_2) editedFields.push('중분류');
+              if (basicInfo.category_3 && basicInfo.category_3 !== deviceData?.category_3) editedFields.push('소분류');
+
+              if (editedFields.length > 0) {
+                statusParts.push({ text: `${editedFields.join(', ')} 수정됨`, isEdited: true });
+              } else {
+                statusParts.push({ text: '기본정보 수정됨', isEdited: true });
+              }
+            }
+
+            // 위치정보 상태 확인
+            if (basicInfo.location_matched === true) {
+              statusParts.push({ text: '위치정보 일치', isEdited: false });
+            } else if (basicInfo.location_matched === 'edited') {
+              // 수정된 위치 필드 확인
+              const locationEdits: string[] = [];
+              if (basicInfo.address && basicInfo.address !== deviceData?.installation_address) locationEdits.push('주소');
+              if (basicInfo.installation_position && basicInfo.installation_position !== deviceData?.installation_position) locationEdits.push('설치위치');
+
+              if (locationEdits.length > 0) {
+                statusParts.push({ text: `${locationEdits.join(', ')} 수정됨`, isEdited: true });
+              } else {
+                statusParts.push({ text: '위치정보 수정됨', isEdited: true });
+              }
+            }
+
+            // 메시지 생성
+            if (statusParts.length > 0) {
+              return (
+                <span className="text-[10px] sm:text-xs whitespace-nowrap">
+                  | {statusParts.map((part, index) => (
+                    <span key={index}>
+                      {index > 0 && ' / '}
+                      <span className={part.isEdited ? 'text-yellow-400' : 'text-green-400'}>
+                        {part.text}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              );
+            }
+
+            // 기본 메시지
+            return (
+              <span className="text-[10px] sm:text-xs text-green-400 whitespace-nowrap">
+                | 일치하면 "전체 일치", 수정이 필요하면 "수정" 버튼을 누르세요.
+              </span>
+            );
+          })()}
         </div>
         <CurrentStepComponent />
       </div>
