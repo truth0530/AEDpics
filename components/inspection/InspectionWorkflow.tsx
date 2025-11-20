@@ -1077,7 +1077,9 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
       {/* 점검 전 확인사항 + 매월 점검 통보 영역 - Only on First Step */}
       {validatedStep === 0 && (
         <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3 space-y-4">
-          {deviceData && <ValidationSummary deviceData={deviceData} noBorder />}
+          <div>
+            {deviceData && <ValidationSummary deviceData={deviceData} noBorder />}
+          </div>
 
           {/* Monthly Inspection Check */}
           {(() => {
@@ -1116,27 +1118,136 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           (currentStatus === 'inspected' || (currentStatus === 'not_inspected' && uninspectedReason.trim())) &&
           (usageCount !== undefined && usageCount !== '' && usageCount !== null);
 
+        // 접힌 상태에서는 요약 텍스트만 표시
+        if (isConfirmed) {
+          return (
+            <div className="space-y-1">
+              {/* 점검 상태 요약 */}
+              <div className="text-xs text-gray-400">
+                매월 점검 통보: <span className={currentStatus === 'inspected' ? 'text-green-300' : 'text-red-300'}>
+                  {currentStatus === 'inspected' ? '점검' : '미점검'}
+                </span>
+              </div>
+              {/* 미점검 사유 요약 */}
+              {currentStatus === 'not_inspected' && uninspectedReason && (
+                <div className="text-xs text-gray-400">
+                  미점검 사유: <span className="text-gray-300">{uninspectedReason}</span>
+                </div>
+              )}
+              {/* 최근 사용건수 요약 */}
+              <div className="text-xs text-gray-400">
+                최근 1년간 사용건수: <span className="text-gray-300">{usageCount ?? 0}회</span>
+              </div>
+              {/* 수정 버튼 */}
+              <button
+                type="button"
+                onClick={() => {
+                  const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                  updateStepData('basicInfo', {
+                    ...basicInfo,
+                    monthlyInspectionConfirmed: false
+                  });
+                }}
+                className="w-full mt-1 px-3 py-1.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+              >
+                수정
+              </button>
+            </div>
+          );
+        }
+
         return (
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-medium text-gray-200 text-sm">
-                매월 1회 이상 점검 후 시군구에 통보여부
-              </div>
-              {isConfirmed ? (
+            <div className="font-medium text-gray-200 text-sm mb-2">
+              매월 1회 이상 점검 후 시군구에 통보여부
+            </div>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={!canSelectInspected}
+                  onClick={() => {
+                    if (canSelectInspected) {
+                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                      updateStepData('basicInfo', {
+                        ...basicInfo,
+                        monthlyInspectionStatus: 'inspected',
+                        uninspectedReason: ''
+                      });
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    currentStatus === 'inspected'
+                      ? 'bg-green-600/20 border-2 border-green-500 text-green-300'
+                      : canSelectInspected
+                      ? 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-green-500/50'
+                      : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  매월 1회 점검
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
                     updateStepData('basicInfo', {
                       ...basicInfo,
-                      monthlyInspectionConfirmed: false
+                      monthlyInspectionStatus: 'not_inspected'
                     });
                   }}
-                  className="px-2 py-1 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    currentStatus === 'not_inspected'
+                      ? 'bg-red-600/20 border-2 border-red-500 text-red-300'
+                      : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-red-500/50'
+                  }`}
                 >
-                  수정
+                  매월 1회 미점검
                 </button>
-              ) : canConfirm ? (
+              </div>
+              {currentStatus === 'not_inspected' && (
+                <div>
+                  <label className="block text-gray-400 text-xs mb-1">
+                    미점검 사유 <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={uninspectedReason}
+                    onChange={(e) => {
+                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                      updateStepData('basicInfo', {
+                        ...basicInfo,
+                        uninspectedReason: e.target.value
+                      });
+                    }}
+                    placeholder="미점검 사유"
+                    className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-gray-100 text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-transparent"
+                  />
+                </div>
+              )}
+              {/* 최근 1년간 사용건수 */}
+              <div className="flex items-center gap-2">
+                <label className="text-gray-400 text-xs whitespace-nowrap">
+                  최근 1년간 사용건수
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="99"
+                  value={usageCount ?? ''}
+                  onChange={(e) => {
+                    const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      usageCountLastYear: e.target.value ? parseInt(e.target.value, 10) : ''
+                    });
+                  }}
+                  placeholder="0"
+                  className="w-16 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-100 text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-center"
+                />
+                <span className="text-gray-500 text-xs">회</span>
+              </div>
+              {/* 확인 버튼 - 사용건수 아래 */}
+              {canConfirm && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1146,107 +1257,12 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
                       monthlyInspectionConfirmed: true
                     });
                   }}
-                  className="px-2 py-1 rounded text-xs font-medium bg-green-600 hover:bg-green-700 border border-green-500 text-white"
+                  className="w-full mt-2 px-3 py-1.5 rounded text-xs font-medium bg-green-600 hover:bg-green-700 border border-green-500 text-white"
                 >
                   확인
                 </button>
-              ) : null}
+              )}
             </div>
-
-            {isConfirmed ? (
-              <div className="text-xs text-gray-400 bg-gray-800/50 rounded px-2 py-1.5">
-                {currentStatus === 'inspected' ? '매월 1회 점검' : '매월 1회 미점검'}
-                {currentStatus === 'not_inspected' && uninspectedReason && ` (${uninspectedReason})`}
-                {' / '}사용건수: {usageCount}회
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={!canSelectInspected}
-                    onClick={() => {
-                      if (canSelectInspected) {
-                        const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
-                        updateStepData('basicInfo', {
-                          ...basicInfo,
-                          monthlyInspectionStatus: 'inspected',
-                          uninspectedReason: ''
-                        });
-                      }
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      currentStatus === 'inspected'
-                        ? 'bg-green-600/20 border-2 border-green-500 text-green-300'
-                        : canSelectInspected
-                        ? 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-green-500/50'
-                        : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                    }`}
-                  >
-                    매월 1회 점검
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
-                      updateStepData('basicInfo', {
-                        ...basicInfo,
-                        monthlyInspectionStatus: 'not_inspected'
-                      });
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      currentStatus === 'not_inspected'
-                        ? 'bg-red-600/20 border-2 border-red-500 text-red-300'
-                        : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-red-500/50'
-                    }`}
-                  >
-                    매월 1회 미점검
-                  </button>
-                </div>
-                {currentStatus === 'not_inspected' && (
-                  <div>
-                    <label className="block text-gray-400 text-xs mb-1">
-                      미점검 사유 <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={uninspectedReason}
-                      onChange={(e) => {
-                        const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
-                        updateStepData('basicInfo', {
-                          ...basicInfo,
-                          uninspectedReason: e.target.value
-                        });
-                      }}
-                      placeholder="미점검 사유"
-                      className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-gray-100 text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-transparent"
-                    />
-                  </div>
-                )}
-                {/* 최근 1년간 사용건수 */}
-                <div className="flex items-center gap-2">
-                  <label className="text-gray-400 text-xs whitespace-nowrap">
-                    최근 1년간 사용건수
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="99"
-                    value={usageCount ?? ''}
-                    onChange={(e) => {
-                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
-                      updateStepData('basicInfo', {
-                        ...basicInfo,
-                        usageCountLastYear: e.target.value ? parseInt(e.target.value, 10) : ''
-                      });
-                    }}
-                    placeholder="0"
-                    className="w-16 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-100 text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-center"
-                  />
-                  <span className="text-gray-500 text-xs">회</span>
-                </div>
-              </div>
-            )}
           </div>
         );
       })()}
