@@ -1107,98 +1107,146 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           }, 0);
         }
 
+        const isConfirmed = (stepData.basicInfo as Record<string, any>)?.monthlyInspectionConfirmed || false;
+        const usageCount = (stepData.basicInfo as Record<string, any>)?.usageCountLastYear;
+        const uninspectedReason = (stepData.basicInfo as Record<string, any>)?.uninspectedReason || '';
+
+        // 확인 버튼 활성화 조건
+        const canConfirm = currentStatus &&
+          (currentStatus === 'inspected' || (currentStatus === 'not_inspected' && uninspectedReason.trim())) &&
+          (usageCount !== undefined && usageCount !== '' && usageCount !== null);
+
         return (
           <div>
-            <div className="space-y-2">
+            <div className="flex items-center justify-between mb-2">
               <div className="font-medium text-gray-200 text-sm">
                 매월 1회 이상 점검 후 시군구에 통보여부
               </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={!canSelectInspected}
-                  onClick={() => {
-                    if (canSelectInspected) {
-                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
-                      updateStepData('basicInfo', {
-                        ...basicInfo,
-                        monthlyInspectionStatus: 'inspected',
-                        uninspectedReason: ''
-                      });
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    currentStatus === 'inspected'
-                      ? 'bg-green-600/20 border-2 border-green-500 text-green-300'
-                      : canSelectInspected
-                      ? 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-green-500/50'
-                      : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                  }`}
-                >
-                  매월 1회 점검
-                </button>
+              {isConfirmed ? (
                 <button
                   type="button"
                   onClick={() => {
                     const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
                     updateStepData('basicInfo', {
                       ...basicInfo,
-                      monthlyInspectionStatus: 'not_inspected'
+                      monthlyInspectionConfirmed: false
                     });
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    currentStatus === 'not_inspected'
-                      ? 'bg-red-600/20 border-2 border-red-500 text-red-300'
-                      : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-red-500/50'
-                  }`}
+                  className="px-2 py-1 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
                 >
-                  매월 1회 미점검
+                  수정
                 </button>
+              ) : canConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      monthlyInspectionConfirmed: true
+                    });
+                  }}
+                  className="px-2 py-1 rounded text-xs font-medium bg-green-600 hover:bg-green-700 border border-green-500 text-white"
+                >
+                  확인
+                </button>
+              ) : null}
+            </div>
+
+            {isConfirmed ? (
+              <div className="text-xs text-gray-400 bg-gray-800/50 rounded px-2 py-1.5">
+                {currentStatus === 'inspected' ? '매월 1회 점검' : '매월 1회 미점검'}
+                {currentStatus === 'not_inspected' && uninspectedReason && ` (${uninspectedReason})`}
+                {' / '}사용건수: {usageCount}회
               </div>
-              {currentStatus === 'not_inspected' && (
-                <div className="mt-2">
-                  <label className="block text-gray-400 text-xs mb-1">
-                    미점검 사유 <span className="text-red-400">*</span>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={!canSelectInspected}
+                    onClick={() => {
+                      if (canSelectInspected) {
+                        const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                        updateStepData('basicInfo', {
+                          ...basicInfo,
+                          monthlyInspectionStatus: 'inspected',
+                          uninspectedReason: ''
+                        });
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      currentStatus === 'inspected'
+                        ? 'bg-green-600/20 border-2 border-green-500 text-green-300'
+                        : canSelectInspected
+                        ? 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-green-500/50'
+                        : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    매월 1회 점검
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                      updateStepData('basicInfo', {
+                        ...basicInfo,
+                        monthlyInspectionStatus: 'not_inspected'
+                      });
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      currentStatus === 'not_inspected'
+                        ? 'bg-red-600/20 border-2 border-red-500 text-red-300'
+                        : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-red-500/50'
+                    }`}
+                  >
+                    매월 1회 미점검
+                  </button>
+                </div>
+                {currentStatus === 'not_inspected' && (
+                  <div>
+                    <label className="block text-gray-400 text-xs mb-1">
+                      미점검 사유 <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={uninspectedReason}
+                      onChange={(e) => {
+                        const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                        updateStepData('basicInfo', {
+                          ...basicInfo,
+                          uninspectedReason: e.target.value
+                        });
+                      }}
+                      placeholder="미점검 사유"
+                      className="w-full px-2 py-1.5 bg-gray-800 border border-gray-700 rounded text-gray-100 text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+                {/* 최근 1년간 사용건수 */}
+                <div className="flex items-center gap-2">
+                  <label className="text-gray-400 text-xs whitespace-nowrap">
+                    최근 1년간 사용건수
                   </label>
-                  <textarea
-                    value={(stepData.basicInfo as Record<string, any>)?.uninspectedReason || ''}
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    value={usageCount ?? ''}
                     onChange={(e) => {
                       const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
                       updateStepData('basicInfo', {
                         ...basicInfo,
-                        uninspectedReason: e.target.value
+                        usageCountLastYear: e.target.value ? parseInt(e.target.value, 10) : ''
                       });
                     }}
-                    placeholder="미점검 사유를 입력하세요"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
-                    rows={3}
+                    placeholder="0"
+                    className="w-16 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-100 text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-center"
                   />
-                </div>
-              )}
-              {/* 최근 1년간 사용건수 */}
-              <div className="mt-3">
-                <label className="block text-gray-400 text-xs mb-1">
-                  최근 1년간 사용건수
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={(stepData.basicInfo as Record<string, any>)?.usageCountLastYear || ''}
-                  onChange={(e) => {
-                    const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
-                    updateStepData('basicInfo', {
-                      ...basicInfo,
-                      usageCountLastYear: e.target.value ? parseInt(e.target.value, 10) : ''
-                    });
-                  }}
-                  placeholder="0"
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <div className="text-[10px] text-gray-500 mt-1">
-                  최근 1년간 해당 AED가 실제로 사용된 횟수를 입력하세요
+                  <span className="text-gray-500 text-xs">회</span>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         );
       })()}
