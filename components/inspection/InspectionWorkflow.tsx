@@ -1118,27 +1118,17 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           (currentStatus === 'inspected' || (currentStatus === 'not_inspected' && uninspectedReason.trim())) &&
           (usageCount !== undefined && usageCount !== '' && usageCount !== null);
 
-        // 접힌 상태에서는 요약 텍스트만 표시
+        // 접힌 상태에서는 1줄 요약만 표시
         if (isConfirmed) {
           return (
-            <div className="space-y-1">
-              {/* 점검 상태 요약 */}
-              <div className="text-xs text-gray-400">
-                매월 점검 통보: <span className={currentStatus === 'inspected' ? 'text-green-300' : 'text-red-300'}>
-                  {currentStatus === 'inspected' ? '점검' : '미점검'}
-                </span>
-              </div>
-              {/* 미점검 사유 요약 */}
-              {currentStatus === 'not_inspected' && uninspectedReason && (
-                <div className="text-xs text-gray-400">
-                  미점검 사유: <span className="text-gray-300">{uninspectedReason}</span>
-                </div>
-              )}
-              {/* 최근 사용건수 요약 */}
-              <div className="text-xs text-gray-400">
-                최근 1년간 사용건수: <span className="text-gray-300">{usageCount ?? 0}회</span>
-              </div>
-              {/* 수정 버튼 */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-400">매월점검:</span>
+              <span className={currentStatus === 'inspected' ? 'text-green-300' : 'text-red-300'}>
+                {currentStatus === 'inspected' ? '점검' : '미점검'}
+                {currentStatus === 'not_inspected' && uninspectedReason && ` (${uninspectedReason})`}
+              </span>
+              <span className="text-gray-600">|</span>
+              <span className="text-gray-400">사용: <span className="text-gray-300">{usageCount ?? 0}회</span></span>
               <button
                 type="button"
                 onClick={() => {
@@ -1148,7 +1138,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
                     monthlyInspectionConfirmed: false
                   });
                 }}
-                className="w-full mt-1 px-3 py-1.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                className="ml-auto px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
               >
                 수정
               </button>
