@@ -294,17 +294,47 @@ export function MatchingStrategyDialog({
         {/* 기존 매칭 vs 새 매칭 비교 섹션 */}
         <div className="grid grid-cols-2 gap-4 pt-4 flex-1 overflow-hidden">
           {/* 좌측: 기존에 매칭한 의무기관 리스트 */}
-          <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col">
+          <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col p-2">
             <div className="flex-1 overflow-y-auto space-y-2">
               {Object.entries(existingMatchesByInstitution).map(([institutionName, data]) => (
-                <div key={institutionName} className="border border-gray-700 rounded-md overflow-hidden">
+                <div key={institutionName} className="space-y-0">
                   {/* 헤더: 제목 + 기관명 */}
-                  <div className="bg-amber-900/30 border-b border-amber-700/50 px-3 py-2">
+                  <div className="bg-amber-900/30 border border-amber-700/50 rounded-md px-3 py-2">
                     <div className="text-xs font-semibold text-amber-300/80 mb-1">기존에 매칭한 의무기관 리스트</div>
                     <div className="font-semibold text-sm text-amber-400">{institutionName}</div>
                   </div>
+                  {/* ㄴ자 화살표 커넥터 (좌측용) */}
+                  <div className="flex justify-center py-1">
+                    <svg width="100" height="50" viewBox="0 0 100 50" className="text-amber-500/70">
+                      {/* 수평 시작 - 점선 */}
+                      <path
+                        d="M 90 8 L 73 8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        strokeLinecap="butt"
+                        strokeDasharray="3 4"
+                      />
+                      {/* ㄴ자 곡선 - 실선 */}
+                      <path
+                        d="M 73 8 L 45 8 Q 20 8, 20 25 L 20 36"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        strokeLinecap="butt"
+                      />
+                      {/* 화살표 머리 */}
+                      <path
+                        d="M 10 30 L 20 44 L 30 30"
+                        fill="currentColor"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinejoin="miter"
+                      />
+                    </svg>
+                  </div>
                   {/* AED 데이터 본문 */}
-                  <div className="bg-gray-900/20 px-2 py-2">
+                  <div className="bg-gray-900/20 border border-gray-700 rounded-md px-2 py-2">
                     {/* 주소 및 관리번호 */}
                     <div className="text-xs text-gray-400 mb-2 space-y-0.5">
                       <div className="truncate">주소: {(data as any).address}</div>
@@ -401,16 +431,46 @@ export function MatchingStrategyDialog({
           </div>
 
           {/* 우측: 이번에 매칭하려는 의무기관 리스트 */}
-          <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col">
+          <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col p-2">
             <div className="flex-1 overflow-y-auto">
-              <div className="border border-gray-700 rounded-md overflow-hidden">
+              <div className="space-y-0">
                 {/* 헤더: 제목 + 기관명 */}
-                <div className="bg-blue-900/30 border-b border-blue-700/50 px-3 py-2">
+                <div className="bg-blue-900/30 border border-blue-700/50 rounded-md px-3 py-2">
                   <div className="text-xs font-semibold text-blue-300/80 mb-1">이번에 매칭하려는 의무기관 리스트</div>
                   <div className="font-semibold text-sm text-blue-400">{targetInstitutionName}</div>
                 </div>
+                {/* ㄱ자 화살표 커넥터 (우측용) */}
+                <div className="flex justify-center py-1">
+                  <svg width="100" height="50" viewBox="0 0 100 50" className="text-blue-500/70">
+                    {/* 수평 시작 - 점선 */}
+                    <path
+                      d="M 10 8 L 27 8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      strokeLinecap="butt"
+                      strokeDasharray="3 4"
+                    />
+                    {/* ㄱ자 곡선 - 실선 */}
+                    <path
+                      d="M 27 8 L 55 8 Q 80 8, 80 25 L 80 36"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      strokeLinecap="butt"
+                    />
+                    {/* 화살표 머리 */}
+                    <path
+                      d="M 70 30 L 80 44 L 90 30"
+                      fill="currentColor"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="miter"
+                    />
+                  </svg>
+                </div>
                 {/* AED 데이터 본문 */}
-                <div className="bg-gray-900/20 px-2 py-2">
+                <div className="bg-gray-900/20 border border-gray-700 rounded-md px-2 py-2">
                   {/* 주소 및 관리번호 */}
                   {newMatchingDevices.length > 0 && (
                     <div className="text-xs text-gray-400 mb-2 space-y-0.5">
@@ -524,22 +584,22 @@ export function MatchingStrategyDialog({
             <div className="text-sm text-center mb-2">추가로 매칭할 장비가 있습니까?</div>
             <div className="flex justify-center gap-3">
               <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAddMoreClick}
-                disabled={activeNewDevices.length === 0}
-                className="px-6"
-              >
-                예
-              </Button>
-              <Button
                 variant="default"
                 size="sm"
                 onClick={handlePrimaryAction}
                 disabled={activeExistingDevices.length === 0 && activeNewDevices.length === 0}
-                className="px-6 bg-blue-600 hover:bg-blue-700"
+                className="px-6 bg-yellow-500 hover:bg-yellow-600 text-black"
               >
-                아니오
+                이대로매칭완료
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleAddMoreClick}
+                disabled={activeNewDevices.length === 0}
+                className="px-6 bg-green-600 hover:bg-green-700"
+              >
+                추가매칭하기
               </Button>
             </div>
           </div>

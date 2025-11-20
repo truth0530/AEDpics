@@ -826,25 +826,7 @@ export default function ManagementNumberPanel({
   };
 
   const renderCandidateList = (items: ManagementNumberCandidate[], showConfidence: boolean) => {
-    // 이미 다른 기관에 매칭된 항목 (원본에서 가져오기 - basket 상태와 무관)
-    const matchedItems = items.filter(item => item.is_matched);
-
-    // DEBUG: matchedItems 확인
-    const renderDebug = {
-      items_total: items.length,
-      matched_items_count: matchedItems.length,
-      searchTerm_active: !!searchTerm,  // 검색어 활성 여부
-      using_searchResults: searchTerm ? true : false,  // searchResults 사용 여부
-      matched_items_sample: matchedItems.slice(0, 3).map(item => ({
-        management_number: item.management_number,
-        institution_name: item.institution_name,
-        is_matched: item.is_matched,
-        matched_to: item.matched_to
-      }))
-    };
-    console.log('[renderCandidateList] matchedItems check:', JSON.stringify(renderDebug, null, 2));
-
-    // 완전 매칭된 항목만 필터링 (부분 매칭은 유지)
+    // 완전 매칭된 항목만 필터링 (부분 매칭은 유지) - basket 상태에 따라 숨기기
     const filteredItems = items.filter(item => {
       const basketItem = basketedItems.find(b => b.management_number === item.management_number);
 
@@ -863,6 +845,25 @@ export default function ManagementNumberPanel({
       // 완전 매칭된 항목만 제외, 부분 매칭은 표시
       return !isFullyMatched;
     });
+
+    // 이미 다른 기관에 매칭된 항목 (filteredItems에서 가져오기 - basket에 담긴 항목은 숨김)
+    const matchedItems = filteredItems.filter(item => item.is_matched);
+
+    // DEBUG: matchedItems 확인
+    const renderDebug = {
+      items_total: items.length,
+      filtered_items_count: filteredItems.length,
+      matched_items_count: matchedItems.length,
+      searchTerm_active: !!searchTerm,  // 검색어 활성 여부
+      using_searchResults: searchTerm ? true : false,  // searchResults 사용 여부
+      matched_items_sample: matchedItems.slice(0, 3).map(item => ({
+        management_number: item.management_number,
+        institution_name: item.institution_name,
+        is_matched: item.is_matched,
+        matched_to: item.matched_to
+      }))
+    };
+    console.log('[renderCandidateList] matchedItems check:', JSON.stringify(renderDebug, null, 2));
 
     // 미매칭 항목만 분리
     const unmatchedItems = filteredItems.filter(item => !item.is_matched);
@@ -1555,30 +1556,6 @@ export default function ManagementNumberPanel({
                 </Card>
               );
             })}
-          </div>
-        )}
-
-        {/* 이미 매칭된 항목 펼치기 버튼 */}
-        {matchedItems.length > 0 && (
-          <div className="pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAlreadyMatched(!showAlreadyMatched)}
-              className="w-full text-xs bg-yellow-100 dark:bg-yellow-900"
-            >
-              {showAlreadyMatched ? (
-                <>
-                  <ChevronUp className="h-3 w-3 mr-1" />
-                  이미 매칭된 항목 {matchedItems.length}개 접기
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-3 w-3 mr-1" />
-                  이미 매칭된 항목 {matchedItems.length}개 펼치기
-                </>
-              )}
-            </Button>
           </div>
         )}
 
@@ -2284,18 +2261,48 @@ export default function ManagementNumberPanel({
             {/* 좌우 비교 섹션 */}
             {duplicateMatchDialog.item && (
               <div className="grid grid-cols-2 gap-4 flex-1 overflow-hidden">{/* 좌측: 기존에 매칭된 기관 */}
-                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col">
+                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col p-2">
                   <div className="flex-1 overflow-y-auto">
-                    <div className="border border-gray-700 rounded-md overflow-hidden">
+                    <div className="space-y-0">
                       {/* 헤더: 제목 + 기관명 */}
-                      <div className="bg-amber-900/30 border-b border-amber-700/50 px-3 py-2">
+                      <div className="bg-amber-900/30 border border-amber-700/50 rounded-md px-3 py-2">
                         <div className="text-xs font-semibold text-amber-300/80 mb-1">기존에 매칭된 의무기관</div>
                         <div className="font-semibold text-sm text-amber-400">
                           {duplicateMatchDialog.item.matched_institution_name || '다른 기관'}
                         </div>
                       </div>
+                      {/* ㄴ자 화살표 커넥터 (좌측용) */}
+                      <div className="flex justify-center py-1">
+                        <svg width="100" height="50" viewBox="0 0 100 50" className="text-amber-500/70">
+                          {/* 수평 시작 - 점선 */}
+                          <path
+                            d="M 90 8 L 73 8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            strokeLinecap="butt"
+                            strokeDasharray="3 4"
+                          />
+                          {/* ㄴ자 곡선 - 실선 */}
+                          <path
+                            d="M 73 8 L 45 8 Q 20 8, 20 25 L 20 36"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            strokeLinecap="butt"
+                          />
+                          {/* 화살표 머리 */}
+                          <path
+                            d="M 10 30 L 20 44 L 30 30"
+                            fill="currentColor"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinejoin="miter"
+                          />
+                        </svg>
+                      </div>
                       {/* AED 데이터 본문 */}
-                      <div className="bg-gray-900/20 px-2 py-2">
+                      <div className="bg-gray-900/20 border border-gray-700 rounded-md px-2 py-2">
                         {/* 주소 및 관리번호 */}
                         <div className="text-xs text-gray-400 mb-2 space-y-0.5">
                           <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
@@ -2421,16 +2428,46 @@ export default function ManagementNumberPanel({
                 </div>
 
                 {/* 우측: 이번에 매칭하려는 기관 */}
-                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col">
+                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col p-2">
                   <div className="flex-1 overflow-y-auto">
-                    <div className="border border-gray-700 rounded-md overflow-hidden">
+                    <div className="space-y-0">
                       {/* 헤더: 제목 + 기관명 */}
-                      <div className="bg-blue-900/30 border-b border-blue-700/50 px-3 py-2">
+                      <div className="bg-blue-900/30 border border-blue-700/50 rounded-md px-3 py-2">
                         <div className="text-xs font-semibold text-blue-300/80 mb-1">이번에 매칭하려는 의무기관</div>
                         <div className="font-semibold text-sm text-blue-400">{selectedInstitution?.institution_name}</div>
                       </div>
+                      {/* ㄱ자 화살표 커넥터 (우측용) */}
+                      <div className="flex justify-center py-1">
+                        <svg width="100" height="50" viewBox="0 0 100 50" className="text-blue-500/70">
+                          {/* 수평 시작 - 점선 */}
+                          <path
+                            d="M 10 8 L 27 8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            strokeLinecap="butt"
+                            strokeDasharray="3 4"
+                          />
+                          {/* ㄱ자 곡선 - 실선 */}
+                          <path
+                            d="M 27 8 L 55 8 Q 80 8, 80 25 L 80 36"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            strokeLinecap="butt"
+                          />
+                          {/* 화살표 머리 */}
+                          <path
+                            d="M 70 30 L 80 44 L 90 30"
+                            fill="currentColor"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinejoin="miter"
+                          />
+                        </svg>
+                      </div>
                       {/* AED 데이터 본문 */}
-                      <div className="bg-gray-900/20 px-2 py-2">
+                      <div className="bg-gray-900/20 border border-gray-700 rounded-md px-2 py-2">
                         {/* 주소 및 관리번호 */}
                         <div className="text-xs text-gray-400 mb-2 space-y-0.5">
                           <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
@@ -2539,19 +2576,35 @@ export default function ManagementNumberPanel({
             {/* 추가 매칭 질문 */}
             {modalBasketItems.length > 0 && (
               <div className="border border-gray-600 rounded-lg p-3 bg-gray-800/30">
-                <div className="text-sm text-center mb-2">추가로 매칭할 장비가 있습니까?</div>
+                <div className="text-sm text-center mb-2">
+                  {basketedManagementNumbers.length === 0
+                    ? "추가로 매칭할 장비가 있습니까?"
+                    : "매칭대기리스트에 추가하시겠습니까?"
+                  }
+                </div>
                 <div className="flex justify-center gap-3">
+                  {/* 3번 섹션이 비어있을 때만 "이대로매칭완료" 버튼 표시 */}
+                  {basketedManagementNumbers.length === 0 && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        // "이대로매칭완료" 클릭: 직접 매칭 처리
+                        handleConfirmDuplicateMatch();
+                      }}
+                      disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
+                      className="px-6 bg-yellow-500 hover:bg-yellow-600 text-black"
+                    >
+                      이대로매칭완료
+                    </Button>
+                  )}
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => {
-                      // "예" 클릭: basket에 추가하고 섹션 2에서 추가 작업 가능
-                      // 우측 "담긴 장비" 전체를 basket에 추가 (cancelledFromExisting은 별개)
-                      // TODO: cancelledFromExisting 상태를 어떻게 전달할지 검토 필요
-
+                      // basket에 추가하고 모달 닫기
                       if (modalBasketItems.length > 0) {
                         modalBasketItems.forEach(basketItem => {
-                          // 우측 "담긴 장비" 전체를 basket에 추가
                           const modifiedItem = {
                             ...basketItem.item,
                             equipment_serials: basketItem.selectedSerials,
@@ -2565,23 +2618,12 @@ export default function ManagementNumberPanel({
                       }
                       setDuplicateMatchDialog({ isOpen: false, item: null });
                       setModalBasketItems([]);
-                      // 주의: cancelledFromExisting은 모달이 닫히면서 초기화됨
-                      // "예" 버튼은 추가 작업을 위해 사용하므로, 나중에 "매칭하기" 버튼에서 처리
                       setCancelledFromExisting(new Set());
                     }}
                     disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
-                    className="px-6"
+                    className="px-6 bg-green-600 hover:bg-green-700"
                   >
-                    예
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleConfirmDuplicateMatch}
-                    disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
-                    className="px-6 bg-amber-600 hover:bg-amber-700"
-                  >
-                    아니오
+                    매칭대기리스트로 이동
                   </Button>
                 </div>
               </div>
