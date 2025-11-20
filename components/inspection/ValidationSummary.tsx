@@ -16,9 +16,10 @@ interface ValidationIssue {
 interface ValidationSummaryProps {
   deviceData?: Record<string, any>;
   onShowDetails?: () => void;
+  noBorder?: boolean;
 }
 
-export function ValidationSummary({ deviceData, onShowDetails }: ValidationSummaryProps) {
+export function ValidationSummary({ deviceData, onShowDetails, noBorder = false }: ValidationSummaryProps) {
   const [duplicateInfo, setDuplicateInfo] = useState<{
     isDuplicate: boolean;
     count: number;
@@ -176,7 +177,7 @@ export function ValidationSummary({ deviceData, onShowDetails }: ValidationSumma
     : '최근 점검일: 점검 이력 없음';
 
   return (
-    <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700 rounded-2xl p-3">
+    <div className={noBorder ? '' : 'bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-700 rounded-2xl p-3'}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Tooltip>

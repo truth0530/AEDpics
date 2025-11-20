@@ -1074,13 +1074,13 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         ))}
       </div>
 
-      {/* Validation Summary - Only on First Step */}
-      {validatedStep === 0 && deviceData && (
-        <ValidationSummary deviceData={deviceData} />
-      )}
+      {/* 점검 전 확인사항 + 매월 점검 통보 영역 - Only on First Step */}
+      {validatedStep === 0 && (
+        <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3 space-y-4">
+          {deviceData && <ValidationSummary deviceData={deviceData} noBorder />}
 
-      {/* Monthly Inspection Check - Only on First Step */}
-      {validatedStep === 0 && (() => {
+          {/* Monthly Inspection Check */}
+          {(() => {
         // Calculate days since last inspection
         const lastInspectionDate = (deviceData as Record<string, any>)?.last_inspection_date;
         const today = new Date();
@@ -1108,7 +1108,7 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
         }
 
         return (
-          <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+          <div>
             <div className="space-y-2">
               <div className="font-medium text-gray-200 text-sm">
                 매월 1회 이상 점검 후 시군구에 통보여부
@@ -1202,6 +1202,8 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
           </div>
         );
       })()}
+        </div>
+      )}
 
       {/* Current Step Content */}
       <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
