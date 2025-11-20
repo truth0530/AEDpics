@@ -1175,6 +1175,29 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
                   />
                 </div>
               )}
+              {/* 최근 1년간 사용건수 */}
+              <div className="mt-3">
+                <label className="block text-gray-400 text-xs mb-1">
+                  최근 1년간 사용건수
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={(stepData.basicInfo as Record<string, any>)?.usageCountLastYear || ''}
+                  onChange={(e) => {
+                    const basicInfo = (stepData.basicInfo || {}) as Record<string, any>;
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      usageCountLastYear: e.target.value ? parseInt(e.target.value, 10) : ''
+                    });
+                  }}
+                  placeholder="0"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div className="text-[10px] text-gray-500 mt-1">
+                  최근 1년간 해당 AED가 실제로 사용된 횟수를 입력하세요
+                </div>
+              </div>
             </div>
           </div>
         );

@@ -357,12 +357,21 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
       supplies: {
         battery_expiry_date: deviceInfo.battery_expiry_date || '',
         battery_matched: deviceInfo.battery_expiry_date_matched || false,
+        battery_action_plan: deviceInfo.battery_action_plan || '',
+        battery_action_custom_reason: deviceInfo.battery_action_custom_reason || '',
 
         pad_expiry_date: deviceInfo.pad_expiry_date || '',
         pad_matched: deviceInfo.pad_expiry_date_matched || false,
+        pad_action_plan: deviceInfo.pad_action_plan || '',
+        pad_action_custom_reason: deviceInfo.pad_action_custom_reason || '',
 
         manufacturing_date: deviceInfo.manufacturing_date || '',
         mfg_date_matched: deviceInfo.manufacturing_date_matched || false,
+        mfg_date_action_plan: deviceInfo.mfg_date_action_plan || '',
+        mfg_date_action_custom_reason: deviceInfo.mfg_date_action_custom_reason || '',
+
+        // 조치기한
+        action_deadline: deviceInfo.action_deadline || '',
       },
       // basicInfo 매핑
       basicInfo: {
@@ -377,6 +386,11 @@ export const useInspectionSessionStore = create<InspectionSessionState>((set, ge
         category_2: basicInfo.category_2 || '',
         category_3: basicInfo.category_3 || '',
         edit_reason: basicInfo.edit_reason || '',
+        // 매월 점검 상태
+        monthly_inspection_status: basicInfo.monthlyInspectionStatus || '',
+        uninspected_reason: basicInfo.uninspectedReason || '',
+        // 최근 1년간 사용건수
+        usage_count_last_year: basicInfo.usageCountLastYear ?? null,
       },
       // storage 매핑
       storage: {

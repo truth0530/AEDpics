@@ -33,6 +33,8 @@ interface BasicInfoData {
   gps_verified?: boolean;
   gps_latitude?: number;
   gps_longitude?: number;
+  access_level?: string;
+  available_hours?: string;
 }
 
 interface LocationInfoData {
@@ -56,10 +58,21 @@ interface DeviceInfoData {
   battery_action_plan?: string;
   pad_action_plan?: string;
   manufacturing_date?: string;
+  manufacturing_date_action_plan?: string;
   operation_status?: string;
   serial_number_photo?: string;
   battery_mfg_date_photo?: string;
   device_mfg_date_photo?: string;
+  // 수정사유 필드
+  battery_modification_reason?: string;
+  pad_expiry_date_modification_reason?: string;
+  manufacturing_date_modification_reason?: string;
+  // 기타사유 필드
+  battery_action_custom_reason?: string;
+  pad_expiry_date_action_custom_reason?: string;
+  manufacturing_date_action_custom_reason?: string;
+  // 조치기한
+  action_deadline?: string;
 }
 
 interface StorageInfoData {
@@ -215,6 +228,48 @@ export function InspectionSummaryStep() {
       }
     }
 
+    // 접근 허용 범위 추가
+    if (basicInfo.access_level) {
+      matched.push({
+        label: '접근 허용 범위',
+        corrected: basicInfo.access_level,
+      });
+    }
+
+    // 사용 가능 시간 추가
+    if (basicInfo.available_hours) {
+      matched.push({
+        label: '사용 가능 시간',
+        corrected: basicInfo.available_hours,
+      });
+    }
+
+    // 매월 점검 상태 추가
+    if ((basicInfo as any).monthlyInspectionStatus) {
+      const status = (basicInfo as any).monthlyInspectionStatus;
+      const statusText = status === 'inspected' ? '매월 1회 점검' : '매월 1회 미점검';
+      matched.push({
+        label: '매월 점검 현황',
+        corrected: statusText,
+      });
+
+      // 미점검 사유
+      if (status === 'not_inspected' && (basicInfo as any).uninspectedReason) {
+        matched.push({
+          label: '미점검 사유',
+          corrected: (basicInfo as any).uninspectedReason,
+        });
+      }
+    }
+
+    // 최근 1년간 사용건수 추가
+    if ((basicInfo as any).usageCountLastYear !== undefined && (basicInfo as any).usageCountLastYear !== null && (basicInfo as any).usageCountLastYear !== '') {
+      matched.push({
+        label: '최근 1년간 사용건수',
+        corrected: `${(basicInfo as any).usageCountLastYear}회`,
+      });
+    }
+
     return { matched, modified };
   }, [stepData.basicInfo, deviceInfo]);
 
@@ -275,11 +330,23 @@ export function InspectionSummaryStep() {
         label: '작동상태',
         corrected: devInfo.operation_status || deviceInfo.operation_status || '-',
       });
-      // 배터리/패드 조치계획 추가 (2025-11-09: Critical fix)
+      // 배터리/패드/제조일자 조치계획 추가 (2025-11-09: Critical fix)
       if (devInfo.battery_action_plan) {
         matched.push({
           label: '배터리 조치계획',
           corrected: devInfo.battery_action_plan,
+        });
+      }
+      if (devInfo.battery_action_custom_reason) {
+        matched.push({
+          label: '배터리 기타사유',
+          corrected: devInfo.battery_action_custom_reason,
+        });
+      }
+      if (devInfo.battery_modification_reason) {
+        matched.push({
+          label: '배터리 수정사유',
+          corrected: devInfo.battery_modification_reason,
         });
       }
       if (devInfo.pad_action_plan) {
@@ -288,14 +355,59 @@ export function InspectionSummaryStep() {
           corrected: devInfo.pad_action_plan,
         });
       }
+      if (devInfo.pad_expiry_date_action_custom_reason) {
+        matched.push({
+          label: '패드 기타사유',
+          corrected: devInfo.pad_expiry_date_action_custom_reason,
+        });
+      }
+      if (devInfo.pad_expiry_date_modification_reason) {
+        matched.push({
+          label: '패드 수정사유',
+          corrected: devInfo.pad_expiry_date_modification_reason,
+        });
+      }
+      if (devInfo.manufacturing_date_action_plan) {
+        matched.push({
+          label: '제조일자 조치계획',
+          corrected: devInfo.manufacturing_date_action_plan,
+        });
+      }
+      if (devInfo.manufacturing_date_action_custom_reason) {
+        matched.push({
+          label: '제조일자 기타사유',
+          corrected: devInfo.manufacturing_date_action_custom_reason,
+        });
+      }
+      if (devInfo.manufacturing_date_modification_reason) {
+        matched.push({
+          label: '제조일자 수정사유',
+          corrected: devInfo.manufacturing_date_modification_reason,
+        });
+      }
+      // 조치기한 추가
+      if (devInfo.action_deadline) {
+        matched.push({
+          label: '조치기한',
+          corrected: devInfo.action_deadline,
+        });
+      }
     } else if (devInfo.supplies_matched === 'edited') {
       const supplyFields = [
         { key: 'battery_expiry_date', label: '배터리 유효기간', dbKey: 'battery_expiry_date' },
         { key: 'pad_expiry_date', label: '패드 유효기간', dbKey: 'patch_expiry_date' },
         { key: 'battery_action_plan', label: '배터리 조치계획', dbKey: 'battery_action_plan' },
+        { key: 'battery_action_custom_reason', label: '배터리 기타사유', dbKey: 'battery_action_custom_reason' },
+        { key: 'battery_modification_reason', label: '배터리 수정사유', dbKey: 'battery_modification_reason' },
         { key: 'pad_action_plan', label: '패드 조치계획', dbKey: 'pad_action_plan' },
+        { key: 'pad_expiry_date_action_custom_reason', label: '패드 기타사유', dbKey: 'pad_expiry_date_action_custom_reason' },
+        { key: 'pad_expiry_date_modification_reason', label: '패드 수정사유', dbKey: 'pad_expiry_date_modification_reason' },
         { key: 'manufacturing_date', label: '제조일자', dbKey: 'manufacturing_date' },
+        { key: 'manufacturing_date_action_plan', label: '제조일자 조치계획', dbKey: 'manufacturing_date_action_plan' },
+        { key: 'manufacturing_date_action_custom_reason', label: '제조일자 기타사유', dbKey: 'manufacturing_date_action_custom_reason' },
+        { key: 'manufacturing_date_modification_reason', label: '제조일자 수정사유', dbKey: 'manufacturing_date_modification_reason' },
         { key: 'operation_status', label: '작동상태', dbKey: 'operation_status' },
+        { key: 'action_deadline', label: '조치기한', dbKey: 'action_deadline' },
       ];
 
       supplyFields.forEach(field => {
@@ -821,123 +933,9 @@ export function InspectionSummaryStep() {
           </div>
         )}
 
-        {/* 3. 종합 의견 및 법조항 (Ⅲ. 점검 종합 의견) */}
+        {/* 3. 관리책임자 교육 이수 현황 (Ⅲ. 관리책임자 교육 이수 현황) */}
         <div className="report-section">
-          <div className="section-title">Ⅲ. 점검 종합 의견</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '10px' }}>
-            <tbody>
-              <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '2px solid #4b5563' }}>
-                <td style={{ padding: '8px', border: 'none', color: '#e5e7eb', lineHeight: '1.5' }}>
-                  {useMemo(() => {
-                    // 1. 관리책임자가 수정된 경우
-                    const managerModified = basicInfoSummary.modified.some(item => item.label === '관리책임자');
-                    if (managerModified) {
-                      return '관리책임자가 변경될 경우 즉시 보건소로 연락주시기 바랍니다.';
-                    }
-
-                    // 2. 배터리 유효기간과 패드 유효기간이 다른 경우
-                    const devInfo = stepData.deviceInfo || {};
-                    const batteryExpiry = devInfo.battery_expiry_date || deviceInfo.battery_expiry_date || '';
-                    const padExpiry = devInfo.pad_expiry_date || deviceInfo.patch_expiry_date || '';
-
-                    if (batteryExpiry && padExpiry && batteryExpiry !== padExpiry) {
-                      return '법 제47조의2제3항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 점검 결과를 통보하지 않은 경우 1차 위반시 과태료 50만원에 해당됩니다. 점검 결과에 정확한 유효기간을 입력하시기 바랍니다.';
-                    }
-
-                    // 3. 기본값
-                    return documentation.notes || '현장 점검 결과 대부분의 항목이 양호합니다. 정기점검을 통해 장비의 안전성을 지속적으로 확보할 것을 권장합니다.';
-                  }, [basicInfoSummary.modified, stepData.deviceInfo, deviceInfo, documentation.notes])}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          {/* 법조항 및 과태료 표 */}
-          <div style={{ marginTop: '10px' }}>
-            <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '8px', color: '#e5e7eb' }}>
-              제62조(과태료)
-            </div>
-            <div style={{ fontSize: '9px', marginBottom: '8px', color: '#d1d5db', lineHeight: '1.5' }}>
-              다음 각 호의 어느 하나에 해당하는 자에게는 과태료를 부과한다.
-            </div>
-
-            {/* 과태료 표 - 항상 4개 항목 모두 표시 */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', color: '#d1d5db', marginTop: '6px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#374151', borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>
-                  <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>위반 행위</th>
-                  <th rowSpan={2} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>근거법조문</th>
-                  <th colSpan={3} style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>과태료 금액</th>
-                </tr>
-                <tr style={{ backgroundColor: '#4b5563', borderBottom: '1px solid #6b7280' }}>
-                  <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>1차 위반</th>
-                  <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', borderRight: '1px solid #6b7280', color: '#f3f4f6' }}>2차 위반</th>
-                  <th style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold', border: 'none', color: '#f3f4f6' }}>3차 위반</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* 응급장비 미설치 */}
-                <tr style={{ borderBottom: '1px solid #6b7280' }}>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
-                    법 제47조의2제1항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비를 갖추지 아니한 경우
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
-                    법 제62조<br/>제1항 제3호의 3
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>150만원</td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>225만원</td>
-                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>300만원</td>
-                </tr>
-
-                {/* 변경신고 미이행 */}
-                <tr style={{ borderBottom: '1px solid #6b7280' }}>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
-                    법 제47조의2제2항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 설치 신고 또는 변경신고를 하지 않은 경우
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
-                    법 제62조<br/>제1항 제3호의 4
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
-                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>150만원</td>
-                </tr>
-
-                {/* 점검 결과 통보 미이행 */}
-                <tr style={{ borderBottom: '1px solid #6b7280' }}>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
-                    법 제47조의2제3항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비의 점검 결과를 통보하지 않은 경우
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
-                    법 제62조<br/>제1항 제3호의 5
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>75만원</td>
-                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>100만원</td>
-                </tr>
-
-                {/* 안내표지판 미부착 */}
-                <tr style={{ borderBottom: '2px solid #4b5563' }}>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'left', lineHeight: '1.4', color: '#d1d5db' }}>
-                    법 제47조의2제4항을 위반하여 자동심장충격기 등 심폐소생술을 할 수 있는 응급장비 사용에 관한 안내표지판을 부착하지 않은 경우
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', fontSize: '7px', color: '#d1d5db' }}>
-                    법 제62조<br/>제2항
-                  </td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>30만원</td>
-                  <td style={{ border: 'none', borderRight: '1px solid #6b7280', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>50만원</td>
-                  <td style={{ border: 'none', padding: '4px', textAlign: 'center', color: '#d1d5db' }}>70만원</td>
-                </tr>
-              </tbody>
-            </table>
-            <div style={{ fontSize: '7px', color: '#9ca3af', marginTop: '4px', textAlign: 'right' }}>
-              응급의료에 관한 법률 시행령 [별표 2] 과태료의 부과기준
-            </div>
-          </div>
-        </div>
-
-        {/* 4. 관리책임자 교육 이수 현황 (Ⅳ. 관리책임자 교육 이수 현황) */}
-        <div className="report-section">
-          <div className="section-title">Ⅳ. 관리책임자 교육 이수 현황</div>
+          <div className="section-title">Ⅲ. 관리책임자 교육 이수 현황</div>
           <table className="report-table" style={{ borderCollapse: 'collapse' }}>
             <tbody>
               <tr style={{ borderTop: '2px solid #4b5563', borderBottom: '1px solid #6b7280' }}>

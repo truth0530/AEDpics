@@ -76,7 +76,7 @@ export function ReadOnlyDeviceInfoStep({ stepData, inspection }: ReadOnlyDeviceI
         )}
 
         {deviceInfo.all_matched === 'edited' && (
-          <div className="rounded-lg px-2.5 py-1.5 bg-yellow-600/10 border border-yellow-600/50 text-sm text-yellow-300 flex items-center gap-2">
+          <div className="rounded-lg px-2.5 py-1.5 bg-green-600/10 border border-green-600/50 text-sm text-green-300 flex items-center gap-2">
             <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
             </svg>
@@ -106,7 +106,7 @@ export function ReadOnlyDeviceInfoStep({ stepData, inspection }: ReadOnlyDeviceI
               </div>
             ) : deviceInfo.battery_expiry_date_matched === 'edited' ? (
               <div className="text-xs text-gray-300">
-                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.battery_expiry_date)} <span className="text-yellow-400 font-medium">수정됨</span>
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.battery_expiry_date)} <span className="text-green-400 font-medium">수정됨</span>
               </div>
             ) : null}
             {inspection.aed_data?.battery_expiry_date && (
@@ -132,7 +132,7 @@ export function ReadOnlyDeviceInfoStep({ stepData, inspection }: ReadOnlyDeviceI
               </div>
             ) : deviceInfo.pad_expiry_date_matched === 'edited' ? (
               <div className="text-xs text-gray-300">
-                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.pad_expiry_date)} <span className="text-yellow-400 font-medium">수정됨</span>
+                <span className="text-gray-500">결과:</span> {formatDate(deviceInfo.pad_expiry_date)} <span className="text-green-400 font-medium">수정됨</span>
               </div>
             ) : null}
             {inspection.aed_data?.patch_expiry_date && (

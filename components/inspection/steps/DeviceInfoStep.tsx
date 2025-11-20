@@ -1230,6 +1230,36 @@ export function DeviceInfoStep() {
           })}
         </div>
 
+        {/* 조치기한 - 배터리, 패드, 제조일자 중 하나라도 조치계획이 입력된 경우 표시 */}
+        {(() => {
+          const batteryActionPlan = deviceInfo.battery_action_plan || '';
+          const padActionPlan = deviceInfo.pad_action_plan || '';
+          const mfgDateActionPlan = deviceInfo.mfg_date_action_plan || '';
+          const hasAnyActionPlan = batteryActionPlan || padActionPlan || mfgDateActionPlan;
+
+          if (!hasAnyActionPlan) return null;
+
+          return (
+            <div className="mt-4 pt-4 border-t border-red-500/30 space-y-2">
+              <div className="text-xs font-medium text-red-400">
+                조치기한
+              </div>
+              <div className="space-y-2">
+                <input
+                  type="date"
+                  value={deviceInfo.action_deadline || ''}
+                  onChange={(e) => handleChange('action_deadline', e.target.value)}
+                  className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                  placeholder="yyyy-mm-dd"
+                />
+                <div className="text-[10px] text-gray-500">
+                  위 조치계획의 완료 예정일을 입력하세요
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* 장비정상 작동 여부 */}
         <div className="mt-4 pt-4 border-t border-gray-700/50 space-y-2">
           <div className="text-xs font-medium text-gray-400">
