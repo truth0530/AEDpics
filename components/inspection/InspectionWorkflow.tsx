@@ -768,20 +768,20 @@ export function InspectionWorkflow({ deviceSerial, deviceData, heading }: Inspec
             <p className="text-gray-300 mb-6 text-sm">
               저장 후 다음 단계로 이동합니다.
             </p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleNextWithSave}
-                disabled={isBusy}
-                className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {isSaving ? '저장 중...' : '저장 후 이동'}
-              </button>
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowSaveModal(false)}
                 disabled={isBusy}
-                className="w-full px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 돌아가기
+              </button>
+              <button
+                onClick={handleNextWithSave}
+                disabled={isBusy}
+                className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {isSaving ? '저장 중...' : '저장 후 이동'}
               </button>
             </div>
           </div>

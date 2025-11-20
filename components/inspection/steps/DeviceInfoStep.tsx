@@ -246,62 +246,104 @@ export function DeviceInfoStep() {
       )}
 
       <div className="space-y-4">
-        {/* 안내 메시지 */}
-        <div className="rounded-lg bg-green-900/10 border border-green-600/20 p-3">
-          <p className="text-xs sm:text-sm text-green-300">
-            💡 등록된 장비 정보가 현장과 일치하면 <strong>"전체 일치"</strong>를, 수정이 필요하면 <strong>"수정"</strong> 버튼을 누르세요.
-          </p>
-        </div>
-
-      {/* 장비 정보 필드 */}
-      <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">
-        <div className="space-y-4">
-          {/* 첫 번째 행: 제조사, 모델명 (1:1 비율) */}
-          <div className="grid grid-cols-2 gap-4">
-            {renderField(DEVICE_FIELDS[0])} {/* 제조사 */}
-            {renderField(DEVICE_FIELDS[1])} {/* 모델명 */}
+        {/* 안내 메시지 - 모든 섹션이 접혀있을 때 숨김 */}
+        {!(
+          (deviceInfo.all_matched === true || deviceInfo.all_matched === 'edited') &&
+          (deviceInfo.battery_expiry_date_matched === true || deviceInfo.battery_expiry_date_matched === 'edited') &&
+          (deviceInfo.pad_expiry_date_matched === true || deviceInfo.pad_expiry_date_matched === 'edited') &&
+          (deviceInfo.manufacturing_date_matched === true || deviceInfo.manufacturing_date_matched === 'edited') &&
+          (deviceInfo.operation_status_matched === true || deviceInfo.operation_status_matched === 'edited')
+        ) && (
+          <div className="rounded-lg bg-green-900/10 border border-green-600/20 p-3">
+            <p className="text-xs sm:text-sm text-green-300">
+              등록된 장비 정보가 현장과 일치하면 <strong>"전체 일치"</strong>를, 수정이 필요하면 <strong>"수정"</strong> 버튼을 누르세요.
+            </p>
           </div>
+        )}
 
-          {/* 제조사-모델 검증 경고 */}
-          {validateManufacturerModel() && (
-            <div className="rounded-lg bg-yellow-900/20 border border-yellow-600/30 px-3 py-2">
-              <p className="text-xs text-yellow-300">
-                {validateManufacturerModel()}
-              </p>
+      {/* 장비 정보 필드 - 접기 기능 */}
+      {(() => {
+        const isDeviceInfoConfirmed = deviceInfo.all_matched === true || deviceInfo.all_matched === 'edited';
+
+        if (isDeviceInfoConfirmed && !isEditMode) {
+          // 접힌 상태: 1줄 요약
+          return (
+            <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400">장비정보:</span>
+                <span className={deviceInfo.all_matched === true ? 'text-green-300' : 'text-yellow-300'}>
+                  {deviceInfo.all_matched === true ? '전체 일치' : '수정됨'}
+                </span>
+                <span className="text-gray-600">|</span>
+                <span className="text-gray-300 truncate flex-1">
+                  {deviceInfo.manufacturer || sessionDeviceInfo.manufacturer || '-'} / {deviceInfo.model_name || sessionDeviceInfo.model_name || '-'} / {deviceInfo.serial_number || sessionDeviceInfo.serial_number || '-'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateStepData('deviceInfo', { ...deviceInfo, all_matched: false });
+                  }}
+                  className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                >
+                  수정
+                </button>
+              </div>
             </div>
-          )}
+          );
+        }
 
-          {/* 두 번째 행: 시리얼번호 */}
-          <div>
-            {renderField(DEVICE_FIELDS[2])} {/* 시리얼번호 */}
+        // 펼쳐진 상태
+        return (
+          <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">
+            <div className="space-y-4">
+              {/* 첫 번째 행: 제조사, 모델명 (1:1 비율) */}
+              <div className="grid grid-cols-2 gap-4">
+                {renderField(DEVICE_FIELDS[0])} {/* 제조사 */}
+                {renderField(DEVICE_FIELDS[1])} {/* 모델명 */}
+              </div>
+
+              {/* 제조사-모델 검증 경고 */}
+              {validateManufacturerModel() && (
+                <div className="rounded-lg bg-yellow-900/20 border border-yellow-600/30 px-3 py-2">
+                  <p className="text-xs text-yellow-300">
+                    {validateManufacturerModel()}
+                  </p>
+                </div>
+              )}
+
+              {/* 두 번째 행: 시리얼번호 */}
+              <div>
+                {renderField(DEVICE_FIELDS[2])} {/* 시리얼번호 */}
+              </div>
+            </div>
+
+            {/* 전체 일치/수정 버튼 */}
+            <div className="mt-4 pt-4 border-t border-gray-700/50">
+              <EditableSectionButtons
+                isEditMode={isEditMode}
+                isMatching={isActuallyMatching}
+                matchedState={deviceInfo.all_matched}
+                onLeftClick={() => {
+                  if (isEditMode) {
+                    handleCancelEdit();
+                  } else {
+                    handleEditAll();
+                  }
+                }}
+                onRightClick={() => {
+                  if (isEditMode) {
+                    handleSaveEdit();
+                  } else {
+                    handleMatchAll();
+                  }
+                }}
+                matchText="전체 일치"
+                matchedText="전체 일치 확인됨"
+              />
+            </div>
           </div>
-        </div>
-
-        {/* 전체 일치/수정 버튼 */}
-        <div className="mt-4 pt-4 border-t border-gray-700/50">
-          <EditableSectionButtons
-            isEditMode={isEditMode}
-            isMatching={isActuallyMatching}
-            matchedState={deviceInfo.all_matched}
-            onLeftClick={() => {
-              if (isEditMode) {
-                handleCancelEdit();
-              } else {
-                handleEditAll();
-              }
-            }}
-            onRightClick={() => {
-              if (isEditMode) {
-                handleSaveEdit();
-              } else {
-                handleMatchAll();
-              }
-            }}
-            matchText="전체 일치"
-            matchedText="전체 일치 확인됨"
-          />
-        </div>
-      </div>
+        );
+      })()}
 
       {/* 표시등 경고 메시지 */}
       {(deviceInfo.indicator_status === 'red' || deviceInfo.indicator_status === 'blinking') && (
@@ -313,38 +355,58 @@ export function DeviceInfoStep() {
       )}
 
       {/* 소모품 정보 */}
-      <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">
-        <h4 className="font-semibold text-white text-sm mb-4">소모품 정보</h4>
+      {(() => {
+        // 모든 소모품 섹션이 접혀있는지 확인
+        const allSupplySectionsCollapsed =
+          (deviceInfo.battery_expiry_date_matched === true || deviceInfo.battery_expiry_date_matched === 'edited') &&
+          (deviceInfo.pad_expiry_date_matched === true || deviceInfo.pad_expiry_date_matched === 'edited') &&
+          (deviceInfo.manufacturing_date_matched === true || deviceInfo.manufacturing_date_matched === 'edited') &&
+          (deviceInfo.operation_status_matched === true || deviceInfo.operation_status_matched === 'edited');
 
-        {/* 제조일자 심볼 안내 */}
-        <div className="rounded-lg bg-blue-900/10 border border-blue-600/20 px-3 py-2 mb-4">
-          <div className="flex items-start gap-2">
-            <svg className="w-5 h-5 flex-shrink-0 text-blue-300" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="8" strokeLinejoin="miter" strokeLinecap="square">
-              <path d="M 10 90 L 10 50 L 20 40 L 30 50 L 40 40 L 50 50 L 60 40 L 70 50 L 70 20 L 90 20 L 90 90 Z" />
-            </svg>
-            <p className="text-[10px] text-blue-200 leading-relaxed">
-              배터리 유효기간은 배터리 제조일로부터 4년 단, 제조사 마다 상이할 수 있음. 제조일자는 공장 건물 형태의 국제 표준 심볼마크와 함께 표기되어 있습니다.
-            </p>
+        return (
+          <div className={allSupplySectionsCollapsed
+            ? "space-y-2"
+            : "rounded-lg border border-gray-700 bg-gray-800/30 p-4"
+          }>
+        {/* 소모품 정보 제목 - 배터리 섹션이 펼쳐져 있을 때만 표시 */}
+        {deviceInfo.battery_expiry_date_matched !== true && deviceInfo.battery_expiry_date_matched !== 'edited' && (
+          <h4 className="font-semibold text-white text-sm mb-4">소모품 정보</h4>
+        )}
+
+        {/* 제조일자 심볼 안내 - 배터리 섹션이 펼쳐져 있을 때만 표시 */}
+        {deviceInfo.battery_expiry_date_matched !== true && deviceInfo.battery_expiry_date_matched !== 'edited' && (
+          <div className="rounded-lg bg-blue-900/10 border border-blue-600/20 px-3 py-2 mb-4">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 flex-shrink-0 text-blue-300" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="8" strokeLinejoin="miter" strokeLinecap="square">
+                <path d="M 10 90 L 10 50 L 20 40 L 30 50 L 40 40 L 50 50 L 60 40 L 70 50 L 70 20 L 90 20 L 90 90 Z" />
+              </svg>
+              <p className="text-[10px] text-blue-200 leading-relaxed">
+                배터리 유효기간은 배터리 제조일로부터 4년 단, 제조사 마다 상이할 수 있음. 제조일자는 공장 건물 형태의 국제 표준 심볼마크와 함께 표기되어 있습니다.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 배터리 유효기간 */}
         <div className="space-y-2 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-medium text-gray-400">
-              배터리 유효기간
+          {/* 배터리 유효기간 라벨과 가이드 버튼 - 배터리 섹션이 펼쳐져 있을 때만 표시 */}
+          {deviceInfo.battery_expiry_date_matched !== true && deviceInfo.battery_expiry_date_matched !== 'edited' && (
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-medium text-gray-400">
+                배터리 유효기간
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBatteryGuide(true)}
+                className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                제조사별 유효기간 확인하기
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowBatteryGuide(true)}
-              className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              제조사별 유효기간 확인하기
-            </button>
-          </div>
+          )}
           {(() => {
             const field = SUPPLY_FIELDS[0]; // battery_expiry_date
             const originalValue = sessionDeviceInfo[field.dbKey] || '';
@@ -371,6 +433,32 @@ export function DeviceInfoStep() {
             const actionCustomReason = deviceInfo.battery_action_custom_reason || '';
             const modificationReason = deviceInfo.battery_modification_reason || '';
 
+            // 접힌 상태: isMatched 또는 isEdited일 때
+            if ((isMatched || isEdited) && !isEditMode) {
+              return (
+                <div className="flex items-center gap-2 text-xs bg-gray-800/30 rounded-lg p-3 border border-gray-700">
+                  <span className="text-gray-400">배터리:</span>
+                  <span className={isMatched ? 'text-green-300' : 'text-yellow-300'}>
+                    {isMatched ? '일치' : '수정됨'}
+                  </span>
+                  <span className="text-gray-600">|</span>
+                  <span className={`truncate flex-1 ${currentIsExpired ? 'text-red-300' : 'text-gray-300'}`}>
+                    {formattedCurrentValue || '-'} {currentIsExpired && '(만료)'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: false });
+                    }}
+                    className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                  >
+                    수정
+                  </button>
+                </div>
+              );
+            }
+
+            // 펼쳐진 상태
             return (
               <div className="flex flex-col gap-2">
                 {isUnchecked && (
@@ -389,8 +477,13 @@ export function DeviceInfoStep() {
                     </div>
                     {/* 초기 상태에서도 만료되면 즉시 조치계획 입력 가능 */}
                     {originalIsExpired && formattedOriginalValue && (
-                      <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                        <div className="text-xs text-red-400 font-medium">유효기간 경과 - 조치계획 입력</div>
+                      <div className={`space-y-2 pl-3 border-l-2 ${actionPlan && (actionPlan !== '기타' || actionCustomReason.trim()) ? 'border-yellow-500/50' : 'border-red-500/50'}`}>
+                        {/* 조치계획 미입력 시에만 안내 문구 표시 */}
+                        {!(actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())) && (
+                          <div className="text-xs font-medium text-red-400">
+                            유효기간 경과 - 조치계획 입력
+                          </div>
+                        )}
                         <select
                           value={actionPlan}
                           onChange={(e) => {
@@ -406,7 +499,11 @@ export function DeviceInfoStep() {
                               handleChange('battery_action_plan', newValue);
                             }
                           }}
-                          className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                          className={`w-full rounded-lg px-3 py-2 bg-gray-800 border text-sm text-white ${
+                            actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())
+                              ? 'border-yellow-500/50 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20'
+                              : 'border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                          }`}
                         >
                           <option value="">조치계획 선택</option>
                           <option value="구매신청서 확인 완료">구매신청서 확인 완료</option>
@@ -697,12 +794,14 @@ export function DeviceInfoStep() {
                         updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
                       }
                     }}
-                    disabled={isMatched || (!isEditMode && !isActuallyMatching)}
+                    disabled={isMatched || (!isEditMode && !isActuallyMatching && !(isUnchecked && originalIsExpired && actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())))}
                     className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                       isMatched
                         ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
                         : isEditMode && !isActuallyMatching
                         ? 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
+                        : (isUnchecked && originalIsExpired && actionPlan && (actionPlan !== '기타' || actionCustomReason.trim()))
+                        ? 'bg-green-600 hover:bg-green-700 border-2 border-green-500 text-white shadow-lg shadow-green-500/20'
                         : isActuallyMatching
                         ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
                         : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
@@ -724,6 +823,13 @@ export function DeviceInfoStep() {
                       </span>
                     ) : isEdited && isActuallyMatching ? (
                       '일치로 변경'
+                    ) : (isUnchecked && originalIsExpired && actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())) ? (
+                      <span className="flex items-center justify-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        확인
+                      </span>
                     ) : (
                       '일치'
                     )}
@@ -734,72 +840,74 @@ export function DeviceInfoStep() {
           })()}
         </div>
 
-        {/* 유효기간 심볼 안내 (반복) */}
-        <div className="rounded-lg bg-blue-900/10 border border-blue-600/20 px-3 py-2 mb-4">
-          <div className="flex items-start gap-2">
-            <svg className="w-5 h-5 flex-shrink-0 text-blue-300" viewBox="0 0 100 100">
-              <defs>
-                <clipPath id="sandClip2">
-                  <rect x="0" y="73" width="100" height="50"/>
-                </clipPath>
-              </defs>
-              <path
-                d="M 35 10 L 25 10 L 25 30 L 45 52 L 45 58"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinejoin="miter"
-                strokeLinecap="butt"
-              />
-              <path
-                d="M 65 10 L 75 10 L 75 30 L 55 52 L 55 58"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinejoin="miter"
-                strokeLinecap="butt"
-              />
-              <path
-                d="M 35 10 H 65"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinecap="butt"
-              />
-              <path
-                d="M 45 58 L 25 78 L 25 93"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinejoin="miter"
-                strokeLinecap="butt"
-              />
-              <path
-                d="M 55 58 L 75 78 L 75 93"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinejoin="miter"
-                strokeLinecap="butt"
-              />
-              <path
-                d="M 25 93 H 75"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeLinecap="butt"
-              />
-              <path
-                d="M 45 58 L 25 78 L 25 93 H 75 L 75 78 L 55 58 Z"
-                fill="currentColor"
-                clipPath="url(#sandClip2)"
-              />
-            </svg>
-            <p className="text-[10px] text-blue-200 leading-relaxed">
-              <strong>유효기간:</strong> 모래시계 심볼, Expiry Date, EXP 등으로 표기되어 있습니다.
-            </p>
+        {/* 유효기간 심볼 안내 - 배터리 섹션이 펼쳐져 있을 때만 표시 */}
+        {deviceInfo.battery_expiry_date_matched !== true && deviceInfo.battery_expiry_date_matched !== 'edited' && (
+          <div className="rounded-lg bg-blue-900/10 border border-blue-600/20 px-3 py-2 mb-4">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 flex-shrink-0 text-blue-300" viewBox="0 0 100 100">
+                <defs>
+                  <clipPath id="sandClip2">
+                    <rect x="0" y="73" width="100" height="50"/>
+                  </clipPath>
+                </defs>
+                <path
+                  d="M 35 10 L 25 10 L 25 30 L 45 52 L 45 58"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinejoin="miter"
+                  strokeLinecap="butt"
+                />
+                <path
+                  d="M 65 10 L 75 10 L 75 30 L 55 52 L 55 58"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinejoin="miter"
+                  strokeLinecap="butt"
+                />
+                <path
+                  d="M 35 10 H 65"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="butt"
+                />
+                <path
+                  d="M 45 58 L 25 78 L 25 93"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinejoin="miter"
+                  strokeLinecap="butt"
+                />
+                <path
+                  d="M 55 58 L 75 78 L 75 93"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinejoin="miter"
+                  strokeLinecap="butt"
+                />
+                <path
+                  d="M 25 93 H 75"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="butt"
+                />
+                <path
+                  d="M 45 58 L 25 78 L 25 93 H 75 L 75 78 L 55 58 Z"
+                  fill="currentColor"
+                  clipPath="url(#sandClip2)"
+                />
+              </svg>
+              <p className="text-[10px] text-blue-200 leading-relaxed">
+                <strong>유효기간:</strong> 모래시계 심볼, Expiry Date, EXP 등으로 표기되어 있습니다.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 패드 유효기간 및 제조일자 */}
         <div className="grid grid-cols-1 gap-4">
@@ -851,6 +959,34 @@ export function DeviceInfoStep() {
             const actionCustomReason = deviceInfo[actionCustomReasonKey] || '';
             const modificationReason = deviceInfo[modificationReasonKey] || '';
 
+            // 접힌 상태: isMatched 또는 isEdited일 때
+            if ((isMatched || isEdited) && !isEditMode) {
+              const shortLabel = field.key === 'manufacturing_date' ? '제조일자' : '패드';
+              const expiredText = field.key === 'manufacturing_date' ? '(10년 경과)' : '(만료)';
+              return (
+                <div key={field.key} className="flex items-center gap-2 text-xs bg-gray-800/30 rounded-lg p-3 border border-gray-700">
+                  <span className="text-gray-400">{shortLabel}:</span>
+                  <span className={isMatched ? 'text-green-300' : 'text-yellow-300'}>
+                    {isMatched ? '일치' : '수정됨'}
+                  </span>
+                  <span className="text-gray-600">|</span>
+                  <span className={`truncate flex-1 ${currentIsExpired ? 'text-red-300' : 'text-gray-300'}`}>
+                    {formattedCurrentValue || '-'} {currentIsExpired && expiredText}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: false });
+                    }}
+                    className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                  >
+                    수정
+                  </button>
+                </div>
+              );
+            }
+
+            // 펼쳐진 상태
             return (
               <div key={field.key} className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -878,10 +1014,13 @@ export function DeviceInfoStep() {
                       </div>
                       {/* 초기 상태에서도 만료되면 즉시 조치계획 입력 가능 */}
                       {originalIsExpired && formattedOriginalValue && (
-                        <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                          <div className="text-xs text-red-400 font-medium">
-                            {field.key === 'manufacturing_date' ? '제조일 10년 경과 - 조치계획 입력' : '유효기간 경과 - 조치계획 입력'}
-                          </div>
+                        <div className={`space-y-2 pl-3 border-l-2 ${actionPlan && (actionPlan !== '기타' || actionCustomReason.trim()) ? 'border-yellow-500/50' : 'border-red-500/50'}`}>
+                          {/* 조치계획 미입력 시에만 안내 문구 표시 */}
+                          {!(actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())) && (
+                            <div className="text-xs font-medium text-red-400">
+                              {field.key === 'manufacturing_date' ? '제조일 10년 경과 - 조치계획 입력' : '유효기간 경과 - 조치계획 입력'}
+                            </div>
+                          )}
                           <select
                             value={actionPlan}
                             onChange={(e) => {
@@ -897,7 +1036,11 @@ export function DeviceInfoStep() {
                                 handleChange(actionPlanKey, newValue);
                               }
                             }}
-                            className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                            className={`w-full rounded-lg px-3 py-2 bg-gray-800 border text-sm text-white ${
+                              actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())
+                                ? 'border-yellow-500/50 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20'
+                                : 'border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                            }`}
                           >
                             <option value="">조치계획 선택</option>
                             <option value="구매신청서 확인 완료">구매신청서 확인 완료</option>
@@ -1192,12 +1335,14 @@ export function DeviceInfoStep() {
                           updateStepData('deviceInfo', { ...deviceInfo, [`${field.key}_matched`]: true });
                         }
                       }}
-                      disabled={isMatched || (!isEditMode && !isActuallyMatching)}
+                      disabled={isMatched || (!isEditMode && !isActuallyMatching && !(isUnchecked && originalIsExpired && actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())))}
                       className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                         isMatched
                           ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
                           : isEditMode && !isActuallyMatching
                           ? 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
+                          : (isUnchecked && originalIsExpired && actionPlan && (actionPlan !== '기타' || actionCustomReason.trim()))
+                          ? 'bg-green-600 hover:bg-green-700 border-2 border-green-500 text-white shadow-lg shadow-green-500/20'
                           : isActuallyMatching
                           ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
                           : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
@@ -1219,6 +1364,13 @@ export function DeviceInfoStep() {
                         </span>
                       ) : isEdited && isActuallyMatching ? (
                         '일치로 변경'
+                      ) : (isUnchecked && originalIsExpired && actionPlan && (actionPlan !== '기타' || actionCustomReason.trim())) ? (
+                        <span className="flex items-center justify-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          확인
+                        </span>
                       ) : (
                         '일치'
                       )}
@@ -1261,10 +1413,17 @@ export function DeviceInfoStep() {
         })()}
 
         {/* 장비정상 작동 여부 */}
-        <div className="mt-4 pt-4 border-t border-gray-700/50 space-y-2">
-          <div className="text-xs font-medium text-gray-400">
-            장비정상 작동 여부
-          </div>
+        <div className={`space-y-2 ${
+          deviceInfo.operation_status_matched === true || deviceInfo.operation_status_matched === 'edited'
+            ? 'mt-2'
+            : 'mt-4 pt-4 border-t border-gray-700/50'
+        }`}>
+          {/* 라벨 - 접히지 않았을 때만 표시 */}
+          {deviceInfo.operation_status_matched !== true && deviceInfo.operation_status_matched !== 'edited' && (
+            <div className="text-xs font-medium text-gray-400">
+              장비정상 작동 여부
+            </div>
+          )}
           {(() => {
             const originalValue = sessionDeviceInfo.operation_status || '';
             const currentValue = deviceInfo.operation_status || originalValue;
@@ -1283,6 +1442,32 @@ export function DeviceInfoStep() {
             const failureReasons = deviceInfo.operation_failure_reasons || [];
             const customReason = deviceInfo.operation_custom_reason || '';
 
+            // 접힌 상태: isMatched 또는 isEdited일 때
+            if ((isMatched || isEdited) && !isEditMode) {
+              return (
+                <div className="flex items-center gap-2 text-xs bg-gray-800/30 rounded-lg p-3 border border-gray-700">
+                  <span className="text-gray-400">작동상태:</span>
+                  <span className={isMatched ? 'text-green-300' : 'text-yellow-300'}>
+                    {isMatched ? '일치' : '수정됨'}
+                  </span>
+                  <span className="text-gray-600">|</span>
+                  <span className={`truncate flex-1 ${currentValue === '불량' ? 'text-red-300' : 'text-gray-300'}`}>
+                    {currentValue === '정상' ? '정상' : currentValue === '불량' ? `불량 (${failureReasons.length}개 사유)` : currentValue || '-'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
+                    }}
+                    className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                  >
+                    수정
+                  </button>
+                </div>
+              );
+            }
+
+            // 펼쳐진 상태
             return (
               <div className="flex flex-col gap-2">
                 {isUnchecked && (
@@ -1302,41 +1487,40 @@ export function DeviceInfoStep() {
                     {/* 일치 확인했지만 불량 상태면 조치계획 필수 */}
                     {currentValue === '불량' && (
                       <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                        <div className="text-xs text-red-400 font-medium">불량 확인 - 불량 사유 (다중선택 가능)</div>
+                        <div className="text-xs text-red-400 font-medium">불량사유</div>
                         <div className="space-y-2">
-                          {/* ✅ Issue #2: 다중 선택 체크박스로 변경 */}
+                          {/* ✅ Issue #2: 다중 선택 버튼으로 변경 */}
                           {[
-                            { value: '배터리 부족', label: '배터리 부족' },
-                            { value: '패드 만료', label: '패드 만료' },
-                            { value: '외관 손상', label: '외관 손상' },
-                            { value: '작동 불가', label: '작동 불가' },
-                            { value: 'AS 요청', label: 'AS 요청' },
-                            { value: '장비 교체 예정', label: '장비 교체 예정' },
-                            { value: '기타', label: '기타' }
+                            { value: '배터리, 패드 유효기간 만료', label: '1. 배터리, 패드 유효기간 만료' },
+                            { value: '배터리 불량', label: '2. 배터리 불량' },
+                            { value: '장비고장', label: '3. 장비고장' },
+                            { value: '도난경보장치 미작동 등', label: '4. 도난경보장치 미작동 등' },
+                            { value: '기타', label: '5. 기타' }
                           ].map((reason) => (
-                            <label
+                            <button
+                              type="button"
                               key={reason.value}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-gray-700/30 hover:border-gray-500 cursor-pointer transition-all"
+                              onClick={() => {
+                                const isSelected = failureReasons.includes(reason.value);
+                                const newReasons = isSelected
+                                  ? failureReasons.filter((r: string) => r !== reason.value)
+                                  : [...failureReasons, reason.value];
+
+                                handleChange('operation_failure_reasons', newReasons);
+
+                                // 기타가 선택 해제되면 커스텀 사유 초기화
+                                if (reason.value === '기타' && isSelected) {
+                                  handleChange('operation_custom_reason', '');
+                                }
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-all ${
+                                failureReasons.includes(reason.value)
+                                  ? 'border-red-500 bg-red-600/20 text-red-300'
+                                  : 'border-gray-600 bg-gray-700/30 text-gray-300 hover:border-gray-500'
+                              }`}
                             >
-                              <input
-                                type="checkbox"
-                                checked={failureReasons.includes(reason.value)}
-                                onChange={(e) => {
-                                  const newReasons = e.target.checked
-                                    ? [...failureReasons, reason.value]
-                                    : failureReasons.filter((r: string) => r !== reason.value);
-
-                                  handleChange('operation_failure_reasons', newReasons);
-
-                                  // 기타가 선택 해제되면 커스텀 사유 초기화
-                                  if (reason.value === '기타' && !e.target.checked) {
-                                    handleChange('operation_custom_reason', '');
-                                  }
-                                }}
-                                className="w-4 h-4 rounded border-gray-600 text-red-600 focus:ring-red-500 focus:ring-offset-gray-800"
-                              />
-                              <span className="text-sm text-gray-300">{reason.label}</span>
-                            </label>
+                              {reason.label}
+                            </button>
                           ))}
                         </div>
 
@@ -1368,13 +1552,14 @@ export function DeviceInfoStep() {
                       <button
                         type="button"
                         onClick={() => {
-                          // ✅ 정상 선택 시 모든 불량 사유 필드 초기화 (배열은 updateStepData로 직접 처리)
+                          // ✅ 정상 선택 시 즉시 확인되어 접힘
                           updateStepData('deviceInfo', {
                             ...deviceInfo,
                             operation_status: '정상',
                             operation_failure_reason: '',
                             operation_custom_reason: '',
-                            operation_failure_reasons: []
+                            operation_failure_reasons: [],
+                            operation_status_matched: 'edited'
                           });
                         }}
                         className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
@@ -1401,40 +1586,39 @@ export function DeviceInfoStep() {
                     {/* ✅ Issue #2: 불량 선택 시 다중 선택 체크박스 */}
                     {currentValue === '불량' && (
                       <div className="space-y-2 pl-3 border-l-2 border-red-500/50">
-                        <div className="text-xs text-red-400 font-medium">불량 사유 (다중선택 가능)</div>
+                        <div className="text-xs text-red-400 font-medium">불량사유</div>
                         <div className="space-y-2">
                           {[
-                            { value: '배터리 부족', label: '배터리 부족' },
-                            { value: '패드 만료', label: '패드 만료' },
-                            { value: '외관 손상', label: '외관 손상' },
-                            { value: '작동 불가', label: '작동 불가' },
-                            { value: 'AS 요청', label: 'AS 요청' },
-                            { value: '장비 교체 예정', label: '장비 교체 예정' },
-                            { value: '기타', label: '기타' }
+                            { value: '배터리, 패드 유효기간 만료', label: '1. 배터리, 패드 유효기간 만료' },
+                            { value: '배터리 불량', label: '2. 배터리 불량' },
+                            { value: '장비고장', label: '3. 장비고장' },
+                            { value: '도난경보장치 미작동 등', label: '4. 도난경보장치 미작동 등' },
+                            { value: '기타', label: '5. 기타' }
                           ].map((reason) => (
-                            <label
+                            <button
+                              type="button"
                               key={reason.value}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-gray-700/30 hover:border-gray-500 cursor-pointer transition-all"
+                              onClick={() => {
+                                const isSelected = failureReasons.includes(reason.value);
+                                const newReasons = isSelected
+                                  ? failureReasons.filter((r: string) => r !== reason.value)
+                                  : [...failureReasons, reason.value];
+
+                                handleChange('operation_failure_reasons', newReasons);
+
+                                // 기타가 선택 해제되면 커스텀 사유 초기화
+                                if (reason.value === '기타' && isSelected) {
+                                  handleChange('operation_custom_reason', '');
+                                }
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-all ${
+                                failureReasons.includes(reason.value)
+                                  ? 'border-red-500 bg-red-600/20 text-red-300'
+                                  : 'border-gray-600 bg-gray-700/30 text-gray-300 hover:border-gray-500'
+                              }`}
                             >
-                              <input
-                                type="checkbox"
-                                checked={failureReasons.includes(reason.value)}
-                                onChange={(e) => {
-                                  const newReasons = e.target.checked
-                                    ? [...failureReasons, reason.value]
-                                    : failureReasons.filter((r: string) => r !== reason.value);
-
-                                  handleChange('operation_failure_reasons', newReasons);
-
-                                  // 기타가 선택 해제되면 커스텀 사유 초기화
-                                  if (reason.value === '기타' && !e.target.checked) {
-                                    handleChange('operation_custom_reason', '');
-                                  }
-                                }}
-                                className="w-4 h-4 rounded border-gray-600 text-red-600 focus:ring-red-500 focus:ring-offset-gray-800"
-                              />
-                              <span className="text-sm text-gray-300">{reason.label}</span>
-                            </label>
+                              {reason.label}
+                            </button>
                           ))}
                         </div>
 
@@ -1448,121 +1632,27 @@ export function DeviceInfoStep() {
                             className="w-full rounded-lg px-3 py-2 bg-gray-800 border border-red-500/50 text-sm text-white placeholder-gray-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
                           />
                         )}
+
+                        {/* 불량 사유 입력 완료 시 확인 버튼 */}
+                        {failureReasons.length > 0 && (!failureReasons.includes('기타') || customReason.trim()) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: 'edited' });
+                            }}
+                            className="w-full mt-2 py-2 px-3 rounded-lg border-2 border-yellow-500 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium transition-all shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-1"
+                          >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            확인
+                          </button>
+                        )}
                       </div>
                     )}
 
-                    {originalValue && (
-                      <div className="text-xs text-gray-500 flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        등록 정보: {originalValue === '정상' ? '정상' : originalValue === '불량' ? '불량' : originalValue}
-                      </div>
-                    )}
                   </div>
                 )}
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isEdited && !isActuallyMatching) {
-                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
-                      } else if (isEdited && isActuallyMatching) {
-                        // isEdited 상태에서 원본과 일치해도 수정 모드로 전환 가능
-                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
-                      } else if (isMatched || (!isEdited && !isMatched && !isEditMode)) {
-                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: false });
-                      }
-                    }}
-                    disabled={isEditMode}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                      isEditMode
-                        ? 'bg-gray-800/50 border border-gray-700/50 text-gray-500 cursor-not-allowed'
-                        : isEdited
-                        ? 'bg-green-600/30 border-2 border-green-500 text-green-200 hover:bg-green-600/40 cursor-pointer shadow-lg shadow-green-500/20'
-                        : 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-yellow-500/50 active:bg-gray-500'
-                    }`}
-                  >
-                    {isEdited ? (
-                      isActuallyMatching ? (
-                        '원본과 동일'
-                      ) : (
-                        <span className="flex items-center justify-center gap-1">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
-                          수정됨
-                        </span>
-                      )
-                    ) : (
-                      '수정'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isEditMode && !isActuallyMatching) {
-                        // 수정 모드에서 확인 - 변경사항 저장
-                        // ✅ Issue #2: 불량 상태이지만 사유가 없으면 경고 (배열 체크)
-                        if (currentValue === '불량') {
-                          if (!failureReasons || failureReasons.length === 0) {
-                            alert('불량 사유를 최소 1개 이상 선택해주세요.');
-                            return;
-                          }
-                          if (failureReasons.includes('기타') && !customReason.trim()) {
-                            alert('기타 사유를 입력해주세요.');
-                            return;
-                          }
-                        }
-                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: 'edited' });
-                      } else if (isActuallyMatching) {
-                        // ✅ Issue #2: 일치 확인 시 불량 상태면 불량 사유 필수 (배열 체크)
-                        if (currentValue === '불량') {
-                          if (!failureReasons || failureReasons.length === 0) {
-                            alert('불량 사유를 최소 1개 이상 선택해주세요.');
-                            return;
-                          }
-                          if (failureReasons.includes('기타') && !customReason.trim()) {
-                            alert('기타 사유를 입력해주세요.');
-                            return;
-                          }
-                        }
-                        updateStepData('deviceInfo', { ...deviceInfo, operation_status_matched: true });
-                      }
-                    }}
-                    disabled={isMatched || (!isEditMode && !isActuallyMatching)}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                      isMatched
-                        ? 'bg-green-600/30 border-2 border-green-500 text-green-200 cursor-default shadow-lg shadow-green-500/20'
-                        : isEditMode && !isActuallyMatching
-                        ? 'bg-yellow-600 hover:bg-yellow-700 border-2 border-yellow-500 text-white shadow-lg shadow-yellow-500/20'
-                        : isActuallyMatching
-                        ? 'bg-gray-700 border border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-green-500/50 active:bg-gray-500'
-                        : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
-                    }`}
-                  >
-                    {isMatched ? (
-                      <span className="flex items-center justify-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        일치 확인됨
-                      </span>
-                    ) : isEditMode && !isActuallyMatching ? (
-                      <span className="flex items-center justify-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        확인
-                      </span>
-                    ) : isEdited && isActuallyMatching ? (
-                      '일치로 변경'
-                    ) : (
-                      '일치'
-                    )}
-                  </button>
-                </div>
               </div>
             );
           })()}
@@ -1622,7 +1712,9 @@ export function DeviceInfoStep() {
         {/*
         </div>
         */}
-      </div>
+        </div>
+        );
+      })()}
       </div>
 
       {/* 실시간 필수항목 검증 경고 */}
