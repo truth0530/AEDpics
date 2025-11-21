@@ -233,14 +233,14 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
 
   return (
     <div className="space-y-2">
-      {/* 24시간 사용 가능 버튼, 배치 시간 입력, 일괄 적용 버튼을 1줄로 */}
-      <div className="flex gap-0.5 flex-nowrap items-center overflow-x-auto">
+      {/* 24시간 사용 가능 버튼, 배치 시간 입력, 일괄 적용 버튼 */}
+      <div className="flex gap-1 flex-wrap items-center">
         <button
           type="button"
           onClick={handle24HoursToggle}
-          className={`px-1.5 py-1 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex-shrink-0 ${
+          className={`px-2 py-1 text-[10px] font-medium rounded transition-all ${
             value.is24hours
-              ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
+              ? 'bg-green-600 text-white border border-green-500'
               : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
           }`}
         >
@@ -252,30 +252,30 @@ export function ImprovedWeeklyScheduleInput({ value, onChange }: ImprovedWeeklyS
           onChange={(e) => handleBatchTimeChange(e.target.value)}
           placeholder="09:00~18:00"
           disabled={value.is24hours}
-          className="w-24 px-1 py-1 text-xs flex-shrink-0 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-center"
+          className="w-20 px-1 py-1 text-[10px] bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-500 focus:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-center"
         />
         {!value.is24hours && (
           <>
             <button
               type="button"
               onClick={applyWeekdayBatch}
-              className="px-1.5 py-1 text-xs font-medium whitespace-nowrap flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="px-1.5 py-1 text-[10px] font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
             >
-              월~금 일괄
+              월~금
             </button>
             <button
               type="button"
               onClick={applyWeekdaySaturdayBatch}
-              className="px-1.5 py-1 text-xs font-medium whitespace-nowrap flex-shrink-0 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              className="px-1.5 py-1 text-[10px] font-medium bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
             >
-              월~토 일괄
+              월~토
             </button>
             <button
               type="button"
               onClick={applySundayHolidayBatch}
-              className="px-1.5 py-1 text-xs font-medium whitespace-nowrap flex-shrink-0 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+              className="px-1.5 py-1 text-[10px] font-medium bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors"
             >
-              일,공 일괄
+              일,휴
             </button>
           </>
         )}

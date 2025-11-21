@@ -446,11 +446,12 @@ export default function InstitutionListPanel({
           </div>
 
           {/* 의무기관 종류 선택 */}
-          <Select value={subDivisionFilter} onValueChange={(value) => {
-            setSubDivisionFilter(value);
-            setCurrentPage(1);
-          }}>
-            <SelectTrigger className="w-[140px] h-9">
+          <div className="flex-1 min-w-0">
+            <Select value={subDivisionFilter} onValueChange={(value) => {
+              setSubDivisionFilter(value);
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-full h-9">
               <SelectValue placeholder="전체" />
             </SelectTrigger>
             <SelectContent className="max-h-[300px]">
@@ -478,7 +479,8 @@ export default function InstitutionListPanel({
               <SelectItem value="카지노">카지노</SelectItem>
               <SelectItem value="항만대합실">항만대합실</SelectItem>
             </SelectContent>
-          </Select>
+            </Select>
+          </div>
 
           {/* 검색창 */}
           <div className="relative flex-1">

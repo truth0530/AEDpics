@@ -246,7 +246,7 @@ export function StorageChecklistStep() {
       {/* 안내표지 설치 (다중선택) */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-4">
         <h4 className="font-semibold text-white text-sm mb-3">안내표지 설치 (다중선택 가능)</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {SIGNAGE_ITEMS.map((item) => {
             const selectedItems = storage.signage_selected || [];
             const isSelected = selectedItems.includes(item.id);

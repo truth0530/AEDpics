@@ -904,85 +904,155 @@ export function BasicInfoStep() {
     return missing;
   }, []);
 
+  // 기본정보 섹션이 확인된 상태인지 (전체 일치 또는 수정됨)
+  const isBasicInfoConfirmed = basicInfo.all_matched === true || basicInfo.all_matched === 'edited';
+
   return (
     <div className="space-y-2">
       {/* 통합된 기본 정보 */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
-        {/* 기본 정보 */}
-        <div className="space-y-2">
-          {/* 첫 번째 행: 관리책임자, 담당자 연락처, 외부표출 */}
-          <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 3.1fr 2.9fr' }}>
-            {renderField(FIELDS[0])} {/* 관리책임자 */}
-            {renderField(FIELDS[1])} {/* 담당자 연락처 */}
-            {/* 외부표출 */}
-            <div className="space-y-1">
-              <div className="text-[10px] font-medium text-gray-400 whitespace-nowrap">외부표출</div>
-              {!isEditMode ? (
-                <div className={`text-xs font-medium whitespace-nowrap ${
-                  basicInfo.all_matched === 'edited' && basicInfo.external_display && basicInfo.external_display !== deviceInfo.external_display
-                    ? 'text-yellow-300'
-                    : ((basicInfo.all_matched === 'edited' ? basicInfo.external_display : deviceInfo.external_display) === 'N')
-                      ? 'text-red-400 font-semibold'
-                      : 'text-gray-100'
-                }`}>
-                  {(basicInfo.all_matched === 'edited' && basicInfo.external_display)
-                    ? basicInfo.external_display
-                    : (deviceInfo.external_display || '데이터없음')}
+        {isBasicInfoConfirmed && !isEditMode ? (
+          // 접힌 상태: 1줄 요약
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-gray-400">기본정보:</span>
+            <span className={basicInfo.all_matched === true ? 'text-green-300' : 'text-yellow-300'}>
+              {basicInfo.all_matched === true ? '일치' : '수정됨'}
+            </span>
+            <span className="text-gray-600">|</span>
+            <span className="text-gray-400">
+              분류: <span className="text-gray-300">
+                {(basicInfo.all_matched === 'edited' && basicInfo.category_1)
+                  ? basicInfo.category_1
+                  : (deviceInfo.category_1 || '-')}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                updateStepData('basicInfo', {
+                  ...basicInfo,
+                  all_matched: false,
+                });
+              }}
+              className="ml-auto px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+            >
+              수정
+            </button>
+          </div>
+        ) : (
+          // 펼친 상태: 전체 정보
+          <>
+            {/* 기본 정보 */}
+            <div className="space-y-2">
+              {/* 첫 번째 행: 관리책임자, 담당자 연락처, 외부표출 */}
+              <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 3.1fr 2.9fr' }}>
+                {renderField(FIELDS[0])} {/* 관리책임자 */}
+                {renderField(FIELDS[1])} {/* 담당자 연락처 */}
+                {/* 외부표출 */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-medium text-gray-400 whitespace-nowrap">외부표출</div>
+                  {!isEditMode ? (
+                    <div className={`text-xs font-medium whitespace-nowrap ${
+                      basicInfo.all_matched === 'edited' && basicInfo.external_display && basicInfo.external_display !== deviceInfo.external_display
+                        ? 'text-yellow-300'
+                        : ((basicInfo.all_matched === 'edited' ? basicInfo.external_display : deviceInfo.external_display) === 'N')
+                          ? 'text-red-400 font-semibold'
+                          : 'text-gray-100'
+                    }`}>
+                      {(basicInfo.all_matched === 'edited' && basicInfo.external_display)
+                        ? basicInfo.external_display
+                        : (deviceInfo.external_display || '데이터없음')}
+                    </div>
+                  ) : (
+                    <select
+                      value={basicInfo.external_display || deviceInfo.external_display || 'N'}
+                      onChange={(e) => {
+                        updateStepData('basicInfo', {
+                          ...basicInfo,
+                          external_display: e.target.value,
+                          all_matched: false,
+                        });
+                      }}
+                      className="w-full rounded-lg px-2 py-1.5 bg-gray-800 border border-gray-600 text-xs text-white placeholder-gray-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 appearance-none"
+                    >
+                      <option value="Y">Y</option>
+                      <option value="N">N</option>
+                    </select>
+                  )}
                 </div>
-              ) : (
-                <select
-                  value={basicInfo.external_display || deviceInfo.external_display || 'N'}
-                  onChange={(e) => {
-                    updateStepData('basicInfo', {
-                      ...basicInfo,
-                      external_display: e.target.value,
-                      all_matched: false,
-                    });
-                  }}
-                  className="w-full rounded-lg px-2 py-1.5 bg-gray-800 border border-gray-600 text-xs text-white placeholder-gray-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 appearance-none"
-                >
-                  <option value="Y">Y</option>
-                  <option value="N">N</option>
-                </select>
-              )}
+              </div>
+
+              {/* 두 번째 행: 분류체계 (대분류, 중분류, 소분류) */}
+              <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 3fr 3fr' }}>
+                {renderField(FIELDS[4])} {/* 대분류 */}
+                {renderField(FIELDS[5])} {/* 중분류 */}
+                {renderField(FIELDS[6])} {/* 소분류 */}
+              </div>
             </div>
-          </div>
 
-          {/* 두 번째 행: 분류체계 (대분류, 중분류, 소분류) */}
-          <div className="grid gap-4" style={{ gridTemplateColumns: '2fr 3fr 3fr' }}>
-            {renderField(FIELDS[4])} {/* 대분류 */}
-            {renderField(FIELDS[5])} {/* 중분류 */}
-            {renderField(FIELDS[6])} {/* 소분류 */}
-          </div>
-        </div>
-
-        {/* 수정/전체 일치 버튼 */}
-        <div className="mt-3">
-          <EditableSectionButtons
-            isEditMode={isEditMode}
-            isMatching={isBasicInfoMatching}
-            matchedState={basicInfo.all_matched}
-            onLeftClick={() => {
-              if (isEditMode) {
-                handleCancelEdit();
-              } else {
-                handleEditAll();
-              }
-            }}
-            onRightClick={() => {
-              if (isEditMode) {
-                handleEditAll();
-              } else {
-                handleMatchAll();
-              }
-            }}
-            matchText="전체 일치"
-            matchedText="전체 일치 확인됨"
-          />
-        </div>
+            {/* 수정/전체 일치 버튼 */}
+            <div className="mt-3">
+              <EditableSectionButtons
+                isEditMode={isEditMode}
+                isMatching={isBasicInfoMatching}
+                matchedState={basicInfo.all_matched}
+                onLeftClick={() => {
+                  if (isEditMode) {
+                    handleCancelEdit();
+                  } else {
+                    handleEditAll();
+                  }
+                }}
+                onRightClick={() => {
+                  if (isEditMode) {
+                    handleEditAll();
+                  } else {
+                    handleMatchAll();
+                  }
+                }}
+                matchText="전체 일치"
+                matchedText="전체 일치 확인됨"
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      {/* 지도 섹션 */}
+      {/* 지도 섹션 - gps_verified로 접기 제어 */}
+      {(() => {
+        // GPS 위치가 확인된 상태인지
+        const isMapConfirmed = basicInfo.gps_verified === true;
+
+        if (isMapConfirmed) {
+          // 접힌 상태: 1줄 요약
+          return (
+            <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400">GPS 위치:</span>
+                <span className="text-green-300">확인됨</span>
+                <span className="text-gray-600">|</span>
+                <span className="text-gray-300 truncate flex-1">
+                  위도 {currentLat?.toFixed(5) || '-'}, 경도 {currentLng?.toFixed(5) || '-'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      gps_verified: false,
+                    });
+                  }}
+                  className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                >
+                  수정
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        // 펼친 상태: 전체 지도
+        return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold text-white text-sm">위치 정보</h4>
@@ -1178,8 +1248,48 @@ export function BasicInfoStep() {
           </p>
         </div>
       </div>
+        );
+      })()}
 
-      {/* 위치정보 */}
+      {/* 주소/설치위치 섹션 - location_matched로 접기 제어 */}
+      {(() => {
+        // 주소 정보가 확인된 상태인지 (일치 또는 수정됨)
+        const isAddressSectionConfirmed = basicInfo.location_matched === true || basicInfo.location_matched === 'edited';
+
+        if (isAddressSectionConfirmed && !isLocationEditMode) {
+          // 접힌 상태: 1줄 요약
+          return (
+            <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400">주소/설치위치:</span>
+                <span className={basicInfo.location_matched === true ? 'text-green-300' : 'text-yellow-300'}>
+                  {basicInfo.location_matched === true ? '일치' : '수정됨'}
+                </span>
+                <span className="text-gray-600">|</span>
+                <span className="text-gray-300 truncate flex-1">
+                  {basicInfo.location_matched === 'edited' && basicInfo.address
+                    ? basicInfo.address
+                    : (deviceInfo.installation_address || '-')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      location_matched: false,
+                    });
+                  }}
+                  className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                >
+                  수정
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        // 펼친 상태: 전체 정보
+        return (
       <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
         {/* 주소와 설치위치 바로 표시 (수정 모드가 아닐 때) */}
         {!isLocationEditMode && (
@@ -1254,116 +1364,295 @@ export function BasicInfoStep() {
           matchedText="일치 확인됨"
         />
       </div>
+        );
+      })()}
 
-      {/* 접근성 정보 섹션 - 직접 입력 방식 */}
-      <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
-        <div className="mb-3">
-          <h4 className="font-semibold text-white text-sm">접근성 정보</h4>
-        </div>
+      {/* 접근 허용 범위 섹션 - accessibility_confirmed로 접기 제어 */}
+      {(() => {
+        // 접근성 정보가 확인된 상태인지
+        const isAccessibilityConfirmed = basicInfo.accessibility_confirmed === true;
+        const accessibilityLevel = basicInfo.accessibility?.accessibility_level;
+        const accessibilityReason = basicInfo.accessibility?.accessibility_reason;
 
-        <div className="space-y-4">
-          {/* 1. 설치 위치 접근 허용 범위 */}
-          <div>
-            <Label className="text-xs font-medium text-white mb-2 block">
-              설치 위치 접근 허용 범위 <span className="text-red-500">*</span>
-            </Label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const newAccessibility = {
-                    ...(basicInfo.accessibility || {}),
-                    accessibility_level: 'public',
-                    improved_schedule: basicInfo.accessibility?.improved_schedule || { is24hours: false }
-                  };
-                  delete newAccessibility.accessibility_reason;
-                  updateStepData('basicInfo', { accessibility: newAccessibility });
-                }}
-                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'public'
-                  ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
-                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
-                  }`}
-              >
-                누구나
-              </button>
+        // 접근성 레벨 표시 텍스트
+        const getAccessibilityLabel = () => {
+          switch (accessibilityLevel) {
+            case 'public': return '누구나';
+            case 'restricted': return '일부';
+            case 'private': return '불가';
+            default: return '-';
+          }
+        };
 
-              <button
-                type="button"
-                onClick={() => {
-                  const newAccessibility = {
-                    ...(basicInfo.accessibility || {}),
-                    accessibility_level: 'restricted',
-                    improved_schedule: basicInfo.accessibility?.improved_schedule || { is24hours: false }
-                  };
-                  updateStepData('basicInfo', { accessibility: newAccessibility });
-                }}
-                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'restricted'
-                  ? 'bg-yellow-600 text-white border-2 border-yellow-500 shadow-lg shadow-yellow-500/20'
-                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
-                  }`}
-              >
-                일부
-              </button>
+        if (isAccessibilityConfirmed && accessibilityLevel) {
+          // 접힌 상태: 1줄 요약
+          return (
+            <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400">접근 허용:</span>
+                <span className={
+                  accessibilityLevel === 'public' ? 'text-green-300' :
+                  accessibilityLevel === 'restricted' ? 'text-yellow-300' :
+                  'text-red-300'
+                }>
+                  {getAccessibilityLabel()}
+                </span>
+                {accessibilityReason && (
+                  <>
+                    <span className="text-gray-600">|</span>
+                    <span className="text-gray-300 truncate">{accessibilityReason}</span>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      accessibility_confirmed: false,
+                    });
+                  }}
+                  className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                >
+                  수정
+                </button>
+              </div>
+            </div>
+          );
+        }
 
-              <button
-                type="button"
-                onClick={() => {
-                  const newAccessibility = {
-                    ...(basicInfo.accessibility || {}),
-                    accessibility_level: 'private',
-                    improved_schedule: basicInfo.accessibility?.improved_schedule || { is24hours: false }
-                  };
-                  updateStepData('basicInfo', { accessibility: newAccessibility });
-                }}
-                className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'private'
-                  ? 'bg-red-600 text-white border-2 border-red-500 shadow-lg shadow-red-500/20'
-                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
-                  }`}
-              >
-                불가
-              </button>
+        // 펼친 상태: 접근 허용 범위만
+        return (
+          <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+            <div className="mb-3">
+              <h4 className="font-semibold text-white text-sm">접근 허용 범위</h4>
             </div>
 
-            {/* 접근 제한 사유 입력 */}
-            {(basicInfo.accessibility?.accessibility_level === 'restricted' ||
-              basicInfo.accessibility?.accessibility_level === 'private') && (
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    placeholder="접근 제한 사유를 입력하세요"
-                    value={basicInfo.accessibility?.accessibility_reason || ''}
-                    onChange={(e) => {
-                      const newAccessibility = {
-                        ...(basicInfo.accessibility || {}),
-                        accessibility_reason: e.target.value,
-                      };
-                      updateStepData('basicInfo', { accessibility: newAccessibility });
-                    }}
-                    className="w-full px-3 py-2 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
-                  />
-                </div>
-              )}
-          </div>
+            <div>
+              <Label className="text-xs font-medium text-white mb-2 block">
+                설치 위치 접근 허용 범위 <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newAccessibility = {
+                      ...(basicInfo.accessibility || {}),
+                      accessibility_level: 'public',
+                      improved_schedule: basicInfo.accessibility?.improved_schedule || { is24hours: false }
+                    };
+                    delete newAccessibility.accessibility_reason;
+                    updateStepData('basicInfo', {
+                      accessibility: newAccessibility,
+                      accessibility_confirmed: true  // 누구나는 즉시 확인
+                    });
+                  }}
+                  className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'public'
+                    ? 'bg-green-600 text-white border-2 border-green-500 shadow-lg shadow-green-500/20'
+                    : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                    }`}
+                >
+                  누구나
+                </button>
 
-          {/* 2. 사용 가능 시간 확인 */}
-          <div>
-            <Label className="text-xs font-medium text-white mb-2 block">
-              사용 가능 시간 확인 <span className="text-red-500">*</span>
-            </Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newAccessibility = {
+                      ...(basicInfo.accessibility || {}),
+                      accessibility_level: 'restricted',
+                      improved_schedule: basicInfo.accessibility?.improved_schedule || { is24hours: false }
+                    };
+                    updateStepData('basicInfo', {
+                      accessibility: newAccessibility,
+                      accessibility_confirmed: false  // 사유 입력 필요
+                    });
+                  }}
+                  className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'restricted'
+                    ? 'bg-yellow-600 text-white border-2 border-yellow-500 shadow-lg shadow-yellow-500/20'
+                    : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                    }`}
+                >
+                  일부
+                </button>
 
-            <ImprovedWeeklyScheduleInput
-              value={(basicInfo.accessibility?.improved_schedule as ImprovedWeeklySchedule) || { is24hours: false }}
-              onChange={(schedule: ImprovedWeeklySchedule) => {
-                const newAccessibility = {
-                  ...(basicInfo.accessibility || {}),
-                  improved_schedule: schedule,
-                };
-                updateStepData('basicInfo', { accessibility: newAccessibility });
-              }}
-            />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newAccessibility = {
+                      ...(basicInfo.accessibility || {}),
+                      accessibility_level: 'private',
+                      improved_schedule: basicInfo.accessibility?.improved_schedule || { is24hours: false }
+                    };
+                    updateStepData('basicInfo', {
+                      accessibility: newAccessibility,
+                      accessibility_confirmed: false  // 사유 입력 필요
+                    });
+                  }}
+                  className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${basicInfo.accessibility?.accessibility_level === 'private'
+                    ? 'bg-red-600 text-white border-2 border-red-500 shadow-lg shadow-red-500/20'
+                    : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                    }`}
+                >
+                  불가
+                </button>
+              </div>
+
+              {/* 접근 제한 사유 입력 및 확인 버튼 */}
+              {(basicInfo.accessibility?.accessibility_level === 'restricted' ||
+                basicInfo.accessibility?.accessibility_level === 'private') && (
+                  <div className="mt-2 space-y-2">
+                    <input
+                      type="text"
+                      placeholder="접근 제한 사유를 입력하세요"
+                      value={basicInfo.accessibility?.accessibility_reason || ''}
+                      onChange={(e) => {
+                        const newAccessibility = {
+                          ...(basicInfo.accessibility || {}),
+                          accessibility_reason: e.target.value,
+                        };
+                        updateStepData('basicInfo', { accessibility: newAccessibility });
+                      }}
+                      className="w-full px-3 py-2 text-xs bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500/20"
+                    />
+                    {/* 확인 버튼 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateStepData('basicInfo', {
+                          ...basicInfo,
+                          accessibility_confirmed: true,
+                        });
+                      }}
+                      disabled={!basicInfo.accessibility?.accessibility_reason}
+                      className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                        basicInfo.accessibility?.accessibility_reason
+                          ? 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
+                          : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                      }`}
+                    >
+                      확인
+                    </button>
+                  </div>
+                )}
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
+
+      {/* 사용 가능 시간 섹션 - schedule_confirmed로 접기 제어 */}
+      {(() => {
+        // 사용 시간이 확인된 상태인지
+        const isScheduleConfirmed = basicInfo.schedule_confirmed === true;
+        const schedule = basicInfo.accessibility?.improved_schedule as ImprovedWeeklySchedule | undefined;
+
+        // 시간이 설정되었는지 확인
+        const isScheduleSet = () => {
+          if (!schedule) return false;
+          if (schedule.is24hours) return true;
+
+          // 요일별 시간이 하나라도 있는지 확인
+          const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'holiday'];
+          return days.some((day) => {
+            const daySchedule = schedule[day as keyof ImprovedWeeklySchedule];
+            return daySchedule && typeof daySchedule === 'object' && 'timeRange' in daySchedule && daySchedule.timeRange;
+          });
+        };
+
+        // 시간 요약 텍스트 생성
+        const getScheduleSummary = () => {
+          if (!schedule) return '미설정';
+          if (schedule.is24hours) return '24시간';
+
+          // 요일별 시간이 있는지 확인
+          const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'holiday'];
+          const dayLabels = ['월', '화', '수', '목', '금', '토', '일', '공휴일'];
+          const activeDays: string[] = [];
+
+          days.forEach((day, idx) => {
+            const daySchedule = schedule[day as keyof ImprovedWeeklySchedule];
+            if (daySchedule && typeof daySchedule === 'object' && 'timeRange' in daySchedule && daySchedule.timeRange) {
+              activeDays.push(dayLabels[idx]);
+            }
+          });
+
+          if (activeDays.length === 0) return '미설정';
+          if (activeDays.length === 7) return '매일 운영';
+          return `${activeDays.join(', ')} 운영`;
+        };
+
+        const scheduleValid = isScheduleSet();
+
+        if (isScheduleConfirmed) {
+          // 접힌 상태: 1줄 요약
+          return (
+            <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400">사용 시간:</span>
+                <span className="text-green-300">
+                  {getScheduleSummary()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateStepData('basicInfo', {
+                      ...basicInfo,
+                      schedule_confirmed: false,
+                    });
+                  }}
+                  className="ml-auto flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-gray-700 hover:bg-gray-600 border border-gray-600 text-gray-300"
+                >
+                  수정
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        // 펼친 상태: 사용 가능 시간
+        return (
+          <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-3">
+            <div className="mb-3">
+              <h4 className="font-semibold text-white text-sm">사용 가능 시간</h4>
+            </div>
+
+            <div>
+              <Label className="text-xs font-medium text-white mb-2 block">
+                사용 가능 시간 확인 <span className="text-red-500">*</span>
+              </Label>
+
+              <ImprovedWeeklyScheduleInput
+                value={(basicInfo.accessibility?.improved_schedule as ImprovedWeeklySchedule) || { is24hours: false }}
+                onChange={(schedule: ImprovedWeeklySchedule) => {
+                  const newAccessibility = {
+                    ...(basicInfo.accessibility || {}),
+                    improved_schedule: schedule,
+                  };
+                  updateStepData('basicInfo', { accessibility: newAccessibility });
+                }}
+              />
+
+              {/* 확인 버튼 - 시간이 설정되어야만 활성화 */}
+              <button
+                type="button"
+                onClick={() => {
+                  updateStepData('basicInfo', {
+                    ...basicInfo,
+                    schedule_confirmed: true,
+                  });
+                }}
+                disabled={!scheduleValid}
+                className={`w-full mt-3 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                  scheduleValid
+                    ? 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
+                    : 'bg-gray-800/50 border border-gray-700/50 text-gray-600 cursor-not-allowed'
+                }`}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 실시간 필수항목 검증 경고 */}
       <ValidationWarning missingFields={missingFields} />
