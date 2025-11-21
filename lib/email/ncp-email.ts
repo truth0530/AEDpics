@@ -7,7 +7,6 @@
 
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
-import { selectSmartSender, recordSendingFailure, recordSendingSuccess } from '@/lib/email/smart-sender-selector-simplified';
 
 export interface NCPEmailRecipient {
   address: string;
@@ -194,53 +193,46 @@ export async function sendNCPEmail(
 }
 
 /**
- * [DEPRECATED - 2025-11-21] 고정식 발신자 선택 함수
+ * 수신자 도메인에 따라 발신자를 선택하는 함수
  *
- * 2025-11-21부터 이 함수는 사용되지 않습니다.
- * 대신 smart-sender-selector-simplified.ts의 selectSmartSender를 사용합니다.
+ * 2025-11-22 롤백: 스마트 발신자 선택 시스템 비활성화
  *
- * 폐기 이유: Daum 반복 차단 문제의 자동 해결
+ * 비활성화 이유:
+ * - NCP의 자동 보안 정책(Block List)은 발신자 로테이션으로 우회 불가능
+ * - NCP는 수신자 주소(recipient address)를 차단하며, 발신자 변경으로는 해제 안 됨
+ * - 실제 테스트 결과: 두 발신자 모두 Daum 차단으로 인해 동시 실패
+ * - 근본 해결책: NCP 기술 지원팀의 화이트리스트 등록 필수
  *
  * 과거 변경 이력:
  * - 2025-10-31 240972d: 초기 구현 (도메인별 선택)
- * - 2025-11-07 ebd58ba: noreply@aed.pics 비활성화 (잘못된 가정)
+ * - 2025-11-07 ebd58ba: noreply@aed.pics 비활성화
  * - 2025-11-13 c719845: 도메인 기반 선택 복구
  * - 2025-11-21 ebc0513: Daum을 위해 noreply@nmc.or.kr로 고정
- * - 2025-11-21 (현재): smart-sender 재활성화
+ * - 2025-11-21: 스마트 발신자 선택 활성화 시도 (3개 커밋)
+ * - 2025-11-22: 스마트 발신자 선택 롤백 (실패 입증)
  *
- * 문제점:
- * 고정식 접근은 반복적인 차단 문제 해결 불가:
- * 1. noreply@nmc.or.kr로 발송 시도
- * 2. NCP가 자동으로 Daum 차단 목록에 추가
- * 3. 수동으로 차단 목록에서 제거
- * 4. 시간이 지나면 다시 자동 추가 (무한 반복)
+ * 스마트 발신자 선택 시스템 실패 증거:
+ * - truth530@daum.net: 4번 시도 중 100% 실패
+ * - wowow212@daum.net: 첫 시도부터 실패
+ * - noreply@aed.pics (Daum): 40% 성공률 → 최근 100% 실패로 변함
+ * - noreply@nmc.or.kr (Daum): 0% 성공률 (항상 차단)
+ * - 로그: "Email sending success" vs 실제: NCP 콘솔 "발송실패"
  *
- * 해결책:
- * smart-sender-selector-simplified.ts를 사용하여:
- * 1. 1차 시도: noreply@aed.pics
- * 2. 실패 시 2차: noreply@nmc.or.kr
- * 3. 실패 패턴을 메모리에 기록하여 다음 시도 최적화
- *
- * @deprecated 2025-11-21 smart-sender selector로 대체됨
+ * 상세 분석: docs/troubleshooting/SMART_SENDER_FAILURE_ANALYSIS_2025-11-22.md
  */
 function selectSenderEmail(recipientEmail: string): string {
-  // 2025-11-13 재활성화: 네이버 DMARC 차단 문제 해결
-  // 과거 검증된 패턴 (사용자 증언 기반)
-  // 2025-11-21 Daum 차단 대응: Daum/Hanmail은 noreply@nmc.or.kr 사용
-  //
-  // [DEPRECATED] 이 함수는 더 이상 사용되지 않습니다.
-  // smart-sender-selector-simplified.ts의 selectSmartSender를 사용하세요.
   const domain = recipientEmail.split('@')[1]?.toLowerCase();
 
   // NMC 도메인: 같은 도메인 사용 (DMARC 정책)
   if (domain === 'nmc.or.kr') return 'noreply@nmc.or.kr';
 
-  // Daum/Hanmail: noreply@aed.pics가 차단되므로 nmc.or.kr 사용
+  // Daum/Hanmail: noreply@aed.pics 권장하지만, 차단 시 백업을 위해 nmc.or.kr 사용 가능
+  // 주의: 두 발신자 모두 차단될 수 있으므로 근본 해결책은 NCP 기술 지원팀 요청
   if (domain === 'daum.net' || domain === 'hanmail.net') {
-    return 'noreply@nmc.or.kr';
+    return 'noreply@aed.pics';
   }
 
-  // 기타 도메인 (네이버, Gmail 등): 기존 패턴 유지
+  // 기타 도메인 (네이버, Gmail 등): aed.pics 사용
   return 'noreply@aed.pics';
 }
 
@@ -277,23 +269,21 @@ export async function sendSimpleEmail(
 /**
  * 수신자 도메인에 따라 발신자를 자동 선택하는 이메일 발송 헬퍼
  *
- * 2025-11-21 스마트 발신자 선택 시스템 활성화:
- * - smart-sender-selector-simplified.ts를 사용하여 도메인별 발신자 로테이션
- * - 이전의 고정식 접근(noreply@nmc.or.kr 고정) → 동적 로테이션으로 변경
- * - 이유: Daum 반복 차단 문제를 자동으로 대응하기 위함
+ * 2025-11-22 롤백: 스마트 발신자 선택 시스템 비활성화
+ * - 도메인별 기본 발신자 선택으로 회귀
+ * - NCP 자동 보안 정책으로 인한 근본적 제약 인식
+ * - 근본 해결책: NCP 기술 지원팀의 화이트리스트 등록 필수
  *
- * 작동 방식:
- * 1. 수신자 도메인에 따라 우선순위 발신자 리스트 확인
- * 2. 이전에 실패한 발신자는 스킵
- * 3. 첫 번째 성공한 발신자 사용
- * 4. 발송 성공/실패 메모리 캐시에 기록
- * 5. 1시간마다 캐시 초기화 (새로운 기회 제공)
+ * 2025-11-21 스마트 발신자 선택 시스템 활성화 시도 (롤백됨):
+ * - 도메인별 발신자 로테이션으로 Daum 반복 차단 문제 자동 해결 시도
+ * - 실제 결과: 완전 실패 (100% 실패율, NCP 자동 정책 우회 불가)
  *
- * 이전 커밋들:
+ * 과거 커밋 이력:
  * - 2025-10-31 240972d: 동적 발신자 선택 구현
  * - 2025-11-13 c719845: 도메인 기반 선택 복구
- * - 2025-11-21 ebc0513: 고정식으로 회귀 (Daum noreply@nmc.or.kr로 고정)
- * - 2025-11-21 (현재): smart-sender-selector 재활성화
+ * - 2025-11-21 ebc0513: Daum 고정식 (noreply@nmc.or.kr)
+ * - 2025-11-21 (3개 커밋): 스마트 선택 활성화 시도
+ * - 2025-11-22: 롤백 (실패 입증)
  */
 export async function sendSmartEmail(
   baseConfig: NCPEmailConfig,
@@ -303,29 +293,20 @@ export async function sendSmartEmail(
   htmlBody: string,
   retryOptions?: RetryOptions
 ): Promise<any> {
-  let senderEmail: string;
-
-  try {
-    // 스마트 발신자 선택 시스템 사용 (도메인별 우선순위 + 실패 캐시)
-    senderEmail = await selectSmartSender(to);
-    logger.info('SmartEmailSender', 'Selected sender using smart selector', {
-      recipient: to,
-      sender: senderEmail
-    });
-  } catch (error) {
-    // 폴백: 스마트 선택 실패 시 기본값
-    logger.error('SmartEmailSender', 'Smart selector failed, using fallback', {
-      recipient: to,
-      error: error instanceof Error ? error.message : error
-    });
-    senderEmail = 'noreply@nmc.or.kr';
-  }
+  // 2025-11-22 롤백: 스마트 선택 대신 안정적인 도메인 기반 선택 사용
+  const senderEmail = selectSenderEmail(to);
 
   const config: NCPEmailConfig = {
     ...baseConfig,
     senderAddress: senderEmail,
     senderName: 'AED 픽스'
   };
+
+  logger.info('EmailSender', 'Selected sender for recipient', {
+    recipient: to,
+    sender: senderEmail,
+    note: 'Using stable domain-based selection (smart selector disabled)'
+  });
 
   try {
     const result = await sendNCPEmail(
@@ -346,24 +327,18 @@ export async function sendSmartEmail(
       retryOptions
     );
 
-    // 발송 성공 기록
-    await recordSendingSuccess(to, senderEmail);
-
-    logger.info('SmartEmailSender', 'Email sent successfully', {
+    logger.info('EmailSender', 'Email sent successfully', {
       recipient: to,
       sender: senderEmail
     });
 
     return result;
   } catch (error) {
-    // 발송 실패 기록 (다음 시도 시 다른 발신자 사용)
-    const errorCode = error instanceof Error ? error.message.substring(0, 50) : 'UNKNOWN';
-    await recordSendingFailure(to, senderEmail, errorCode);
-
-    logger.error('SmartEmailSender', 'Email sending failed', {
+    logger.error('EmailSender', 'Email sending failed', {
       recipient: to,
       sender: senderEmail,
-      error: error instanceof Error ? error.message : error
+      error: error instanceof Error ? error.message : error,
+      note: 'NCP automatic security policy may have blocked this address. Contact NCP support team to request whitelist.'
     });
 
     throw error;
