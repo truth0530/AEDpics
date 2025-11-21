@@ -719,6 +719,7 @@ model user_profiles {
   organization_change_requests_as_reviewer                                                         organization_change_requests[]    @relation("change_request_reviewer")
   organization_change_requests_as_user                                                             organization_change_requests[]    @relation("change_request_user")
   push_subscriptions                                                                               push_subscriptions[]
+  security_pledges                                                                                 security_pledges[]
   sessions                                                                                         sessions[]
   target_list_devices_target_list_devices_matched_byTouser_profiles                                target_list_devices[]             @relation("target_list_devices_matched_byTouser_profiles")
   target_list_devices_target_list_devices_verified_byTouser_profiles                               target_list_devices[]             @relation("target_list_devices_verified_byTouser_profiles")
@@ -788,6 +789,22 @@ model notification_settings {
   user                 user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "idx_notification_settings_user")
+}
+
+model security_pledges {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String        @db.Uuid
+  pledge_type    String        @db.VarChar(50)
+  agreed_at      DateTime      @default(now()) @db.Timestamptz(6)
+  signature_data String        @db.Text
+  ip_address     String?       @db.Inet
+  user_agent     String?
+  created_at     DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+  user_profiles  user_profiles @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_security_pledges_user")
+  @@index([pledge_type], map: "idx_security_pledges_type")
 }
 
 model push_subscriptions {
