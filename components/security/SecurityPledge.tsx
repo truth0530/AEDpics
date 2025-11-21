@@ -61,6 +61,11 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
     };
 
     const handleSubmit = async () => {
+        if (!agreedToSecurity) {
+            alert("먼저 보안 서약에 동의해주세요.");
+            return;
+        }
+
         if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
             alert("서명을 해주세요.");
             return;
@@ -119,7 +124,7 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                         보안 서약서
                     </CardTitle>
                     <CardDescription className="mt-2 text-gray-400">
-                        임시점검원 업무 수행을 위해 아래 내용을 확인하고 동의해 주십시오.
+                        자동심장충격기 현장점검 업무 수행을 위해 아래 내용을 확인하고 동의해 주십시오.
                     </CardDescription>
                 </CardHeader>
 
@@ -127,12 +132,11 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                     {/* Security Pledge Section */}
                     <section className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-white">
                                 보안 서약 내용
-                                <span className="text-xs font-normal text-red-400 border border-red-800 bg-red-950 px-2 py-0.5 rounded-full">필수</span>
                             </h3>
                         </div>
-                        <ScrollArea className="h-[320px] w-full rounded-lg border border-gray-700 bg-gray-900 p-4 text-sm text-gray-300 leading-relaxed shadow-inner">
+                        <div className="w-full rounded-lg border border-gray-700 bg-gray-900 p-4 text-sm text-gray-300 leading-relaxed shadow-inner">
                             <p className="font-medium mb-2 text-white">
                                 본인은 {organizationName}의 임시점검원으로서 현장 점검 업무를 수행함에 있어, 다음 사항을 준수할 것을 엄숙히 서약합니다.
                             </p>
@@ -159,7 +163,7 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                                 <p className="text-gray-400 text-xs mb-1">{year}년 {month}월 {day}일</p>
                                 <p className="font-bold text-white">서약자: {userName}</p>
                             </div>
-                        </ScrollArea>
+                        </div>
 
                         <div className="flex items-center space-x-2 pt-1">
                             <Checkbox
@@ -182,12 +186,13 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                     {/* Electronic Signature Section */}
                     <section className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-white">
                                 전자 서명
-                                <span className="text-xs font-normal text-red-400 border border-red-800 bg-red-950 px-2 py-0.5 rounded-full">필수</span>
                             </h3>
                         </div>
-                        <div className="border border-gray-700 rounded-lg bg-gray-950 overflow-hidden relative">
+                        <div className={`border border-gray-700 rounded-lg overflow-hidden relative transition-all duration-300 ${
+                            !agreedToSecurity ? 'opacity-50 pointer-events-none' : 'bg-gray-950'
+                        }`}>
                             <SignatureCanvas
                                 ref={sigCanvas}
                                 penColor="white"
@@ -201,12 +206,15 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                                     size="sm"
                                     onClick={clearSignature}
                                     className="text-xs h-7 px-2 bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
+                                    disabled={!agreedToSecurity}
                                 >
                                     지우기
                                 </Button>
                             </div>
                             <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
-                                <span className="text-gray-600 text-sm">여기에 서명해주세요</span>
+                                <span className="text-gray-600 text-sm">
+                                    {!agreedToSecurity ? '먼저 위 보안 서약에 동의해주세요' : '여기에 서명해주세요'}
+                                </span>
                             </div>
                         </div>
                         <p className="text-xs text-gray-400">
@@ -216,9 +224,9 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
 
                 </CardContent>
 
-                <CardFooter className="flex flex-col gap-3 bg-gray-800 rounded-b-xl p-6 border-t border-gray-700">
+                <CardFooter className="flex flex-col items-center gap-3 bg-gray-800 rounded-b-xl p-6 border-t border-gray-700">
                     <Button
-                        className="w-full text-base py-6 font-semibold shadow-md transition-all hover:shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
+                        className="w-48 text-base py-5 font-semibold shadow-md transition-all hover:shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
                         size="lg"
                         disabled={!canSubmit || isSubmitting}
                         onClick={handleSubmit}
