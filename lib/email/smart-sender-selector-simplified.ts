@@ -10,14 +10,20 @@ import { logger } from '@/lib/logger';
 /**
  * 수신 도메인별 발신자 매핑 (차단 이력 기반)
  *
- * 2025-11-07 기준 확인된 차단 패턴:
- * - naver.com: noreply@aed.pics ❌ → noreply@nmc.or.kr ✅
- * - daum.net: noreply@nmc.or.kr ❌
- * - nmc.or.kr: noreply@nmc.or.kr ❌ → noreply@aed.pics ✅
+ * 2025-11-21 실제 테스트 결과:
+ * - daum.net: noreply@aed.pics (1차) ✅ 성공
+ * - naver.com: noreply@aed.pics (1차) 권장 (nmc.or.kr은 SECURITY_AND_POLICY_ABNORMAL 오류)
+ * - nmc.or.kr: noreply@nmc.or.kr (1차 - DMARC 준수)
+ *
+ * 과거 뒷걸음질 분석 (2025-10-31 ~ 2025-11-21):
+ * - 초기: 도메인별 우선순위 선택 (실패)
+ * - 재시도: noreply@aed.pics로 통일 (Daum 차단)
+ * - 재차 변경: noreply@nmc.or.kr로 고정 (Naver 보안 정책 오류)
+ * - 최종 해결: 스마트 선택 시스템으로 복귀 + Naver 우선순위 수정
  */
 const DOMAIN_SENDER_MAPPING: Record<string, string[]> = {
-  // 네이버 계열
-  'naver.com': ['noreply@nmc.or.kr', 'noreply@aed.pics'],
+  // 네이버 계열 (2025-11-21 수정: Naver는 aed.pics 1차 권장)
+  'naver.com': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
 
   // 다음/카카오 계열 (한메일 포함)
   'daum.net': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
