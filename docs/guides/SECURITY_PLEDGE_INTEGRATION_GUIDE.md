@@ -7,7 +7,7 @@
 
 ### ✅ 완료된 부분
 - SecurityPledge UI 컴포넌트 (`/components/security/SecurityPledge.tsx`)
-- 보안 서약서 페이지 (`/app/security-pledge/page.tsx`)
+- 보안 서약서 페이지 (`/app/security-pledge/page.tsx`) - 테스트 가능
 - API 엔드포인트 (`/api/security-pledge/route.ts`)
 - 데이터베이스 테이블 (`security_pledges`)
 - 전자서명 기능 (SignatureCanvas)

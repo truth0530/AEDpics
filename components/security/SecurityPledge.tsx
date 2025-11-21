@@ -23,12 +23,11 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SecurityPledgeProps {
-    preview?: boolean;
     onComplete?: () => void;
     redirectTo?: string;
 }
 
-export function SecurityPledge({ preview = false, onComplete, redirectTo = "/dashboard" }: SecurityPledgeProps) {
+export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: SecurityPledgeProps) {
     const { data: session } = useSession();
     const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
     const [agreedToSecurity, setAgreedToSecurity] = useState(false);
@@ -37,9 +36,6 @@ export function SecurityPledge({ preview = false, onComplete, redirectTo = "/das
     const router = useRouter();
 
     React.useEffect(() => {
-        // Preview 모드에서는 체크하지 않음
-        if (preview) return;
-
         const checkStatus = async () => {
             try {
                 const res = await fetch("/api/security-pledge");
@@ -59,19 +55,13 @@ export function SecurityPledge({ preview = false, onComplete, redirectTo = "/das
             }
         };
         checkStatus();
-    }, [router, preview, onComplete, redirectTo]);
+    }, [router, onComplete, redirectTo]);
 
     const clearSignature = () => {
         sigCanvas.current?.clear();
     };
 
     const handleSubmit = async () => {
-        // Preview 모드에서는 제출 불가
-        if (preview) {
-            alert("미리보기 모드에서는 제출할 수 없습니다.");
-            return;
-        }
-
         if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
             alert("서명을 해주세요.");
             return;
@@ -115,20 +105,11 @@ export function SecurityPledge({ preview = false, onComplete, redirectTo = "/das
             <Card className="w-full max-w-2xl shadow-lg">
                 <CardHeader className="text-center border-b bg-white rounded-t-xl pb-6">
                     <CardTitle className="text-2xl font-bold text-gray-900">
-                        보안 서약서 및 개인정보 수집 동의{preview && " (미리보기)"}
+                        보안 서약서 및 개인정보 수집 동의
                     </CardTitle>
                     <CardDescription className="mt-2 text-gray-600">
-                        {preview
-                            ? "임시점검원 가입 시 동의하게 될 보안 서약서 내용입니다."
-                            : "임시점검원 업무 수행을 위해 아래 내용을 확인하고 동의해 주십시오."}
+                        임시점검원 업무 수행을 위해 아래 내용을 확인하고 동의해 주십시오.
                     </CardDescription>
-                    {preview && (
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-sm text-blue-700">
-                                ℹ️ 이것은 미리보기 페이지입니다. 실제 서약서는 회원가입 과정에서 작성하게 됩니다.
-                            </p>
-                        </div>
-                    )}
                 </CardHeader>
 
                 <CardContent className="space-y-8 p-6">
@@ -157,12 +138,11 @@ export function SecurityPledge({ preview = false, onComplete, redirectTo = "/das
                             <Checkbox
                                 id="privacy-agreement"
                                 checked={agreedToPrivacy}
-                                onCheckedChange={(checked) => !preview && setAgreedToPrivacy(checked as boolean)}
-                                disabled={preview}
+                                onCheckedChange={(checked) => setAgreedToPrivacy(checked as boolean)}
                             />
                             <Label
                                 htmlFor="privacy-agreement"
-                                className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${preview ? 'opacity-60' : 'cursor-pointer'}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                             >
                                 위 개인정보 수집 및 이용에 동의합니다.
                             </Label>
@@ -212,12 +192,11 @@ export function SecurityPledge({ preview = false, onComplete, redirectTo = "/das
                             <Checkbox
                                 id="security-agreement"
                                 checked={agreedToSecurity}
-                                onCheckedChange={(checked) => !preview && setAgreedToSecurity(checked as boolean)}
-                                disabled={preview}
+                                onCheckedChange={(checked) => setAgreedToSecurity(checked as boolean)}
                             />
                             <Label
                                 htmlFor="security-agreement"
-                                className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${preview ? 'opacity-60' : 'cursor-pointer'}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                             >
                                 위 보안 서약 내용을 충분히 숙지하였으며, 이에 동의합니다.
                             </Label>
@@ -234,39 +213,28 @@ export function SecurityPledge({ preview = false, onComplete, redirectTo = "/das
                                 <span className="text-xs font-normal text-red-500 border border-red-200 bg-red-50 px-2 py-0.5 rounded-full">필수</span>
                             </h3>
                         </div>
-                        {preview ? (
-                            <div className="border border-gray-200 rounded-lg bg-gray-50 p-8 text-center">
-                                <p className="text-gray-500">
-                                    실제 가입 시 이 영역에서 전자서명을 하게 됩니다.
-                                </p>
-                                <p className="text-xs text-gray-400 mt-2">
-                                    터치스크린 또는 마우스로 서명할 수 있습니다.
-                                </p>
+                        <div className="border border-gray-300 rounded-lg bg-white overflow-hidden relative">
+                            <SignatureCanvas
+                                ref={sigCanvas}
+                                penColor="black"
+                                canvasProps={{
+                                    className: "w-full h-40 bg-white cursor-crosshair"
+                                }}
+                            />
+                            <div className="absolute top-2 right-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={clearSignature}
+                                    className="text-xs h-7 px-2"
+                                >
+                                    지우기
+                                </Button>
                             </div>
-                        ) : (
-                            <div className="border border-gray-300 rounded-lg bg-white overflow-hidden relative">
-                                <SignatureCanvas
-                                    ref={sigCanvas}
-                                    penColor="black"
-                                    canvasProps={{
-                                        className: "w-full h-40 bg-white cursor-crosshair"
-                                    }}
-                                />
-                                <div className="absolute top-2 right-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={clearSignature}
-                                        className="text-xs h-7 px-2"
-                                    >
-                                        지우기
-                                    </Button>
-                                </div>
-                                <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
-                                    <span className="text-gray-300 text-sm">여기에 서명해주세요</span>
-                                </div>
+                            <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+                                <span className="text-gray-300 text-sm">여기에 서명해주세요</span>
                             </div>
-                        )}
+                        </div>
                         <p className="text-xs text-gray-500">
                             ※ 위 서명은 본인의 자필 서명과 동일한 효력을 가집니다.
                         </p>
@@ -275,42 +243,17 @@ export function SecurityPledge({ preview = false, onComplete, redirectTo = "/das
                 </CardContent>
 
                 <CardFooter className="flex flex-col gap-3 bg-gray-50 rounded-b-xl p-6 border-t">
-                    {preview ? (
-                        <>
-                            <Button
-                                className="w-full text-base py-6 font-semibold shadow-md transition-all hover:shadow-lg"
-                                size="lg"
-                                onClick={() => router.push('/auth/signup')}
-                                variant="outline"
-                            >
-                                회원가입하러 가기
-                            </Button>
-                            <Button
-                                className="w-full text-base py-6 font-semibold shadow-md transition-all hover:shadow-lg"
-                                size="lg"
-                                onClick={() => router.push('/')}
-                            >
-                                홈으로 돌아가기
-                            </Button>
-                            <p className="text-xs text-center text-gray-400">
-                                이 내용은 임시점검원 가입 과정에서 실제로 동의하게 됩니다.
-                            </p>
-                        </>
-                    ) : (
-                        <>
-                            <Button
-                                className="w-full text-base py-6 font-semibold shadow-md transition-all hover:shadow-lg"
-                                size="lg"
-                                disabled={!canSubmit || isSubmitting}
-                                onClick={handleSubmit}
-                            >
-                                {isSubmitting ? "제출 중..." : "동의하고 계속하기"}
-                            </Button>
-                            <p className="text-xs text-center text-gray-400">
-                                모든 필수 항목에 동의하고 서명을 완료해야 합니다.
-                            </p>
-                        </>
-                    )}
+                    <Button
+                        className="w-full text-base py-6 font-semibold shadow-md transition-all hover:shadow-lg"
+                        size="lg"
+                        disabled={!canSubmit || isSubmitting}
+                        onClick={handleSubmit}
+                    >
+                        {isSubmitting ? "제출 중..." : "동의하고 계속하기"}
+                    </Button>
+                    <p className="text-xs text-center text-gray-400">
+                        모든 필수 항목에 동의하고 서명을 완료해야 합니다.
+                    </p>
                 </CardFooter>
             </Card>
         </div>

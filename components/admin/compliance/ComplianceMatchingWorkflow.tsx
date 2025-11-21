@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getRegionLabel } from '@/lib/constants/regions';
 import { isHighQualityMatch } from '@/lib/utils/match-tier';
 import InstitutionListPanel from './InstitutionListPanel';
+import InstitutionGroupingPanel from './InstitutionGroupingPanel';
 import ManagementNumberPanel from './ManagementNumberPanel';
 import BasketPanel from './BasketPanel';
 import { UnmatchableReasonDialog } from './UnmatchableReasonDialog';
@@ -107,6 +108,10 @@ export default function ComplianceMatchingWorkflow({
   // 매칭 전략 선택 모달 상태
   const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
   const [conflictData, setConflictData] = useState<ConflictCheckResult | null>(null);
+
+  // 그루핑 패널 표시 상태
+  const [isGroupingEnabled, setIsGroupingEnabled] = useState(false);
+  const [selectedGroupInstitutions, setSelectedGroupInstitutions] = useState<TargetInstitution[]>([]);
 
   // 헤더 Region Filter에서 선택한 지역 (동적으로 연결)
   const [selectedRegion, setSelectedRegion] = useState<{ sido: string | null; gugun: string | null }>(() => {
@@ -854,37 +859,66 @@ export default function ComplianceMatchingWorkflow({
         <div className="col-span-4 flex flex-col overflow-hidden border-r">
           <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-none">
             <CardHeader className="pb-2 pt-2 pl-1 pr-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Badge variant="outline">1</Badge>
-                {selectedInstitution ? (
-                  <span>
-                    <span className="text-blue-600 dark:text-blue-400">{selectedInstitution.institution_name}</span> 선택됨
-                  </span>
-                ) : (
-                  <>
-                    의무설치기관
-                    <span className="text-xs text-muted-foreground font-normal ml-1">
-                      미매칭만 표시
+              <CardTitle className="text-base flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">1</Badge>
+                  {isGroupingEnabled ? (
+                    <span>중복 기관 그루핑</span>
+                  ) : selectedInstitution ? (
+                    <span>
+                      <span className="text-blue-600 dark:text-blue-400">{selectedInstitution.institution_name}</span> 선택됨
                     </span>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      의무설치기관
+                      <span className="text-xs text-muted-foreground font-normal ml-1">
+                        미매칭만 표시
+                      </span>
+                    </>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant={isGroupingEnabled ? "default" : "outline"}
+                  onClick={() => setIsGroupingEnabled(!isGroupingEnabled)}
+                  className="text-xs"
+                >
+                  {isGroupingEnabled ? '일반 모드' : '그루핑 모드'}
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden flex flex-col pl-0 pr-2">
-              <InstitutionListPanel
-                year={year}
-                sido={selectedRegion.sido}
-                gugun={selectedRegion.gugun}
-                selectedInstitution={selectedInstitution}
-                onSelect={setSelectedInstitution}
-                refreshTrigger={refreshTrigger}
-                hasPartialMatch={hasPartialMatch}
-                hasFullMatch={hasFullMatch}
-                partialMatchCount={partialMatchCount}
-                fullMatchCount={fullMatchCount}
-                basket={currentBasket}
-                hasUniqueKeyInBasket={hasUniqueKeyMatch}
-              />
+              {isGroupingEnabled ? (
+                <InstitutionGroupingPanel
+                  year={year}
+                  sido={selectedRegion.sido}
+                  gugun={selectedRegion.gugun}
+                  onSelectionChange={(institutions) => {
+                    setSelectedGroupInstitutions(institutions);
+                    // 그룹에서 첫 번째 기관을 선택된 기관으로 설정
+                    if (institutions.length > 0) {
+                      setSelectedInstitution(institutions[0]);
+                    } else {
+                      setSelectedInstitution(null);
+                    }
+                  }}
+                />
+              ) : (
+                <InstitutionListPanel
+                  year={year}
+                  sido={selectedRegion.sido}
+                  gugun={selectedRegion.gugun}
+                  selectedInstitution={selectedInstitution}
+                  onSelect={setSelectedInstitution}
+                  refreshTrigger={refreshTrigger}
+                  hasPartialMatch={hasPartialMatch}
+                  hasFullMatch={hasFullMatch}
+                  partialMatchCount={partialMatchCount}
+                  fullMatchCount={fullMatchCount}
+                  basket={currentBasket}
+                  hasUniqueKeyInBasket={hasUniqueKeyMatch}
+                />
+              )}
             </CardContent>
           </Card>
         </div>

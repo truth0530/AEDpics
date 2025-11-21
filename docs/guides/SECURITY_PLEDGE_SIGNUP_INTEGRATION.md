@@ -4,10 +4,10 @@
 임시점검원이 회원가입 과정에서 보안 서약서에 동의하도록 통합하는 가이드입니다.
 보안 서약서는 **회원가입 시 1회만** 작성하며, 이후 점검 시에는 체크하지 않습니다.
 
-## 미리보기 페이지 접근
-- **URL**: https://aed.pics/security-pledge-preview
-- **용도**: 이메일 인증 없이 보안 서약서 내용을 미리 확인
-- **특징**: 체크박스와 서명이 비활성화된 읽기 전용 모드
+## 테스트 페이지 접근
+- **URL**: https://aed.pics/security-pledge
+- **용도**: 보안 서약서 내용 확인 및 UI 테스트
+- **특징**: 회원가입 플로우 통합 전까지는 직접 접근 가능
 
 ## 구현 방식
 
@@ -57,7 +57,6 @@ export default function SecurityPledgePage() {
 
   return (
     <SecurityPledge
-      preview={false}
       onComplete={handlePledgeComplete}
       redirectTo="/dashboard"
     />
@@ -203,14 +202,7 @@ export const authOptions: NextAuthOptions = {
 3. 서약서 페이지 표시 안 됨
 4. 관리자 승인 대기
 
-### 시나리오 3: 미리보기 페이지 접근
-1. 직접 URL 입력: `/security-pledge-preview`
-2. 서약서 내용 확인 (읽기 전용)
-3. 체크박스 비활성화 상태 확인
-4. 서명 영역 비활성화 확인
-5. "회원가입하러 가기" 버튼 확인
-
-### 시나리오 4: 서약서 작성 후 재로그인
+### 시나리오 3: 서약서 작성 후 재로그인
 1. 서약서 작성 완료한 임시점검원 계정
 2. 로그아웃 후 재로그인
 3. 서약서 페이지 건너뛰고 바로 대시보드 접근
@@ -227,9 +219,6 @@ graph TD
     E --> F[DB에 서약 정보 저장]
     F --> G[세션 업데이트]
     G --> H[대시보드]
-
-    I[미리보기 페이지] --> J[읽기 전용 모드]
-    J --> K[회원가입 유도]
 ```
 
 ## 주의사항
@@ -242,18 +231,12 @@ graph TD
    - korea.kr, nmc.or.kr: 서약서 제외
    - 기타 도메인: 서약서 필수
 
-3. **미리보기 페이지**
-   - 인증 없이 접근 가능
-   - 실제 제출 불가능
-   - 테스트 및 확인 용도
-
-4. **세션 관리**
+3. **세션 관리**
    - hasPledge 상태를 토큰에 저장
    - 서약서 작성 후 즉시 업데이트
 
 ## 관련 파일
-- `/app/security-pledge/page.tsx` - 실제 서약서 페이지
-- `/app/security-pledge-preview/page.tsx` - 미리보기 페이지
+- `/app/security-pledge/page.tsx` - 서약서 페이지
 - `/components/security/SecurityPledge.tsx` - 서약서 컴포넌트
 - `/app/api/security-pledge/route.ts` - 서약서 API
 - `/lib/middleware/security-pledge-check.ts` - 미들웨어 체크 함수
