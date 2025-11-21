@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 
 const SignatureCanvas = dynamic(() => import("react-signature-canvas"), {
     ssr: false,
-    loading: () => <div className="w-full h-40 bg-gray-100 animate-pulse rounded-lg" />,
+    loading: () => <div className="w-full h-40 bg-gray-800 animate-pulse rounded-lg" />,
 }) as any;
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,7 +29,6 @@ interface SecurityPledgeProps {
 
 export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: SecurityPledgeProps) {
     const { data: session } = useSession();
-    const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
     const [agreedToSecurity, setAgreedToSecurity] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const sigCanvas = React.useRef<any>(null);
@@ -98,93 +97,67 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
         }
     };
 
-    const canSubmit = agreedToPrivacy && agreedToSecurity;
+    const canSubmit = agreedToSecurity;
+
+    // 보건소명 가져오기 (session에서 조직명 사용)
+    const organizationName = session?.user?.organizationName || "[소속기관명]";
+
+    // 현재 날짜
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const day = currentDate.getDate();
+
+    // 사용자 이름
+    const userName = session?.user?.name || "[사용자 이름]";
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
-            <Card className="w-full max-w-2xl shadow-lg">
-                <CardHeader className="text-center border-b bg-white rounded-t-xl pb-6">
-                    <CardTitle className="text-2xl font-bold text-gray-900">
-                        보안 서약서 및 개인정보 수집 동의
+        <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
+            <Card className="w-full max-w-2xl shadow-2xl bg-gray-800 border-gray-700">
+                <CardHeader className="text-center border-b border-gray-700 bg-gray-800 rounded-t-xl pb-6">
+                    <CardTitle className="text-2xl font-bold text-white">
+                        보안 서약서
                     </CardTitle>
-                    <CardDescription className="mt-2 text-gray-600">
+                    <CardDescription className="mt-2 text-gray-400">
                         임시점검원 업무 수행을 위해 아래 내용을 확인하고 동의해 주십시오.
                     </CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-8 p-6">
-                    {/* Section 1: Personal Information Collection */}
+                    {/* Security Pledge Section */}
                     <section className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                1. 개인정보 수집 및 이용 동의
-                                <span className="text-xs font-normal text-red-500 border border-red-200 bg-red-50 px-2 py-0.5 rounded-full">필수</span>
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                보안 서약 내용
+                                <span className="text-xs font-normal text-red-400 border border-red-800 bg-red-950 px-2 py-0.5 rounded-full">필수</span>
                             </h3>
                         </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-gray-600 leading-relaxed">
-                            <p>
-                                본인은 임시점검원으로서 업무를 수행함에 있어, 다음과 같이 개인정보를 수집·이용하는 것에 동의합니다.
-                            </p>
-                            <ul className="list-disc list-inside mt-2 space-y-1 ml-1">
-                                <li><strong>수집 목적:</strong> 임시점검원 신원 확인, 업무 배정 및 관리, 보안 서약 효력 유지</li>
-                                <li><strong>수집 항목:</strong> 성명, 휴대전화번호, 생년월일, 소속(필요 시)</li>
-                                <li><strong>보유 기간:</strong> <span className="underline decoration-gray-400 underline-offset-2">업무 종료 및 보안 책임 기간 만료 시까지 (최대 1년)</span></li>
-                            </ul>
-                            <p className="mt-2 text-xs text-gray-500">
-                                ※ 귀하는 개인정보 수집·이용에 거부할 권리가 있으나, 동의 거부 시 임시점검원 업무 수행이 불가능할 수 있습니다.
-                            </p>
-                        </div>
-                        <div className="flex items-center space-x-2 pt-1">
-                            <Checkbox
-                                id="privacy-agreement"
-                                checked={agreedToPrivacy}
-                                onCheckedChange={(checked) => setAgreedToPrivacy(checked as boolean)}
-                            />
-                            <Label
-                                htmlFor="privacy-agreement"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                            >
-                                위 개인정보 수집 및 이용에 동의합니다.
-                            </Label>
-                        </div>
-                    </section>
-
-                    <div className="h-px bg-gray-100" />
-
-                    {/* Section 2: Security Pledge */}
-                    <section className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                2. 보안 서약서
-                                <span className="text-xs font-normal text-red-500 border border-red-200 bg-red-50 px-2 py-0.5 rounded-full">필수</span>
-                            </h3>
-                        </div>
-                        <ScrollArea className="h-[280px] w-full rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700 leading-relaxed shadow-sm">
-                            <p className="font-medium mb-2">
-                                본인은 귀사의 임시점검원으로서 현장 점검 업무를 수행함에 있어, 다음 사항을 준수할 것을 엄숙히 서약합니다.
+                        <ScrollArea className="h-[320px] w-full rounded-lg border border-gray-700 bg-gray-900 p-4 text-sm text-gray-300 leading-relaxed shadow-inner">
+                            <p className="font-medium mb-2 text-white">
+                                본인은 {organizationName}의 임시점검원으로서 현장 점검 업무를 수행함에 있어, 다음 사항을 준수할 것을 엄숙히 서약합니다.
                             </p>
 
                             <ol className="list-decimal list-outside ml-5 space-y-3">
                                 <li>
-                                    <strong>목적 외 사용 금지:</strong> 본인은 업무 수행 중 취득한 모든 정보(관리책임자 성명, 연락처, 설치 장소의 세부 정보 등)를 오직 정해진 점검 업무 목적으로만 사용하겠습니다.
+                                    <strong className="text-yellow-400">목적 외 사용 금지:</strong> 본인은 업무 수행 중 취득한 모든 정보(관리책임자 성명, 연락처, 설치 장소의 세부 정보 등)를 오직 정해진 점검 업무 목적으로만 사용하겠습니다.
                                 </li>
                                 <li>
-                                    <strong>제3자 제공 및 유출 금지:</strong> 본인은 업무상 알게 된 개인정보 및 기밀 사항을 타인에게 누설하거나, 인터넷/SNS 등에 게시하는 등 외부로 유출하지 않겠습니다.
+                                    <strong className="text-yellow-400">제3자 제공 및 유출 금지:</strong> 본인은 업무상 알게 된 개인정보 및 기밀 사항을 타인에게 누설하거나, 인터넷/SNS 등에 게시하는 등 외부로 유출하지 않겠습니다.
                                 </li>
                                 <li>
-                                    <strong>자료의 보호 및 파기:</strong> 본인은 점검 화면 캡처, 메모 등 업무상 생성된 자료를 철저히 관리하며, 업무가 종료되거나 목적이 달성된 즉시 복구 불가능한 방법으로 파기하겠습니다.
+                                    <strong className="text-yellow-400">자료의 보호 및 파기:</strong> 본인은 점검 화면 캡처, 메모 등 업무상 생성된 자료를 철저히 관리하며, 업무가 종료되거나 목적이 달성된 즉시 복구 불가능한 방법으로 파기하겠습니다.
                                 </li>
                                 <li>
-                                    <strong>접근 권한 준수:</strong> 본인은 부여받은 권한(본인 할당 장비 조회 및 본인 점검 결과 수정)을 넘어서는 시스템 접근이나 정보 열람을 시도하지 않겠습니다.
+                                    <strong className="text-yellow-400">접근 권한 준수:</strong> 본인은 부여받은 권한(본인 할당 장비 조회 및 본인 점검 결과 수정)에 충실할 것이며 아이디와 비밀번호를 타인과 공유하지 않겠습니다.
                                 </li>
                                 <li>
-                                    <strong>법적 책임:</strong> 만약 위 사항을 위반하여 개인정보 유출 사고나 보안 사고가 발생할 경우, 관련 법령(개인정보보호법 등)에 따른 민·형사상 책임을 질 것을 서약합니다.
+                                    <strong className="text-yellow-400">법적 책임:</strong> 만약 위 사항을 위반하여 개인정보 유출 사고나 보안 사고가 발생할 경우, 관련 법령(개인정보보호법 등)에 따른 민·형사상 책임을 질 것을 서약합니다.
                                 </li>
                             </ol>
 
-                            <div className="mt-6 pt-4 border-t border-dashed border-gray-200 text-center">
-                                <p className="text-gray-500 text-xs mb-1">{new Date().getFullYear()}년 {new Date().getMonth() + 1}월 {new Date().getDate()}일</p>
-                                <p className="font-bold text-gray-800">서약자: {session?.user?.name || session?.user?.email || '사용자'}</p>
+                            <div className="mt-6 pt-4 border-t border-dashed border-gray-700 text-center">
+                                <p className="text-gray-400 text-xs mb-1">{year}년 {month}월 {day}일</p>
+                                <p className="font-bold text-white">서약자: {userName}</p>
                             </div>
                         </ScrollArea>
 
@@ -193,32 +166,33 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                                 id="security-agreement"
                                 checked={agreedToSecurity}
                                 onCheckedChange={(checked) => setAgreedToSecurity(checked as boolean)}
+                                className="border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                             />
                             <Label
                                 htmlFor="security-agreement"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-gray-300"
                             >
                                 위 보안 서약 내용을 충분히 숙지하였으며, 이에 동의합니다.
                             </Label>
                         </div>
                     </section>
 
-                    <div className="h-px bg-gray-100" />
+                    <div className="h-px bg-gray-700" />
 
-                    {/* Section 3: Electronic Signature */}
+                    {/* Electronic Signature Section */}
                     <section className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                3. 전자 서명
-                                <span className="text-xs font-normal text-red-500 border border-red-200 bg-red-50 px-2 py-0.5 rounded-full">필수</span>
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                전자 서명
+                                <span className="text-xs font-normal text-red-400 border border-red-800 bg-red-950 px-2 py-0.5 rounded-full">필수</span>
                             </h3>
                         </div>
-                        <div className="border border-gray-300 rounded-lg bg-white overflow-hidden relative">
+                        <div className="border border-gray-700 rounded-lg bg-gray-950 overflow-hidden relative">
                             <SignatureCanvas
                                 ref={sigCanvas}
-                                penColor="black"
+                                penColor="white"
                                 canvasProps={{
-                                    className: "w-full h-40 bg-white cursor-crosshair"
+                                    className: "w-full h-40 bg-gray-950 cursor-crosshair"
                                 }}
                             />
                             <div className="absolute top-2 right-2">
@@ -226,33 +200,33 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                                     variant="outline"
                                     size="sm"
                                     onClick={clearSignature}
-                                    className="text-xs h-7 px-2"
+                                    className="text-xs h-7 px-2 bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
                                 >
                                     지우기
                                 </Button>
                             </div>
                             <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
-                                <span className="text-gray-300 text-sm">여기에 서명해주세요</span>
+                                <span className="text-gray-600 text-sm">여기에 서명해주세요</span>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-400">
                             ※ 위 서명은 본인의 자필 서명과 동일한 효력을 가집니다.
                         </p>
                     </section>
 
                 </CardContent>
 
-                <CardFooter className="flex flex-col gap-3 bg-gray-50 rounded-b-xl p-6 border-t">
+                <CardFooter className="flex flex-col gap-3 bg-gray-800 rounded-b-xl p-6 border-t border-gray-700">
                     <Button
-                        className="w-full text-base py-6 font-semibold shadow-md transition-all hover:shadow-lg"
+                        className="w-full text-base py-6 font-semibold shadow-md transition-all hover:shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
                         size="lg"
                         disabled={!canSubmit || isSubmitting}
                         onClick={handleSubmit}
                     >
                         {isSubmitting ? "제출 중..." : "동의하고 계속하기"}
                     </Button>
-                    <p className="text-xs text-center text-gray-400">
-                        모든 필수 항목에 동의하고 서명을 완료해야 합니다.
+                    <p className="text-xs text-center text-gray-500">
+                        보안 서약에 동의하고 서명을 완료해야 합니다.
                     </p>
                 </CardFooter>
             </Card>
