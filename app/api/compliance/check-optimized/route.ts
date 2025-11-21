@@ -192,6 +192,7 @@ export async function GET(request: NextRequest) {
         equipment_serial: true,
         management_number: true,
         installation_institution: true,
+        installation_position: true,
         installation_location_address: true,
         installation_address: true,
       }
@@ -217,11 +218,16 @@ export async function GET(request: NextRequest) {
             address: aed.installation_location_address || aed.installation_address || '',
             equipment_count: 0,
             equipment_serials: [],
+            equipment_details: [],
             confidence: 100
           };
         }
         acc[aed.management_number].equipment_count++;
         acc[aed.management_number].equipment_serials.push(aed.equipment_serial);
+        acc[aed.management_number].equipment_details.push({
+          serial: aed.equipment_serial,
+          location: aed.installation_position || aed.installation_location_address || aed.installation_address || ''
+        });
         return acc;
       }, {});
 

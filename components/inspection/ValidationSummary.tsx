@@ -195,7 +195,7 @@ export function ValidationSummary({ deviceData, onShowDetails, noBorder = false 
                 <p><span className="text-yellow-300">미점검 일수</span> - 60일 이상 미점검</p>
                 <p><span className="text-yellow-300">점검 이력 없음</span> - 점검 기록 없음</p>
                 <p><span className="text-red-300">제조번호 중복</span> - 동일 제조번호 존재</p>
-                <p><span className="text-green-300">이상 없음</span> - 모든 항목 정상</p>
+                <p><span className="text-green-300">특이사항 없음</span> - 모든 항목 정상</p>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -215,7 +215,7 @@ export function ValidationSummary({ deviceData, onShowDetails, noBorder = false 
       <div className="flex flex-wrap gap-2">
         {alerts.length > 0 ? alerts : (
           <span className="text-xs font-medium text-green-300">
-            이상 없음
+            특이사항 없음
           </span>
         )}
       </div>

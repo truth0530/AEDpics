@@ -46,6 +46,11 @@ interface CompletedTarget {
     institution_name: string;
     address: string;
     equipment_count: number;
+    equipment_serials?: string[];
+    equipment_details?: Array<{
+      serial: string;
+      location: string;
+    }>;
     confidence: number;
   }>;
   status: 'installed' | 'not_installed' | 'confirmed' | 'pending' | 'unmatchable';
@@ -418,8 +423,16 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                       <span className="text-sm text-muted-foreground truncate block max-w-xs">{target.reason || '-'}</span>
                     </TableCellTooltip>
                   ) : target.status === 'confirmed' && target.matches[0] ? (
-                    <TableCellTooltip content={target.matches[0].management_number}>
-                      <span className="font-mono text-sm truncate block max-w-xs">{target.matches[0].management_number}</span>
+                    <TableCellTooltip
+                      content={
+                        `설치기관명: ${target.matches[0].institution_name}\n` +
+                        `관리번호: ${target.matches[0].management_number}\n` +
+                        `주소: ${target.matches[0].address}\n` +
+                        `장비연번 (${target.matches[0].equipment_count}대):\n` +
+                        (target.matches[0].equipment_details?.map(d => `  ${d.serial} - ${d.location}`).join('\n') || '')
+                      }
+                    >
+                      <span className="font-mono text-sm truncate block max-w-xs cursor-help">{target.matches[0].management_number}</span>
                     </TableCellTooltip>
                   ) : (
                     <span className="text-muted-foreground">-</span>
@@ -429,8 +442,16 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                   {target.status === 'unmatchable' ? (
                     <span className="text-muted-foreground">-</span>
                   ) : target.status === 'confirmed' && target.matches[0] ? (
-                    <TableCellTooltip content={`${target.matches[0].equipment_count}대`}>
-                      <span className="text-sm">{target.matches[0].equipment_count}대</span>
+                    <TableCellTooltip
+                      content={
+                        target.matches[0].equipment_details && target.matches[0].equipment_details.length > 0
+                          ? target.matches[0].equipment_details.map(d => `${d.serial} → ${d.location}`).join('\n')
+                          : target.matches[0].equipment_serials && target.matches[0].equipment_serials.length > 0
+                          ? target.matches[0].equipment_serials.join('\n')
+                          : `${target.matches[0].equipment_count}대`
+                      }
+                    >
+                      <span className="text-sm cursor-help">{target.matches[0].equipment_count}대</span>
                     </TableCellTooltip>
                   ) : (
                     <span className="text-muted-foreground">-</span>
@@ -440,8 +461,16 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
                   {target.status === 'unmatchable' ? (
                     <span className="text-muted-foreground">-</span>
                   ) : target.status === 'confirmed' && target.matches[0] ? (
-                    <TableCellTooltip content={target.matches[0].address}>
-                      <span className="text-sm truncate block">{target.matches[0].address}</span>
+                    <TableCellTooltip
+                      content={
+                        `설치기관명: ${target.matches[0].institution_name}\n` +
+                        `관리번호: ${target.matches[0].management_number}\n` +
+                        `주소: ${target.matches[0].address}\n` +
+                        `장비연번 (${target.matches[0].equipment_count}대):\n` +
+                        (target.matches[0].equipment_details?.map(d => `  ${d.serial} - ${d.location}`).join('\n') || '')
+                      }
+                    >
+                      <span className="text-sm truncate block cursor-help">{target.matches[0].address}</span>
                     </TableCellTooltip>
                   ) : (
                     <span className="text-muted-foreground">-</span>
@@ -563,7 +592,7 @@ const ComplianceCompletedList = forwardRef<ComplianceCompletedListRef, Complianc
           <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(15, totalPages) }, (_, i) => {
               // 현재 페이지 근처의 페이지 번호만 표시
-              let pageNum;
+              let pageNum: number;
               if (totalPages <= 15) {
                 pageNum = i + 1;
               } else if (currentPage <= 7) {

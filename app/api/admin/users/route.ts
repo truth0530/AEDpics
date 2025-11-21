@@ -9,7 +9,8 @@ import { prisma } from '@/lib/prisma';
  *
  * Query Parameters:
  * - role: 역할별 필터링 (예: pending_approval, local_admin)
- * - region: 지역별 필터링
+ * - region: 시도별 필터링 (region_code)
+ * - gugun: 시군구별 필터링 (district)
  * - search: 이름 또는 이메일 검색
  * - page: 페이지 번호 (기본: 1)
  * - limit: 페이지당 개수 (기본: 20)
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
     const region = searchParams.get('region');
+    const gugun = searchParams.get('gugun');
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -49,8 +51,12 @@ export async function GET(request: NextRequest) {
       where.role = role;
     }
 
-    if (region) {
+    if (region && region !== '시도') {
       where.region_code = region;
+    }
+
+    if (gugun && gugun !== '전체') {
+      where.district = gugun;
     }
 
     if (search) {

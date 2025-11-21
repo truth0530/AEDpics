@@ -84,6 +84,9 @@ interface UsersResponse {
  */
 export default function AdminUsersPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved'>('pending');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [regionFilter, setRegionFilter] = useState<string>('');
+  const [gugunFilter, setGugunFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -99,6 +102,22 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
+
+  // 지역 변경 이벤트 리스너
+  useEffect(() => {
+    const handleRegionChange = (event: CustomEvent) => {
+      const { regionCode, sido, gugun } = event.detail;
+      console.log('[UserManagement] Region changed:', { regionCode, sido, gugun });
+      setRegionFilter(regionCode || '');
+      setGugunFilter(gugun || '');
+      setPage(1); // 페이지를 1로 리셋
+    };
+
+    window.addEventListener('regionSelected', handleRegionChange as EventListener);
+    return () => {
+      window.removeEventListener('regionSelected', handleRegionChange as EventListener);
+    };
+  }, []);
 
   // 수정 성공 메시지 표시
   useEffect(() => {
@@ -134,8 +153,8 @@ export default function AdminUsersPage() {
   const isMasterAccount = currentUserData?.user?.email === 'truth0530@nmc.or.kr';
 
   // 사용자 목록 조회
-  const { data, isLoading, error } = useQuery<UsersResponse>({
-    queryKey: ['admin', 'users', filter, searchQuery, page],
+  const { data, isLoading, error} = useQuery<UsersResponse>({
+    queryKey: ['admin', 'users', filter, roleFilter, regionFilter, gugunFilter, searchQuery, page],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('page', page.toString());
@@ -143,9 +162,18 @@ export default function AdminUsersPage() {
 
       if (filter === 'pending') {
         params.append('role', 'pending_approval');
+      } else if (roleFilter !== 'all') {
+        // 역할별 필터가 선택된 경우
+        params.append('role', roleFilter);
       }
       // 'approved' 필터는 특정 role만 필터링하지 않음
       // 대신 pending_approval이 아닌 모든 사용자를 보여줌
+      if (regionFilter) {
+        params.append('region', regionFilter);
+      }
+      if (gugunFilter) {
+        params.append('gugun', gugunFilter);
+      }
       if (searchQuery) {
         params.append('search', searchQuery);
       }
@@ -320,11 +348,12 @@ export default function AdminUsersPage() {
         {/* 필터 및 검색 */}
         <Card className="bg-gray-900 border-gray-800">
           <CardContent className="pt-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* 상태 필터 */}
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={() => { setFilter('pending'); setPage(1); }}
+                  onClick={() => { setFilter('pending'); setRoleFilter('all'); setPage(1); }}
                   variant={filter === 'pending' ? 'default' : 'outline'}
                   className={filter === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : 'border-gray-700 text-gray-300 hover:bg-gray-800'}
                 >
@@ -332,7 +361,7 @@ export default function AdminUsersPage() {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => { setFilter('approved'); setPage(1); }}
+                  onClick={() => { setFilter('approved'); setRoleFilter('all'); setPage(1); }}
                   variant={filter === 'approved' ? 'default' : 'outline'}
                   className={filter === 'approved' ? 'bg-green-600 hover:bg-green-700' : 'border-gray-700 text-gray-300 hover:bg-gray-800'}
                 >
@@ -340,7 +369,7 @@ export default function AdminUsersPage() {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => { setFilter('all'); setPage(1); }}
+                  onClick={() => { setFilter('all'); setRoleFilter('all'); setPage(1); }}
                   variant={filter === 'all' ? 'default' : 'outline'}
                   className={filter === 'all' ? 'bg-blue-600 hover:bg-blue-700' : 'border-gray-700 text-gray-300 hover:bg-gray-800'}
                 >
@@ -348,7 +377,94 @@ export default function AdminUsersPage() {
                 </Button>
               </div>
 
-              <div className="flex-1 relative">
+              {/* 역할별 필터 */}
+              {filter !== 'pending' && (
+                <>
+                  <div className="h-6 w-px bg-gray-700" />
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <Badge
+                      onClick={() => { setRoleFilter('all'); setPage(1); }}
+                      className={`cursor-pointer text-xs ${
+                        roleFilter === 'all'
+                          ? 'bg-blue-600 hover:bg-blue-700 border-blue-500'
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                      }`}
+                      variant="outline"
+                    >
+                      전체
+                    </Badge>
+                    <Badge
+                      onClick={() => { setRoleFilter('emergency_center_admin'); setPage(1); }}
+                      className={`cursor-pointer text-xs ${
+                        roleFilter === 'emergency_center_admin'
+                          ? getRoleBadgeClass('emergency_center_admin')
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                      }`}
+                      variant="outline"
+                    >
+                      {getRoleLabel('emergency_center_admin')}
+                    </Badge>
+                    <Badge
+                      onClick={() => { setRoleFilter('regional_emergency_center_admin'); setPage(1); }}
+                      className={`cursor-pointer text-xs ${
+                        roleFilter === 'regional_emergency_center_admin'
+                          ? getRoleBadgeClass('regional_emergency_center_admin')
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                      }`}
+                      variant="outline"
+                    >
+                      {getRoleLabel('regional_emergency_center_admin')}
+                    </Badge>
+                    <Badge
+                      onClick={() => { setRoleFilter('ministry_admin'); setPage(1); }}
+                      className={`cursor-pointer text-xs ${
+                        roleFilter === 'ministry_admin'
+                          ? getRoleBadgeClass('ministry_admin')
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                      }`}
+                      variant="outline"
+                    >
+                      {getRoleLabel('ministry_admin')}
+                    </Badge>
+                    <Badge
+                      onClick={() => { setRoleFilter('regional_admin'); setPage(1); }}
+                      className={`cursor-pointer text-xs ${
+                        roleFilter === 'regional_admin'
+                          ? getRoleBadgeClass('regional_admin')
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                      }`}
+                      variant="outline"
+                    >
+                      {getRoleLabel('regional_admin')}
+                    </Badge>
+                    <Badge
+                      onClick={() => { setRoleFilter('local_admin'); setPage(1); }}
+                      className={`cursor-pointer text-xs ${
+                        roleFilter === 'local_admin'
+                          ? getRoleBadgeClass('local_admin')
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                      }`}
+                      variant="outline"
+                    >
+                      {getRoleLabel('local_admin')}
+                    </Badge>
+                    <Badge
+                      onClick={() => { setRoleFilter('temporary_inspector'); setPage(1); }}
+                      className={`cursor-pointer text-xs ${
+                        roleFilter === 'temporary_inspector'
+                          ? getRoleBadgeClass('temporary_inspector')
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
+                      }`}
+                      variant="outline"
+                    >
+                      {getRoleLabel('temporary_inspector')}
+                    </Badge>
+                  </div>
+                </>
+              )}
+
+              {/* 검색창 */}
+              <div className="flex-1 min-w-[200px] relative ml-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="text"
