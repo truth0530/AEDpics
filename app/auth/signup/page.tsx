@@ -17,14 +17,16 @@ import { OrganizationAutocomplete } from '@/components/ui/organization-autocompl
 import { extractRetryInfo } from '@/lib/utils/rate-limit-helper';
 import { formatPhoneNumber, validatePhoneNumber, getPhoneErrorMessage, isMobilePhone } from '@/lib/utils/phone';
 import { getRegionFromPhone } from '@/lib/utils/area-code';
+import { SecurityPledge } from '@/components/security/SecurityPledge';
 
 export default function ImprovedSignUpPage() {
   const router = useRouter();
-  
-  // 단계별 상태 관리
-  const [currentStep, setCurrentStep] = useState(1); // 1: 이메일, 2: OTP, 3: 정보입력, 4: 완료
+
+  // 단계별 상태 관리 (3.5 추가: 보안서약서)
+  const [currentStep, setCurrentStep] = useState(1); // 1: 이메일, 2: OTP, 3: 정보입력, 3.5: 보안서약서(임시점검원만), 4: 완료
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pledgeSignature, setPledgeSignature] = useState<string | null>(null); // 보안서약서 서명 데이터
   
   // 이메일 인증 상태
   const [email, setEmail] = useState('');
@@ -350,10 +352,10 @@ export default function ImprovedSignUpPage() {
     }
   };
 
-  // Step 3: 회원가입 완료
-  const handleCompleteSignup = async (e: React.FormEvent) => {
+  // Step 3: 정보 입력 완료 → 임시점검원이면 보안서약서로, 아니면 회원가입 진행
+  const handleProceedFromInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('회원가입 시작');
+    console.log('정보 입력 완료');
     setLoading(true);
     setError(null);
 
@@ -400,6 +402,34 @@ export default function ImprovedSignUpPage() {
       return;
     }
 
+    setLoading(false);
+
+    // 임시점검원(기타 도메인)인지 확인
+    const emailDomain = verifiedEmail.split('@')[1];
+    const isTemporaryInspector = emailDomain !== 'korea.kr' && emailDomain !== 'nmc.or.kr';
+
+    if (isTemporaryInspector) {
+      // 임시점검원은 보안서약서 단계로 이동
+      setCurrentStep(3.5);
+    } else {
+      // 공공기관 사용자는 바로 회원가입 진행
+      await handleCompleteSignup();
+    }
+  };
+
+  // 보안서약서 완료 처리
+  const handlePledgeComplete = (signatureData: string) => {
+    setPledgeSignature(signatureData);
+    // 보안서약서 완료 후 회원가입 진행
+    handleCompleteSignup();
+  };
+
+  // 최종 회원가입 처리
+  const handleCompleteSignup = async () => {
+    console.log('회원가입 API 호출 시작');
+    setLoading(true);
+    setError(null);
+
     try {
       // 기타 선택 시 customOrganizationName을 사용, 아니면 organizationName 사용
       const finalOrgName = (formData.organizationName === '기타 (직접 입력)' && formData.customOrganizationName)
@@ -443,7 +473,9 @@ export default function ImprovedSignUpPage() {
             accountType: accountType ?? 'public',
             role: 'pending_approval',
             isActive: false
-          }
+          },
+          // 보안서약서 서명 데이터 (임시점검원만)
+          pledgeSignature: pledgeSignature
         })
       });
 
@@ -902,7 +934,7 @@ export default function ImprovedSignUpPage() {
 
           {/* Step 3: 정보 입력 */}
           {currentStep === 3 && (
-            <form onSubmit={handleCompleteSignup}>
+            <form onSubmit={handleProceedFromInfo}>
               <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
                 <div className="flex items-start gap-2 mb-2">
                   <span className="text-green-400 text-lg">✓</span>
@@ -1281,6 +1313,23 @@ export default function ImprovedSignUpPage() {
                 </NeoButton>
               </div>
             </form>
+          )}
+
+          {/* Step 3.5: 보안서약서 (임시점검원만) */}
+          {currentStep === 3.5 && (
+            <div className="relative -m-6">
+              <SecurityPledge
+                onComplete={handlePledgeComplete}
+                userData={{
+                  email: verifiedEmail,
+                  fullName: formData.fullName,
+                  organizationName: formData.organizationName === '기타 (직접 입력)' && formData.customOrganizationName
+                    ? formData.customOrganizationName
+                    : formData.organizationName
+                }}
+                isSignupFlow={true}
+              />
+            </div>
           )}
 
           {/* Step 4: 완료 */}

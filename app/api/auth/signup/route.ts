@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // 2. 요청 데이터 파싱
     const body = await request.json()
-    const { email, password, profileData } = body
+    const { email, password, profileData, pledgeSignature } = body
 
     // 3. 필수 필드 검증
     if (!email || !password) {
@@ -231,6 +231,23 @@ export async function POST(request: NextRequest) {
         user_agent: request.headers.get('user-agent') || 'unknown'
       }
     })
+
+    // 11. 보안서약서 저장 (임시점검원만)
+    if (pledgeSignature && isTemporaryInspector) {
+      await prisma.security_pledges.create({
+        data: {
+          id: randomUUID(),
+          user_id: user.id,
+          pledge_type: 'temporary_inspector_pledge',
+          agreed_at: new Date(),
+          signature_data: pledgeSignature,
+          ip_address: request.headers.get('x-forwarded-for') || null,
+          user_agent: request.headers.get('user-agent') || null,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      })
+    }
 
     // 비밀번호 해시 제거 후 반환
     const { password_hash: _, ...safeUser } = user

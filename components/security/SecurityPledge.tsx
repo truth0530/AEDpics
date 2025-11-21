@@ -23,41 +23,67 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SecurityPledgeProps {
-    onComplete?: () => void;
+    onComplete?: ((signatureData?: string) => void) | (() => void);
     redirectTo?: string;
+    // 회원가입 시 전달되는 데이터
+    userData?: {
+        email: string;
+        fullName: string;
+        organizationName: string;
+    };
+    isSignupFlow?: boolean; // 회원가입 플로우인지 구분
 }
 
-export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: SecurityPledgeProps) {
+export function SecurityPledge({
+    onComplete,
+    redirectTo = "/dashboard",
+    userData,
+    isSignupFlow = false
+}: SecurityPledgeProps) {
     const { data: session } = useSession();
     const [agreedToSecurity, setAgreedToSecurity] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [hasSigned, setHasSigned] = useState(false); // 서명 여부 추가
     const sigCanvas = React.useRef<any>(null);
     const router = useRouter();
 
     React.useEffect(() => {
-        const checkStatus = async () => {
-            try {
-                const res = await fetch("/api/security-pledge");
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.hasSigned) {
-                        // 이미 서약서 작성한 경우 리다이렉트하거나 onComplete 호출
-                        if (onComplete) {
-                            onComplete();
-                        } else {
-                            router.replace(redirectTo);
+        // 회원가입 플로우가 아닐 때만 기존 서약 상태 체크
+        if (!isSignupFlow) {
+            const checkStatus = async () => {
+                try {
+                    const res = await fetch("/api/security-pledge");
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.hasSigned) {
+                            // 이미 서약서 작성한 경우 리다이렉트하거나 onComplete 호출
+                            if (onComplete) {
+                                onComplete();
+                            } else {
+                                router.replace(redirectTo);
+                            }
                         }
                     }
+                } catch (error) {
+                    console.error("Failed to check pledge status:", error);
                 }
-            } catch (error) {
-                console.error("Failed to check pledge status:", error);
-            }
-        };
-        checkStatus();
-    }, [router, onComplete, redirectTo]);
+            };
+            checkStatus();
+        }
+    }, [router, onComplete, redirectTo, isSignupFlow]);
+
+    // 서명 캔버스 변경 감지
+    const handleSignatureChange = () => {
+        if (sigCanvas.current && !sigCanvas.current.isEmpty()) {
+            setHasSigned(true);
+        } else {
+            setHasSigned(false);
+        }
+    };
 
     const clearSignature = () => {
         sigCanvas.current?.clear();
+        setHasSigned(false);
     };
 
     const handleSubmit = async () => {
@@ -75,24 +101,33 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
         try {
             const signatureData = sigCanvas.current.getTrimmedCanvas().toDataURL("image/png");
 
-            const response = await fetch("/api/security-pledge", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ signatureData }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Failed to submit pledge");
-            }
-
-            alert("보안 서약서가 제출되었습니다.");
-
-            // onComplete 콜백이 있으면 호출, 없으면 리다이렉트
-            if (onComplete) {
-                onComplete();
+            // 회원가입 플로우인 경우 서명 데이터를 onComplete로 전달
+            if (isSignupFlow) {
+                if (onComplete) {
+                    // 서명 데이터를 전달하기 위해 수정
+                    (onComplete as any)(signatureData);
+                }
             } else {
-                router.push(redirectTo);
+                // 일반 플로우 (바로가기 링크 등)
+                const response = await fetch("/api/security-pledge", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ signatureData }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Failed to submit pledge");
+                }
+
+                alert("보안 서약서가 제출되었습니다.");
+
+                // onComplete 콜백이 있으면 호출, 없으면 리다이렉트
+                if (onComplete) {
+                    onComplete();
+                } else {
+                    router.push(redirectTo);
+                }
             }
         } catch (error) {
             console.error("Submission error:", error);
@@ -102,10 +137,11 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
         }
     };
 
-    const canSubmit = agreedToSecurity;
+    // 3단계 검증: 1.체크박스 체크 2.서명 완료 3.버튼 활성화
+    const canSubmit = agreedToSecurity && hasSigned;
 
-    // 보건소명 가져오기 (session에서 조직명 사용)
-    const organizationName = session?.user?.organizationName || "[소속기관명]";
+    // 보건소명 가져오기 (userData 우선, 없으면 session에서)
+    const organizationName = userData?.organizationName || session?.user?.organizationName || "[소속기관명]";
 
     // 현재 날짜
     const currentDate = new Date();
@@ -113,12 +149,12 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
     const month = currentDate.getMonth() + 1;
     const day = currentDate.getDate();
 
-    // 사용자 이름
-    const userName = session?.user?.name || "[사용자 이름]";
+    // 사용자 이름 (userData 우선, 없으면 session에서)
+    const userName = userData?.fullName || session?.user?.name || "[사용자 이름]";
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
-            <Card className="w-full max-w-2xl shadow-2xl bg-gray-800 border-gray-700">
+        <div className={isSignupFlow ? "" : "flex justify-center items-center min-h-screen bg-gray-900 p-4"}>
+            <Card className={`w-full ${isSignupFlow ? "" : "max-w-2xl"} shadow-2xl bg-gray-800 border-gray-700`}>
                 <CardHeader className="text-center border-b border-gray-700 bg-gray-800 rounded-t-xl pb-6">
                     <CardTitle className="text-2xl font-bold text-white">
                         보안 서약서
@@ -196,6 +232,7 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                             <SignatureCanvas
                                 ref={sigCanvas}
                                 penColor="white"
+                                onEnd={handleSignatureChange}
                                 canvasProps={{
                                     className: "w-full h-40 bg-gray-950 cursor-crosshair"
                                 }}
@@ -213,7 +250,8 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                             </div>
                             <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
                                 <span className="text-gray-600 text-sm">
-                                    {!agreedToSecurity ? '먼저 위 보안 서약에 동의해주세요' : '여기에 서명해주세요'}
+                                    {!agreedToSecurity ? '먼저 위 보안 서약에 동의해주세요' :
+                                     hasSigned ? '서명이 완료되었습니다' : '여기에 서명해주세요'}
                                 </span>
                             </div>
                         </div>
@@ -234,7 +272,9 @@ export function SecurityPledge({ onComplete, redirectTo = "/dashboard" }: Securi
                         {isSubmitting ? "제출 중..." : "동의하고 계속하기"}
                     </Button>
                     <p className="text-xs text-center text-gray-500">
-                        보안 서약에 동의하고 서명을 완료해야 합니다.
+                        {!agreedToSecurity ? '보안 서약에 동의해주세요' :
+                         !hasSigned ? '전자서명을 해주세요' :
+                         '동의하고 계속하기 버튼을 눌러주세요'}
                     </p>
                 </CardFooter>
             </Card>
