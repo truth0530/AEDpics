@@ -38,8 +38,24 @@ export async function POST(request: NextRequest) {
       if (gugun) whereConditions += ` AND gugun = '${gugun}'`;
 
       const targets = await prisma.$queryRawUnsafe<any[]>(`
+        WITH numbered_targets AS (
+          SELECT
+            institution_name,
+            sido,
+            gugun,
+            division,
+            sub_division,
+            unique_key,
+            address,
+            ROW_NUMBER() OVER (ORDER BY institution_name, sido, gugun) as row_num
+          FROM target_list_2025
+          WHERE ${whereConditions}
+        )
         SELECT
-          CONCAT(institution_name, '_', sido, '_', gugun, '_', COALESCE(unique_key, ROW_NUMBER() OVER ())) as target_key,
+          CASE
+            WHEN unique_key IS NOT NULL THEN CONCAT(institution_name, '_', sido, '_', gugun, '_', unique_key)
+            ELSE CONCAT(institution_name, '_', sido, '_', gugun, '_row_', row_num::text)
+          END as target_key,
           institution_name,
           sido,
           gugun,
@@ -47,11 +63,10 @@ export async function POST(request: NextRequest) {
           sub_division,
           unique_key,
           address,
-          equipment_count::integer as equipment_count,
+          0::integer as equipment_count,
           0::integer as matched_count,
-          COALESCE(equipment_count, 0)::integer as unmatched_count
-        FROM target_list_2025
-        WHERE ${whereConditions}
+          0::integer as unmatched_count
+        FROM numbered_targets
         ORDER BY institution_name, sido, gugun
         LIMIT 5000
       `);

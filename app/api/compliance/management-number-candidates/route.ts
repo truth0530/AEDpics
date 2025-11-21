@@ -201,6 +201,8 @@ export async function GET(request: NextRequest) {
               ad.sido,
               ad.gugun,
               ad.equipment_serial,
+              ad.category_1,
+              ad.category_2,
               EXISTS(
                 SELECT 1 FROM aedpics.target_list_devices tld
                 JOIN aedpics.aed_data ad2 ON tld.equipment_serial = ad2.equipment_serial
@@ -254,10 +256,11 @@ export async function GET(request: NextRequest) {
               ELSE 0  -- TNMS가 계산하도록 0점 부여
             END as confidence,
             gd.is_matched,
-            gd.matched_to
+            gd.matched_to,
+            gd.matched_institution_name,
+            gd.category_1,
+            gd.category_2
           FROM grouped_data gd
-          WHERE gd.sido = ${normalizedSido}
-            AND gd.gugun = ${normalizedGugun}
           ORDER BY confidence DESC, equipment_count DESC
           LIMIT 100
         `;
