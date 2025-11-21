@@ -25,11 +25,12 @@ const DOMAIN_SENDER_MAPPING: Record<string, string[]> = {
   // 네이버 계열 (2025-11-21 수정: Naver는 aed.pics 1차 권장)
   'naver.com': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
 
-  // 다음/카카오 계열 (한메일 포함) (2025-11-22 시험: admin@aed.pics 추가)
-  // 우선순위: admin@aed.pics (새로운 계정) → noreply@aed.pics (이전 성공) → noreply@nmc.or.kr (항상 실패)
-  'daum.net': ['admin@aed.pics', 'noreply@aed.pics', 'noreply@nmc.or.kr'],
-  'hanmail.net': ['admin@aed.pics', 'noreply@aed.pics', 'noreply@nmc.or.kr'],  // hanmail은 다음 계열
-  'kakao.com': ['admin@aed.pics', 'noreply@aed.pics', 'noreply@nmc.or.kr'],
+  // 다음/카카오 계열 (한메일 포함)
+  // 2025-11-22 확정: admin@aed.pics 테스트 실패 - 도메인 레벨 차단 확인
+  // 우선순위: noreply@aed.pics (마지막 성공 기록) → noreply@nmc.or.kr (안정적)
+  'daum.net': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
+  'hanmail.net': ['noreply@aed.pics', 'noreply@nmc.or.kr'],  // hanmail은 다음 계열
+  'kakao.com': ['noreply@aed.pics', 'noreply@nmc.or.kr'],
 
   // 구글 계열
   'gmail.com': ['noreply@aed.pics', 'noreply@nmc.or.kr'],

@@ -297,21 +297,15 @@ export async function sendSmartEmail(
 ): Promise<any> {
   let senderEmail: string;
 
-  try {
-    // 스마트 발신자 선택 시스템 사용 (admin@aed.pics 포함)
-    senderEmail = await selectSmartSender(to);
-    logger.info('SmartEmailSender', 'Selected sender using smart selector', {
-      recipient: to,
-      sender: senderEmail
-    });
-  } catch (error) {
-    // 폴백: 스마트 선택 실패 시 기본값
-    logger.error('SmartEmailSender', 'Smart selector failed, using fallback', {
-      recipient: to,
-      error: error instanceof Error ? error.message : error
-    });
-    senderEmail = 'noreply@aed.pics';
-  }
+  // 2025-11-22: 단일 발신자로 복귀
+  // 10월 31일 이후 도입한 동적 발신자 선택이 Daum 차단 유발
+  // 10월 31일 이전처럼 noreply@nmc.or.kr 단일 발신자 사용
+  senderEmail = 'noreply@nmc.or.kr';
+  logger.info('SmartEmailSender', 'Using single sender for stability', {
+    recipient: to,
+    sender: senderEmail,
+    note: 'Dynamic selection caused Daum blocking since Oct 31'
+  });
 
   const config: NCPEmailConfig = {
     ...baseConfig,
