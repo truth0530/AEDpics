@@ -297,14 +297,26 @@ export async function sendSmartEmail(
 ): Promise<any> {
   let senderEmail: string;
 
-  // 2025-11-22: 단일 발신자로 복귀
-  // 10월 31일 이후 도입한 동적 발신자 선택이 Daum 차단 유발
-  // 10월 31일 이전처럼 noreply@nmc.or.kr 단일 발신자 사용
-  senderEmail = 'noreply@nmc.or.kr';
-  logger.info('SmartEmailSender', 'Using single sender for stability', {
+  // 2025-11-22: 도메인별 검증된 발신자 사용
+  // 테스트 결과:
+  // - Daum/Hanmail: noreply@nmc.or.kr 성공
+  // - Naver: noreply@aed.pics 성공 (nmc.or.kr은 SECURITY_AND_POLICY_ABNORMAL)
+  const domain = to.split('@')[1]?.toLowerCase();
+
+  if (domain === 'naver.com') {
+    senderEmail = 'noreply@aed.pics';  // Naver는 이것만 성공
+  } else if (domain === 'daum.net' || domain === 'hanmail.net') {
+    senderEmail = 'noreply@nmc.or.kr';  // Daum은 이것만 성공
+  } else if (domain === 'nmc.or.kr') {
+    senderEmail = 'noreply@nmc.or.kr';  // 같은 도메인
+  } else {
+    senderEmail = 'noreply@aed.pics';  // 기본값 (Gmail 등)
+  }
+
+  logger.info('SmartEmailSender', 'Using verified sender per domain', {
     recipient: to,
-    sender: senderEmail,
-    note: 'Dynamic selection caused Daum blocking since Oct 31'
+    domain: domain,
+    sender: senderEmail
   });
 
   const config: NCPEmailConfig = {
