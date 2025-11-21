@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
     // 연도별 테이블 선택
     if (year === '2025') {
       // 2025년 데이터는 target_list_2025 테이블 사용
-      const targets = await prisma.$queryRaw<any[]>`
+      let whereConditions = '1=1';
+      if (sido) whereConditions += ` AND sido = '${sido}'`;
+      if (gugun) whereConditions += ` AND gugun = '${gugun}'`;
+
+      const targets = await prisma.$queryRawUnsafe<any[]>(`
         SELECT
           CONCAT(institution_name, '_', sido, '_', gugun, '_', COALESCE(unique_key, ROW_NUMBER() OVER ())) as target_key,
           institution_name,
@@ -44,29 +48,13 @@ export async function POST(request: NextRequest) {
           unique_key,
           address,
           equipment_count::integer as equipment_count,
-          COALESCE(
-            (SELECT COUNT(DISTINCT cm.equipment_serial)
-             FROM compliance_matches cm
-             WHERE cm.target_key = CONCAT(institution_name, '_', sido, '_', gugun, '_', COALESCE(unique_key, ROW_NUMBER() OVER ()))
-             AND cm.year = ${year}
-             AND cm.is_deleted = false),
-            0
-          )::integer as matched_count,
-          (equipment_count::integer - COALESCE(
-            (SELECT COUNT(DISTINCT cm.equipment_serial)
-             FROM compliance_matches cm
-             WHERE cm.target_key = CONCAT(institution_name, '_', sido, '_', gugun, '_', COALESCE(unique_key, ROW_NUMBER() OVER ()))
-             AND cm.year = ${year}
-             AND cm.is_deleted = false),
-            0
-          ))::integer as unmatched_count
+          0::integer as matched_count,
+          COALESCE(equipment_count, 0)::integer as unmatched_count
         FROM target_list_2025
-        WHERE 1=1
-        ${sido ? `AND sido = '${sido}'` : ''}
-        ${gugun ? `AND gugun = '${gugun}'` : ''}
+        WHERE ${whereConditions}
         ORDER BY institution_name, sido, gugun
         LIMIT 5000
-      `;
+      `);
 
       // 타입 변환
       const institutions: TargetInstitution[] = targets.map((t: any) => ({

@@ -5,8 +5,6 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import {
   GitMerge,
@@ -36,7 +34,6 @@ export default function InstitutionGroupingPanel({
   onGroupsReady,
   onSelectionChange
 }: InstitutionGroupingPanelProps) {
-  const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [groups, setGroups] = useState<InstitutionGroup[]>([]);
@@ -48,8 +45,6 @@ export default function InstitutionGroupingPanel({
 
   // 그룹핑 분석 실행
   const analyzeGroups = useCallback(async () => {
-    if (!isEnabled) return;
-
     setIsLoading(true);
     setError(null);
     setProgress(0);
@@ -75,7 +70,10 @@ export default function InstitutionGroupingPanel({
       setProgress(100);
 
       if (!response.ok) {
-        throw new Error('Failed to analyze groups');
+        console.error('API Response Error:', response.status, response.statusText);
+        const errorData = await response.text();
+        console.error('Error details:', errorData);
+        throw new Error(`Failed to analyze groups: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -98,20 +96,12 @@ export default function InstitutionGroupingPanel({
     } finally {
       setIsLoading(false);
     }
-  }, [isEnabled, year, sido, gugun, onGroupsReady]);
+  }, [year, sido, gugun, onGroupsReady]);
 
-  // 그룹핑 활성화/비활성화 시 분석 실행
+  // 컴포넌트 마운트 시 자동으로 분석 실행
   useEffect(() => {
-    if (isEnabled) {
-      analyzeGroups();
-    } else {
-      setGroups([]);
-      setUngrouped([]);
-      setStats(null);
-      setSelectedGroups(new Set());
-      setSelectedMembers(new Set());
-    }
-  }, [isEnabled, analyzeGroups]);
+    analyzeGroups();
+  }, [analyzeGroups]);
 
   // 그룹 선택 핸들러
   const handleGroupSelect = (groupId: string, selected: boolean) => {
@@ -197,28 +187,32 @@ export default function InstitutionGroupingPanel({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full h-full flex flex-col overflow-hidden">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <GitMerge className="w-5 h-5 text-blue-500" />
-            <CardTitle>중복 기관 그룹핑</CardTitle>
+            <CardTitle className="text-base">중복 기관 그룹핑</CardTitle>
+            {stats && (
+              <Badge variant="secondary" className="text-xs">
+                {stats.groupCount}개 그룹
+              </Badge>
+            )}
           </div>
-          <div className="flex items-center gap-4">
-            <Label htmlFor="grouping-toggle" className="cursor-pointer">
-              그룹핑 모드
-            </Label>
-            <Switch
-              id="grouping-toggle"
-              checked={isEnabled}
-              onCheckedChange={setIsEnabled}
-              disabled={isLoading}
-            />
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={analyzeGroups}
+            disabled={isLoading}
+            className="text-xs"
+          >
+            <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+            재분석
+          </Button>
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex-1 overflow-hidden flex flex-col">
         {/* 진행 상태 표시 */}
         {isLoading && progress > 0 && (
           <div className="mb-4">
@@ -238,19 +232,8 @@ export default function InstitutionGroupingPanel({
           </Alert>
         )}
 
-        {/* 그룹핑 비활성화 상태 */}
-        {!isEnabled && !isLoading && (
-          <Alert className="mb-4">
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              그룹핑 모드를 활성화하면 유사한 기관들을 자동으로 그룹화하여
-              일괄 매칭을 수행할 수 있습니다.
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* 통계 정보 */}
-        {isEnabled && stats && (
+        {stats && (
           <div className="grid grid-cols-4 gap-3 mb-4">
             <div className="p-3 bg-gray-50 rounded-lg">
               <div className="text-xs text-gray-600">전체 기관</div>
@@ -278,7 +261,7 @@ export default function InstitutionGroupingPanel({
         )}
 
         {/* 액션 버튼 */}
-        {isEnabled && groups.length > 0 && (
+        {groups.length > 0 && (
           <div className="flex items-center gap-2 mb-4">
             <Button
               variant="outline"
@@ -325,7 +308,7 @@ export default function InstitutionGroupingPanel({
         )}
 
         {/* 그룹 리스트 */}
-        {isEnabled && groups.length > 0 && (
+        {groups.length > 0 && (
           <div className="space-y-3 max-h-[600px] overflow-y-auto">
             {groups.map(group => (
               <InstitutionGroupCard
@@ -344,7 +327,7 @@ export default function InstitutionGroupingPanel({
         )}
 
         {/* 그룹화되지 않은 기관 수 표시 */}
-        {isEnabled && ungrouped.length > 0 && (
+        {ungrouped.length > 0 && (
           <Alert className="mt-4">
             <Info className="h-4 w-4" />
             <AlertDescription>
@@ -355,7 +338,7 @@ export default function InstitutionGroupingPanel({
         )}
 
         {/* 일괄 매칭 버튼 */}
-        {isEnabled && selectedMembers.size > 0 && (
+        {selectedMembers.size > 0 && (
           <div className="mt-4 pt-4 border-t">
             <Button
               className="w-full"
