@@ -7,6 +7,7 @@
 
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
+import { selectSmartSender, recordSendingFailure, recordSendingSuccess } from '@/lib/email/smart-sender-selector-simplified';
 
 export interface NCPEmailRecipient {
   address: string;
@@ -269,21 +270,22 @@ export async function sendSimpleEmail(
 /**
  * 수신자 도메인에 따라 발신자를 자동 선택하는 이메일 발송 헬퍼
  *
- * 2025-11-22 롤백: 스마트 발신자 선택 시스템 비활성화
- * - 도메인별 기본 발신자 선택으로 회귀
- * - NCP 자동 보안 정책으로 인한 근본적 제약 인식
- * - 근본 해결책: NCP 기술 지원팀의 화이트리스트 등록 필수
+ * 2025-11-22 재활성화: admin@aed.pics 추가 테스트
+ * - Daum용 새로운 발신자(admin@aed.pics) 추가 시도
+ * - 우선순위: admin@aed.pics → noreply@aed.pics → noreply@nmc.or.kr
+ * - 목표: Daum 차단 문제 해결 방안 탐색
  *
- * 2025-11-21 스마트 발신자 선택 시스템 활성화 시도 (롤백됨):
- * - 도메인별 발신자 로테이션으로 Daum 반복 차단 문제 자동 해결 시도
- * - 실제 결과: 완전 실패 (100% 실패율, NCP 자동 정책 우회 불가)
+ * 2025-11-22 이전 롤백:
+ * - 도메인별 기본 발신자 선택으로 회귀 시도
+ * - 실제 결과: noreply@aed.pics/nmc.or.kr만으로도 해결 불가
  *
  * 과거 커밋 이력:
  * - 2025-10-31 240972d: 동적 발신자 선택 구현
  * - 2025-11-13 c719845: 도메인 기반 선택 복구
  * - 2025-11-21 ebc0513: Daum 고정식 (noreply@nmc.or.kr)
- * - 2025-11-21 (3개 커밋): 스마트 선택 활성화 시도
- * - 2025-11-22: 롤백 (실패 입증)
+ * - 2025-11-21 (3개 커밋): 스마트 선택 활성화 시도 (실패)
+ * - 2025-11-22 08:48: 롤백 (안정적 구성으로)
+ * - 2025-11-22 09:00: 재활성화 (admin@aed.pics 테스트)
  */
 export async function sendSmartEmail(
   baseConfig: NCPEmailConfig,
@@ -293,20 +295,29 @@ export async function sendSmartEmail(
   htmlBody: string,
   retryOptions?: RetryOptions
 ): Promise<any> {
-  // 2025-11-22 롤백: 스마트 선택 대신 안정적인 도메인 기반 선택 사용
-  const senderEmail = selectSenderEmail(to);
+  let senderEmail: string;
+
+  try {
+    // 스마트 발신자 선택 시스템 사용 (admin@aed.pics 포함)
+    senderEmail = await selectSmartSender(to);
+    logger.info('SmartEmailSender', 'Selected sender using smart selector', {
+      recipient: to,
+      sender: senderEmail
+    });
+  } catch (error) {
+    // 폴백: 스마트 선택 실패 시 기본값
+    logger.error('SmartEmailSender', 'Smart selector failed, using fallback', {
+      recipient: to,
+      error: error instanceof Error ? error.message : error
+    });
+    senderEmail = 'noreply@aed.pics';
+  }
 
   const config: NCPEmailConfig = {
     ...baseConfig,
     senderAddress: senderEmail,
     senderName: 'AED 픽스'
   };
-
-  logger.info('EmailSender', 'Selected sender for recipient', {
-    recipient: to,
-    sender: senderEmail,
-    note: 'Using stable domain-based selection (smart selector disabled)'
-  });
 
   try {
     const result = await sendNCPEmail(
@@ -327,18 +338,24 @@ export async function sendSmartEmail(
       retryOptions
     );
 
-    logger.info('EmailSender', 'Email sent successfully', {
+    // 발송 성공 기록
+    await recordSendingSuccess(to, senderEmail);
+
+    logger.info('SmartEmailSender', 'Email sent successfully', {
       recipient: to,
       sender: senderEmail
     });
 
     return result;
   } catch (error) {
-    logger.error('EmailSender', 'Email sending failed', {
+    // 발송 실패 기록 (다음 시도 시 다른 발신자 사용)
+    const errorCode = error instanceof Error ? error.message.substring(0, 50) : 'UNKNOWN';
+    await recordSendingFailure(to, senderEmail, errorCode);
+
+    logger.error('SmartEmailSender', 'Email sending failed', {
       recipient: to,
       sender: senderEmail,
-      error: error instanceof Error ? error.message : error,
-      note: 'NCP automatic security policy may have blocked this address. Contact NCP support team to request whitelist.'
+      error: error instanceof Error ? error.message : error
     });
 
     throw error;
