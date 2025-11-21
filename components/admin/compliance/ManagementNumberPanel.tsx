@@ -54,6 +54,7 @@ interface TargetInstitution {
 interface BasketItem {
   management_number: string;
   selected_serials?: string[];
+  is_matched?: boolean;
 }
 
 interface ManagementNumberPanelProps {
@@ -62,6 +63,7 @@ interface ManagementNumberPanelProps {
   onAddToBasket: (item: ManagementNumberCandidate) => void;
   onAddMultipleToBasket: (items: ManagementNumberCandidate[]) => void;
   onAddEquipmentSerial: (item: ManagementNumberCandidate, serial: string) => void;
+  onReplaceBasketItemSerials?: (item: ManagementNumberCandidate, serials: string[], isMatched?: boolean) => void;
   basketedManagementNumbers?: string[];
   basketedItems?: BasketItem[];
   isCollapsed?: boolean;
@@ -417,6 +419,7 @@ export default function ManagementNumberPanel({
   onAddToBasket,
   onAddMultipleToBasket,
   onAddEquipmentSerial,
+  onReplaceBasketItemSerials,
   basketedManagementNumbers = [],
   basketedItems = [],
   isCollapsed = false,
@@ -583,6 +586,14 @@ export default function ManagementNumberPanel({
   const handleAddToBasket = (item: ManagementNumberCandidate) => {
     // 이미 매칭된 항목인지 체크
     if (item.is_matched) {
+      // 기존 basket에 담긴 시리얼 확인 (이미 3번섹션에 담긴 것들)
+      const existingBasketItem = basketedItems.find(b => b.management_number === item.management_number);
+      const existingSelectedSerials = existingBasketItem?.selected_serials || [];
+
+      // 기존 선택된 것 + 나머지 모두 합치기 (일괄담기이므로 전체 선택)
+      const allSerials = item.equipment_serials || [];
+      const newSelectedSerials = [...new Set([...existingSelectedSerials, ...allSerials])];
+
       // 이중매칭 확인 모달 열기
       setDuplicateMatchDialog({ isOpen: true, item });
       setDuplicateReason('duplicate_institution');
@@ -590,15 +601,47 @@ export default function ManagementNumberPanel({
       // 모달 내 상태 초기화
       setModalSearchTerm('');
       setModalSearchResults([]);
-      // 초기 항목을 modalBasketItems에 추가 - 모든 장비연번 선택된 상태로 시작
+      // 기존 담긴 것 + 나머지 전부 선택된 상태로 시작
       setModalBasketItems([{
         item,
-        selectedSerials: item.equipment_serials || [],
+        selectedSerials: newSelectedSerials,
         removedSerials: []
       }]);
     } else {
       // 일반 매칭
       onAddToBasket(item);
+    }
+  };
+
+  // 개별 장비연번 담기 핸들러 (이중매칭 체크)
+  const handleAddEquipmentSerial = (item: ManagementNumberCandidate, serial: string) => {
+    // 이미 매칭된 항목인지 체크
+    if (item.is_matched) {
+      // 기존 basket에 담긴 시리얼 확인 (이미 3번섹션에 담긴 것들)
+      const existingBasketItem = basketedItems.find(b => b.management_number === item.management_number);
+      const existingSelectedSerials = existingBasketItem?.selected_serials || [];
+
+      // 기존 선택된 것 + 새로 클릭한 것 합치기
+      const newSelectedSerials = existingSelectedSerials.includes(serial)
+        ? existingSelectedSerials
+        : [...existingSelectedSerials, serial];
+
+      // 이중매칭 확인 모달 열기 - 기존 담긴 것 + 새로 클릭한 것 포함
+      setDuplicateMatchDialog({ isOpen: true, item });
+      setDuplicateReason('duplicate_institution');
+      setOtherReason('');
+      // 모달 내 상태 초기화
+      setModalSearchTerm('');
+      setModalSearchResults([]);
+      // 기존 담긴 것 + 새로 클릭한 것이 선택된 상태로 시작
+      setModalBasketItems([{
+        item,
+        selectedSerials: newSelectedSerials,
+        removedSerials: (item.equipment_serials || []).filter(s => !newSelectedSerials.includes(s))
+      }]);
+    } else {
+      // 일반 매칭
+      onAddEquipmentSerial(item, serial);
     }
   };
 
@@ -846,8 +889,13 @@ export default function ManagementNumberPanel({
       return !isFullyMatched;
     });
 
-    // 이미 다른 기관에 매칭된 항목 (filteredItems에서 가져오기 - basket에 담긴 항목은 숨김)
-    const matchedItems = filteredItems.filter(item => item.is_matched);
+    // 이미 다른 기관에 매칭된 항목 (basket에서 is_matched: false로 해제된 경우 제외)
+    const matchedItems = items.filter(item => {
+      // basket에서 is_matched가 명시적으로 false로 설정된 경우 매칭 목록에서 제외
+      const basketItem = basketedItems.find(b => b.management_number === item.management_number);
+      if (basketItem && basketItem.is_matched === false) return false;
+      return item.is_matched;
+    });
 
     // DEBUG: matchedItems 확인
     const renderDebug = {
@@ -865,8 +913,13 @@ export default function ManagementNumberPanel({
     };
     console.log('[renderCandidateList] matchedItems check:', JSON.stringify(renderDebug, null, 2));
 
-    // 미매칭 항목만 분리
-    const unmatchedItems = filteredItems.filter(item => !item.is_matched);
+    // 미매칭 항목만 분리 (basket에서 is_matched: false로 설정된 항목 포함)
+    const unmatchedItems = filteredItems.filter(item => {
+      const basketItem = basketedItems.find(b => b.management_number === item.management_number);
+      // basket에서 is_matched가 명시적으로 false로 설정된 경우 미매칭으로 취급
+      if (basketItem && basketItem.is_matched === false) return true;
+      return !item.is_matched;
+    });
 
     // 미매칭 항목을 60% 초과와 60% 이하로 분리
     const highConfidenceItems = unmatchedItems.filter(item => !item.confidence || item.confidence > 60);
@@ -959,19 +1012,23 @@ export default function ManagementNumberPanel({
               const isPartiallyMatchedLevel2 = isPartiallyMatched && addressMatchLevel === 2; // 시도+구군만 일치
               const isPartiallyMatchedLevel3 = isPartiallyMatched && addressMatchLevel === 3; // 시도+구군+읍면동 일치
 
+              // basket에서 is_matched가 명시적으로 false로 설정된 경우 중복 매칭이 아닌 것으로 취급
+              const effectiveIsMatched = basketItem?.is_matched === false ? false : item.is_matched;
+
               return (
                 <Card
                   key={item.management_number}
                   className={cn(
                     "p-2 transition-all border",
-                    !item.is_matched && !isPartiallyMatched && !isFullyMatched && (!item.confidence || item.confidence >= 90) && "bg-green-900/[0.06] border-slate-300 dark:border-slate-600",
-                    !item.is_matched && !isPartiallyMatched && !isFullyMatched && item.confidence && item.confidence < 90 && "border-slate-200 dark:border-slate-700",
+                    !effectiveIsMatched && !isPartiallyMatched && !isFullyMatched && (!item.confidence || item.confidence >= 90) && "bg-green-900/[0.06] border-slate-300 dark:border-slate-600",
+                    !effectiveIsMatched && !isPartiallyMatched && !isFullyMatched && item.confidence && item.confidence < 90 && "border-slate-200 dark:border-slate-700",
                     // 100% 매칭: 강조 스타일
-                    item.is_matched && item.confidence === 100 && "bg-blue-50/50 dark:bg-blue-950/30 border-blue-400 dark:border-blue-500",
+                    effectiveIsMatched && item.confidence === 100 && !isFullyMatched && "bg-blue-50/50 dark:bg-blue-950/30 border-blue-400 dark:border-blue-500",
                     // 기타 매칭: 흐리게
-                    item.is_matched && item.confidence !== 100 && "opacity-50 bg-muted border-slate-200 dark:border-slate-700",
+                    effectiveIsMatched && item.confidence !== 100 && !isFullyMatched && "opacity-50 bg-muted border-slate-200 dark:border-slate-700",
                     isPartiallyMatched && "border-slate-300 dark:border-slate-600",
-                    isFullyMatched && "border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                    // basket에 담긴 항목: 더 흐리게
+                    isFullyMatched && "opacity-30 border-green-400 bg-green-50/50 dark:bg-green-950/20"
                   )}
                 >
                   <div className="space-y-1.5">
@@ -1104,7 +1161,7 @@ export default function ManagementNumberPanel({
                                 )}
                               </div>
                             </div>
-                            {/* 일괄담기 버튼 */}
+                            {/* 일괄담기 버튼 - 이미 매칭된 항목은 중복매칭 안내 */}
                             {!isPartiallyMatched && !isFullyMatched && (
                               <Button
                                 size="sm"
@@ -1113,9 +1170,9 @@ export default function ManagementNumberPanel({
                                   e.stopPropagation();
                                   handleAddToBasket(item);
                                 }}
-                                className="flex-shrink-0 h-6 text-xs bg-transparent text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600"
+                                className="flex-shrink-0 h-6 text-xs bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 border-amber-400 dark:border-amber-600 font-semibold"
                               >
-                                일괄담기
+                                중복매칭을 위해 일괄담기
                               </Button>
                             )}
                           </div>
@@ -1157,7 +1214,7 @@ export default function ManagementNumberPanel({
                                   )}
                                   onClick={() => {
                                     if (!item.is_matched) {
-                                      onAddEquipmentSerial(item, detail.serial);
+                                      handleAddEquipmentSerial(item, detail.serial);
                                     }
                                   }}
                                 >
@@ -1190,7 +1247,7 @@ export default function ManagementNumberPanel({
                                     className="h-4 text-[10px] px-1.5 py-0 flex-shrink-0 border-foreground/20 dark:border-foreground/30 hover:bg-foreground/10 dark:hover:bg-foreground/20"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onAddEquipmentSerial(item, detail.serial);
+                                      handleAddEquipmentSerial(item, detail.serial);
                                     }}
                                   >
                                     담기
@@ -1280,17 +1337,20 @@ export default function ManagementNumberPanel({
               const isPartiallyMatchedLevel2 = isPartiallyMatched && addressMatchLevel === 2; // 시도+구군만 일치
               const isPartiallyMatchedLevel3 = isPartiallyMatched && addressMatchLevel === 3; // 시도+구군+읍면동 일치
 
+              // basket에서 is_matched가 명시적으로 false로 설정된 경우 중복 매칭이 아닌 것으로 취급
+              const effectiveIsMatched = basketItem?.is_matched === false ? false : item.is_matched;
+
               return (
                 <Card
                   key={item.management_number}
                   className={cn(
                     "p-2 transition-all border",
-                    !item.is_matched && !isPartiallyMatched && !isFullyMatched && (!item.confidence || item.confidence >= 90) && "bg-green-900/[0.06] border-slate-300 dark:border-slate-600",
-                    !item.is_matched && !isPartiallyMatched && !isFullyMatched && item.confidence && item.confidence < 90 && "border-slate-200 dark:border-slate-700",
+                    !effectiveIsMatched && !isPartiallyMatched && !isFullyMatched && (!item.confidence || item.confidence >= 90) && "bg-green-900/[0.06] border-slate-300 dark:border-slate-600",
+                    !effectiveIsMatched && !isPartiallyMatched && !isFullyMatched && item.confidence && item.confidence < 90 && "border-slate-200 dark:border-slate-700",
                     // 100% 매칭: 강조 스타일
-                    item.is_matched && item.confidence === 100 && "bg-blue-50/50 dark:bg-blue-950/30 border-blue-400 dark:border-blue-500",
+                    effectiveIsMatched && item.confidence === 100 && "bg-blue-50/50 dark:bg-blue-950/30 border-blue-400 dark:border-blue-500",
                     // 기타 매칭: 흐리게
-                    item.is_matched && item.confidence !== 100 && "opacity-50 bg-muted border-slate-200 dark:border-slate-700",
+                    effectiveIsMatched && item.confidence !== 100 && "opacity-50 bg-muted border-slate-200 dark:border-slate-700",
                     isPartiallyMatched && "border-slate-300 dark:border-slate-600",
                     isFullyMatched && "border-green-400 bg-green-50/50 dark:bg-green-950/20"
                   )}
@@ -1507,7 +1567,7 @@ export default function ManagementNumberPanel({
                                   )}
                                   onClick={() => {
                                     if (!item.is_matched) {
-                                      onAddEquipmentSerial(item, detail.serial);
+                                      handleAddEquipmentSerial(item, detail.serial);
                                     }
                                   }}
                                 >
@@ -1540,7 +1600,7 @@ export default function ManagementNumberPanel({
                                     className="h-4 text-[10px] px-1.5 py-0 flex-shrink-0 border-foreground/20 dark:border-foreground/30 hover:bg-foreground/10 dark:hover:bg-foreground/20"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onAddEquipmentSerial(item, detail.serial);
+                                      handleAddEquipmentSerial(item, detail.serial);
                                     }}
                                   >
                                     담기
@@ -1781,7 +1841,7 @@ export default function ManagementNumberPanel({
                                       : "bg-green-900/[0.06]"
                                   )}
                                   onClick={() => {
-                                    onAddEquipmentSerial(item, detail.serial);
+                                    handleAddEquipmentSerial(item, detail.serial);
                                   }}
                                 >
                                   {detail.location_detail && (
@@ -1814,7 +1874,7 @@ export default function ManagementNumberPanel({
                                     className="h-auto text-xs px-1 py-0 flex-shrink-0"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onAddEquipmentSerial(item, detail.serial);
+                                      handleAddEquipmentSerial(item, detail.serial);
                                     }}
                                   >
                                     담기
@@ -2118,7 +2178,7 @@ export default function ManagementNumberPanel({
                                   )}
                                   onClick={() => {
                                     if (!item.is_matched) {
-                                      onAddEquipmentSerial(item, detail.serial);
+                                      handleAddEquipmentSerial(item, detail.serial);
                                     }
                                   }}
                                 >
@@ -2152,7 +2212,7 @@ export default function ManagementNumberPanel({
                                     className="h-auto text-xs px-1 py-0 flex-shrink-0"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onAddEquipmentSerial(item, detail.serial);
+                                      handleAddEquipmentSerial(item, detail.serial);
                                     }}
                                   >
                                     담기
@@ -2598,33 +2658,37 @@ export default function ManagementNumberPanel({
                       이대로매칭완료
                     </Button>
                   )}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      // basket에 추가하고 모달 닫기
-                      if (modalBasketItems.length > 0) {
-                        modalBasketItems.forEach(basketItem => {
-                          const modifiedItem = {
-                            ...basketItem.item,
-                            equipment_serials: basketItem.selectedSerials,
-                            equipment_count: basketItem.selectedSerials.length,
-                            equipment_details: basketItem.item.equipment_details?.filter(
-                              d => basketItem.selectedSerials.includes(d.serial)
-                            ) || []
-                          };
-                          onAddToBasket(modifiedItem);
-                        });
-                      }
-                      setDuplicateMatchDialog({ isOpen: false, item: null });
-                      setModalBasketItems([]);
-                      setCancelledFromExisting(new Set());
-                    }}
-                    disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
-                    className="px-6 bg-green-600 hover:bg-green-700"
-                  >
-                    매칭대기리스트로 이동
-                  </Button>
+                  {(() => {
+                    // 중복 여부 확인: 좌측 남은 장비와 우측 선택된 장비 간 겹침
+                    const activeSerials = duplicateMatchDialog.item?.equipment_serials?.filter(
+                      (serial: string) => !cancelledFromExisting.has(serial)
+                    ) || [];
+                    const selectedSerials = modalBasketItems.length > 0 ? modalBasketItems[0].selectedSerials : [];
+                    const hasOverlap = activeSerials.some((serial: string) => selectedSerials.includes(serial));
+
+                    return (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          // basket을 모달 상태로 교체하고 모달 닫기
+                          if (modalBasketItems.length > 0 && onReplaceBasketItemSerials) {
+                            modalBasketItems.forEach(basketItem => {
+                              // 중복이 없으면 is_matched: false로 설정
+                              onReplaceBasketItemSerials(basketItem.item, basketItem.selectedSerials, hasOverlap);
+                            });
+                          }
+                          setDuplicateMatchDialog({ isOpen: false, item: null });
+                          setModalBasketItems([]);
+                          setCancelledFromExisting(new Set());
+                        }}
+                        disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
+                        className={hasOverlap ? "px-6 bg-green-600 hover:bg-green-700" : "px-6 bg-blue-600 hover:bg-blue-700"}
+                      >
+                        {hasOverlap ? '매칭대기리스트로 이동' : '중복 없이 매칭대기리스트에 담기'}
+                      </Button>
+                    );
+                  })()}
                 </div>
               </div>
             )}

@@ -498,14 +498,81 @@ export default function ComplianceMatchingWorkflow({
 
       // 남은 장비연번이 있으면 업데이트
       const updatedItems = [...currentItems];
+
+      // is_matched가 true인 경우, 남은 장비연번이 기존 매칭된 장비와 중복이 있는지 확인
+      let newIsMatched = existingItem.is_matched;
+      if (existingItem.is_matched) {
+        // equipment_serials는 기존에 매칭된 장비연번들
+        const hasOverlap = newSerials.some(serial =>
+          existingItem.equipment_serials.includes(serial)
+        );
+        // 중복이 없으면 is_matched를 false로 변경
+        if (!hasOverlap) {
+          newIsMatched = false;
+        }
+      }
+
       updatedItems[existingItemIndex] = {
         ...existingItem,
-        selected_serials: newSerials
+        selected_serials: newSerials,
+        is_matched: newIsMatched
       };
 
       return {
         ...prev,
         [targetKey]: updatedItems
+      };
+    });
+  };
+
+  // 장비연번 전체 교체 (모달에서 사용)
+  const handleReplaceBasketItemSerials = (item: ManagementNumberCandidate, serials: string[], isMatched?: boolean) => {
+    if (!selectedInstitution) return;
+
+    setBasketByInstitution(prev => {
+      const targetKey = selectedInstitution.target_key;
+      const currentItems = prev[targetKey] || [];
+
+      const existingItemIndex = currentItems.findIndex(i => i.management_number === item.management_number);
+
+      // 선택된 serials가 없으면 항목 제거
+      if (serials.length === 0) {
+        if (existingItemIndex >= 0) {
+          return {
+            ...prev,
+            [targetKey]: currentItems.filter(i => i.management_number !== item.management_number)
+          };
+        }
+        return prev;
+      }
+
+      // 기존 항목이 있으면 serials 교체
+      if (existingItemIndex >= 0) {
+        const updatedItems = [...currentItems];
+        updatedItems[existingItemIndex] = {
+          ...currentItems[existingItemIndex],
+          selected_serials: serials,
+          // is_matched 값이 명시적으로 전달되면 업데이트
+          ...(isMatched !== undefined && { is_matched: isMatched })
+        };
+        return {
+          ...prev,
+          [targetKey]: updatedItems
+        };
+      }
+
+      // 기존 항목이 없으면 새로 추가
+      const basketItem: BasketItem = {
+        ...item,
+        target_key: selectedInstitution.target_key,
+        selected_serials: serials,
+        // is_matched 값이 명시적으로 전달되면 사용, 아니면 원본 item의 값 사용
+        is_matched: isMatched !== undefined ? isMatched : item.is_matched
+      };
+
+      return {
+        ...prev,
+        [targetKey]: [...currentItems, basketItem]
       };
     });
   };
@@ -922,10 +989,12 @@ export default function ComplianceMatchingWorkflow({
                 onAddToBasket={handleAddToBasket}
                 onAddMultipleToBasket={handleAddMultipleToBasket}
                 onAddEquipmentSerial={handleAddEquipmentSerial}
+                onReplaceBasketItemSerials={handleReplaceBasketItemSerials}
                 basketedManagementNumbers={currentBasket.map(item => item.management_number)}
                 basketedItems={currentBasket.map(item => ({
                   management_number: item.management_number,
-                  selected_serials: item.selected_serials
+                  selected_serials: item.selected_serials,
+                  is_matched: item.is_matched
                 }))}
                 isCollapsed={isManagementPanelCollapsed}
                 onCandidatesLoaded={setCandidatesData}

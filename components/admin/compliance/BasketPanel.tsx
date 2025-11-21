@@ -25,6 +25,7 @@ interface BasketItem {
   selected_serials?: string[]; // 선택된 장비연번 (undefined면 전체, 배열이면 일부만)
   category_1?: string;
   category_2?: string;
+  is_matched?: boolean; // 이미 다른 기관에 매칭된 항목 여부 (중복매칭)
 }
 
 interface TargetInstitution {
@@ -400,7 +401,8 @@ export default function BasketPanel({
                     "p-1.5 transition-all hover:shadow-md",
                     isPartiallyMatched
                       ? "border border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"
-                      : "border border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                      : "border border-green-400 bg-green-50/50 dark:bg-green-950/20",
+                    item.is_matched && "opacity-50"
                   )}
                 >
                   <div className="space-y-1">
