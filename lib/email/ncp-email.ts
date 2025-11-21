@@ -219,8 +219,18 @@ export async function sendNCPEmail(
 function selectSenderEmail(recipientEmail: string): string {
   // 2025-11-13 재활성화: 네이버 DMARC 차단 문제 해결
   // 과거 검증된 패턴 (사용자 증언 기반)
+  // 2025-11-21 Daum 차단 대응: Daum/Hanmail은 noreply@nmc.or.kr 사용
   const domain = recipientEmail.split('@')[1]?.toLowerCase();
+
+  // NMC 도메인: 같은 도메인 사용 (DMARC 정책)
   if (domain === 'nmc.or.kr') return 'noreply@nmc.or.kr';
+
+  // Daum/Hanmail: noreply@aed.pics가 차단되므로 nmc.or.kr 사용
+  if (domain === 'daum.net' || domain === 'hanmail.net') {
+    return 'noreply@nmc.or.kr';
+  }
+
+  // 기타 도메인 (네이버, Gmail 등): 기존 패턴 유지
   return 'noreply@aed.pics';
 }
 

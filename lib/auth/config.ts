@@ -17,7 +17,8 @@ export const ALLOWED_EMAIL_DOMAINS = [
   'hanmail.net',
   'hotmail.com',
   'outlook.com',
-  'yahoo.com'
+  'yahoo.com',
+  'example.com' // 테스트용
 ];
 
 // Master 관리자 이메일 (환경변수에서 가져오기)

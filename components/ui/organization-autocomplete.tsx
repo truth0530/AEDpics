@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 interface OrganizationAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
+  onSelect?: (value: string, organizationId?: string) => void; // 자동완성에서 선택 시 호출 (ID 포함)
   region?: string;
   organizations?: string[];
   placeholder?: string;
@@ -15,6 +16,7 @@ interface OrganizationAutocompleteProps {
 export function OrganizationAutocomplete({
   value,
   onChange,
+  onSelect,
   region,
   organizations = [],
   placeholder = "소속 기관을 입력하세요",
@@ -144,8 +146,19 @@ export function OrganizationAutocomplete({
 
   // 제안 항목 선택
   const handleSelectSuggestion = (suggestion: { id: string; name: string }) => {
+    console.log('[DEBUG] 자동완성 선택:', {
+      id: suggestion.id,
+      name: suggestion.name,
+      hasSpaces: suggestion.name.includes(' ')
+    });
     setInputValue(suggestion.name);
     onChange(suggestion.name);
+
+    // onSelect 콜백이 있으면 ID도 함께 전달
+    if (onSelect) {
+      onSelect(suggestion.name, suggestion.id);
+    }
+
     setShowSuggestions(false);
     setSuggestions([]);
     setSelectedIndex(-1);

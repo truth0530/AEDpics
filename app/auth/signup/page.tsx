@@ -68,6 +68,7 @@ export default function ImprovedSignUpPage() {
     remarks: '',
     organizationId: ''
   });
+  const [isOrgFromAutocomplete, setIsOrgFromAutocomplete] = useState(false); // 자동완성에서 선택했는지 여부
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [passwordStrength, setPasswordStrength] = useState<{ score: number; feedback: string[]; suggestions: string[] }>({ score: 0, feedback: [], suggestions: [] });
   const [showOrgWarning, setShowOrgWarning] = useState(false);
@@ -386,16 +387,18 @@ export default function ImprovedSignUpPage() {
       return;
     }
 
-    // 소속기관 검증 - 목록에 없는 기관인 경우 경고
-    const isOrgInList = dynamicOrganizations.includes(formData.organizationName);
+    // 소속기관 검증 - 자동완성에서 선택한 경우는 검증 건너뛰기
+    const isOrgInList = dynamicOrganizations.includes(formData.organizationName) || isOrgFromAutocomplete;
     console.log('소속기관 검증:', {
       organizationName: formData.organizationName,
       dynamicOrganizations,
       isOrgInList,
+      isOrgFromAutocomplete,
       orgWarningConfirmed
     });
 
-    if (!isOrgInList && formData.organizationName !== '기타 (직접 입력)' && !orgWarningConfirmed) {
+    // 자동완성에서 선택하지 않은 경우에만 경고 표시
+    if (!isOrgInList && !isOrgFromAutocomplete && formData.organizationName !== '기타 (직접 입력)' && !orgWarningConfirmed) {
       console.log('경고 모달 표시');
       setShowOrgWarning(true);
       setLoading(false);
@@ -436,21 +439,25 @@ export default function ImprovedSignUpPage() {
         ? formData.customOrganizationName
         : formData.organizationName;
 
-      // 조직 ID 조회 (API를 통해)
+      // 조직 ID 처리 (자동완성에서 선택한 경우 이미 ID가 있음)
       const regionCode = getRegionCode(formData.region);
-      let organizationId = null;
+      let organizationId = formData.organizationId || null;
 
-      if (finalOrgName && finalOrgName !== '기타 (직접 입력)') {
-        console.log('[DEBUG] 조직 조회 시작:', { finalOrgName });
-        const orgResponse = await fetch(`/api/organizations/search?name=${encodeURIComponent(finalOrgName)}`);
+      // 자동완성에서 선택하지 않고 직접 입력한 경우만 조직 검색
+      if (!organizationId && finalOrgName && finalOrgName !== '기타 (직접 입력)') {
+        console.log('[DEBUG] 조직 조회 시작 (직접 입력):', { finalOrgName });
+        const orgResponse = await fetch(`/api/organizations/search?search=${encodeURIComponent(finalOrgName)}`);
 
         if (orgResponse.ok) {
           const orgData = await orgResponse.json();
-          if (orgData.id) {
-            organizationId = orgData.id;
+          // API가 여러 조직을 반환하므로 첫 번째 것 사용
+          if (orgData.organizations && orgData.organizations.length > 0) {
+            organizationId = orgData.organizations[0].id;
           }
         }
         console.log('[DEBUG] 조직 조회 결과:', { organizationId });
+      } else if (organizationId) {
+        console.log('[DEBUG] 자동완성에서 선택한 조직 ID 사용:', { organizationId });
       }
 
       // NextAuth Signup API 호출 (bcrypt 비밀번호 해싱 포함)
@@ -718,7 +725,7 @@ export default function ImprovedSignUpPage() {
                     <span className="text-green-400 mt-0.5">✓</span>
                     <div>
                       <span className="text-green-400 font-medium">@nmc.or.kr</span>
-                      <span className="text-gray-300"> → 중앙/권역 응급의료센터 관리자</span>
+                      <span className="text-gray-300"> → 중앙응급의료센터/응급의료지원센터</span>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
@@ -1204,7 +1211,24 @@ export default function ImprovedSignUpPage() {
 
                   <OrganizationAutocomplete
                     value={formData.organizationName || ''}
-                    onChange={(value) => setFormData({ ...formData, organizationName: value })}
+                    onChange={(value) => {
+                      // 수동 입력 시 ID 초기화
+                      setFormData({
+                        ...formData,
+                        organizationName: value,
+                        organizationId: ''
+                      });
+                      setIsOrgFromAutocomplete(false);
+                    }}
+                    onSelect={(name, id) => {
+                      console.log('[DEBUG] 조직 선택:', { name, id });
+                      setFormData({
+                        ...formData,
+                        organizationName: name,
+                        organizationId: id || ''
+                      });
+                      setIsOrgFromAutocomplete(!!id); // ID가 있으면 자동완성에서 선택한 것
+                    }}
                     region={formData.region}
                     organizations={dynamicOrganizations}
                     placeholder={!formData.region ? '지역을 먼저 선택하세요' : '소속 기관을 검색하세요'}
