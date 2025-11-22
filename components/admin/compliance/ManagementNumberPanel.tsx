@@ -1980,23 +1980,25 @@ export default function ManagementNumberPanel({
             </div>
 
             {/* 카테고리 필터 드롭다운 */}
-            <Select value={category2Filter} onValueChange={setCategory2Filter}>
-              <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="카테고리 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="전체">전체</SelectItem>
-                {availableCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex-1 min-w-0">
+              <Select value={category2Filter} onValueChange={setCategory2Filter}>
+                <SelectTrigger className="w-full h-9">
+                  <SelectValue placeholder="카테고리 선택" className="truncate" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="전체">전체</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* 검색창 */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="기관명, 장비연번, 관리번호, 주소로 검색..."

@@ -113,11 +113,12 @@ export async function POST(request: NextRequest) {
 
     } else {
       // 2024년 이전 데이터는 target_list_2024 테이블 사용
-      if (sido) whereClause.sido = sido;
-      if (gugun) whereClause.gugun = gugun;
+      const whereClauseObj: Record<string, string> = {};
+      if (sido) whereClauseObj.sido = sido;
+      if (gugun) whereClauseObj.gugun = gugun;
 
       const targets = await prisma.target_list_2024.findMany({
-        where: whereClause,
+        where: whereClauseObj,
         take: 5000, // 성능을 위해 제한
         orderBy: [
           { institution_name: 'asc' },
