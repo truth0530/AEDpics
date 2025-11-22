@@ -49,7 +49,23 @@ export async function GET(request: NextRequest) {
     let normalizedSido: string | null = null;
     let normalizedGugun: string | null = null;
 
-    if (targetKey) {
+    if (targetName && targetSido) {
+      // 그루핑 모드: 전달된 정보로 가상의 targetInstitution 생성
+      targetInstitution = {
+        sido: targetSido,
+        gugun: targetGugun
+      };
+
+      normalizedSido = targetSido;
+      normalizedGugun = targetGugun ? (normalizeGugunForDB(targetGugun) ?? targetGugun) : null;
+
+      console.log('[Grouping Mode API] Virtual target institution:', {
+        name: targetName,
+        sido: targetSido,
+        gugun: targetGugun,
+        address: targetAddress
+      });
+    } else if (targetKey) {
       // 일반 모드: 2025년 의무설치기관 조회
       targetInstitution = await prisma.target_list_2025.findUnique({
         where: { target_key: targetKey },
@@ -66,22 +82,6 @@ export async function GET(request: NextRequest) {
       // 따라서 정규화 없이 그대로 사용
       normalizedSido = targetInstitution.sido;
       normalizedGugun = targetInstitution.gugun ? (normalizeGugunForDB(targetInstitution.gugun) ?? targetInstitution.gugun) : null;
-    } else if (targetName && targetSido) {
-      // 그루핑 모드: 전달된 정보로 가상의 targetInstitution 생성
-      targetInstitution = {
-        sido: targetSido,
-        gugun: targetGugun
-      };
-
-      normalizedSido = targetSido;
-      normalizedGugun = targetGugun ? (normalizeGugunForDB(targetGugun) ?? targetGugun) : null;
-
-      console.log('[Grouping Mode API] Virtual target institution:', {
-        name: targetName,
-        sido: targetSido,
-        gugun: targetGugun,
-        address: targetAddress
-      });
     }
 
     // 자동 추천: 의무설치기관 선택 여부에 따라 다른 쿼리 실행

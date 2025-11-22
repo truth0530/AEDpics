@@ -277,10 +277,26 @@ export default function ComplianceMatchingWorkflow({
       try {
         const params = new URLSearchParams({
           year,
-          target_key: selectedInstitution.target_key,
           include_all_region: 'false',
           include_matched: 'false'
         });
+
+        // 그루핑 모드 지원: target_key 대신 기관 정보 직접 전달
+        if (selectedInstitution.target_key) {
+          params.append('target_key', selectedInstitution.target_key);
+        }
+        if (selectedInstitution.institution_name) {
+          params.append('target_name', selectedInstitution.institution_name);
+        }
+        if (selectedInstitution.sido) {
+          params.append('target_sido', selectedInstitution.sido);
+        }
+        if (selectedInstitution.gugun) {
+          params.append('target_gugun', selectedInstitution.gugun);
+        }
+        if (selectedInstitution.address) {
+          params.append('target_address', selectedInstitution.address);
+        }
 
         const response = await fetch(`/api/compliance/management-number-candidates?${params}`);
         if (!response.ok) throw new Error('Failed to fetch candidates');
