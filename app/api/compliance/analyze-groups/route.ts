@@ -27,9 +27,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { year = '2025', sido, gugun, threshold = 0.85 } = body;
 
-    // 기관 리스트 조회
-    let whereClause: any = {};
-
     // 연도별 테이블 선택
     if (year === '2025') {
       // 2025년 데이터는 target_list_2025 테이블 사용
