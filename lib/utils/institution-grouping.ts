@@ -90,14 +90,14 @@ export function calculateSimilarity(
   inst1: TargetInstitution,
   inst2: TargetInstitution
 ): SimilarityResult {
-  // 1. 기관명 유사도 (40%)
+  // 1. 기관명 유사도 (50% - 가중치 증가)
   const name1 = normalizeInstitutionName(inst1.institution_name);
   const name2 = normalizeInstitutionName(inst2.institution_name);
   const maxLen = Math.max(name1.length, name2.length);
   const distance = levenshteinDistance(name1, name2);
   const nameScore = maxLen > 0 ? (1 - distance / maxLen) : 0;
 
-  // 2. 주소 유사도 (30%)
+  // 2. 주소 유사도 (40% - 가중치 증가)
   // 통합시스템 사용: "대구" vs "대구광역시"를 동일하게 인식
   const sido1 = normalizeSidoForDB(inst1.sido) || inst1.sido;
   const sido2 = normalizeSidoForDB(inst2.sido) || inst2.sido;
@@ -110,7 +110,8 @@ export function calculateSimilarity(
     }
   }
 
-  // 3. 분류 유사도 (30%)
+  // 3. 분류 유사도 (10% - 가중치 감소)
+  // 구급차와 일반 기관도 같은 그룹으로 묶기 위해 가중치를 낮춤
   let divisionScore = 0;
   if (inst1.division === inst2.division) {
     divisionScore += 0.6;
@@ -119,8 +120,8 @@ export function calculateSimilarity(
     }
   }
 
-  // 가중 평균 계산
-  const totalScore = (nameScore * 0.4) + (addressScore * 0.3) + (divisionScore * 0.3);
+  // 가중 평균 계산 (기관명 50% + 주소 40% + 분류 10%)
+  const totalScore = (nameScore * 0.5) + (addressScore * 0.4) + (divisionScore * 0.1);
 
   return {
     score: totalScore,

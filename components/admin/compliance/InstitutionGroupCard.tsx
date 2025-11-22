@@ -258,35 +258,52 @@ export default function InstitutionGroupCard({
             {/* 전체 선택/해제 헤더 */}
             <div className="flex items-center gap-2 mb-2 px-1">
               <Checkbox
-                checked={group.members.every(m => selectedMembers.has(m.target_key))}
+                checked={group.members.filter(m => {
+                  const memberIsAmbulance = isAmbulance(m);
+                  return ambulanceInfo.hasConflict ? memberIsAmbulance : true;
+                }).every(m => selectedMembers.has(m.target_key))}
                 onCheckedChange={(checked) => {
                   group.members.forEach(member => {
-                    handleMemberSelect(member.target_key, checked as boolean);
+                    const memberIsAmbulance = isAmbulance(member);
+                    const canSelect = ambulanceInfo.hasConflict ? memberIsAmbulance : true;
+                    if (canSelect) {
+                      handleMemberSelect(member.target_key, checked as boolean);
+                    }
                   });
                 }}
                 className="mt-0"
-                aria-label="Select all members in this group"
+                aria-label="Select all selectable members in this group"
               />
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                전체 선택
+                {ambulanceInfo.hasConflict ? '구급차만 선택' : '전체 선택'}
               </span>
             </div>
 
             <div className="space-y-1 mt-1">
               {[...group.members]
                 .sort((a, b) => {
+                  // 구급차를 먼저 표시
+                  const aIsAmbulance = isAmbulance(a);
+                  const bIsAmbulance = isAmbulance(b);
+                  if (aIsAmbulance !== bIsAmbulance) {
+                    return aIsAmbulance ? -1 : 1;
+                  }
                   const addressA = a.address || '';
                   const addressB = b.address || '';
                   return addressA.localeCompare(addressB, 'ko-KR');
                 })
                 .map((member) => {
+                  const memberIsAmbulance = isAmbulance(member);
+                  const canSelect = ambulanceInfo.hasConflict ? memberIsAmbulance : true;
+
                   return (
                     <div
                       key={member.target_key}
                       className={cn(
                         "flex items-start gap-2 p-1.5 px-1 rounded",
-                        "hover:bg-gray-100 dark:hover:bg-gray-700/50",
-                        selectedMembers.has(member.target_key) && "bg-blue-100 dark:bg-blue-900/20"
+                        canSelect && "hover:bg-gray-100 dark:hover:bg-gray-700/50",
+                        selectedMembers.has(member.target_key) && "bg-blue-100 dark:bg-blue-900/20",
+                        !canSelect && "opacity-60"
                       )}
                     >
                       <Checkbox
@@ -294,6 +311,7 @@ export default function InstitutionGroupCard({
                         onCheckedChange={(checked) =>
                           handleMemberSelect(member.target_key, checked as boolean)
                         }
+                        disabled={!canSelect}
                         className="mt-0.5"
                         aria-label={`Select ${member.institution_name}`}
                       />
@@ -304,6 +322,11 @@ export default function InstitutionGroupCard({
                           <span className="font-medium text-sm truncate">
                             {member.institution_name}
                           </span>
+                          {!canSelect && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                              (구급차와 그루핑할 수 없음)
+                            </span>
+                          )}
                         </div>
 
                         {/* sub_division / unique_key */}
@@ -311,7 +334,7 @@ export default function InstitutionGroupCard({
                           {member.sub_division && (
                             <span className={cn(
                               "border rounded px-1.5 py-0.5",
-                              isAmbulance(member)
+                              memberIsAmbulance
                                 ? "border-red-500/50 text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300"
                                 : "border-gray-700/30"
                             )}>
