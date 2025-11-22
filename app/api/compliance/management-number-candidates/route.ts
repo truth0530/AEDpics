@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const includeAllRegion = searchParams.get('include_all_region') === 'true';
     const includeMatched = searchParams.get('include_matched') === 'true';
+    const category2Filter = searchParams.get('category_2'); // 카테고리 필터
 
     // 그루핑모드에서 전달된 추가 파라미터
     const targetName = searchParams.get('target_name');
@@ -740,13 +741,26 @@ export async function GET(request: NextRequest) {
       matched_items: filteredAutoSuggestions.filter(item => item.is_matched).length
     });
 
+    // category_2 필터 적용 (구비의무기관 내에서)
+    let finalAutoSuggestions = filteredAutoSuggestions;
+    let finalSearchResults = filteredSearchResults;
+
+    if (category2Filter) {
+      finalAutoSuggestions = filteredAutoSuggestions.filter(item =>
+        item.category_1 === '구비의무기관' && item.category_2 === category2Filter
+      );
+      finalSearchResults = filteredSearchResults.filter(item =>
+        item.category_1 === '구비의무기관' && item.category_2 === category2Filter
+      );
+    }
+
     return NextResponse.json({
-      auto_suggestions: filteredAutoSuggestions.map(item => ({
+      auto_suggestions: finalAutoSuggestions.map(item => ({
         ...item,
         equipment_count: Number(item.equipment_count),
         confidence: item.confidence ? Number(item.confidence) : null,
       })),
-      search_results: filteredSearchResults.map(item => ({
+      search_results: finalSearchResults.map(item => ({
         ...item,
         equipment_count: Number(item.equipment_count),
         confidence: item.confidence ? Number(item.confidence) : null,

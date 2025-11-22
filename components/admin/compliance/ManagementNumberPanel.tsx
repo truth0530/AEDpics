@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp, AlertTriangle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { shortenAddressSido } from '@/lib/constants/regions';
@@ -431,6 +432,8 @@ export default function ManagementNumberPanel({
   const [searchTerm, setSearchTerm] = useState('');
   const [includeAllRegion, setIncludeAllRegion] = useState(false);
   const [showAlreadyMatched, setShowAlreadyMatched] = useState(true); // 기본: 이미 매칭된 항목 펼침
+  const [category2Filter, setCategory2Filter] = useState<string>('전체');
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   // 펼쳐진 관리번호 Set (관리번호별 펼침/접힘 상태 관리)
   // 접힌 상태를 추적 (기본값은 펼쳐진 상태)
   const [collapsedManagementNumbers, setCollapsedManagementNumbers] = useState<Set<string>>(new Set());
@@ -464,11 +467,27 @@ export default function ManagementNumberPanel({
     }
   }, [selectedInstitution]);
 
+  // 컴포넌트 마운트 시 category 목록 불러오기
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/compliance/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableCategories(data.categories || []);
+        }
+      } catch (error) {
+        console.error('[ManagementNumberPanel] Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   // 선택된 기관이 변경되거나 필터 옵션이 변경되면 데이터 조회
   // 2025-11-19: showAlreadyMatched 의존성 제거 (UI 상태만 변경, API 재호출 불필요)
   useEffect(() => {
     fetchCandidates();
-  }, [selectedInstitution, includeAllRegion]);
+  }, [selectedInstitution, includeAllRegion, category2Filter]);
 
   // 검색어 변경 시 검색 실행 (디바운싱)
   useEffect(() => {
@@ -540,6 +559,10 @@ export default function ManagementNumberPanel({
 
       if (searchTerm) {
         params.append('search', searchTerm);
+      }
+
+      if (category2Filter !== '전체') {
+        params.append('category_2', category2Filter);
       }
 
       const response = await fetch(`/api/compliance/management-number-candidates?${params}`);
@@ -1955,6 +1978,21 @@ export default function ManagementNumberPanel({
                 전지역 조회
               </label>
             </div>
+
+            {/* 카테고리 필터 드롭다운 */}
+            <Select value={category2Filter} onValueChange={setCategory2Filter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="카테고리 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="전체">전체</SelectItem>
+                {availableCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 검색창 */}
