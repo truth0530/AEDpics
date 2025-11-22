@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Info,
   ChevronDown,
+  ChevronUp,
   CheckSquare,
   Square,
   Package,
@@ -51,6 +52,7 @@ export default function InstitutionGroupingPanel({
   const [stats, setStats] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isGuidanceCollapsed, setIsGuidanceCollapsed] = useState(false);
 
   // 동적 마스터 기관 추적 (그룹ID -> 마스터 기관)
   const [dynamicMasters, setDynamicMasters] = useState<Map<string, TargetInstitution>>(new Map());
@@ -158,6 +160,13 @@ export default function InstitutionGroupingPanel({
   useEffect(() => {
     analyzeGroups();
   }, [analyzeGroups]);
+
+  // 선택 시 자동으로 안내 문구 접기
+  useEffect(() => {
+    if (selectedMembers.size > 0 || selectedGroups.size > 0) {
+      setIsGuidanceCollapsed(true);
+    }
+  }, [selectedMembers.size, selectedGroups.size]);
 
   // 그룹 선택 핸들러
   const handleGroupSelect = (groupId: string, selected: boolean) => {
@@ -401,14 +410,38 @@ export default function InstitutionGroupingPanel({
           </Alert>
         )}
 
-        {/* 통계 정보 */}
+        {/* 통계 정보 (접을 수 있는 안내문구) */}
         {stats && (
-          <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
-            <div className="text-xs text-gray-700 dark:text-gray-300 space-y-1">
-              <div>
-                {locationLabel} <span className="font-semibold text-gray-900 dark:text-white">{stats.totalInstitutions}개</span>의 의무설치기관 중 <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.groupedInstitutions}개</span>를 <span className="font-semibold text-green-600 dark:text-green-400">{stats.groupCount}개 그룹</span>으로 분류했습니다. 구급차의 경우 별개 기관으로 구분하고 인트라넷과 각각 매칭해야 합니다. (단 소방은 일괄매칭 가능) 그루핑된 기관명을 확인 후, 같은 기관이 확실한 경우 그룹으로 묶어 우측의 인트라넷 장비와 일괄 매칭을 진행해주세요 나머지 <span className="font-semibold text-yellow-600 dark:text-yellow-400">{stats.potentialDuplicates}개</span> 기관은 일반 모드에서 수동으로 검토하며 매칭을 진행해야 합니다.
+          <div className="mb-3">
+            {isGuidanceCollapsed ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsGuidanceCollapsed(false)}
+                className="w-full text-xs h-8 flex items-center justify-center gap-1"
+              >
+                <ChevronDown className="w-3 h-3" />
+                안내문구 펼치기
+              </Button>
+            ) : (
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-xs text-gray-700 dark:text-gray-300 space-y-1 flex-1">
+                    <div>
+                      {locationLabel} <span className="font-semibold text-gray-900 dark:text-white">{stats.totalInstitutions}개</span>의 의무설치기관 중 <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.groupedInstitutions}개</span>를 <span className="font-semibold text-green-600 dark:text-green-400">{stats.groupCount}개 그룹</span>으로 분류했습니다. 구급차의 경우 별개 기관으로 구분하고 인트라넷과 각각 매칭해야 합니다. (단 소방은 일괄매칭 가능) 그루핑된 기관명을 확인 후, 같은 기관이 확실한 경우 그룹으로 묶어 우측의 인트라넷 장비와 일괄 매칭을 진행해주세요 나머지 <span className="font-semibold text-yellow-600 dark:text-yellow-400">{stats.potentialDuplicates}개</span> 기관은 일반 모드에서 수동으로 검토하며 매칭을 진행해야 합니다.
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsGuidanceCollapsed(true)}
+                    className="p-1 h-auto flex-shrink-0"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

@@ -1926,8 +1926,8 @@ export default function ManagementNumberPanel({
           </div>
         )}
 
-        {/* 60% 이하 안내 문구 */}
-        {lowConfidenceItems.length > 0 && (
+        {/* 60% 이하 안내 문구 - 높은 신뢰도 항목이 없을 때만 표시 */}
+        {lowConfidenceItems.length > 0 && highConfidenceItems.length === 0 && (
           <div className="pt-2 px-2">
             <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded p-2">
               <div className="flex items-start gap-1.5">
