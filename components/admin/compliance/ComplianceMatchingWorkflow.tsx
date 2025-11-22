@@ -610,6 +610,9 @@ export default function ComplianceMatchingWorkflow({
     if (strategy === 'cancel') return;
 
     try {
+      // 담긴 장비의 serial 목록 추출
+      const equipmentSerials = currentBasket.flatMap(item => item.selected_serials || []);
+
       const response = await fetch('/api/compliance/match-basket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -617,6 +620,7 @@ export default function ComplianceMatchingWorkflow({
           target_key: selectedInstitution.target_key,
           year: parseInt(year),
           management_numbers: currentBasket.map(item => item.management_number),
+          equipment_serials: equipmentSerials,  // 담긴 장비만 매칭
           strategy
         })
       });
@@ -955,7 +959,7 @@ export default function ComplianceMatchingWorkflow({
             <CardHeader className="pb-2 pt-2 pl-1 pr-2">
               <CardTitle className="text-base flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">1</Badge>
+                  <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700">A</Badge>
                   {isGroupingEnabled ? (
                     <span>중복 기관 그루핑</span>
                   ) : selectedInstitution ? (
@@ -1071,18 +1075,17 @@ export default function ComplianceMatchingWorkflow({
         )}
 
         {/* Column 2: 관리번호 리스트 */}
-        <div className={`flex flex-col overflow-hidden border-r transition-all ${
-          !selectedInstitution
+        <div className={`flex flex-col overflow-hidden border-r transition-all ${!selectedInstitution
             ? 'col-span-6'
             : isManagementPanelCollapsed
               ? 'col-span-2'
               : 'col-span-4'
-        }`}>
+          }`}>
           <Card className="flex-1 flex flex-col overflow-hidden bg-green-900/[0.06] border-0 shadow-none">
             <CardHeader className="pb-2 pt-2 px-2">
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Badge variant="outline">2</Badge>
+                  <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700">E</Badge>
                   {!isManagementPanelCollapsed && (
                     <span>매칭후보(인트라넷)</span>
                   )}
@@ -1093,15 +1096,14 @@ export default function ComplianceMatchingWorkflow({
                       size="sm"
                       variant={currentBasket.length > 0 || hasHighConfidenceCandidates ? "outline" : "destructive"}
                       onClick={handleNoMatchAvailable}
-                      className={`text-xs ${
-                        currentBasket.length > 0
+                      className={`text-xs ${currentBasket.length > 0
                           ? 'opacity-40'
                           : hasHighConfidenceCandidates
-                          ? 'opacity-60'
-                          : ''
-                      }`}
+                            ? 'opacity-60'
+                            : ''
+                        }`}
                     >
-                      매칭불가처리
+                      매칭대상없음
                     </Button>
                   )}
                   {selectedInstitution && (
@@ -1149,7 +1151,7 @@ export default function ComplianceMatchingWorkflow({
               <CardHeader className="pb-2 pt-2 px-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Badge variant="outline">3</Badge>
+                    <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">D</Badge>
                     {currentBasket.length === 0 ? (
                       <span>매칭대기리스트가 비어 있습니다</span>
                     ) : (

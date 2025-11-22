@@ -190,21 +190,19 @@ export default function InstitutionGroupCard({
         isSelected && "ring-2 ring-blue-500",
         "hover:shadow-md"
       )}>
-        <CardHeader className="pb-2 pt-2 px-2">
+        <CardHeader
+          className="pb-2 pt-2 px-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           <div className="flex items-start gap-1.5">
-            {/* 확장/축소 버튼 */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="p-0 h-auto w-auto hover:bg-transparent -ml-2"
-            >
+            {/* 확장/축소 아이콘 */}
+            <div className="p-0 h-auto w-auto -ml-2">
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4" />
               ) : (
                 <ChevronRight className="w-4 h-4" />
               )}
-            </Button>
+            </div>
 
             {/* 그룹 정보 */}
             <div className="flex-1 min-w-0">

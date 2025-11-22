@@ -324,8 +324,11 @@ export default function BasketPanel({
       {/* 매칭 대상 의무기관 헤더 - basket에 항목이 있을 때만 표시 */}
       {selectedInstitution && basket.length > 0 && (
         <div className="flex-shrink-0 mb-2 p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded border-2 border-blue-400">
-          <div className="font-medium text-sm text-blue-600 dark:text-blue-400 truncate">
-            {selectedInstitution.institution_name}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 text-sm font-bold flex-shrink-0">A</span>
+            <div className="font-medium text-sm text-blue-600 dark:text-blue-400 truncate">
+              {selectedInstitution.institution_name}
+            </div>
           </div>
         </div>
       )}
@@ -447,11 +450,14 @@ export default function BasketPanel({
                     <div className="flex items-start justify-between">
                       <div className="flex-1 space-y-0.5">
                         {/* 기관명칭 */}
-                        <div className="font-medium text-sm">
-                          {highlightMatchingInstitutionName(item.institution_name, selectedInstitution?.institution_name)}
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-green-100 text-green-700 border border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 text-[10px] font-bold flex-shrink-0">E</span>
+                          <div className="font-medium text-sm">
+                            {highlightMatchingInstitutionName(item.institution_name, selectedInstitution?.institution_name)}
+                          </div>
                         </div>
                         {/* 관리번호 + 분류1,2 */}
-                        <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground pl-6">
                           <span className="font-mono">
                             {item.management_number}
                           </span>

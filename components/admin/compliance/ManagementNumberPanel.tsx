@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Search, MapPin, TrendingUp, ChevronDown, ChevronUp, AlertTriangle, AlertCircle, CornerLeftUp, CornerRightDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { shortenAddressSido } from '@/lib/constants/regions';
 import { getMatchTier } from '@/lib/utils/match-tier';
@@ -22,6 +22,7 @@ interface EquipmentDetail {
   location_detail: string;
   category_1?: string | null;
   category_2?: string | null;
+  installation_position?: string | null;
 }
 
 interface ManagementNumberCandidate {
@@ -39,6 +40,8 @@ interface ManagementNumberCandidate {
   matched_institution_name: string | null;
   category_1?: string | null;
   category_2?: string | null;
+  installation_position?: string | null;
+  location_detail?: string | null;
 }
 
 interface TargetInstitution {
@@ -700,9 +703,29 @@ export default function ManagementNumberPanel({
         ? isAmbulanceFromAED(equipmentDetail)
         : isAmbulanceFromAED(item);
 
+      // DEBUG: 구급차 판별 로그
+      console.log('[handleAddEquipmentSerial] Ambulance Detection:', {
+        serial,
+        target: {
+          institution_name: selectedInstitution.institution_name,
+          sub_division: selectedInstitution.sub_division,
+          isAmbulance: targetIsAmbulance
+        },
+        source: {
+          management_number: item.management_number,
+          institution_name: item.institution_name,
+          category_1: equipmentDetail?.category_1 || item.category_1,
+          category_2: equipmentDetail?.category_2 || item.category_2,
+          installation_position: equipmentDetail?.installation_position || item.installation_position,
+          location_detail: equipmentDetail?.location_detail || item.location_detail,
+          isAmbulance: sourceIsAmbulance
+        }
+      });
+
       const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
 
       if (!validation.valid) {
+        console.error('[handleAddEquipmentSerial] Validation Failed:', validation.error);
         setAmbulanceValidationError(validation.error || '매칭 규칙 위반');
         return;
       }
@@ -2138,12 +2161,12 @@ export default function ManagementNumberPanel({
       }}>
         <DialogContent className="max-w-[55vw] sm:max-w-[55vw] md:max-w-[55vw] lg:max-w-[55vw] xl:max-w-[55vw] max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-3">
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              이중 매칭 확인
+            <DialogTitle className="text-base">
+              이전에 매칭한 장비와 비교 후 결정해주세요
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              이미 다른 기관에 매칭된 장비입니다. 처리 방법을 선택하세요.
+              <div>좌측: 이전의 매칭장비를 취소할 수 있음(매칭취소/복원)</div>
+              <div>우측: 이번에 매칭할 장비를 결정할 수 있음(비우기/담기)</div>
             </DialogDescription>
           </DialogHeader>
 
@@ -2151,52 +2174,40 @@ export default function ManagementNumberPanel({
             {/* 좌우 비교 섹션 */}
             {duplicateMatchDialog.item && (
               <div className="grid grid-cols-2 gap-4 flex-1 overflow-hidden">{/* 좌측: 기존에 매칭된 기관 */}
-                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col p-2">
+                <div className="overflow-hidden flex flex-col p-2">
                   <div className="flex-1 overflow-y-auto">
                     <div className="space-y-0">
                       {/* 헤더: 제목 + 기관명 */}
-                      <div className="bg-amber-900/30 border border-amber-700/50 rounded-md px-3 py-2">
-                        <div className="text-xs font-semibold text-amber-300/80 mb-1">기존에 매칭된 의무기관</div>
-                        <div className="font-semibold text-sm text-amber-400">
+                      <div className="border border-gray-600 rounded-md px-3 py-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 text-sm font-bold">A</span>
+                          <span className="text-xs font-semibold text-muted-foreground">기존에 매칭된 의무기관</span>
+                        </div>
+                        <div className="font-semibold text-sm pl-8">
                           {duplicateMatchDialog.item.matched_institution_name || '다른 기관'}
                         </div>
                       </div>
-                      {/* ㄴ자 화살표 커넥터 (좌측용) */}
-                      <div className="flex justify-center py-1">
-                        <svg width="100" height="50" viewBox="0 0 100 50" className="text-amber-500/70">
-                          {/* 수평 시작 - 점선 */}
-                          <path
-                            d="M 90 8 L 73 8"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            strokeLinecap="butt"
-                            strokeDasharray="3 4"
-                          />
-                          {/* ㄴ자 곡선 - 실선 */}
-                          <path
-                            d="M 73 8 L 45 8 Q 20 8, 20 25 L 20 36"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            strokeLinecap="butt"
-                          />
-                          {/* 화살표 머리 */}
-                          <path
-                            d="M 10 30 L 20 44 L 30 30"
-                            fill="currentColor"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinejoin="miter"
-                          />
-                        </svg>
+                      {/* 화살표 커넥터 (좌측용) - 좌우로 벌린 형태 + 문구 */}
+                      <div className="flex justify-between items-center px-4 py-1">
+                        <div className="rounded-full p-1 bg-amber-50 dark:bg-amber-900/20">
+                          <CornerLeftUp className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                        </div>
+                        <span className="text-xs px-3 py-1 h-6 rounded-md border border-amber-500/30 text-amber-400/70 font-medium cursor-not-allowed">이전매칭</span>
+                        <div className="rounded-full p-1 bg-amber-50 dark:bg-amber-900/20">
+                          <CornerRightDown className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                        </div>
                       </div>
                       {/* AED 데이터 본문 */}
                       <div className="bg-gray-900/20 border border-gray-700 rounded-md px-2 py-2">
                         {/* 주소 및 관리번호 */}
                         <div className="text-xs text-gray-400 mb-2 space-y-0.5">
-                          <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
-                          <div>관리번호: {duplicateMatchDialog.item.management_number}</div>
+                          <div className="flex items-start gap-2">
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-green-100 text-green-700 border border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 text-xs font-bold flex-shrink-0 mt-0.5">E</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
+                              <div>관리번호: {duplicateMatchDialog.item.management_number}</div>
+                            </div>
+                          </div>
                         </div>
 
                         {/* 기존 매칭 장비 (취소되지 않은 장비) */}
@@ -2220,7 +2231,7 @@ export default function ManagementNumberPanel({
                                     setCancelledFromExisting(new Set(duplicateMatchDialog.item?.equipment_serials || []));
                                   }}
                                 >
-                                  일괄매칭취소
+                                  이전매칭 일괄취소
                                 </Button>
                               </div>
                               <div className="space-y-0.5">
@@ -2228,7 +2239,7 @@ export default function ManagementNumberPanel({
                                   const equipmentDetail = duplicateMatchDialog.item?.equipment_details?.find(d => d.serial === serial);
                                   const isMatchingWithNew = newSerials.includes(serial);
                                   return (
-                                    <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-amber-900/20 border border-amber-700/30 px-1 rounded">
+                                    <div key={idx} className="flex items-center justify-between text-xs py-0.5 border border-gray-600 px-1 rounded">
                                       <div className="flex-1 min-w-0">
                                         <div className="text-xs leading-tight">
                                           <span className={`font-mono font-medium ${isMatchingWithNew ? 'text-blue-400' : 'text-white'}`}>
@@ -2256,7 +2267,7 @@ export default function ManagementNumberPanel({
                                           });
                                         }}
                                       >
-                                        매칭취소
+                                        이전매칭취소
                                       </Button>
                                     </div>
                                   );
@@ -2266,102 +2277,152 @@ export default function ManagementNumberPanel({
                           );
                         })()}
 
-                        {/* 매칭취소된 장비 */}
-                        {cancelledFromExisting.size > 0 && (
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">
-                              매칭취소된 장비 ({cancelledFromExisting.size}대)
-                            </div>
-                            <div className="space-y-0.5">
-                              {Array.from(cancelledFromExisting).map((serial, idx) => {
-                                const equipmentDetail = duplicateMatchDialog.item?.equipment_details?.find(d => d.serial === serial);
-                                return (
-                                  <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-gray-800/50 border border-gray-700/30 px-1 rounded">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="text-xs leading-tight">
-                                        <span className="font-mono font-medium text-gray-500">
-                                          {serial}
-                                        </span>
-                                        {equipmentDetail?.location_detail && (
-                                          <>
-                                            <span className="text-gray-600 mx-1">|</span>
-                                            <span className="text-gray-600">
-                                              {equipmentDetail.location_detail}
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
-                                      onClick={() => {
-                                        setCancelledFromExisting(prev => {
-                                          const newSet = new Set(prev);
-                                          newSet.delete(serial);
-                                          return newSet;
-                                        });
-                                      }}
-                                    >
-                                      복원
-                                    </Button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
+                  {/* 매칭취소된 장비 - 별도 카드 */}
+                  {cancelledFromExisting.size > 0 && (
+                    <div className="mt-2 border border-gray-600 rounded-md px-2 py-2 bg-gray-800/30">
+                      <div className="text-xs text-gray-400 mb-1 font-medium">
+                        매칭취소할 장비 ({cancelledFromExisting.size}대)
+                      </div>
+                      <div className="space-y-0.5">
+                        {Array.from(cancelledFromExisting).map((serial, idx) => {
+                          const equipmentDetail = duplicateMatchDialog.item?.equipment_details?.find(d => d.serial === serial);
+                          return (
+                            <div key={idx} className="flex items-center justify-between text-xs py-0.5 border border-gray-700 px-1 rounded">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs leading-tight">
+                                  <span className="font-mono font-medium text-gray-500">
+                                    {serial}
+                                  </span>
+                                  {equipmentDetail?.location_detail && (
+                                    <>
+                                      <span className="text-gray-600 mx-1">|</span>
+                                      <span className="text-gray-600">
+                                        {equipmentDetail.location_detail}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
+                                onClick={() => {
+                                  setCancelledFromExisting(prev => {
+                                    const newSet = new Set(prev);
+                                    newSet.delete(serial);
+                                    return newSet;
+                                  });
+                                }}
+                              >
+                                복원
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 우측: 이번에 매칭하려는 기관 */}
-                <div className="border border-gray-700 rounded-lg overflow-hidden flex flex-col p-2">
+                <div className="overflow-hidden flex flex-col p-2">
                   <div className="flex-1 overflow-y-auto">
                     <div className="space-y-0">
                       {/* 헤더: 제목 + 기관명 */}
                       <div className="bg-blue-900/30 border border-blue-700/50 rounded-md px-3 py-2">
-                        <div className="text-xs font-semibold text-blue-300/80 mb-1">이번에 매칭하려는 의무기관</div>
-                        <div className="font-semibold text-sm text-blue-400">{selectedInstitution?.institution_name}</div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 text-sm font-bold">A</span>
+                          <span className="text-xs font-semibold text-blue-300/80">이번에 매칭하려는 의무기관</span>
+                        </div>
+                        <div className="font-semibold text-sm text-blue-400 pl-8">{selectedInstitution?.institution_name}</div>
                       </div>
-                      {/* ㄱ자 화살표 커넥터 (우측용) */}
-                      <div className="flex justify-center py-1">
-                        <svg width="100" height="50" viewBox="0 0 100 50" className="text-blue-500/70">
-                          {/* 수평 시작 - 점선 */}
-                          <path
-                            d="M 10 8 L 27 8"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            strokeLinecap="butt"
-                            strokeDasharray="3 4"
-                          />
-                          {/* ㄱ자 곡선 - 실선 */}
-                          <path
-                            d="M 27 8 L 55 8 Q 80 8, 80 25 L 80 36"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            strokeLinecap="butt"
-                          />
-                          {/* 화살표 머리 */}
-                          <path
-                            d="M 70 30 L 80 44 L 90 30"
-                            fill="currentColor"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinejoin="miter"
-                          />
-                        </svg>
+                      {/* 화살표 커넥터 (우측용) - 좌우로 벌린 형태 + 매칭대기리스트 버튼 */}
+                      <div className="flex justify-between items-center px-4 py-1">
+                        <div className="rounded-full p-1 bg-blue-50 dark:bg-blue-900/20">
+                          <CornerLeftUp className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+                        </div>
+                        {/* 매칭대기리스트로 이동 버튼 */}
+                        {(() => {
+                          const activeSerials = duplicateMatchDialog.item?.equipment_serials?.filter(
+                            (serial: string) => !cancelledFromExisting.has(serial)
+                          ) || [];
+                          const selectedSerials = modalBasketItems.length > 0 ? modalBasketItems[0].selectedSerials : [];
+                          const hasOverlap = activeSerials.some((serial: string) => selectedSerials.includes(serial));
+                          const noExistingMatches = activeSerials.length === 0;
+                          const noSelectedSerials = selectedSerials.length === 0;
+
+                          // Case 2: 우측에서 모든 장비를 비운 경우
+                          if (noSelectedSerials) {
+                            return (
+                              <span className="text-xs px-3 py-1 h-6 rounded-md border border-red-500/30 text-red-400/70 font-medium">
+                                매칭할 장비 없음
+                              </span>
+                            );
+                          }
+
+                          // Case 1: 좌측에서 모든 장비를 취소한 경우 (이중 매칭 해소)
+                          if (noExistingMatches) {
+                            return (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => {
+                                  if (modalBasketItems.length > 0 && onReplaceBasketItemSerials) {
+                                    modalBasketItems.forEach(basketItem => {
+                                      // 이중 매칭 해소됨 - hasOverlap을 false로 설정
+                                      onReplaceBasketItemSerials(basketItem.item, basketItem.selectedSerials, false);
+                                    });
+                                  }
+                                  setDuplicateMatchDialog({ isOpen: false, item: null });
+                                  setModalBasketItems([]);
+                                  setCancelledFromExisting(new Set());
+                                }}
+                                className="text-xs px-3 py-1 h-6 bg-yellow-500 hover:bg-yellow-600 text-black"
+                              >
+                                바로 매칭하기
+                              </Button>
+                            );
+                          }
+
+                          return (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                if (modalBasketItems.length > 0 && onReplaceBasketItemSerials) {
+                                  modalBasketItems.forEach(basketItem => {
+                                    onReplaceBasketItemSerials(basketItem.item, basketItem.selectedSerials, hasOverlap);
+                                  });
+                                }
+                                setDuplicateMatchDialog({ isOpen: false, item: null });
+                                setModalBasketItems([]);
+                                setCancelledFromExisting(new Set());
+                              }}
+                              className={`text-xs px-3 py-1 h-6 ${hasOverlap ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}`}
+                            >
+                              {hasOverlap ? '매칭대기리스트로 이동' : '매칭대기리스트에 담기'}
+                            </Button>
+                          );
+                        })()}
+                        <div className="rounded-full p-1 bg-blue-50 dark:bg-blue-900/20">
+                          <CornerRightDown className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+                        </div>
                       </div>
                       {/* AED 데이터 본문 */}
                       <div className="bg-gray-900/20 border border-gray-700 rounded-md px-2 py-2">
                         {/* 주소 및 관리번호 */}
                         <div className="text-xs text-gray-400 mb-2 space-y-0.5">
-                          <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
-                          <div>관리번호: {duplicateMatchDialog.item.management_number}</div>
+                          <div className="flex items-start gap-2">
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-green-100 text-green-700 border border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 text-xs font-bold flex-shrink-0 mt-0.5">E</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate">주소: {duplicateMatchDialog.item.address}</div>
+                              <div>관리번호: {duplicateMatchDialog.item.management_number}</div>
+                            </div>
+                          </div>
                         </div>
 
                         {/* 담긴 장비 */}
@@ -2418,107 +2479,110 @@ export default function ManagementNumberPanel({
                           </div>
                         )}
 
-                        {/* 비워진 장비 */}
-                        {modalBasketItems.length > 0 && modalBasketItems[0]?.removedSerials.length > 0 && (
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">비워진 장비 ({modalBasketItems[0].removedSerials.length}대)</div>
-                            <div className="space-y-0.5">
-                              {modalBasketItems[0].removedSerials.map((serial, idx) => {
-                                const equipmentDetail = modalBasketItems[0].item.equipment_details?.find(d => d.serial === serial);
-                                return (
-                                  <div key={idx} className="flex items-center justify-between text-xs py-0.5 bg-gray-800/50 border border-gray-700/30 px-1 rounded">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="text-xs leading-tight">
-                                        <span className="font-mono font-medium text-gray-500">
-                                          {serial}
-                                        </span>
-                                        {equipmentDetail?.location_detail && (
-                                          <>
-                                            <span className="text-gray-600 mx-1">|</span>
-                                            <span className="text-gray-600">
-                                              {equipmentDetail.location_detail}
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
-                                      onClick={() => handleModalAddSerial(0, serial)}
-                                    >
-                                      담기
-                                    </Button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
+                  {/* 비워진 장비 - 별도 카드 */}
+                  {modalBasketItems.length > 0 && modalBasketItems[0]?.removedSerials.length > 0 && (
+                    <div className="mt-2 border border-gray-600 rounded-md px-2 py-2 bg-gray-800/30">
+                      <div className="text-xs text-gray-400 mb-1 font-medium">이번 매칭에 제외될 장비 ({modalBasketItems[0].removedSerials.length}대)</div>
+                      <div className="space-y-0.5">
+                        {modalBasketItems[0].removedSerials.map((serial, idx) => {
+                          const equipmentDetail = modalBasketItems[0].item.equipment_details?.find(d => d.serial === serial);
+                          return (
+                            <div key={idx} className="flex items-center justify-between text-xs py-0.5 border border-gray-700 px-1 rounded">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs leading-tight">
+                                  <span className="font-mono font-medium text-gray-500">
+                                    {serial}
+                                  </span>
+                                  {equipmentDetail?.location_detail && (
+                                    <>
+                                      <span className="text-gray-600 mx-1">|</span>
+                                      <span className="text-gray-600">
+                                        {equipmentDetail.location_detail}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-green-400 hover:text-green-300 hover:bg-green-950 ml-2 flex-shrink-0"
+                                onClick={() => handleModalAddSerial(0, serial)}
+                              >
+                                담기
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* 추가 매칭 질문 */}
-            {modalBasketItems.length > 0 && (
+            {/* 상태 안내 문구 */}
+            {duplicateMatchDialog.item && (() => {
+              const activeSerials = duplicateMatchDialog.item?.equipment_serials?.filter(
+                (serial: string) => !cancelledFromExisting.has(serial)
+              ) || [];
+              const selectedSerials = modalBasketItems.length > 0 ? modalBasketItems[0].selectedSerials : [];
+              const noExistingMatches = activeSerials.length === 0;
+              const noSelectedSerials = selectedSerials.length === 0;
+
+              // Case 1: 좌측에서 모든 장비를 취소한 경우
+              if (noExistingMatches && !noSelectedSerials) {
+                return (
+                  <div className="border border-green-600/50 rounded-lg p-4 bg-green-900/20 text-center">
+                    <div className="text-lg font-bold text-green-400 mb-1">
+                      이중 매칭이 해소되었습니다
+                    </div>
+                    <div className="text-sm text-green-300/80">
+                      기존 매칭이 모두 취소되어 충돌 없이 바로 매칭할 수 있습니다
+                    </div>
+                  </div>
+                );
+              }
+
+              // Case 2: 우측에서 모든 장비를 비운 경우
+              if (noSelectedSerials) {
+                return (
+                  <div className="border border-red-600/50 rounded-lg p-4 bg-red-900/20 text-center">
+                    <div className="text-lg font-bold text-red-400 mb-1">
+                      매칭할 장비가 없습니다
+                    </div>
+                    <div className="text-sm text-red-300/80">
+                      장비를 다시 담아주세요
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
+
+            {/* 이대로매칭완료 버튼 (3번 섹션이 비어있을 때만 표시) */}
+            {modalBasketItems.length > 0 && basketedManagementNumbers.length === 0 && (
               <div className="border border-gray-600 rounded-lg p-3 bg-gray-800/30">
                 <div className="text-sm text-center mb-2">
-                  {basketedManagementNumbers.length === 0
-                    ? "추가로 매칭할 장비가 있습니까?"
-                    : "매칭대기리스트에 추가하시겠습니까?"
-                  }
+                  추가로 매칭할 장비가 있습니까?
                 </div>
-                <div className="flex justify-center gap-3">
-                  {/* 3번 섹션이 비어있을 때만 "이대로매칭완료" 버튼 표시 */}
-                  {basketedManagementNumbers.length === 0 && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        // "이대로매칭완료" 클릭: 직접 매칭 처리
-                        handleConfirmDuplicateMatch();
-                      }}
-                      disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
-                      className="px-6 bg-yellow-500 hover:bg-yellow-600 text-black"
-                    >
-                      이대로매칭완료
-                    </Button>
-                  )}
-                  {(() => {
-                    // 중복 여부 확인: 좌측 남은 장비와 우측 선택된 장비 간 겹침
-                    const activeSerials = duplicateMatchDialog.item?.equipment_serials?.filter(
-                      (serial: string) => !cancelledFromExisting.has(serial)
-                    ) || [];
-                    const selectedSerials = modalBasketItems.length > 0 ? modalBasketItems[0].selectedSerials : [];
-                    const hasOverlap = activeSerials.some((serial: string) => selectedSerials.includes(serial));
-
-                    return (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => {
-                          // basket을 모달 상태로 교체하고 모달 닫기
-                          if (modalBasketItems.length > 0 && onReplaceBasketItemSerials) {
-                            modalBasketItems.forEach(basketItem => {
-                              // 중복이 없으면 is_matched: false로 설정
-                              onReplaceBasketItemSerials(basketItem.item, basketItem.selectedSerials, hasOverlap);
-                            });
-                          }
-                          setDuplicateMatchDialog({ isOpen: false, item: null });
-                          setModalBasketItems([]);
-                          setCancelledFromExisting(new Set());
-                        }}
-                        disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
-                        className={hasOverlap ? "px-6 bg-green-600 hover:bg-green-700" : "px-6 bg-blue-600 hover:bg-blue-700"}
-                      >
-                        {hasOverlap ? '매칭대기리스트로 이동' : '중복 없이 매칭대기리스트에 담기'}
-                      </Button>
-                    );
-                  })()}
+                <div className="flex justify-center">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      // "이대로매칭완료" 클릭: 직접 매칭 처리
+                      handleConfirmDuplicateMatch();
+                    }}
+                    disabled={modalBasketItems.reduce((sum, item) => sum + item.selectedSerials.length, 0) === 0}
+                    className="px-6 bg-yellow-500 hover:bg-yellow-600 text-black"
+                  >
+                    이대로매칭완료
+                  </Button>
                 </div>
               </div>
             )}

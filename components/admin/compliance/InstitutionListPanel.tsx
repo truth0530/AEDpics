@@ -527,6 +527,9 @@ export default function InstitutionListPanel({
                   >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
+                          {isSelected && (
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 text-xs font-bold flex-shrink-0">A</span>
+                          )}
                           <div className="font-medium text-sm">
                             {isSelected && selectedInstitution
                               ? highlightMatchingInstitutionName(institution.institution_name, selectedInstitution.institution_name)
@@ -663,6 +666,7 @@ export default function InstitutionListPanel({
                               return (
                                 <div key={item.management_number} className="flex items-center gap-2 flex-wrap">
                                   {/* 관리번호와 기관명 */}
+                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-green-100 text-green-700 border border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700 text-[10px] font-bold flex-shrink-0">E</span>
                                   <div className="text-xs leading-tight font-medium">
                                     {highlightMatchingInstitutionName(item.institution_name, institution.institution_name)} {equipmentCount}대
                                   </div>
