@@ -629,15 +629,31 @@ export default function ManagementNumberPanel({
 
   // 담기 버튼 클릭 핸들러 (이중매칭 체크 + 구급차 매칭 검증)
   const handleAddToBasket = (item: ManagementNumberCandidate) => {
-    // 1. 구급차 매칭 검증 (Strict Rule)
+    // 1. 구급차 매칭 검증 (Strict Rule) - 모든 장비연번 검증
     if (selectedInstitution) {
       const targetIsAmbulance = isAmbulanceFromTarget(selectedInstitution);
-      const sourceIsAmbulance = isAmbulanceFromAED(item);
-      const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
 
-      if (!validation.valid) {
-        setAmbulanceValidationError(validation.error || '매칭 규칙 위반');
-        return;
+      // 일괄담기이므로 모든 장비연번을 검증해야 함
+      const allSerials = item.equipment_serials || [];
+
+      for (const serial of allSerials) {
+        // 개별 장비 정보 찾기
+        const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+
+        // 개별 장비 정보로 구급차 여부 판별 (Phase 7 fallback 포함)
+        const sourceIsAmbulance = equipmentDetail
+          ? isAmbulanceFromAED(equipmentDetail)
+          : isAmbulanceFromAED(item);
+
+        const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
+
+        if (!validation.valid) {
+          setErrorModal({
+            title: '매칭 규칙 위반',
+            message: validation.error || '구급차 매칭 규칙을 위반했습니다.'
+          });
+          return; // 검증 실패 시 담기 중단
+        }
       }
     }
 
@@ -675,7 +691,15 @@ export default function ManagementNumberPanel({
     // 1. 구급차 매칭 검증 (Strict Rule)
     if (selectedInstitution) {
       const targetIsAmbulance = isAmbulanceFromTarget(selectedInstitution);
-      const sourceIsAmbulance = isAmbulanceFromAED(item);
+
+      // 개별 장비 정보 찾기
+      const equipmentDetail = item.equipment_details?.find(d => d.serial === serial);
+
+      // 개별 장비 정보가 있으면 그것으로 검증, 없으면 관리번호 전체로 검증
+      const sourceIsAmbulance = equipmentDetail
+        ? isAmbulanceFromAED(equipmentDetail)
+        : isAmbulanceFromAED(item);
+
       const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
 
       if (!validation.valid) {

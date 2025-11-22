@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
 import { v4 as uuidv4 } from 'uuid';
+import { isAmbulanceFromTarget, isAmbulanceFromAED, validateMatching } from '@/lib/utils/ambulance-detector';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,39 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields' },
         { status: 400 }
       );
+    }
+
+    // Validation (Strict Rule for Ambulance)
+    if (status === 'installed' && management_numbers && management_numbers.length > 0) {
+      // 1. Fetch Target
+      const target = await prisma.target_list_2025.findUnique({
+        where: { target_key },
+        select: { sub_division: true, institution_name: true }
+      });
+
+      if (!target) {
+        return NextResponse.json({ error: 'Target institution not found' }, { status: 404 });
+      }
+
+      // 2. Fetch AEDs
+      const aeds = await prisma.aed_data.findMany({
+        where: { management_number: { in: management_numbers } },
+        select: { category_1: true, category_2: true, installation_position: true }
+      });
+
+      if (aeds.length === 0) {
+        return NextResponse.json({ error: 'No AEDs found for provided management numbers' }, { status: 404 });
+      }
+
+      // 3. Validate
+      const targetIsAmbulance = isAmbulanceFromTarget(target);
+      for (const aed of aeds) {
+        const sourceIsAmbulance = isAmbulanceFromAED(aed);
+        const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+      }
     }
 
     // 트랜잭션으로 처리

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getRegionLabel } from '@/lib/constants/regions';
 import { isHighQualityMatch } from '@/lib/utils/match-tier';
+import { isAmbulanceFromTarget, isAmbulanceFromAED, validateMatching } from '@/lib/utils/ambulance-detector';
 import InstitutionListPanel from './InstitutionListPanel';
 import InstitutionGroupingPanel from './InstitutionGroupingPanel';
 import ManagementNumberPanel from './ManagementNumberPanel';
@@ -686,7 +687,49 @@ export default function ComplianceMatchingWorkflow({
   const handleMatchBasket = async () => {
     if (currentBasket.length === 0 || !selectedInstitution) return;
 
-    // 바로 충돌 체크 진행
+    // 1. 구급차 매칭 검증 (Phase 7 + Phase 8)
+    const targetIsAmbulance = isAmbulanceFromTarget(selectedInstitution);
+
+    // Basket에 담긴 모든 장비연번 수집
+    const allSerials: string[] = [];
+    for (const basketItem of currentBasket) {
+      const serials = basketItem.selected_serials || [];
+      allSerials.push(...serials);
+    }
+
+    // candidatesData에서 장비 상세정보 찾기
+    const equipmentDetails: Array<{ serial: string; category_1?: string; category_2?: string; installation_position?: string }> = [];
+    for (const serial of allSerials) {
+      // candidatesData에서 해당 serial을 포함한 관리번호 찾기
+      for (const candidate of candidatesData) {
+        const detail = candidate.equipment_details?.find((d: any) => d.serial === serial);
+        if (detail) {
+          equipmentDetails.push({
+            serial: (detail as any).serial,
+            category_1: (detail as any).category_1,
+            category_2: (detail as any).category_2,
+            installation_position: (detail as any).installation_position
+          });
+          break;
+        }
+      }
+    }
+
+    // 각 장비가 구급차인지 검증
+    for (const equipment of equipmentDetails) {
+      const sourceIsAmbulance = isAmbulanceFromAED(equipment);
+      const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
+
+      if (!validation.valid) {
+        setErrorModal({
+          title: '매칭 규칙 위반',
+          message: validation.error || '구급차 매칭 규칙을 위반했습니다.'
+        });
+        return; // 검증 실패 시 매칭 중단
+      }
+    }
+
+    // 2. 충돌 체크 진행
     await proceedWithMatchCheck(currentBasket);
   };
 

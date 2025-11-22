@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth-options';
+import { isAmbulanceFromTarget, isAmbulanceFromAED, validateMatching } from '@/lib/utils/ambulance-detector';
 
 /**
  * POST /api/compliance/match-basket
@@ -76,11 +77,21 @@ export async function POST(request: NextRequest) {
           equipment_serial: { in: equipment_serials },
           management_number: { in: management_numbers }
         },
-        select: { equipment_serial: true },
+        select: { equipment_serial: true, category_1: true, category_2: true, installation_position: true },
       });
 
       if (validSerials.length === 0) {
         return NextResponse.json({ error: 'No valid equipment found for the provided serials and management numbers' }, { status: 404 });
+      }
+
+      // 4-1. Ambulance Validation (Strict Rule)
+      const targetIsAmbulance = isAmbulanceFromTarget(targetInstitution);
+      for (const equipment of validSerials) {
+        const sourceIsAmbulance = isAmbulanceFromAED(equipment);
+        const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
       }
 
       serialsToMatch = validSerials.map((e) => e.equipment_serial);
@@ -89,11 +100,21 @@ export async function POST(request: NextRequest) {
       // 기존 로직: management_numbers의 모든 장비 사용
       const equipmentSerials = await prisma.aed_data.findMany({
         where: { management_number: { in: management_numbers } },
-        select: { equipment_serial: true },
+        select: { equipment_serial: true, category_1: true, category_2: true, installation_position: true },
       });
 
       if (equipmentSerials.length === 0) {
         return NextResponse.json({ error: 'No equipment found for the provided management numbers' }, { status: 404 });
+      }
+
+      // 4-1. Ambulance Validation (Strict Rule)
+      const targetIsAmbulance = isAmbulanceFromTarget(targetInstitution);
+      for (const equipment of equipmentSerials) {
+        const sourceIsAmbulance = isAmbulanceFromAED(equipment);
+        const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
       }
 
       serialsToMatch = equipmentSerials.map((e) => e.equipment_serial);

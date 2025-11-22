@@ -7,10 +7,15 @@ import { Card } from '@/components/ui/card';
 import { MapPin, ChevronDown, ChevronUp, GitCompare, CornerRightDown, CornerLeftUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { shortenAddressSido } from '@/lib/constants/regions';
+import { isAmbulanceFromAED, validateBasket, getAmbulanceType } from '@/lib/utils/ambulance-detector';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface EquipmentDetail {
   serial: string;
   location_detail: string;
+  category_1?: string | null;
+  category_2?: string | null;
 }
 
 interface BasketItem {
@@ -294,6 +299,26 @@ export default function BasketPanel({
   // 부분 매칭 여부 (선택된 장비가 전체 장비보다 적음)
   const hasPartialMatch = selectedEquipment > 0 && selectedEquipment < totalEquipment;
 
+  // Basket 유효성 검사 (Soft Rule) - Deep Validation
+  const flattenedItems = basket.flatMap(item => {
+    // 선택된 시리얼이 있는 경우, 해당 장비의 카테고리 정보를 사용
+    if (item.selected_serials && item.selected_serials.length > 0 && item.equipment_details) {
+      return item.equipment_details
+        .filter(detail => item.selected_serials!.includes(detail.serial))
+        .map(detail => ({
+          category_1: detail.category_1,
+          category_2: detail.category_2
+        }));
+    }
+    // 선택된 시리얼이 없거나 정보가 없는 경우, 관리번호 레벨의 카테고리 사용
+    return [{
+      category_1: item.category_1,
+      category_2: item.category_2
+    }];
+  });
+
+  const basketValidation = validateBasket(flattenedItems);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* 매칭 대상 의무기관 헤더 - basket에 항목이 있을 때만 표시 */}
@@ -302,6 +327,19 @@ export default function BasketPanel({
           <div className="font-medium text-sm text-blue-600 dark:text-blue-400 truncate">
             {selectedInstitution.institution_name}
           </div>
+        </div>
+      )}
+
+      {/* Basket Validation Warning */}
+      {basketValidation.warning && (
+        <div className="flex-shrink-0 mb-2 px-2">
+          <Alert variant="destructive" className="py-2">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle className="text-xs font-bold ml-2">주의: 장비 유형 혼합</AlertTitle>
+            <AlertDescription className="text-xs ml-2">
+              {basketValidation.warning}
+            </AlertDescription>
+          </Alert>
         </div>
       )}
 
@@ -423,8 +461,21 @@ export default function BasketPanel({
                             </span>
                           )}
                           {item.category_2 && (
-                            <span>
-                              {item.category_2}
+                            <span className={cn(
+                              "border rounded px-1.5 py-0.5 text-xs",
+                              isAmbulanceFromAED(item)
+                                ? "border-red-500/50 text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300"
+                                : "border-gray-700/30"
+                            )}>
+                              {(() => {
+                                if (isAmbulanceFromAED(item)) {
+                                  const type = getAmbulanceType(item);
+                                  if (type === '119구급대') return '119구급차';
+                                  if (type === '의료기관') return '병원구급차';
+                                  return '구급차';
+                                }
+                                return item.category_2;
+                              })()}
                             </span>
                           )}
                         </div>
@@ -446,8 +497,8 @@ export default function BasketPanel({
                               item.confidence === 100
                                 ? "bg-amber-100 text-red-800 border-amber-300 dark:bg-amber-900/30 dark:text-red-400"
                                 : item.confidence >= 90
-                                ? "bg-slate-700 dark:bg-slate-600 text-white"
-                                : "bg-transparent border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                                  ? "bg-slate-700 dark:bg-slate-600 text-white"
+                                  : "bg-transparent border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
                             )}
                           >
                             {item.confidence.toFixed(0)}%
@@ -519,8 +570,8 @@ export default function BasketPanel({
                                             isUniqueKeyMatched
                                               ? "text-purple-600 dark:text-purple-400"
                                               : !isUniqueKeyMatched && selectedInstitution?.unique_key
-                                              ? "text-red-600 dark:text-red-400"
-                                              : "text-muted-foreground"
+                                                ? "text-red-600 dark:text-red-400"
+                                                : "text-muted-foreground"
                                           )}>
                                             {highlightVehicleText(equipmentDetail.location_detail)}
                                           </span>
@@ -532,8 +583,8 @@ export default function BasketPanel({
                                         isUniqueKeyMatched
                                           ? "text-purple-700 dark:text-purple-300"
                                           : !isUniqueKeyMatched && selectedInstitution?.unique_key
-                                          ? "text-red-600 dark:text-red-400"
-                                          : ""
+                                            ? "text-red-600 dark:text-red-400"
+                                            : ""
                                       )}>{serial}</span>
                                     </div>
                                   </div>
@@ -628,8 +679,8 @@ export default function BasketPanel({
                                         isUniqueKeyMatched
                                           ? "text-purple-700 dark:text-purple-300"
                                           : !isUniqueKeyMatched && selectedInstitution?.unique_key
-                                          ? "text-red-600 dark:text-red-400"
-                                          : ""
+                                            ? "text-red-600 dark:text-red-400"
+                                            : ""
                                       )}>{serial}</span>
                                       {equipmentDetail?.location_detail && (
                                         <span className={cn(
@@ -637,8 +688,8 @@ export default function BasketPanel({
                                           isUniqueKeyMatched
                                             ? "text-purple-600 dark:text-purple-400"
                                             : !isUniqueKeyMatched && selectedInstitution?.unique_key
-                                            ? "text-red-600 dark:text-red-400"
-                                            : "text-muted-foreground"
+                                              ? "text-red-600 dark:text-red-400"
+                                              : "text-muted-foreground"
                                         )}>
                                           {highlightVehicleText(equipmentDetail.location_detail)}
                                         </span>

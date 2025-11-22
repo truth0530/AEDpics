@@ -209,7 +209,9 @@ export async function GET(request: NextRequest) {
             (SELECT json_agg(
                json_build_object(
                  'serial', ad2.equipment_serial,
-                 'location_detail', COALESCE(ad2.installation_position, '')
+                 'location_detail', COALESCE(ad2.installation_position, ''),
+                 'category_1', ad2.category_1,
+                 'category_2', ad2.category_2
                ) ORDER BY ad2.equipment_serial
              )
              FROM aedpics.aed_data ad2
@@ -283,7 +285,9 @@ export async function GET(request: NextRequest) {
             (SELECT json_agg(
                json_build_object(
                  'serial', ad2.equipment_serial,
-                 'location_detail', COALESCE(ad2.installation_position, '')
+                 'location_detail', COALESCE(ad2.installation_position, ''),
+                 'category_1', ad2.category_1,
+                 'category_2', ad2.category_2
                ) ORDER BY ad2.equipment_serial
              )
              FROM aedpics.aed_data ad2
@@ -354,7 +358,9 @@ export async function GET(request: NextRequest) {
             (SELECT json_agg(
                json_build_object(
                  'serial', ad2.equipment_serial,
-                 'location_detail', COALESCE(ad2.installation_position, '')
+                 'location_detail', COALESCE(ad2.installation_position, ''),
+                 'category_1', ad2.category_1,
+                 'category_2', ad2.category_2
                ) ORDER BY ad2.equipment_serial
              )
              FROM aedpics.aed_data ad2
@@ -388,7 +394,9 @@ export async function GET(request: NextRequest) {
           (SELECT json_agg(
              json_build_object(
                'serial', ad2.equipment_serial,
-               'location_detail', COALESCE(ad2.installation_position, '')
+               'location_detail', COALESCE(ad2.installation_position, ''),
+               'category_1', ad2.category_1,
+               'category_2', ad2.category_2
              ) ORDER BY ad2.equipment_serial
            )
            FROM aedpics.aed_data ad2
@@ -458,7 +466,9 @@ export async function GET(request: NextRequest) {
             (SELECT json_agg(
                json_build_object(
                  'serial', ad2.equipment_serial,
-                 'location_detail', COALESCE(ad2.installation_position, '')
+                 'location_detail', COALESCE(ad2.installation_position, ''),
+                 'category_1', ad2.category_1,
+                 'category_2', ad2.category_2
                ) ORDER BY ad2.equipment_serial
              )
              FROM aedpics.aed_data ad2
@@ -521,7 +531,9 @@ export async function GET(request: NextRequest) {
             (SELECT json_agg(
                json_build_object(
                  'serial', ad2.equipment_serial,
-                 'location_detail', COALESCE(ad2.installation_position, '')
+                 'location_detail', COALESCE(ad2.installation_position, ''),
+                 'category_1', ad2.category_1,
+                 'category_2', ad2.category_2
                ) ORDER BY ad2.equipment_serial
              )
              FROM aedpics.aed_data ad2
@@ -583,7 +595,9 @@ export async function GET(request: NextRequest) {
             (SELECT json_agg(
                json_build_object(
                  'serial', ad2.equipment_serial,
-                 'location_detail', COALESCE(ad2.installation_position, '')
+                 'location_detail', COALESCE(ad2.installation_position, ''),
+                 'category_1', ad2.category_1,
+                 'category_2', ad2.category_2
                ) ORDER BY ad2.equipment_serial
              )
              FROM aedpics.aed_data ad2
