@@ -537,8 +537,10 @@ export default function InstitutionListPanel({
                         <div className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground flex-wrap">
                           {institution.sub_division && (
                             <span className={cn(
-                              institution.sub_division === '119및 의료기관 구급차' &&
-                              "border border-red-500 rounded px-1.5 py-0.5"
+                              "border rounded px-1.5 py-0.5",
+                              institution.sub_division === '119및 의료기관 구급차'
+                                ? "border-red-500/50"
+                                : "border-gray-700/30"
                             )}>
                               {institution.sub_division}
                             </span>
