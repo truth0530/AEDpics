@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // category_2 고유 값 조회 (category_1이 구비의무기관인 경우만)
     const category2Results = await prisma.$queryRaw<Array<{ category_2: string | null }>>`
       SELECT DISTINCT category_2
-      FROM management_numbers
+      FROM aedpics.aed_data
       WHERE category_1 = '구비의무기관'
         AND category_2 IS NOT NULL
         AND category_2 != ''
