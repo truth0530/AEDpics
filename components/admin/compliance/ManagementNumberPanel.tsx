@@ -523,9 +523,21 @@ export default function ManagementNumberPanel({
         // API는 항상 모든 데이터를 반환하고, UI에서 showAlreadyMatched 상태로 접기/펼치기 제어
       });
 
-      // 의무설치기관이 선택된 경우에만 target_key 추가
+      // 의무설치기관이 선택된 경우 처리
       if (selectedInstitution) {
-        params.append('target_key', selectedInstitution.target_key);
+        // target_key가 row_ 패턴을 포함하면 그루핑모드에서 생성된 synthetic key
+        // 이 경우 기관명과 주소 정보를 대신 전달
+        if (selectedInstitution.target_key.includes('_row_')) {
+          params.append('target_name', selectedInstitution.institution_name);
+          params.append('target_sido', selectedInstitution.sido || '');
+          params.append('target_gugun', selectedInstitution.gugun || '');
+          if (selectedInstitution.address) {
+            params.append('target_address', selectedInstitution.address);
+          }
+        } else {
+          // 일반 모드: 기존처럼 target_key 사용
+          params.append('target_key', selectedInstitution.target_key);
+        }
       }
 
       if (searchTerm) {

@@ -33,6 +33,12 @@ export async function GET(request: NextRequest) {
     const includeAllRegion = searchParams.get('include_all_region') === 'true';
     const includeMatched = searchParams.get('include_matched') === 'true';
 
+    // 그루핑모드에서 전달된 추가 파라미터
+    const targetName = searchParams.get('target_name');
+    const targetSido = searchParams.get('target_sido');
+    const targetGugun = searchParams.get('target_gugun');
+    const targetAddress = searchParams.get('target_address');
+
     // 2025년 데이터만 사용
     const targetTableRaw = Prisma.raw('aedpics.target_list_2025');
     const yearInt = 2025;
@@ -43,7 +49,7 @@ export async function GET(request: NextRequest) {
     let normalizedGugun: string | null = null;
 
     if (targetKey) {
-      // 2025년 의무설치기관 조회
+      // 일반 모드: 2025년 의무설치기관 조회
       targetInstitution = await prisma.target_list_2025.findUnique({
         where: { target_key: targetKey },
         select: { sido: true, gugun: true }
@@ -59,6 +65,22 @@ export async function GET(request: NextRequest) {
       // 따라서 정규화 없이 그대로 사용
       normalizedSido = targetInstitution.sido;
       normalizedGugun = targetInstitution.gugun ? (normalizeGugunForDB(targetInstitution.gugun) ?? targetInstitution.gugun) : null;
+    } else if (targetName && targetSido) {
+      // 그루핑 모드: 전달된 정보로 가상의 targetInstitution 생성
+      targetInstitution = {
+        sido: targetSido,
+        gugun: targetGugun
+      };
+
+      normalizedSido = targetSido;
+      normalizedGugun = targetGugun ? (normalizeGugunForDB(targetGugun) ?? targetGugun) : null;
+
+      console.log('[Grouping Mode API] Virtual target institution:', {
+        name: targetName,
+        sido: targetSido,
+        gugun: targetGugun,
+        address: targetAddress
+      });
     }
 
     // 자동 추천: 의무설치기관 선택 여부에 따라 다른 쿼리 실행
@@ -83,26 +105,42 @@ export async function GET(request: NextRequest) {
     const tnmsConfidenceMap = new Map<string, number>();
 
     if (targetInstitution) {
-      // 선택된 의무설치기관 정보 조회
-      const targetInfo = await prisma.target_list_2025.findUnique({
-        where: { target_key: targetKey! },
-        select: { institution_name: true }
-      });
-      const targetName = targetInfo?.institution_name || '';
+      // 기관명 결정: 그루핑 모드면 파라미터에서, 일반 모드면 DB에서
+      let institutionName = '';
 
-      // TNMS 사전 계산된 매칭 결과 확인 (29,295개 데이터 활용)
-      const tnmsMatching = await prisma.$queryRaw<Array<{
+      if (targetName) {
+        // 그루핑 모드: 파라미터로 전달된 이름 사용
+        institutionName = targetName;
+      } else if (targetKey) {
+        // 일반 모드: DB에서 조회
+        const targetInfo = await prisma.target_list_2025.findUnique({
+          where: { target_key: targetKey },
+          select: { institution_name: true }
+        });
+        institutionName = targetInfo?.institution_name || '';
+      }
+
+      // TNMS 사전 계산된 매칭 결과 확인 (targetKey가 있는 경우만)
+      let tnmsMatching: Array<{
         matched_equipment_serial: string;
         confidence_score: number;
         match_type: string;
-      }>>`
-        SELECT
-          matched_equipment_serial,
-          confidence_score,
-          match_type
-        FROM aedpics.tnms_matching_results
-        WHERE target_key = ${targetKey}
-      `;
+      }> = [];
+
+      if (targetKey) {
+        tnmsMatching = await prisma.$queryRaw<Array<{
+          matched_equipment_serial: string;
+          confidence_score: number;
+          match_type: string;
+        }>>`
+          SELECT
+            matched_equipment_serial,
+            confidence_score,
+            match_type
+          FROM aedpics.tnms_matching_results
+          WHERE target_key = ${targetKey}
+        `;
+      }
 
       // 사전 계산된 매칭 결과를 Map에 저장 (빠른 조회를 위해)
       tnmsMatching.forEach(match => {
@@ -176,9 +214,9 @@ export async function GET(request: NextRequest) {
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
-              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
-              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
-              WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
+              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${institutionName}, ' ', '') THEN 100
+              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${institutionName}, ' ', '') || '%' THEN 90
+              WHEN REPLACE(${institutionName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
               ELSE 0  -- TNMS가 계산하도록 0점 부여
             END as confidence,
             gd.is_matched,
@@ -250,9 +288,9 @@ export async function GET(request: NextRequest) {
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
-              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
-              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
-              WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
+              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${institutionName}, ' ', '') THEN 100
+              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${institutionName}, ' ', '') || '%' THEN 90
+              WHEN REPLACE(${institutionName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
               ELSE 0  -- TNMS가 계산하도록 0점 부여
             END as confidence,
             gd.is_matched,
@@ -321,9 +359,9 @@ export async function GET(request: NextRequest) {
              FROM aedpics.aed_data ad2
              WHERE ad2.management_number = gd.management_number) as equipment_details,
             CASE
-              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${targetName}, ' ', '') THEN 100
-              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${targetName}, ' ', '') || '%' THEN 90
-              WHEN REPLACE(${targetName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
+              WHEN REPLACE(gd.installation_institution, ' ', '') = REPLACE(${institutionName}, ' ', '') THEN 100
+              WHEN REPLACE(gd.installation_institution, ' ', '') ILIKE '%' || REPLACE(${institutionName}, ' ', '') || '%' THEN 90
+              WHEN REPLACE(${institutionName}, ' ', '') ILIKE '%' || REPLACE(gd.installation_institution, ' ', '') || '%' THEN 85
               ELSE 0  -- TNMS가 계산하도록 0점 부여
             END as confidence,
             gd.is_matched,
@@ -598,18 +636,31 @@ export async function GET(request: NextRequest) {
     // TNMS 도입 시 이 로직은 제거되고 standard_code 기반 매칭으로 대체됨
     let improvedAutoSuggestions = autoSuggestionsQuery;
     if (targetInstitution && !search) {
-      const targetInfo = await prisma.target_list_2025.findUnique({
-        where: { target_key: targetKey! },
-        select: { institution_name: true, sido: true, gugun: true, division: true, sub_division: true }
-      });
+      let targetNameForMatch = '';
+      let targetAddressForMatch = '';
+      let targetSidoForMatch = '';
+      let targetGugunForMatch = '';
 
-      const targetName = targetInfo?.institution_name || '';
-      // 의무설치기관의 위치 정보 (address 필드 없으므로 sido + gugun + division으로 구성)
-      const targetAddress = [targetInfo?.sido, targetInfo?.gugun, targetInfo?.division]
-        .filter(Boolean)
-        .join(' ');
-      const targetSido = targetInfo?.sido || '';
-      const targetGugun = targetInfo?.gugun || '';
+      if (targetKey) {
+        // 일반 모드: DB에서 정보 조회
+        const targetInfo = await prisma.target_list_2025.findUnique({
+          where: { target_key: targetKey },
+          select: { institution_name: true, sido: true, gugun: true, division: true, sub_division: true }
+        });
+
+        targetNameForMatch = targetInfo?.institution_name || '';
+        targetAddressForMatch = [targetInfo?.sido, targetInfo?.gugun, targetInfo?.division]
+          .filter(Boolean)
+          .join(' ');
+        targetSidoForMatch = targetInfo?.sido || '';
+        targetGugunForMatch = targetInfo?.gugun || '';
+      } else if (targetName) {
+        // 그루핑 모드: 파라미터로 전달된 정보 사용
+        targetNameForMatch = targetName;
+        targetAddressForMatch = targetAddress || [targetSido, targetGugun].filter(Boolean).join(' ');
+        targetSidoForMatch = targetSido || '';
+        targetGugunForMatch = targetGugun || '';
+      }
 
       // 각 후보의 신뢰도를 계산 - TNMS 사전 계산 결과 우선, 없으면 실시간 계산
       const enhancedCandidates = await Promise.all(autoSuggestionsQuery.map(async item => {
@@ -633,10 +684,10 @@ export async function GET(request: NextRequest) {
 
         // 2. 사전 계산 결과가 없으면 실시간 TNMS 정규화 계산
         const matchResult = await calculateInstitutionMatchConfidence(
-          targetName,          // target이 먼저
+          targetNameForMatch,          // target이 먼저
           item.institution_name,
-          targetAddress,       // 의무설치기관 주소
-          item.address        // AED 설치 주소
+          targetAddressForMatch,       // 의무설치기관 주소
+          item.address                 // AED 설치 주소
         );
         const fuzzyConfidence = matchResult.confidence;
 

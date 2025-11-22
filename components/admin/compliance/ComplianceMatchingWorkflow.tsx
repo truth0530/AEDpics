@@ -895,9 +895,20 @@ export default function ComplianceMatchingWorkflow({
                   gugun={selectedRegion.gugun}
                   onSelectionChange={(institutions) => {
                     setSelectedGroupInstitutions(institutions);
-                    // 그룹에서 첫 번째 기관을 선택된 기관으로 설정
+                    // 그룹 선택 시: 첫 번째 기관(스마트 마스터)을 추천 기준으로 사용
+                    // InstitutionGroupingPanel에서 이미 스마트하게 정렬됨:
+                    // 1. 사용자가 개별 클릭한 기관
+                    // 2. equipment_count 최다 기관
+                    // 3. 본원/센터/대학병원
+                    // 4. 그룹의 기본 마스터
                     if (institutions.length > 0) {
                       setSelectedInstitution(institutions[0]);
+                      console.log('[Grouping Mode] 추천 기준 기관:', {
+                        name: institutions[0].institution_name,
+                        sido: institutions[0].sido,
+                        gugun: institutions[0].gugun,
+                        totalSelected: institutions.length
+                      });
                     } else {
                       setSelectedInstitution(null);
                     }
