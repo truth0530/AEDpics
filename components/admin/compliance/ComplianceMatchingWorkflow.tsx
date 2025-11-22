@@ -5,7 +5,9 @@ import { UserProfile } from '@/packages/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getRegionLabel } from '@/lib/constants/regions';
 import { isHighQualityMatch } from '@/lib/utils/match-tier';
 import InstitutionListPanel from './InstitutionListPanel';
@@ -108,6 +110,9 @@ export default function ComplianceMatchingWorkflow({
   // 매칭 전략 선택 모달 상태
   const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
   const [conflictData, setConflictData] = useState<ConflictCheckResult | null>(null);
+
+  // 에러 모달 상태
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
 
   // 그루핑 패널 표시 상태
   const [isGroupingEnabled, setIsGroupingEnabled] = useState(false);
@@ -660,14 +665,20 @@ export default function ComplianceMatchingWorkflow({
         const count = item.selected_serials?.length || item.equipment_count;
         return sum + count;
       }, 0);
-      alert(`매칭이 완료되었습니다.\n\n• 기관: ${selectedInstitution.institution_name}\n• 매칭된 관리번호: ${currentBasket.length}개\n• 매칭된 장비: ${matchedCount}대`);
+      setErrorModal({
+        title: '매칭 완료',
+        message: `매칭이 완료되었습니다.\n\n• 기관: ${selectedInstitution.institution_name}\n• 매칭된 관리번호: ${currentBasket.length}개\n• 매칭된 장비: ${matchedCount}대`
+      });
 
       // 선택된 기관 초기화 (리스트에서 사라지므로)
       setSelectedInstitution(null);
 
     } catch (error) {
       console.error('매칭 실패:', error);
-      alert(error instanceof Error ? error.message : '매칭 중 오류가 발생했습니다.');
+      setErrorModal({
+        title: '매칭 실패',
+        message: error instanceof Error ? error.message : '매칭 중 오류가 발생했습니다.'
+      });
     }
   };
 
@@ -712,7 +723,10 @@ export default function ComplianceMatchingWorkflow({
 
     } catch (error) {
       console.error('매칭 충돌 확인 실패:', error);
-      alert(error instanceof Error ? error.message : '매칭 충돌 확인 중 오류가 발생했습니다.');
+      setErrorModal({
+        title: '매칭 충돌 확인 실패',
+        message: error instanceof Error ? error.message : '매칭 충돌 확인 중 오류가 발생했습니다.'
+      });
     }
   };
 
@@ -737,13 +751,19 @@ export default function ComplianceMatchingWorkflow({
 
           if (!unmatchResponse.ok) {
             const errorData = await unmatchResponse.json();
-            alert(`매칭 해제 실패: ${errorData.error || '알 수 없는 오류'}`);
+            setErrorModal({
+              title: '매칭 해제 실패',
+              message: `매칭 해제 실패: ${errorData.error || '알 수 없는 오류'}`
+            });
             return;
           }
         }
       } catch (error) {
         console.error('Failed to unmatch:', error);
-        alert('매칭 해제 중 오류가 발생했습니다.');
+        setErrorModal({
+          title: '매칭 해제 오류',
+          message: '매칭 해제 중 오류가 발생했습니다.'
+        });
         return;
       }
     }
@@ -772,13 +792,19 @@ export default function ComplianceMatchingWorkflow({
 
           if (!unmatchResponse.ok) {
             const errorData = await unmatchResponse.json();
-            alert(`매칭 해제 실패: ${errorData.error || '알 수 없는 오류'}`);
+            setErrorModal({
+              title: '매칭 해제 실패',
+              message: `매칭 해제 실패: ${errorData.error || '알 수 없는 오류'}`
+            });
             return;
           }
         }
       } catch (error) {
         console.error('Failed to unmatch:', error);
-        alert('매칭 해제 중 오류가 발생했습니다.');
+        setErrorModal({
+          title: '매칭 해제 오류',
+          message: '매칭 해제 중 오류가 발생했습니다.'
+        });
         return;
       }
     }
@@ -819,7 +845,10 @@ export default function ComplianceMatchingWorkflow({
 
     } catch (error) {
       console.error('매칭 대상 없음 처리 실패:', error);
-      alert('처리 중 오류가 발생했습니다.');
+      setErrorModal({
+        title: '처리 실패',
+        message: '처리 중 오류가 발생했습니다.'
+      });
     }
   };
 
@@ -859,11 +888,17 @@ export default function ComplianceMatchingWorkflow({
 
       setSelectedInstitution(null);
 
-      alert('매칭 불가로 처리되었습니다.');
+      setErrorModal({
+        title: '처리 완료',
+        message: '매칭 불가로 처리되었습니다.'
+      });
 
     } catch (error) {
       console.error('매칭 불가 처리 실패:', error);
-      alert(error instanceof Error ? error.message : '처리 중 오류가 발생했습니다.');
+      setErrorModal({
+        title: '처리 실패',
+        message: error instanceof Error ? error.message : '처리 중 오류가 발생했습니다.'
+      });
     }
   };
 
@@ -1114,6 +1149,53 @@ export default function ComplianceMatchingWorkflow({
         onConfirm={handleStrategyConfirm}
         onAddMore={handleAddMoreFromStrategy}
       />
+
+      {/* 에러 모달 */}
+      <Dialog open={!!errorModal} onOpenChange={() => setErrorModal(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg">{errorModal?.title}</DialogTitle>
+                <DialogDescription className="text-sm mt-1">
+                  {errorModal?.title === '매칭 완료' || errorModal?.title === '처리 완료'
+                    ? '작업이 정상적으로 처리되었습니다'
+                    : '작업 중 문제가 발생했습니다'}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Alert
+              variant={errorModal?.title === '매칭 완료' || errorModal?.title === '처리 완료' ? 'default' : 'destructive'}
+              className={errorModal?.title === '매칭 완료' || errorModal?.title === '처리 완료'
+                ? 'border-green-200 bg-green-50 dark:bg-green-900/20'
+                : 'border-red-200 bg-red-50 dark:bg-red-900/20'}
+            >
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className={errorModal?.title === '매칭 완료' || errorModal?.title === '처리 완료'
+                ? 'text-sm font-medium text-green-800 dark:text-green-200 whitespace-pre-line'
+                : 'text-sm font-medium text-red-800 dark:text-red-200 whitespace-pre-line'}
+              >
+                {errorModal?.message}
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => setErrorModal(null)}
+              className="w-full sm:w-auto"
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

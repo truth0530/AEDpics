@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { isAmbulanceFromAED, isAmbulanceFromTarget, validateMatching, getAmbulanceType } from '@/lib/utils/ambulance-detector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,8 @@ import { getAddressMatchLevel } from '@/lib/utils/string-similarity';
 interface EquipmentDetail {
   serial: string;
   location_detail: string;
+  category_1?: string | null;
+  category_2?: string | null;
 }
 
 interface ManagementNumberCandidate {
@@ -90,11 +93,7 @@ function hasUniqueKeyMatch(locationDetail: string, uniqueKey: string | undefined
 }
 
 // 구급차 여부 판단 함수 (InstitutionGroupCard와 동일한 로직)
-function isAmbulance(item: ManagementNumberCandidate): boolean {
-  // category_2에서 "의료기관에서 운용 중인 구급차"를 확인
-  const category2 = item.category_2 || '';
-  return category2.includes('의료기관에서 운용 중인 구급차');
-}
+const isAmbulance = isAmbulanceFromAED;
 
 // 설치장소 텍스트에서 구급차/차량번호 강조
 function highlightVehicleText(text: string): React.ReactNode {
@@ -622,8 +621,26 @@ export default function ManagementNumberPanel({
     });
   };
 
-  // 담기 버튼 클릭 핸들러 (이중매칭 체크)
+  // 구급차 검증 에러 다이얼로그 상태
+  const [ambulanceValidationError, setAmbulanceValidationError] = useState<string | null>(null);
+
+  // 일반 에러 모달 상태
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
+
+  // 담기 버튼 클릭 핸들러 (이중매칭 체크 + 구급차 매칭 검증)
   const handleAddToBasket = (item: ManagementNumberCandidate) => {
+    // 1. 구급차 매칭 검증 (Strict Rule)
+    if (selectedInstitution) {
+      const targetIsAmbulance = isAmbulanceFromTarget(selectedInstitution);
+      const sourceIsAmbulance = isAmbulanceFromAED(item);
+      const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
+
+      if (!validation.valid) {
+        setAmbulanceValidationError(validation.error || '매칭 규칙 위반');
+        return;
+      }
+    }
+
     // 이미 매칭된 항목인지 체크
     if (item.is_matched) {
       // 기존 basket에 담긴 시리얼 확인 (이미 3번섹션에 담긴 것들)
@@ -653,8 +670,20 @@ export default function ManagementNumberPanel({
     }
   };
 
-  // 개별 장비연번 담기 핸들러 (이중매칭 체크)
+  // 개별 장비연번 담기 핸들러 (이중매칭 체크 + 구급차 매칭 검증)
   const handleAddEquipmentSerial = (item: ManagementNumberCandidate, serial: string) => {
+    // 1. 구급차 매칭 검증 (Strict Rule)
+    if (selectedInstitution) {
+      const targetIsAmbulance = isAmbulanceFromTarget(selectedInstitution);
+      const sourceIsAmbulance = isAmbulanceFromAED(item);
+      const validation = validateMatching(targetIsAmbulance, sourceIsAmbulance);
+
+      if (!validation.valid) {
+        setAmbulanceValidationError(validation.error || '매칭 규칙 위반');
+        return;
+      }
+    }
+
     // 이미 매칭된 항목인지 체크
     if (item.is_matched) {
       // 기존 basket에 담긴 시리얼 확인 (이미 3번섹션에 담긴 것들)
@@ -854,7 +883,10 @@ export default function ManagementNumberPanel({
       // 매칭할 장비가 없으면 스킵
       if (serialsToMatch.length === 0 || managementNumbersToMatch.length === 0) {
         console.log('[handleConfirmDuplicateMatch] 매칭할 장비 없음 - 스킵');
-        alert('매칭할 장비가 없습니다. 매칭취소된 장비가 있어야 새 기관으로 이동할 수 있습니다.');
+        setErrorModal({
+          title: '매칭 불가',
+          message: '매칭할 장비가 없습니다. 매칭취소된 장비가 있어야 새 기관으로 이동할 수 있습니다.'
+        });
         return;
       }
 
@@ -881,7 +913,10 @@ export default function ManagementNumberPanel({
       if (!matchResponse.ok) {
         const errorData = await matchResponse.json();
         console.error('[handleConfirmDuplicateMatch] Match 실패:', errorData);
-        alert(`매칭 실패: ${errorData.error || '알 수 없는 오류'}`);
+        setErrorModal({
+          title: '매칭 실패',
+          message: `매칭 실패: ${errorData.error || '알 수 없는 오류'}`
+        });
         return;
       }
 
@@ -889,7 +924,10 @@ export default function ManagementNumberPanel({
       console.log('[handleConfirmDuplicateMatch] Match 성공:', matchResult);
 
       // 성공 메시지
-      alert(`매칭 완료: ${matchResult.matched_count || managementNumbersToMatch.length}개 관리번호, ${matchResult.equipment_count || serialsToMatch.length}대 장비`);
+      setErrorModal({
+        title: '매칭 완료',
+        message: `매칭 완료: ${matchResult.matched_count || managementNumbersToMatch.length}개 관리번호, ${matchResult.equipment_count || serialsToMatch.length}대 장비`
+      });
 
       // 3. 모달 닫기 및 상태 초기화
       setDuplicateMatchDialog({ isOpen: false, item: null });
@@ -904,7 +942,10 @@ export default function ManagementNumberPanel({
 
     } catch (error) {
       console.error('[handleConfirmDuplicateMatch] 오류:', error);
-      alert(`오류 발생: ${error}`);
+      setErrorModal({
+        title: '오류 발생',
+        message: `오류 발생: ${error}`
+      });
     }
   };
 
@@ -1159,10 +1200,18 @@ export default function ManagementNumberPanel({
                           <span className={cn(
                             "border rounded px-1.5 py-0.5 text-xs",
                             isAmbulance(item)
-                              ? "border-red-500/50"
+                              ? "border-red-500/50 text-red-700 bg-red-50 dark:bg-red-900/20 dark:text-red-300"
                               : "border-gray-700/30"
                           )}>
-                            {item.category_2 === '구비의무기관' ? '의무' : item.category_2}
+                            {(() => {
+                              if (isAmbulance(item)) {
+                                const type = getAmbulanceType(item);
+                                if (type === '119구급대') return '119구급차';
+                                if (type === '의료기관') return '병원구급차';
+                                return '구급차';
+                              }
+                              return item.category_2 === '구비의무기관' ? '의무' : item.category_2;
+                            })()}
                           </span>
                         )}
                       </div>
@@ -2473,6 +2522,98 @@ export default function ManagementNumberPanel({
                 </Button>
               </div>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 구급차 매칭 검증 에러 모달 */}
+      <Dialog open={!!ambulanceValidationError} onOpenChange={() => setAmbulanceValidationError(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg">매칭 규칙 위반</DialogTitle>
+                <DialogDescription className="text-sm mt-1">
+                  구급차 매칭 규칙을 확인해주세요
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-900/20">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm font-medium text-red-800 dark:text-red-200">
+                {ambulanceValidationError}
+              </AlertDescription>
+            </Alert>
+
+            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">매칭 규칙:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>구급차 기관에는 구급차 장비만 매칭 가능</li>
+                <li>일반 기관에는 일반 장비만 매칭 가능</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => setAmbulanceValidationError(null)}
+              className="w-full sm:w-auto"
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 일반 에러 모달 */}
+      <Dialog open={!!errorModal} onOpenChange={() => setErrorModal(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg">{errorModal?.title}</DialogTitle>
+                <DialogDescription className="text-sm mt-1">
+                  {errorModal?.title === '매칭 완료'
+                    ? '작업이 정상적으로 처리되었습니다'
+                    : '작업 중 문제가 발생했습니다'}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Alert
+              variant={errorModal?.title === '매칭 완료' ? 'default' : 'destructive'}
+              className={errorModal?.title === '매칭 완료'
+                ? 'border-green-200 bg-green-50 dark:bg-green-900/20'
+                : 'border-red-200 bg-red-50 dark:bg-red-900/20'}
+            >
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className={errorModal?.title === '매칭 완료'
+                ? 'text-sm font-medium text-green-800 dark:text-green-200'
+                : 'text-sm font-medium text-red-800 dark:text-red-200'}
+              >
+                {errorModal?.message}
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => setErrorModal(null)}
+              className="w-full sm:w-auto"
+            >
+              확인
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
