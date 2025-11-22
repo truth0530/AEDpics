@@ -89,6 +89,13 @@ function hasUniqueKeyMatch(locationDetail: string, uniqueKey: string | undefined
   return valuesInParentheses.some(value => value === uniqueKey);
 }
 
+// 구급차 여부 판단 함수 (InstitutionGroupCard와 동일한 로직)
+function isAmbulance(item: ManagementNumberCandidate): boolean {
+  // category_2에서 "의료기관에서 운용 중인 구급차"를 확인
+  const category2 = item.category_2 || '';
+  return category2.includes('의료기관에서 운용 중인 구급차');
+}
+
 // 설치장소 텍스트에서 구급차/차량번호 강조
 function highlightVehicleText(text: string): React.ReactNode {
   if (!text) return text;
@@ -1139,12 +1146,22 @@ export default function ManagementNumberPanel({
                           관리번호 {item.management_number}
                         </div>
                         {item.category_1 && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className={cn(
+                            "border rounded px-1.5 py-0.5 text-xs",
+                            item.category_1 === '구비의무기관'
+                              ? "border-gray-700/30"
+                              : "border-gray-700/30"
+                          )}>
                             {item.category_1 === '구비의무기관' ? '의무' : item.category_1}
                           </span>
                         )}
                         {item.category_2 && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className={cn(
+                            "border rounded px-1.5 py-0.5 text-xs",
+                            isAmbulance(item)
+                              ? "border-red-500/50"
+                              : "border-gray-700/30"
+                          )}>
                             {item.category_2 === '구비의무기관' ? '의무' : item.category_2}
                           </span>
                         )}
@@ -1771,12 +1788,22 @@ export default function ManagementNumberPanel({
                           관리번호 {item.management_number}
                         </div>
                         {item.category_1 && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className={cn(
+                            "border rounded px-1.5 py-0.5 text-xs",
+                            item.category_1 === '구비의무기관'
+                              ? "border-gray-700/30"
+                              : "border-gray-700/30"
+                          )}>
                             {item.category_1 === '구비의무기관' ? '의무' : item.category_1}
                           </span>
                         )}
                         {item.category_2 && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className={cn(
+                            "border rounded px-1.5 py-0.5 text-xs",
+                            isAmbulance(item)
+                              ? "border-red-500/50"
+                              : "border-gray-700/30"
+                          )}>
                             {item.category_2 === '구비의무기관' ? '의무' : item.category_2}
                           </span>
                         )}
