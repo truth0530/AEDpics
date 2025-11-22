@@ -2,6 +2,8 @@
  * 의무기관 중복 통합을 위한 유틸리티 함수
  */
 
+import { normalizeSidoForDB, shortenAddressSido } from '@/lib/constants/regions';
+
 // 타입 정의
 export interface TargetInstitution {
   target_key: string;
@@ -96,8 +98,12 @@ export function calculateSimilarity(
   const nameScore = maxLen > 0 ? (1 - distance / maxLen) : 0;
 
   // 2. 주소 유사도 (30%)
+  // 통합시스템 사용: "대구" vs "대구광역시"를 동일하게 인식
+  const sido1 = normalizeSidoForDB(inst1.sido) || inst1.sido;
+  const sido2 = normalizeSidoForDB(inst2.sido) || inst2.sido;
+
   let addressScore = 0;
-  if (inst1.sido === inst2.sido) {
+  if (sido1 === sido2) {
     addressScore += 0.5;
     if (inst1.gugun === inst2.gugun) {
       addressScore += 0.5;

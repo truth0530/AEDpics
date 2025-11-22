@@ -319,30 +319,22 @@ export default function InstitutionGroupCard({
 
                   {/* sub_division / unique_key */}
                   <div className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground flex-wrap">
-                    {isAmbulance(member) ? (
-                      <>
-                        <Badge className="border border-red-500 bg-transparent text-red-600 dark:text-red-400 text-xs py-0 px-1.5 h-5 flex-shrink-0">
-                          119및 의료기관 구급차
-                        </Badge>
-                        {member.unique_key && (
-                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded">
-                            <span className="font-mono text-sm">
-                              {member.unique_key}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <span className="truncate">{member.division}</span>
-                        {member.unique_key && (
-                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded">
-                            <span className="font-mono text-sm">
-                              {member.unique_key}
-                            </span>
-                          </div>
-                        )}
-                      </>
+                    {member.sub_division && (
+                      <span className={cn(
+                        "border rounded px-1.5 py-0.5",
+                        isAmbulance(member)
+                          ? "border-red-500/50"
+                          : "border-gray-700/30"
+                      )}>
+                        {member.sub_division}
+                      </span>
+                    )}
+                    {member.unique_key && (
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded">
+                        <span className="font-mono text-sm">
+                          {member.unique_key}
+                        </span>
+                      </div>
                     )}
                   </div>
 
